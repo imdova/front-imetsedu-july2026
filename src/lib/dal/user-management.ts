@@ -154,7 +154,7 @@ export const inviteUmUser = async (input: {
   name: string; title?: string; email: string; phone?: string; role: string; department: string;
 }): Promise<Result<{ email: string }>> => {
   const res = await api.post<unknown>("/user-management/invitations", {
-    name: input.name,
+    fullName: input.name,
     email: input.email,
     role: input.role,
     department: input.department,

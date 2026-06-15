@@ -47,7 +47,6 @@ export function SettingsForm() {
           <Card><CardContent className="space-y-5">
             <Secret label={t("settingVdocipher")} hint={t("secretHint")} />
             <Secret label={t("settingProxycurl")} hint={t("secretHint")} />
-            <Secret label={t("settingStripe")} hint={t("secretHint")} />
           </CardContent></Card>
         </TabsContent>
       </Tabs>

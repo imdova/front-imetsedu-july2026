@@ -6,7 +6,7 @@
 import { respond } from "./delay";
 
 export type IntegrationStatus = "connected" | "not_configured";
-export type IntegrationGroup = "marketing" | "operations" | "financial" | "optimization";
+export type IntegrationGroup = "marketing" | "operations" | "optimization";
 
 export interface Integration {
   id: string;
@@ -43,7 +43,6 @@ const integrations: Integration[] = [
   { id: "int_zoom", name: "Zoom Classes", description: "Schedule and manage live interactive sessions.", group: "operations", icon: "Video", accent: "#3b82f6", status: "connected" },
   { id: "int_vdocipher", name: "VdoCipher", description: "High-security DRM video hosting for courses.", group: "operations", icon: "Lock", accent: "#f59e0b", status: "connected" },
   { id: "int_whatsapp", name: "WhatsApp API", description: "Automated notifications and student messaging.", group: "operations", icon: "MessageCircle", accent: "#22c55e", status: "connected" },
-  { id: "int_payment", name: "Payment Gateway", description: "Process payments and manage transactions.", group: "financial", icon: "Landmark", accent: "#3b82f6", status: "connected" },
   { id: "int_seo", name: "Advanced SEO Tools", description: "Improve search visibility and rankings.", group: "optimization", icon: "Search", accent: "#a855f7", status: "not_configured" },
 ];
 
