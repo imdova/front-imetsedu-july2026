@@ -25,6 +25,7 @@ import {
   ArrowLeft,
   Check,
   Loader2,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -142,6 +143,28 @@ export function LeadDetail({
     const r = await dal.groups.addLeadToGroup(groupId, lead.id);
     if (r.ok) toast.success(t("addedToGroup"));
     else toast.error(r.error);
+  };
+
+  // ─── Certificates ───
+  const [certGroup, setCertGroup] = React.useState(groupOptions[0]?.value ?? "");
+  const [certUploading, setCertUploading] = React.useState<"group" | "lms" | null>(null);
+  const groupCertRef = React.useRef<HTMLInputElement>(null);
+  const lmsCertRef = React.useRef<HTMLInputElement>(null);
+
+  /** Upload a PDF and assign it as a certificate to this lead. */
+  const uploadCert = async (file: File | undefined, which: "group" | "lms") => {
+    if (!file) return;
+    if (file.type !== "application/pdf") { toast.error(t("certPdfOnly")); return; }
+    setCertUploading(which);
+    const up = await dal.upload.uploadFile(file);
+    if (!up.ok) { setCertUploading(null); toast.error(up.error); return; }
+    const res = await dal.crm.assignCertificate(lead.id, {
+      certificateLink: up.data.url,
+      groupId: which === "group" ? (certGroup || undefined) : undefined,
+    });
+    setCertUploading(null);
+    if (res.ok) { setLead(res.data); toast.success(t("certUploaded")); }
+    else toast.error(res.error);
   };
 
   /** Schedule a new follow-up — appended to lead.data.followUps via PATCH. */
@@ -507,18 +530,25 @@ export function LeadDetail({
                   <p className="inline-flex items-center gap-1.5 font-semibold"><GraduationCap className="size-4" />{t("groupCertificate")}</p>
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("linkedGroup")}</p>
-                    <Select defaultValue="CPHQ-G42">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{["CPHQ-G42", "CPHQ-G41", "CIC-2026"].map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+                    <Select value={certGroup} onValueChange={setCertGroup} disabled={groupOptions.length === 0}>
+                      <SelectTrigger><SelectValue placeholder={t("selectGroupPh")} /></SelectTrigger>
+                      <SelectContent>{groupOptions.map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <Button className="w-full gap-1.5" onClick={() => toast.info(t("choosePdf"))}><Upload className="size-4" />{t("choosePdf")}</Button>
+                  <input ref={groupCertRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { void uploadCert(e.target.files?.[0], "group"); e.target.value = ""; }} />
+                  <Button className="w-full gap-1.5" disabled={certUploading !== null} onClick={() => groupCertRef.current?.click()}>
+                    {certUploading === "group" ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}{t("choosePdf")}
+                  </Button>
                   <p className="text-xs text-muted-foreground">{t("reuploadGroup")}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="space-y-3 pt-6">
-                  <Button variant="secondary" className="w-full gap-1.5" onClick={() => toast.info(t("choosePdf"))}><Upload className="size-4" />{t("choosePdf")}</Button>
+                  <p className="inline-flex items-center gap-1.5 font-semibold"><Award className="size-4" />{t("lmsCertificate")}</p>
+                  <input ref={lmsCertRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { void uploadCert(e.target.files?.[0], "lms"); e.target.value = ""; }} />
+                  <Button variant="secondary" className="w-full gap-1.5" disabled={certUploading !== null} onClick={() => lmsCertRef.current?.click()}>
+                    {certUploading === "lms" ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}{t("choosePdf")}
+                  </Button>
                   <p className="text-xs text-muted-foreground">{t("reuploadLms")}</p>
                 </CardContent>
               </Card>
@@ -526,10 +556,27 @@ export function LeadDetail({
             <Card>
               <CardHeader><CardTitle className="text-base">{t("issuedCertificates")}</CardTitle></CardHeader>
               <CardContent>
-                <div className="grid place-items-center gap-3 rounded-xl border border-dashed py-16 text-center">
-                  <Award className="size-9 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground">{t("noCertificate")}</p>
-                </div>
+                {lead.certificates && lead.certificates.length > 0 ? (
+                  <ul className="space-y-2.5">
+                    {lead.certificates.map((c, i) => (
+                      <li key={`${c.code}-${i}`} className="flex items-center gap-3 rounded-xl border p-3">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-success/12 text-success"><Award className="size-4" /></span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium tabular-nums">{c.code}</p>
+                          <p className="text-xs text-muted-foreground">{c.date}{c.groupId && groupOptions.find((g) => g.value === c.groupId) ? ` · ${groupOptions.find((g) => g.value === c.groupId)!.label}` : ""}</p>
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="gap-1.5">
+                          <a href={c.link} target="_blank" rel="noreferrer" download><Download className="size-3.5" />{t("certView")}</a>
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="grid place-items-center gap-3 rounded-xl border border-dashed py-16 text-center">
+                    <Award className="size-9 text-muted-foreground/50" />
+                    <p className="text-sm text-muted-foreground">{t("noCertificate")}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

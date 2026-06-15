@@ -8,6 +8,7 @@ import type {
   ActivityKind,
   FollowUp,
   FollowUpStatus,
+  LeadCertificate,
   PaymentPlanSummary,
   PlanInstallment,
   PlanInstallmentStatus,
@@ -126,6 +127,14 @@ export function mapLead(raw: any): Lead {
     dueDate: f.dueDate || undefined,
     doneNote: f.doneNote || undefined,
   }));
+  const certificates: LeadCertificate[] = (raw.data?.certificates ?? [])
+    .map((c: any) => ({
+      code: c.certificateCode ?? "—",
+      link: c.certificateLink ?? "",
+      date: formatDate(c.assignedAt ?? c.createdAt),
+      groupId: c.groupId ?? undefined,
+    }))
+    .filter((c: LeadCertificate) => c.link);
 
   return {
     id: raw._id ?? raw.id,
@@ -162,6 +171,7 @@ export function mapLead(raw: any): Lead {
     followUps,
     paymentPlan: mapPaymentPlans(raw)[0],
     paymentPlans: mapPaymentPlans(raw),
+    certificates,
     assignedPipelineIds: pipelines.map((p) => p._id ?? p.id).filter(Boolean),
     pipelines: pipelines
       .map((p) => ({ id: p._id ?? p.id, title: p.title ?? "Pipeline", stage: p.stage ?? "" }))

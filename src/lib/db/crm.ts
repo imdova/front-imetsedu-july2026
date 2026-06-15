@@ -37,6 +37,13 @@ export interface LeadActivity {
 }
 
 export type FollowUpStatus = "overdue" | "today" | "upcoming" | "done";
+export interface LeadCertificate {
+  code: string;
+  link: string;
+  date: string; // human label
+  groupId?: string;
+}
+
 export interface FollowUp {
   id: string;
   note: string;
@@ -103,6 +110,8 @@ export interface Lead {
   paymentPlan?: PaymentPlanSummary;
   /** All payment plans on the lead (a lead may have several). */
   paymentPlans?: PaymentPlanSummary[];
+  /** Issued completion certificates. */
+  certificates?: LeadCertificate[];
   /** Recruitment pipelines this lead belongs to. */
   assignedPipelineIds: string[];
   /** Per-pipeline membership with the lead's current backend stage key in each. */

@@ -214,6 +214,24 @@ export const updateLeadFields = async (
   }
 };
 
+/** LIVE: assign a completion certificate to a lead (POST /crm/leads/:id/certificate).
+ * The backend generates a code, stores it on `lead.data.certificates`, and logs an
+ * activity. Re-reads the lead so the issued-certificates list reflects the new entry. */
+export const assignCertificate = async (
+  leadId: string,
+  input: { groupId?: string; lmsId?: string; certificateLink: string },
+): Promise<Result<db.Lead>> => {
+  const res = await leadsSvc.assignCertificateToLead(leadId, input);
+  if (!res.ok) return res;
+  const leadRes = await leadsSvc.getLeadById(leadId);
+  if (!leadRes.ok) return leadRes;
+  try {
+    return ok(mapLead(leadRes.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to assign certificate"));
+  }
+};
+
 /** LIVE: add or update ONE payment plan in `lead.data.paymentPlans` without
  * disturbing the others. Reads the lead's current raw plans first, then writes
  * the full array back (so a lead can carry several plans). Pass `index` to edit
