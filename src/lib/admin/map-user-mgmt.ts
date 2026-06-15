@@ -1,5 +1,7 @@
 /** Maps backend user-management docs (staff, departments, roles) to the UI shapes. */
-import type { UmUser, UmUserStatus, UmStats, UmDepartment, UmRole, UmRisk } from "@/lib/db/user-management";
+import type {
+  UmUser, UmUserStatus, UmStats, UmDepartment, UmRole, UmRisk, UmInvitation, UmInvitationStatus,
+} from "@/lib/db/user-management";
 import type { StaffRole } from "@integration/services/roles";
 
 const initials = (n: string) => n.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
@@ -67,6 +69,27 @@ export function computeUmStats(rows: UmUser[]): UmStats {
     accepted: rows.filter((u) => u.status !== "pending").length,
     activeStaff: active.length,
     pendingInvites: rows.filter((u) => u.status === "pending").length,
+  };
+}
+
+const INVITE_STATUS: Record<string, UmInvitationStatus> = {
+  pending: "pending", accepted: "accepted", expired: "expired", cancelled: "cancelled", canceled: "cancelled",
+};
+
+/** Map a backend invitation doc (populated role/department/invitedBy) to UI. */
+export function mapInvitation(raw: any): UmInvitation {
+  const name = raw?.fullName ?? raw?.name ?? "—";
+  return {
+    id: raw?._id ?? raw?.id ?? "",
+    name,
+    email: raw?.email ?? "",
+    role: raw?.role?.title ?? raw?.role?.name ?? (typeof raw?.role === "string" ? raw.role : "—"),
+    department: raw?.department?.name ?? (typeof raw?.department === "string" ? raw.department : "—"),
+    status: INVITE_STATUS[String(raw?.status ?? "").toLowerCase()] ?? "pending",
+    expiresAt: raw?.expiresAt ? String(raw.expiresAt).slice(0, 10) : null,
+    invitedBy: raw?.invitedBy?.name ?? raw?.invitedBy?.email ?? "—",
+    createdAt: String(raw?.createdAt ?? "").slice(0, 10) || "—",
+    initials: initials(name),
   };
 }
 

@@ -45,6 +45,22 @@ export interface UmDepartment {
   createdAt: string;
 }
 
+export type UmInvitationStatus = "pending" | "accepted" | "expired" | "cancelled";
+
+export interface UmInvitation {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  status: UmInvitationStatus;
+  /** ISO date the invite link expires. */
+  expiresAt: string | null;
+  invitedBy: string;
+  createdAt: string;
+  initials: string;
+}
+
 export type UmRisk = "low" | "medium" | "elevated" | "high";
 
 export interface UmRole {

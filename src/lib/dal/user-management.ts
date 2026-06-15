@@ -4,10 +4,10 @@
 import { ok, fail, toMessage, api, type Result } from "@integration/lib/api-client";
 import * as rolesSvc from "@integration/services/roles";
 import * as db from "@/lib/db/user-management";
-import type { UmUser, UmStats, UmDepartment, UmRole } from "@/lib/db/user-management";
+import type { UmUser, UmStats, UmDepartment, UmRole, UmInvitation } from "@/lib/db/user-management";
 import type { UserDetail } from "@/lib/db/admin";
 import {
-  mapStaff, computeUmStats, mapDepartment, mapRole, grantedToPermissions,
+  mapStaff, computeUmStats, mapDepartment, mapRole, mapInvitation, grantedToPermissions,
 } from "@/lib/admin/map-user-mgmt";
 
 async function wrap<T>(fn: () => Promise<T>, msg: string): Promise<Result<T>> {
@@ -149,6 +149,17 @@ export const deleteUmRole = (id: string): Promise<Result<void>> =>
   rolesSvc.deleteStaffRole(id);
 
 /* ───────────────────────── Invitations ───────────────────────── */
+
+/** LIVE: pending/sent invitations from GET /user-management/invitations. */
+export const fetchUmInvitations = async (): Promise<Result<UmInvitation[]>> => {
+  const res = await api.get<unknown>("/user-management/invitations");
+  if (!res.ok) return res;
+  try {
+    return ok(arr<any>(res.data).map(mapInvitation));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to load invitations"));
+  }
+};
 
 export const inviteUmUser = async (input: {
   name: string; title?: string; email: string; phone?: string; role: string; department: string;
