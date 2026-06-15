@@ -95,6 +95,7 @@ export function mapLead(raw: any): Lead {
     kind: activityKind(a.action ?? ""),
     text: a.action ?? "",
     ago: relativeTime(a.performedAt),
+    at: a.performedAt ?? a.createdAt ?? undefined,
   }));
   const followUps: FollowUp[] = (raw.data?.followUps ?? []).map((f: any, i: number) => ({
     id: f.id ?? `fu_${i}`,
@@ -115,7 +116,14 @@ export function mapLead(raw: any): Lead {
     educationLevel: raw.educationLevel,
     source: raw.source ?? "—",
     gender: raw.gender,
-    coursesOfInterest: raw.coursesOfInterest ?? [],
+    // The backend populates coursesOfInterest with {_id, titleEn, titleAr};
+    // keep ids for the form, expose names for the list column.
+    coursesOfInterest: (raw.coursesOfInterest ?? []).map((c: any) =>
+      typeof c === "object" && c ? String(c._id ?? c.id ?? "") : String(c),
+    ).filter(Boolean),
+    courseNames: (raw.coursesOfInterest ?? [])
+      .map((c: any) => (typeof c === "object" && c ? (c.titleEn ?? c.titleAr ?? c.title ?? "") : ""))
+      .filter(Boolean),
     jobTitle: raw.jobTitle ?? raw.data?.jobTitle,
     counselorId: raw.counselor?._id ?? raw.counselorId ?? "",
     counselorName: raw.counselor?.name ?? raw.counselorName ?? "Unassigned",

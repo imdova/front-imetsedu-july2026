@@ -45,9 +45,10 @@ interface LeadPaymentTabProps {
   plan: PaymentPlanSummary | undefined;
   pct: number;
   onUpdated?: (lead: Lead) => void;
+  courseOptions?: { value: string; label: string }[];
 }
 
-export function LeadPaymentTab({ leadName, leadId, plan, pct, onUpdated }: LeadPaymentTabProps) {
+export function LeadPaymentTab({ leadName, leadId, plan, pct, onUpdated, courseOptions = [] }: LeadPaymentTabProps) {
   const t = useTranslations("Crm");
   const [modalOpen, setModalOpen] = React.useState(false);
 
@@ -89,6 +90,7 @@ export function LeadPaymentTab({ leadName, leadId, plan, pct, onUpdated }: LeadP
         leadId={leadId}
         existing={plan}
         onSaved={(lead) => { onUpdated?.(lead); setModalOpen(false); }}
+        courseOptions={courseOptions}
       />
     </div>
   );
@@ -398,13 +400,14 @@ function defaultDueDates(n: number): string[] {
 }
 
 function PaymentPlanModal({
-  open, onOpenChange, leadId, existing, onSaved,
+  open, onOpenChange, leadId, existing, onSaved, courseOptions = [],
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   leadId: string;
   existing?: PaymentPlanSummary;
   onSaved: (lead: Lead) => void;
+  courseOptions?: { value: string; label: string }[];
 }) {
   const t = useTranslations("Crm");
   const [courseName, setCourseName] = React.useState("");
@@ -491,7 +494,22 @@ function PaymentPlanModal({
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>{t("ppCourse")}</Label>
-            <Input value={courseName} onChange={(e) => setCourseName(e.target.value)} placeholder={t("ppCoursePh")} />
+            {courseOptions.length > 0 ? (
+              <Select value={courseName || undefined} onValueChange={setCourseName}>
+                <SelectTrigger><SelectValue placeholder={t("ppCoursePh")} /></SelectTrigger>
+                <SelectContent>
+                  {/* Seed an entry for an existing name that isn't in the current course list. */}
+                  {courseName && !courseOptions.some((c) => c.label === courseName) ? (
+                    <SelectItem value={courseName}>{courseName}</SelectItem>
+                  ) : null}
+                  {courseOptions.map((c) => (
+                    <SelectItem key={c.value} value={c.label}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value={courseName} onChange={(e) => setCourseName(e.target.value)} placeholder={t("ppCoursePh")} />
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

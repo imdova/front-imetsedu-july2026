@@ -16,16 +16,18 @@ export default async function AdminNewLeadPage({
   setRequestLocale(locale);
   const t = await getTranslations("Crm");
 
-  const [counselorsRes, pipelinesRes, coursesRes] = await Promise.all([
+  const [counselorsRes, pipelinesRes, coursesRes, optionsRes] = await Promise.all([
     dal.crm.fetchCounselors(),
     dal.crm.fetchLeadPipelines(),
     dal.courses.fetchCourses(),
+    dal.crm.fetchCrmFieldOptions(),
   ]);
 
   const courseOptions = (coursesRes.ok ? coursesRes.data : []).map((c) => ({
     value: c.id,
     label: c.titleEn || c.titleAr || c.slug,
   }));
+  const fieldOpts = optionsRes.ok ? optionsRes.data : { sources: [], specialties: [] };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-8">
@@ -42,6 +44,8 @@ export default async function AdminNewLeadPage({
         counselors={counselorsRes.ok ? counselorsRes.data : []}
         pipelines={pipelinesRes.ok ? pipelinesRes.data : []}
         courseOptions={courseOptions}
+        sourceOptions={fieldOpts.sources}
+        specialtyOptions={fieldOpts.specialties}
         basePath="/admin/crm"
       />
     </div>

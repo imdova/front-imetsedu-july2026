@@ -15,6 +15,23 @@ import {
   GraduationCap,
   Sparkles,
   Check,
+  Share2,
+  Search,
+  Globe,
+  Users,
+  CalendarDays,
+  Phone,
+  Mail,
+  MessageCircle,
+  Briefcase,
+  Radio,
+  Wallet,
+  Settings2,
+  Target,
+  ClipboardList,
+  Stethoscope,
+  BarChart3,
+  Cpu,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +43,8 @@ import {
   SPECIALTIES,
   EDUCATION_LEVELS,
   type Counselor,
+  type Lead,
+  type CreateLeadInput,
 } from "@/lib/db/crm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +87,35 @@ const COUNTRIES = [
   { code: "US", dial: "+1", name: "United States", flag: "🇺🇸" },
   { code: "GB", dial: "+44", name: "United Kingdom", flag: "🇬🇧" },
 ] as const;
+
+/** Pick a relevant icon for a lead-source / specialty option by keyword. */
+function iconForSource(value: string): React.ElementType {
+  const s = value.toLowerCase();
+  if (/(facebook|meta|insta|social|tiktok|snap)/.test(s)) return Share2;
+  if (/(google|search|seo|bing)/.test(s)) return Search;
+  if (/(whatsapp|whats app)/.test(s)) return MessageCircle;
+  if (/(website|web|organic|landing)/.test(s)) return Globe;
+  if (/(referral|friend|word|recommend)/.test(s)) return Users;
+  if (/(fair|event|expo|conference|seminar)/.test(s)) return CalendarDays;
+  if (/(call|phone|hotline)/.test(s)) return Phone;
+  if (/(email|mail|newsletter)/.test(s)) return Mail;
+  if (/(linkedin)/.test(s)) return Briefcase;
+  if (/(ad|campaign|paid|ppc)/.test(s)) return Megaphone;
+  return Radio;
+}
+function iconForSpecialty(value: string): React.ElementType {
+  const s = value.toLowerCase();
+  if (/(finance|account|bank|invest)/.test(s)) return Wallet;
+  if (/(market|brand|advert)/.test(s)) return Megaphone;
+  if (/(human|hr|people|recruit)/.test(s)) return Users;
+  if (/(operation|logistic|supply)/.test(s)) return Settings2;
+  if (/(strateg)/.test(s)) return Target;
+  if (/(project|pmp|program)/.test(s)) return ClipboardList;
+  if (/(health|medical|nurs|clinic|quality|cphq|patient)/.test(s)) return Stethoscope;
+  if (/(data|analyt|statistic)/.test(s)) return BarChart3;
+  if (/(it|tech|software|comput|develop|engineer)/.test(s)) return Cpu;
+  return GraduationCap;
+}
 
 const schema = z.object({
   // Phone is the only required field — everything else is optional.
@@ -121,38 +169,70 @@ export function CreateLeadForm({
   pipelines,
   courseOptions,
   basePath,
+  editLead,
+  sourceOptions,
+  specialtyOptions,
 }: {
   counselors: Counselor[];
   pipelines: Option[];
   courseOptions: Option[];
   basePath: string;
+  /** When provided, the form edits this lead instead of creating a new one. */
+  editLead?: Lead;
+  /** Real lead-source / specialty options from CRM settings (fall back to seeds). */
+  sourceOptions?: string[];
+  specialtyOptions?: string[];
 }) {
   const t = useTranslations("Crm");
   const router = useRouter();
+  const isEdit = !!editLead;
+  const specialtyList = specialtyOptions?.length ? specialtyOptions : SPECIALTIES;
+  const sourceList = sourceOptions?.length ? sourceOptions : SOURCES;
   const [duplicate, setDuplicate] = React.useState<{ id: string; fullName: string } | null>(null);
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      fullName: "",
-      email: "",
-      phoneCountryCode: "+20",
-      phone: "",
-      whatsAppCountryCode: "+20",
-      whatsApp: "",
-      country: "EG",
-      specialty: "",
-      educationLevel: "",
-      source: "",
-      jobTitle: "",
-      coursesOfInterest: [],
-      counselorId: "none",
-      gender: "",
-      dateOfBirth: "",
-      leadType: "warm",
-      targetPipeline: "none",
-      linkedinUrl: "",
-    },
+    defaultValues: editLead
+      ? {
+          fullName: editLead.fullName ?? "",
+          email: editLead.email ?? "",
+          phoneCountryCode: editLead.phoneCountryCode || "+20",
+          phone: editLead.phone ?? "",
+          whatsAppCountryCode: editLead.phoneCountryCode || "+20",
+          whatsApp: editLead.whatsApp ?? "",
+          country: editLead.country || "EG",
+          specialty: editLead.specialty ?? "",
+          educationLevel: editLead.educationLevel ?? "",
+          source: editLead.source ?? "",
+          jobTitle: editLead.jobTitle ?? "",
+          coursesOfInterest: editLead.coursesOfInterest ?? [],
+          counselorId: editLead.counselorId || "none",
+          gender: editLead.gender ?? "",
+          dateOfBirth: "",
+          leadType: ["cold", "warm", "hot"].includes(editLead.priority) ? editLead.priority : "warm",
+          targetPipeline: "none",
+          linkedinUrl: "",
+        }
+      : {
+          fullName: "",
+          email: "",
+          phoneCountryCode: "+20",
+          phone: "",
+          whatsAppCountryCode: "+20",
+          whatsApp: "",
+          country: "EG",
+          specialty: "",
+          educationLevel: "",
+          source: "",
+          jobTitle: "",
+          coursesOfInterest: [],
+          counselorId: "none",
+          gender: "",
+          dateOfBirth: "",
+          leadType: "warm",
+          targetPipeline: "none",
+          linkedinUrl: "",
+        },
   });
 
   const v = form.watch();
@@ -175,7 +255,9 @@ export function CreateLeadForm({
   const checkDuplicate = async (phone: string) => {
     if (phone.replace(/\D/g, "").length < 6) return;
     const res = await dal.crm.checkPhone(phone);
-    setDuplicate(res.ok && res.data ? { id: res.data.id, fullName: res.data.fullName } : null);
+    // Ignore a hit on the lead being edited (it would match its own phone).
+    const hit = res.ok && res.data && res.data.id !== editLead?.id ? res.data : null;
+    setDuplicate(hit ? { id: hit.id, fullName: hit.fullName } : null);
   };
 
   const sameAsPhone = (checked: boolean) => {
@@ -197,7 +279,7 @@ export function CreateLeadForm({
 
   const submit = (addAnother: boolean) =>
     form.handleSubmit(async (values) => {
-      const res = await dal.crm.createLead({
+      const payload: CreateLeadInput = {
         fullName: values.fullName || undefined,
         email: values.email,
         phone: values.phone,
@@ -215,10 +297,13 @@ export function CreateLeadForm({
         dateOfBirth: values.dateOfBirth || undefined,
         leadType: (["cold", "warm", "hot"].includes(values.leadType) ? values.leadType : "warm") as "cold" | "warm" | "hot",
         targetPipeline: values.targetPipeline === "none" ? undefined : values.targetPipeline,
-      });
+      };
+      const res = editLead
+        ? await dal.crm.updateLead(editLead.id, payload)
+        : await dal.crm.createLead(payload);
       if (res.ok) {
-        toast.success(t("leadCreated", { name: res.data.fullName }));
-        if (addAnother) {
+        toast.success(editLead ? t("leadUpdated", { name: res.data.fullName }) : t("leadCreated", { name: res.data.fullName }));
+        if (!editLead && addAnother) {
           form.reset();
           setDuplicate(null);
         } else {
@@ -231,30 +316,46 @@ export function CreateLeadForm({
 
   /* ── small building blocks ─────────────────────────────────────── */
 
-  const selectField = (name: keyof Values, label: string, options: Option[], placeholder: string) => (
+  const selectField = (
+    name: keyof Values,
+    label: string,
+    options: Option[],
+    placeholder: string,
+    iconFor?: (value: string) => React.ElementType,
+  ) => (
     <FormField
       control={form.control}
       name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{label}</FormLabel>
-          <Select value={field.value as string} onValueChange={field.onChange}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {options.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field }) => {
+        const SelectedIcon = iconFor && field.value ? iconFor(field.value as string) : null;
+        return (
+          <FormItem>
+            <FormLabel>{label}</FormLabel>
+            <Select value={field.value as string} onValueChange={field.onChange}>
+              <FormControl>
+                <SelectTrigger>
+                  {SelectedIcon && <SelectedIcon className="size-4 shrink-0 text-muted-foreground" />}
+                  <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {options.map((o) => {
+                  const Icon = iconFor ? iconFor(o.value) : null;
+                  return (
+                    <SelectItem key={o.value} value={o.value}>
+                      <span className="inline-flex items-center gap-2">
+                        {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
+                        {o.label}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 
@@ -367,7 +468,7 @@ export function CreateLeadForm({
               </div>
 
               {selectField("country", t("fCountry"), COUNTRIES.map((c) => ({ value: c.code, label: `${c.flag} ${c.name}` })), t("selectCountry"))}
-              {selectField("specialty", t("fSpecialty"), SPECIALTIES.map((s) => ({ value: s, label: s })), t("selectSpecialty"))}
+              {selectField("specialty", t("fSpecialty"), specialtyList.map((s) => ({ value: s, label: s })), t("selectSpecialty"), iconForSpecialty)}
 
               <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
                 <FormItem>
@@ -475,7 +576,7 @@ export function CreateLeadForm({
             </header>
 
             <div className="space-y-5">
-              {selectField("source", t("leadSource"), SOURCES.map((s) => ({ value: s, label: s })), t("selectSource"))}
+              {selectField("source", t("leadSource"), sourceList.map((s) => ({ value: s, label: s })), t("selectSource"), iconForSource)}
               {selectField("targetPipeline", t("targetPipeline"), [
                 { value: "none", label: t("noPipelineOption") },
                 ...pipelines,
@@ -516,24 +617,26 @@ export function CreateLeadForm({
           </section>
         </div>
 
-        {/* ── Footer actions (full width) ─────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5 lg:col-span-2">
+        {/* ── Footer actions (full width, pinned so it's never masked) ── */}
+        <div className="sticky bottom-0 z-30 -mx-1 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-1 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:col-span-2">
           <p className={cn("inline-flex items-center gap-2 text-sm", canSubmit ? "text-muted-foreground" : "text-warning")}>
             {!canSubmit && <AlertTriangle className="size-4" />}
-            {canSubmit ? t("readyToCreate") : t("addPhone")}
+            {canSubmit ? (isEdit ? t("readyToSave") : t("readyToCreate")) : t("addPhone")}
           </p>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="ghost" onClick={() => router.push(`${basePath}/leads`)}>
+            <Button type="button" variant="ghost" onClick={() => router.push(isEdit ? `${basePath}/leads/${editLead!.id}` : `${basePath}/leads`)}>
               {t("cancel")}
             </Button>
-            <Button type="button" variant="outline" onClick={() => submit(true)}
-              disabled={!canSubmit || form.formState.isSubmitting}>
-              {t("saveAndAdd")}
-            </Button>
+            {!isEdit && (
+              <Button type="button" variant="outline" onClick={() => submit(true)}
+                disabled={!canSubmit || form.formState.isSubmitting}>
+                {t("saveAndAdd")}
+              </Button>
+            )}
             <Button type="button" onClick={() => submit(false)}
               disabled={!canSubmit || form.formState.isSubmitting} className="gap-1.5">
               {form.formState.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-              {t("createLeadBtn")}
+              {isEdit ? t("saveChangesLead") : t("createLeadBtn")}
             </Button>
           </div>
         </div>

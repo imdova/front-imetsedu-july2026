@@ -37,6 +37,7 @@ function fmtDate(iso?: string, fallback?: string): string {
 export function getLeadColumns(
   t: CrmT,
   onOpen: (lead: Lead) => void,
+  onEdit: (lead: Lead) => void,
 ): ColumnDef<Lead>[] {
   return [
     {
@@ -109,6 +110,28 @@ export function getLeadColumns(
       cell: ({ row }) => <span className="text-sm">{row.original.specialty || "—"}</span>,
     },
     {
+      accessorKey: "source",
+      header: t("colSource"),
+      cell: ({ row }) => {
+        const s = row.original.source;
+        return s && s !== "—" ? <Badge variant="outline">{s}</Badge> : <span className="text-sm text-muted-foreground">—</span>;
+      },
+    },
+    {
+      id: "course",
+      header: t("colCourse"),
+      cell: ({ row }) => {
+        const names = row.original.courseNames ?? [];
+        if (!names.length) return <span className="text-sm text-muted-foreground">—</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-sm" title={names.join(", ")}>
+            <span className="max-w-[180px] truncate">{names[0]}</span>
+            {names.length > 1 && <span className="text-xs text-muted-foreground">+{names.length - 1}</span>}
+          </span>
+        );
+      },
+    },
+    {
       accessorKey: "createdAtISO",
       header: ({ column }) => <DataTableColumnHeader column={column} title={t("colCreated")} />,
       cell: ({ row }) => (
@@ -153,7 +176,7 @@ export function getLeadColumns(
             <Button variant="ghost" size="icon" className="size-8" asChild disabled={!l.email}>
               <a href={l.email ? `mailto:${l.email}` : undefined} aria-label={t("actEmail")}><Mail className="size-4" /></a>
             </Button>
-            <Button variant="ghost" size="icon" className="size-8" onClick={() => onOpen(l)} aria-label={t("editLead")}>
+            <Button variant="ghost" size="icon" className="size-8" onClick={() => onEdit(l)} aria-label={t("editLead")}>
               <Pencil className="size-4" />
             </Button>
             <Button variant="ghost" size="icon" className="size-8 text-primary" onClick={() => sendSetPassword(l, t)} aria-label={t("setPwAction")}>

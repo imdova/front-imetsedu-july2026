@@ -16,10 +16,11 @@ export default async function LeadDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations("Crm");
 
-  const [leadRes, pipelineRes, pipelinesRes] = await Promise.all([
+  const [leadRes, pipelineRes, pipelinesRes, coursesRes] = await Promise.all([
     dal.crm.fetchLead(id),
     dal.crm.fetchPipeline(),
     dal.crm.fetchLeadPipelines(),
+    dal.courses.fetchCourses(),
   ]);
 
   if (!leadRes.ok || !leadRes.data) notFound();
@@ -27,6 +28,10 @@ export default async function LeadDetailPage({
   const assignablePipelines = (pipelinesRes.ok ? pipelinesRes.data : []).map((p) => ({
     id: p.value,
     title: p.label,
+  }));
+  const courseOptions = (coursesRes.ok ? coursesRes.data : []).map((c) => ({
+    value: c.id,
+    label: c.titleEn || c.titleAr || c.slug,
   }));
 
   const stageRes = await Promise.all(
@@ -47,6 +52,7 @@ export default async function LeadDetailPage({
         stages={pipelineRes.ok ? pipelineRes.data.stages : []}
         assignablePipelines={assignablePipelines}
         pipelineStages={pipelineStages}
+        courseOptions={courseOptions}
       />
     </div>
   );

@@ -5,6 +5,7 @@
  */
 import { ok, fail, toMessage, api, type Result } from "@integration/lib/api-client";
 import * as leadsSvc from "@integration/services/leads";
+import * as crmSettingsSvc from "@integration/services/crm-settings";
 import * as db from "@/lib/db/crm";
 import { mapLead, STAGE_MAP } from "@/lib/crm/map-lead";
 import { mapCrmStats } from "@/lib/crm/map-stats";
@@ -153,6 +154,40 @@ export const createLead = async (
     return ok(mapLead(res.data));
   } catch (err) {
     return fail(toMessage(err, "Failed to create lead"));
+  }
+};
+
+/** LIVE: full edit of a lead's fields via PATCH /crm/leads/:id (UpdateLeadDto is
+ * a partial of CreateLeadDto, so the same field mapping applies). */
+export const updateLead = async (
+  id: string,
+  input: db.CreateLeadInput,
+): Promise<Result<db.Lead>> => {
+  const res = await leadsSvc.updateLead(id, {
+    fullName: input.fullName || undefined,
+    email: input.email || undefined,
+    phone: input.phone || undefined,
+    phoneCountryCode: input.phoneCountryCode || undefined,
+    whatsApp: input.whatsApp || undefined,
+    whatsAppCountryCode: input.whatsAppCountryCode || undefined,
+    country: input.country || undefined,
+    specialty: input.specialty || undefined,
+    educationLevel: input.educationLevel || undefined,
+    source: input.source || undefined,
+    dateOfBirth: input.dateOfBirth || undefined,
+    gender: input.gender,
+    coursesOfInterest: input.coursesOfInterest?.length ? input.coursesOfInterest : undefined,
+    courseInterestId: input.coursesOfInterest?.[0],
+    jobTitle: input.jobTitle || undefined,
+    counselor: input.counselorId || undefined,
+    priority: input.leadType,
+    data: input.jobTitle ? { jobTitle: input.jobTitle } : undefined,
+  });
+  if (!res.ok) return res;
+  try {
+    return ok(mapLead(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to update lead"));
   }
 };
 /** LIVE: patch top-level lead fields and/or merge into `lead.data` (notes,
@@ -308,6 +343,22 @@ export const fetchCrmStats = async (): Promise<Result<db.CrmStats>> => {
     return fail(toMessage(err, "Failed to map CRM stats"));
   }
 };
+/** LIVE: lead-form dropdown options (lead source + specialty) from the CRM
+ * settings collection (GET /crm/settings). Each setting is a named group with
+ * an `options` array; we match the group by its English name. */
+export const fetchCrmFieldOptions = async (): Promise<Result<{ sources: string[]; specialties: string[] }>> => {
+  const res = await crmSettingsSvc.listCrmSettings();
+  if (!res.ok) return res;
+  try {
+    const list: any[] = Array.isArray(res.data) ? res.data : ((res.data as { data?: any[] })?.data ?? []);
+    const optionsFor = (kw: string): string[] =>
+      (list.find((s) => `${s?.nameEn ?? ""}`.toLowerCase().includes(kw))?.options ?? []) as string[];
+    return ok({ sources: optionsFor("source"), specialties: optionsFor("special") });
+  } catch (err) {
+    return fail(toMessage(err, "Failed to load CRM options"));
+  }
+};
+
 export const fetchPipelineInventory = () => wrap(db.getPipelineInventory, "Failed to load pipelines");
 export const fetchPipelineInventoryStats = () => wrap(db.getPipelineInventoryStats, "Failed to load pipeline stats");
 

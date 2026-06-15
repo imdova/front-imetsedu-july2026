@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Phone,
   MessageCircle,
@@ -24,17 +24,22 @@ import {
   ChevronRight,
   ArrowLeft,
   Check,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Lead, PipelineStage, ActivityKind, FollowUpStatus } from "@/lib/db/crm";
 import { dal } from "@/lib/dal";
-import { cn, getInitials } from "@/lib/utils";
+import { cn, getInitials, createId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -48,11 +53,44 @@ import { PriorityBadge } from "./lead-badges";
 import { PaymentCard, PaymentCardEmpty } from "./payment-card";
 import { AssignPipelineTrigger } from "./assign-pipeline-dialog";
 import { LeadPaymentTab } from "./lead-payment-tab";
+import { LeadTransitionModal } from "./lead-transition-modal";
+
+const GATED_STAGES = ["contacted", "enrolled", "lost"] as const;
+type GatedStage = (typeof GATED_STAGES)[number];
+const isGated = (stageKey: string): stageKey is GatedStage =>
+  (GATED_STAGES as readonly string[]).includes(stageKey);
 import { STAGE_LABEL_KEY } from "../lib/maps";
 
 const ACTIVITY_ICON: Record<ActivityKind, React.ElementType> = {
   call: Phone, whatsapp: MessageCircle, email: Mail, note: StickyNote, stage: ArrowRightLeft, form: FileText,
 };
+
+/** Backend logs stage moves as the raw string "Stage changed to <stageKey>".
+ * Turn that into a friendly, translated label (falls back to a prettified key
+ * for custom-pipeline stages). Other activity text is returned unchanged. */
+const prettifyStage = (k: string) => k.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+/** Exact date + time for an activity, localized. */
+function fmtDateTime(iso: string | undefined, locale: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(d);
+}
+function displayActivityText(
+  text: string,
+  t: (k: string, vals?: Record<string, string>) => string,
+  tr: (k: string) => string,
+): string {
+  const m = text.match(/^Stage changed to\s+(.+)$/i);
+  if (!m) return text;
+  const key = m[1].trim();
+  const label = STAGE_LABEL_KEY[key] ? tr(STAGE_LABEL_KEY[key]) : prettifyStage(key);
+  return t("pipelineMovedTo", { stage: label });
+}
 
 const FOLLOWUP_STYLE: Record<FollowUpStatus, string> = {
   overdue: "bg-destructive/12 text-destructive",
@@ -68,21 +106,51 @@ export function LeadDetail({
   stages,
   assignablePipelines = [],
   pipelineStages = [],
+  courseOptions = [],
 }: {
   lead: Lead;
   stages: PipelineStage[];
   assignablePipelines?: { id: string; title: string }[];
   pipelineStages?: PipelineStageList[];
+  courseOptions?: { value: string; label: string }[];
 }) {
   const t = useTranslations("Crm");
+  const locale = useLocale();
   const tr = t as unknown as (k: string) => string;
+  const tv = t as unknown as (k: string, vals?: Record<string, string>) => string;
   const [lead, setLead] = React.useState(initial);
   const [channel, setChannel] = React.useState<"note" | "whatsapp" | "email" | "sms">("note");
   const [draft, setDraft] = React.useState("");
   const [jobTitle, setJobTitle] = React.useState(initial.jobTitle ?? "");
   const [saving, setSaving] = React.useState(false);
+  const [fuOpen, setFuOpen] = React.useState(false);
+  const [fuNote, setFuNote] = React.useState("");
+  const [fuDate, setFuDate] = React.useState("");
+  const [fuSaving, setFuSaving] = React.useState(false);
+  // A pending gated stage move, held while its qualification modal is open.
+  const [pendingStage, setPendingStage] = React.useState<{ targetStage: GatedStage; run: () => Promise<void> } | null>(null);
 
-  const moveStage = async (stageKey: string) => {
+  /** Schedule a new follow-up — appended to lead.data.followUps via PATCH. */
+  const addFollowUp = async () => {
+    if (!fuDate) { toast.error(t("fuDateRequired")); return; }
+    setFuSaving(true);
+    const label = new Date(fuDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric", year: "numeric" });
+    const followUps = [
+      ...lead.followUps,
+      { id: createId("fu"), note: fuNote.trim(), date: label, dueDate: fuDate, status: "upcoming" as const },
+    ];
+    const res = await dal.crm.updateLeadFields(lead.id, { dataPatch: { followUps } });
+    setFuSaving(false);
+    if (res.ok) {
+      setLead(res.data);
+      setFuOpen(false); setFuNote(""); setFuDate("");
+      toast.success(t("fuAdded"));
+    } else {
+      toast.error(res.error);
+    }
+  };
+
+  const doMoveStage = async (stageKey: string) => {
     const res = await dal.crm.updateLeadStage(lead.id, stageKey);
     if (res.ok && res.data) {
       setLead(res.data);
@@ -90,6 +158,12 @@ export function LeadDetail({
     } else if (!res.ok) {
       toast.error(res.error);
     }
+  };
+  // Gated stages (contacted/enrolled/lost) open their qualification modal first,
+  // mirroring the pipeline board; other stages move immediately.
+  const moveStage = (stageKey: string) => {
+    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: () => doMoveStage(stageKey) });
+    else void doMoveStage(stageKey);
   };
 
   const copy = (value: string) => {
@@ -136,7 +210,7 @@ export function LeadDetail({
     else if (!res.ok) toast.error(res.error);
   };
 
-  const moveStageInPipeline = async (pipelineId: string, stageKey: string, stageName: string) => {
+  const doMoveStageInPipeline = async (pipelineId: string, stageKey: string, stageName: string) => {
     const res = await dal.crm.setLeadStageInPipeline(lead.id, pipelineId, stageKey);
     if (res.ok && res.data) {
       setLead(res.data);
@@ -144,6 +218,10 @@ export function LeadDetail({
     } else if (!res.ok) {
       toast.error(res.error);
     }
+  };
+  const moveStageInPipeline = (pipelineId: string, stageKey: string, stageName: string) => {
+    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: () => doMoveStageInPipeline(pipelineId, stageKey, stageName) });
+    else void doMoveStageInPipeline(pipelineId, stageKey, stageName);
   };
 
   const completeFollowUp = async (id: string) => {
@@ -203,7 +281,7 @@ export function LeadDetail({
           <ActionBtn icon={Phone} label={t("actCall")} href={`tel:${lead.phoneCountryCode}${lead.phone}`} />
           <ActionBtn icon={MessageCircle} label={t("actWhatsApp")} href={`https://wa.me/${(lead.whatsApp ?? lead.phone).replace(/\D/g, "")}`} external />
           <ActionBtn icon={Mail} label={t("actEmail")} href={`mailto:${lead.email}`} />
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info(t("actSchedule"))}><CalendarDays className="size-4" />{t("actSchedule")}</Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setFuOpen(true)}><CalendarDays className="size-4" />{t("actSchedule")}</Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setChannel("note")}><StickyNote className="size-4" />{t("actNote")}</Button>
           <div className="ms-auto flex flex-wrap items-center justify-end gap-2">
             <AssignPipelineTrigger
@@ -297,8 +375,8 @@ export function LeadDetail({
                     {pipelineMoves.map((m) => (
                       <div key={m.id} className="flex items-center gap-2 text-sm">
                         <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><ArrowRightLeft className="size-3" /></span>
-                        <span className="font-medium">{m.text}</span>
-                        <span className="ms-auto text-xs text-muted-foreground">{m.ago}</span>
+                        <span className="font-medium">{displayActivityText(m.text, tv, tr)}</span>
+                        <span className="ms-auto text-xs text-muted-foreground" title={m.ago}>{m.at ? fmtDateTime(m.at, locale) : m.ago}</span>
                       </div>
                     ))}
                   </CardContent>
@@ -314,8 +392,8 @@ export function LeadDetail({
                       return (
                         <li key={a.id} className="relative">
                           <span className="absolute -start-6 grid size-5 place-items-center rounded-full bg-primary/10 text-primary ring-4 ring-background"><Icon className="size-3" /></span>
-                          <p className="text-sm">{a.text}</p>
-                          <p className="text-xs text-muted-foreground">{a.ago}</p>
+                          <p className="text-sm">{displayActivityText(a.text, tv, tr)}</p>
+                          <p className="text-xs text-muted-foreground" title={a.ago}>{a.at ? fmtDateTime(a.at, locale) : a.ago}</p>
                         </li>
                       );
                     })}
@@ -334,7 +412,7 @@ export function LeadDetail({
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2 text-base"><CalendarDays className="size-4 text-primary" />{t("followUpAlerts")}</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <Button variant="outline" size="sm" className="w-full gap-1.5 text-primary" onClick={() => toast.info(t("addFollowUp"))}><Plus className="size-4" />{t("addFollowUp")}</Button>
+                  <Button variant="outline" size="sm" className="w-full gap-1.5 text-primary" onClick={() => setFuOpen(true)}><Plus className="size-4" />{t("addFollowUp")}</Button>
                   {lead.followUps.map((f) => (
                     <div key={f.id} className="space-y-2 rounded-xl border p-3">
                       <Badge className={cn("border-transparent", FOLLOWUP_STYLE[f.status])}>
@@ -356,7 +434,7 @@ export function LeadDetail({
 
         {/* ───── Payment ───── */}
         <TabsContent value="payment" className="mt-5">
-          <LeadPaymentTab leadName={lead.fullName} leadId={lead.id} plan={plan} pct={pct} onUpdated={setLead} />
+          <LeadPaymentTab leadName={lead.fullName} leadId={lead.id} plan={plan} pct={pct} onUpdated={setLead} courseOptions={courseOptions} />
         </TabsContent>
 
         {/* ───── Certificate ───── */}
@@ -400,6 +478,42 @@ export function LeadDetail({
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Add / schedule follow-up */}
+      <Dialog open={fuOpen} onOpenChange={(o) => { setFuOpen(o); if (!o) { setFuNote(""); setFuDate(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("addFollowUp")}</DialogTitle>
+            <DialogDescription>{t("fuModalHint")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t("fuDate")} <span className="text-destructive">*</span></Label>
+              <Input type="date" value={fuDate} onChange={(e) => setFuDate(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("fuNote")}</Label>
+              <Textarea rows={3} value={fuNote} onChange={(e) => setFuNote(e.target.value)} placeholder={t("fuNotePh")} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFuOpen(false)} disabled={fuSaving}>{t("cancel")}</Button>
+            <Button onClick={addFollowUp} disabled={!fuDate || fuSaving} className="gap-1.5">
+              {fuSaving && <Loader2 className="size-4 animate-spin" />}{t("fuSchedule")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stage-transition qualification modal (same as the pipeline board) */}
+      {pendingStage && (
+        <LeadTransitionModal
+          lead={lead}
+          targetStage={pendingStage.targetStage}
+          onConfirm={() => { void pendingStage.run(); setPendingStage(null); }}
+          onCancel={() => setPendingStage(null)}
+        />
+      )}
     </div>
   );
 }

@@ -185,7 +185,11 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   };
 
   const columns = React.useMemo(
-    () => getLeadColumns(t, (lead) => router.push(`${basePath}/leads/${lead.id}`)),
+    () => getLeadColumns(
+      t,
+      (lead) => router.push(`${basePath}/leads/${lead.id}`),
+      (lead) => router.push(`${basePath}/leads/${lead.id}/edit`),
+    ),
     [t, router, basePath],
   );
 

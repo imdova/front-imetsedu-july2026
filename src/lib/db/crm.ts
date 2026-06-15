@@ -32,6 +32,8 @@ export interface LeadActivity {
   kind: ActivityKind;
   text: string;
   ago: string;
+  /** Raw ISO timestamp of the activity, for showing the exact date + time. */
+  at?: string;
 }
 
 export type FollowUpStatus = "overdue" | "today" | "upcoming" | "done";
@@ -76,6 +78,8 @@ export interface Lead {
   source: string;
   gender?: "male" | "female";
   coursesOfInterest: string[];
+  /** Display titles for `coursesOfInterest` (populated from the backend). */
+  courseNames?: string[];
   jobTitle?: string;
   counselorId: string;
   counselorName: string;
