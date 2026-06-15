@@ -18,7 +18,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const PAGE_SIZE = 10;
 
@@ -123,6 +122,15 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
   const statusLabel = (s: "all" | UmUserStatus) =>
     s === "all" ? t("umStAll") : s === "active" ? t("umStActive") : s === "pending" ? t("umStPending") : t("umStSuspended");
 
+  const counts = React.useMemo(() => ({
+    all: list.length,
+    active: list.filter((u) => u.status === "active").length,
+    pending: list.filter((u) => u.status === "pending").length,
+    suspended: list.filter((u) => u.status === "suspended").length,
+  }), [list]);
+
+  const FILTER_TABS = ["all", "active", "pending", "suspended"] as const;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -151,6 +159,27 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
           tone="bg-warning/10 text-warning" icon={<Mail className="size-4" />} />
       </div>
 
+      {/* Status filter tabs */}
+      <div className="flex flex-wrap gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm">
+        {FILTER_TABS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => { setStatus(s); setPage(0); }}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+              status === s ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+            )}
+          >
+            {statusLabel(s)}
+            <span className={cn(
+              "rounded-full px-1.5 text-xs tabular-nums",
+              status === s ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground",
+            )}>{counts[s]}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Table card */}
       <div className="rounded-2xl border border-border/70 bg-card shadow-sm">
         {/* Toolbar */}
@@ -161,16 +190,6 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
               placeholder={t("umSearch")} className="ps-9" />
           </div>
           <div className="flex items-center gap-2">
-            <Select value={status} onValueChange={(v) => { setStatus(v as typeof status); setPage(0); }}>
-              <SelectTrigger className="w-[170px]">
-                <span className="text-muted-foreground">{t("umStatusFilter", { value: statusLabel(status) })}</span>
-              </SelectTrigger>
-              <SelectContent>
-                {(["all", "active", "pending", "suspended"] as const).map((s) => (
-                  <SelectItem key={s} value={s}>{statusLabel(s)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button variant="outline" className="gap-2"><Columns3 className="size-4" />{t("umColumns")}</Button>
             <Button variant="outline" size="icon" aria-label={t("umRefresh")} onClick={() => { setSearch(""); setStatus("all"); setPage(0); toast.success(t("umRefresh")); }}>
               <RefreshCw className="size-4" />
