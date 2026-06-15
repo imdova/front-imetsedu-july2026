@@ -50,6 +50,7 @@ export function mapCourse(raw: any): CourseRow {
     isTopRated: !!raw?.isTopRated,
     thumbnailUrl: raw?.image || raw?.gallery?.[0]?.url || raw?.gallery?.[0] || FALLBACK_THUMB,
     updatedAt: fmtDate(raw?.updatedAt),
+    previewVideoUrl: raw?.previewVideoUrl || undefined,
     descriptionEn: raw?.descriptionEn || undefined,
     descriptionAr: raw?.descriptionAr || undefined,
     whoCanAttendEn: raw?.whoCanAttendEn || undefined,

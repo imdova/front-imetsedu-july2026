@@ -80,6 +80,8 @@ export interface CourseRow {
   isTopRated: boolean;
   thumbnailUrl: string;
   updatedAt: string;
+  /** Preview/promo video (YouTube URL) shown on the public course page. */
+  previewVideoUrl?: string;
   /** Long-form content for the public course page (HTML rich text or plain). */
   descriptionEn?: string;
   descriptionAr?: string;

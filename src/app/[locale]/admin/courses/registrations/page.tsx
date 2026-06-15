@@ -48,10 +48,10 @@ export default async function AdminRegistrationsPage({ params }: { params: Promi
     .map((c) => c.titleEn || c.titleAr || c.slug)
     .filter(Boolean)
     .map((v) => ({ value: v, label: v }));
-  const counselorOptions = (counselorsRes.ok ? counselorsRes.data : []).map((c) => ({
-    value: c.name,
-    label: c.name,
-  }));
+  const counselorList = counselorsRes.ok ? counselorsRes.data : [];
+  const counselorOptions = counselorList.map((c) => ({ value: c.name, label: c.name }));
+  // Id-keyed options for the bulk "assign sales agent" action.
+  const counselorAssignOptions = counselorList.map((c) => ({ value: c.id, label: c.name }));
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
@@ -60,6 +60,7 @@ export default async function AdminRegistrationsPage({ params }: { params: Promi
         applicants={applicants}
         courseOptions={courseOptions}
         counselorOptions={counselorOptions}
+        counselorAssignOptions={counselorAssignOptions}
         basePath="/admin/crm"
       />
     </div>

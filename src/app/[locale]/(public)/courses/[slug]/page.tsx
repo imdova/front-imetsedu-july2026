@@ -22,6 +22,21 @@ import { CourseCard } from "@/features/marketing/components/course-card";
 import { CourseCurriculum } from "@/features/marketing/components/course-curriculum";
 import { CourseApplyDialog } from "@/features/marketing/components/course-apply-dialog";
 
+/** Convert a YouTube watch/share URL to an autoplaying (muted) embed URL.
+ * Muted autoplay is required by browser policies; the user can unmute. */
+function youTubeEmbed(url?: string): string | null {
+  if (!url) return null;
+  const m = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/,
+  );
+  const id = m?.[1];
+  if (!id) return null;
+  const p = new URLSearchParams({
+    autoplay: "1", mute: "1", rel: "0", playsinline: "1", modestbranding: "1",
+  });
+  return `https://www.youtube.com/embed/${id}?${p.toString()}`;
+}
+
 export default async function CourseDetailPage({
   params,
 }: {
@@ -43,6 +58,7 @@ export default async function CourseDetailPage({
   const instructor = instructors[course.titleEn.length % instructors.length];
   const onSale = course.salePriceEGP > 0 && course.salePriceEGP < course.priceEGP;
   const price = onSale ? course.salePriceEGP : course.priceEGP;
+  const previewEmbed = youTubeEmbed(course.previewVideoUrl);
 
   const outcomes = [
     "Build and interpret professional models from scratch",
@@ -137,16 +153,28 @@ export default async function CourseDetailPage({
           <aside className="lg:row-span-2">
             <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-lg lg:sticky lg:top-20">
               <div className="relative aspect-video bg-muted">
-                <Image
-                  src={course.thumbnailUrl}
-                  alt={course.titleEn}
-                  fill
-                  sizes="360px"
-                  className="object-cover"
-                />
-                <span className="absolute inset-0 grid place-items-center bg-black/20">
-                  <PlayCircle className="size-14 text-white/90" />
-                </span>
+                {previewEmbed ? (
+                  <iframe
+                    src={previewEmbed}
+                    title={course.titleEn}
+                    className="absolute inset-0 size-full"
+                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                    allowFullScreen
+                  />
+                ) : (
+                  <>
+                    <Image
+                      src={course.thumbnailUrl}
+                      alt={course.titleEn}
+                      fill
+                      sizes="360px"
+                      className="object-cover"
+                    />
+                    <span className="absolute inset-0 grid place-items-center bg-black/20">
+                      <PlayCircle className="size-14 text-white/90" />
+                    </span>
+                  </>
+                )}
               </div>
               <div className="space-y-4 p-5">
                 <div className="flex items-baseline gap-2">

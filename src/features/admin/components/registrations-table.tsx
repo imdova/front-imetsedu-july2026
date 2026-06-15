@@ -3,13 +3,16 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search, Columns3, Eye } from "lucide-react";
+import { Search, Columns3, Eye, UserPlus, Download, Mail, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
+import { dal } from "@/lib/dal";
 import { getInitials, cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -65,15 +68,55 @@ export function RegistrationsTable({
   applicants,
   courseOptions,
   counselorOptions,
+  counselorAssignOptions = [],
   basePath,
 }: {
   applicants: CourseApplicant[];
   courseOptions: Option[];
   counselorOptions: Option[];
+  /** Id-keyed counselor options for the bulk "assign sales agent" action. */
+  counselorAssignOptions?: Option[];
   basePath: string;
 }) {
   const t = useTranslations("Admin");
   const router = useRouter();
+  const [assigning, setAssigning] = React.useState(false);
+
+  /** Bulk-assign the selected applicants to a sales agent (counselor). */
+  const assignAgent = async (counselorId: string, ids: string[], done: () => void) => {
+    if (!ids.length) return;
+    setAssigning(true);
+    const res = await dal.crm.bulkAssignCounselor(ids, counselorId);
+    setAssigning(false);
+    if (res.ok) {
+      toast.success(t("rgAssignedToast", { n: ids.length }));
+      done();
+      router.refresh();
+    } else {
+      toast.error(res.error);
+    }
+  };
+
+  /** Download the selected applicants as a CSV (client-side). */
+  const exportSelected = (rows: CourseApplicant[]) => {
+    const head = ["Student", "Email", "Courses", "Country", "Specialty", "Sales agent", "Source", "Created"];
+    const cell = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = rows.map((a) =>
+      [a.student, a.email, a.courses.join(" | "), a.country, a.specialty, a.salesAgent, a.leadSource, a.createdAt].map(cell).join(","));
+    const csv = [head.map(cell).join(","), ...lines].join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const link = document.createElement("a");
+    link.href = url; link.download = "registrations.csv"; link.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("rgExportedToast", { n: rows.length }));
+  };
+
+  /** Open a pre-filled email (BCC) to the selected applicants. */
+  const emailSelected = (rows: CourseApplicant[]) => {
+    const emails = Array.from(new Set(rows.map((a) => a.email).filter(Boolean)));
+    if (!emails.length) { toast.error(t("rgNoEmails")); return; }
+    window.open(`mailto:?bcc=${encodeURIComponent(emails.join(","))}`, "_self");
+  };
 
   const [search, setSearch] = React.useState("");
   const [course, setCourse] = React.useState("all");
@@ -104,6 +147,20 @@ export function RegistrationsTable({
   );
 
   const columns = React.useMemo<ColumnDef<CourseApplicant>[]>(() => [
+    {
+      id: "select",
+      enableHiding: false,
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected() ? true : table.getIsSomePageRowsSelected() ? "indeterminate" : false}
+          onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
+          aria-label={t("rgSelectAll")}
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} aria-label={t("rgSelectRow")} />
+      ),
+    },
     {
       id: "student",
       header: t("colStudent"),
@@ -205,6 +262,36 @@ export function RegistrationsTable({
             </DropdownMenu>
           </div>
         )}
+        bulkBar={(table) => {
+          const selectedRows = table.getSelectedRowModel().rows.map((r) => r.original);
+          const ids = selectedRows.map((a) => a.id);
+          return (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-2 shadow-sm">
+              <span className="ps-1 text-sm font-medium">{t("rgSelectedCount", { n: ids.length })}</span>
+              <span className="h-5 w-px bg-border" />
+              <Select disabled={assigning} value="" onValueChange={(v) => assignAgent(v, ids, () => table.resetRowSelection())}>
+                <SelectTrigger className="h-8 w-auto gap-1.5">
+                  {assigning ? <Loader2 className="size-3.5 animate-spin" /> : <UserPlus className="size-3.5" />}
+                  <SelectValue placeholder={t("rgAssignAgent")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {counselorAssignOptions.length === 0 ? (
+                    <SelectItem value="none" disabled>{t("rgNoAgents")}</SelectItem>
+                  ) : counselorAssignOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => exportSelected(selectedRows)}>
+                <Download className="size-3.5" />{t("rgExportSel")}
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => emailSelected(selectedRows)}>
+                <Mail className="size-3.5" />{t("rgEmailSel")}
+              </Button>
+              <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-muted-foreground" onClick={() => table.resetRowSelection()}>
+                <X className="size-3.5" />{t("rgClearSel")}
+              </Button>
+            </div>
+          );
+        }}
         emptyState={<p className="text-sm text-muted-foreground">{t("rgEmpty")}</p>}
       />
     </div>
