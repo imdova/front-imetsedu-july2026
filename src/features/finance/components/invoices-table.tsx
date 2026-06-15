@@ -9,7 +9,8 @@ import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import type { Invoice } from "@/lib/db/finance";
 import { dal } from "@/lib/dal";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getInitials } from "@/lib/utils";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -57,29 +58,50 @@ export function InvoicesTable({
         accessorKey: "studentName",
         header: t("colStudent"),
         cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{row.original.studentName}</p>
-            <p className="truncate text-xs text-muted-foreground">{row.original.group}</p>
+          <div className="flex items-center gap-2.5">
+            <Avatar className="size-8 border"><AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">{getInitials(row.original.studentName)}</AvatarFallback></Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium leading-tight">{row.original.studentName}</p>
+              <p className="truncate text-xs text-muted-foreground">{row.original.group || row.original.studentEmail}</p>
+            </div>
           </div>
         ),
       },
       {
         accessorKey: "type",
         header: t("colType"),
-        cell: ({ row }) => (
-          <Badge variant="secondary">
-            {t(row.original.type === "installment" ? "typeInstallment" : "typeOneOff")}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const n = row.original.installments?.length ?? 0;
+          return (
+            <Badge variant="secondary" className="font-normal">
+              {row.original.type === "installment"
+                ? t("invInstallments", { n })
+                : t("typeOneOff")}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "amount",
         header: t("colAmount"),
-        cell: ({ row }) => (
-          <span className="font-medium tabular-nums">
-            {formatCurrency(row.original.amount, row.original.currency)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const inv = row.original;
+          const pct = inv.amount > 0 ? Math.min(100, Math.round((inv.paid / inv.amount) * 100)) : 0;
+          const partial = inv.paid > 0 && inv.paid < inv.amount;
+          return (
+            <div className="min-w-[120px] space-y-1">
+              <span className="font-medium tabular-nums">{formatCurrency(inv.amount, inv.currency)}</span>
+              {partial && (
+                <>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-success" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-[0.65rem] text-muted-foreground tabular-nums">{t("invPaidOf", { paid: formatCurrency(inv.paid, inv.currency), total: formatCurrency(inv.amount, inv.currency) })}</p>
+                </>
+              )}
+            </div>
+          );
+        },
       },
       {
         accessorKey: "status",
@@ -87,10 +109,19 @@ export function InvoicesTable({
         cell: ({ row }) => <InvoiceStatusBadge value={row.original.status} />,
       },
       {
+        accessorKey: "issuedDate",
+        header: t("colIssued"),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">{row.original.issuedDate}</span>
+        ),
+      },
+      {
         accessorKey: "dueDate",
         header: t("colDue"),
         cell: ({ row }) => (
-          <span className="text-xs text-muted-foreground">{row.original.dueDate}</span>
+          <span className={cn("text-xs", row.original.status === "overdue" ? "font-medium text-destructive" : "text-muted-foreground")}>
+            {row.original.dueDate}
+          </span>
         ),
       },
       {

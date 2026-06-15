@@ -78,6 +78,15 @@ export function updateLeadStage(
   return api.patch<Lead>(LEADS_API.STAGE(id), input);
 }
 
+/** Append an activity/note to a lead's timeline (POST /crm/leads/:id/activities).
+ * The backend stamps `performedAt` and pushes onto `lead.activities`. */
+export function addLeadActivity(
+  id: string,
+  input: { action: string; note?: string },
+): Promise<Result<Lead>> {
+  return api.post<Lead>(LEADS_API.ACTIVITIES(id), input);
+}
+
 export function exportLeads(): Promise<Result<void>> {
   return api.download(LEADS_API.EXPORT, "leads_export.xlsx");
 }

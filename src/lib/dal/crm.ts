@@ -215,6 +215,23 @@ export const updateLeadFields = async (
   }
 };
 
+/** LIVE: append a note/activity to the lead's timeline (POST /crm/leads/:id/activities).
+ * The backend keeps every entry and stamps `performedAt`, so notes accumulate in the
+ * Activity timeline rather than overwriting a single field. Returns the mapped lead. */
+export const addLeadActivity = async (
+  id: string,
+  action: string,
+  note?: string,
+): Promise<Result<db.Lead>> => {
+  const res = await leadsSvc.addLeadActivity(id, { action, note });
+  if (!res.ok) return res;
+  try {
+    return ok(mapLead(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to add note"));
+  }
+};
+
 /** LIVE: replace the lead's pipeline membership (PATCH /crm/leads/add-to-pipelines),
  * then re-read the lead so the UI reflects the server's canonical state. */
 export const setLeadPipelines = async (

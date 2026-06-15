@@ -327,14 +327,14 @@ export function CreateLeadForm({
       control={form.control}
       name={name}
       render={({ field }) => {
-        const SelectedIcon = iconFor && field.value ? iconFor(field.value as string) : null;
         return (
           <FormItem>
             <FormLabel>{label}</FormLabel>
             <Select value={field.value as string} onValueChange={field.onChange}>
               <FormControl>
+                {/* SelectValue already mirrors the selected item's icon + label,
+                    so we don't render a second standalone icon here. */}
                 <SelectTrigger>
-                  {SelectedIcon && <SelectedIcon className="size-4 shrink-0 text-muted-foreground" />}
                   <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
               </FormControl>

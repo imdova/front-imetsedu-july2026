@@ -15,6 +15,7 @@ export const LEADS_API = {
   },
   EXPORT: "/crm/leads/export",
   STAGE: (id: string) => `/crm/leads/${id}/stage`,
+  ACTIVITIES: (id: string) => `/crm/leads/${id}/activities`,
   BULK_PIPELINE: "/crm/leads/bulk-pipeline",
   BULK_STAGE: "/crm/leads/bulk-stage",
   ASSIGN_COUNSELOR: "/crm/leads/assign-counselor",

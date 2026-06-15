@@ -2,18 +2,40 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Users, Wallet, AlertTriangle, CalendarClock, CircleCheck, Search, Filter, List, LayoutGrid, Columns3 } from "lucide-react";
+import {
+  Users, Wallet, AlertTriangle, CalendarClock, CircleCheck, Search, Filter,
+  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download,
+} from "lucide-react";
+import { toast } from "sonner";
 
 import type { Invoice, Installment } from "@/lib/db/finance";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const INST_STYLE: Record<string, string> = {
-  PAID: "bg-success/15 text-success",
-  DUE: "bg-destructive/12 text-destructive",
-  SCHEDULED: "bg-muted text-muted-foreground",
+/** Per-installment visual treatment. */
+const INST_STYLE: Record<Installment["status"], { box: string; icon: React.ElementType; dot: string }> = {
+  PAID: { box: "border-success/40 bg-success/8 text-success", icon: Check, dot: "bg-success" },
+  DUE: { box: "border-destructive/40 bg-destructive/8 text-destructive", icon: AlertCircle, dot: "bg-destructive" },
+  SCHEDULED: { box: "border-border bg-muted/40 text-muted-foreground", icon: Clock, dot: "bg-muted-foreground/50" },
+};
+
+type PlanStatus = "active" | "overdue" | "completed";
+
+/** Derive a plan-level status from its installments. */
+function planStatusOf(inst: Installment[]): PlanStatus {
+  if (inst.length && inst.every((i) => i.status === "PAID")) return "completed";
+  if (inst.some((i) => i.status === "DUE")) return "overdue";
+  return "active";
+}
+
+const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
+  active: "border-primary/30 bg-primary/10 text-primary",
+  overdue: "border-destructive/30 bg-destructive/10 text-destructive",
+  completed: "border-success/30 bg-success/10 text-success",
 };
 
 export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
@@ -21,6 +43,9 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
   const [tab, setTab] = React.useState<"all" | "overdue" | "upcoming" | "paid">("all");
   const [search, setSearch] = React.useState("");
   const [view, setView] = React.useState<"list" | "grid">("list");
+  const [course, setCourse] = React.useState("all");
+  const [ptype, setPtype] = React.useState("all");
+  const [pstatus, setPstatus] = React.useState("all");
 
   // Each installment invoice is one payment plan / schedule.
   const plans = invoices.filter((i) => i.installments && i.installments.length > 0);
@@ -32,6 +57,9 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
   const upcoming = allInst.filter((i) => i.status === "SCHEDULED");
   const unpaidCount = allInst.filter((i) => i.status !== "PAID").length;
 
+  // Distinct courses/groups for the filter dropdown.
+  const courses = Array.from(new Set(plans.map((p) => p.group).filter(Boolean))) as string[];
+
   const matchTab = (p: Invoice) => {
     const inst = p.installments ?? [];
     if (tab === "overdue") return inst.some((i) => i.status === "DUE");
@@ -39,10 +67,69 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
     if (tab === "paid") return inst.every((i) => i.status === "PAID");
     return true;
   };
-  const rows = plans.filter(matchTab).filter((p) =>
-    !search || p.studentName.toLowerCase().includes(search.toLowerCase()) || (p.group ?? "").toLowerCase().includes(search.toLowerCase()));
 
-  const maxInstall = Math.max(1, ...plans.map((p) => p.installments?.length ?? 0));
+  const rows = plans
+    .filter(matchTab)
+    .filter((p) => course === "all" || p.group === course)
+    .filter((p) => {
+      if (ptype === "all") return true;
+      const n = p.installments?.length ?? 0;
+      return ptype === "4plus" ? n >= 4 : String(n) === ptype;
+    })
+    .filter((p) => pstatus === "all" || planStatusOf(p.installments ?? []) === pstatus)
+    .filter((p) =>
+      !search ||
+      p.studentName.toLowerCase().includes(search.toLowerCase()) ||
+      p.studentEmail.toLowerCase().includes(search.toLowerCase()) ||
+      (p.group ?? "").toLowerCase().includes(search.toLowerCase()));
+
+  const filtersActive = course !== "all" || ptype !== "all" || pstatus !== "all" || !!search;
+  const clearFilters = () => { setCourse("all"); setPtype("all"); setPstatus("all"); setSearch(""); };
+
+  // ─── Multi-select + bulk actions ───
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const toggleOne = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const visibleIds = rows.map((p) => p.id);
+  const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
+  const someSelected = visibleIds.some((id) => selected.has(id)) && !allSelected;
+  const toggleAll = () =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) visibleIds.forEach((id) => next.delete(id));
+      else visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  const selectedPlans = rows.filter((p) => selected.has(p.id));
+
+  const sendReminders = () => {
+    const emails = Array.from(new Set(selectedPlans.map((p) => p.studentEmail).filter(Boolean)));
+    if (!emails.length) { toast.error(t("ptNoEmails")); return; }
+    const subject = encodeURIComponent(t("ptReminderSubject"));
+    const body = encodeURIComponent(t("ptReminderBody"));
+    window.open(`mailto:?bcc=${encodeURIComponent(emails.join(","))}&subject=${subject}&body=${body}`, "_self");
+    toast.success(t("ptRemindersSent", { n: emails.length }));
+  };
+
+  const exportCsv = () => {
+    const head = ["Student", "Email", "Group", "Total", "Paid", "Remaining", "Status", "Installments"];
+    const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = selectedPlans.map((p) => {
+      const inst = p.installments ?? [];
+      const paid = inst.filter((i) => i.status === "PAID").reduce((s, i) => s + i.amount, 0);
+      return [p.studentName, p.studentEmail, p.group ?? "", p.amount, paid, p.amount - paid, planStatusOf(inst), inst.length].map(cell).join(",");
+    });
+    const csv = [head.map(cell).join(","), ...lines].join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = "payment-plans.csv"; a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("ptExported", { n: selectedPlans.length }));
+  };
 
   const kpis = [
     { label: t("ptScheduled"), value: `${plans.length}`, sub: t("ptScheduledSub"), icon: Users, tone: "bg-success/15 text-success" },
@@ -85,23 +172,54 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
       </div>
 
       <div className="space-y-4 rounded-xl border bg-card p-4">
-        <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"><Filter className="size-4" />{t("ptFilters")}</p>
-        <div className="grid gap-3 lg:grid-cols-[1fr_repeat(4,minmax(0,160px))]">
+        <div className="flex items-center justify-between gap-2">
+          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"><Filter className="size-4" />{t("ptFilters")}</p>
+          {filtersActive && (
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-muted-foreground" onClick={clearFilters}>
+              <X className="size-3.5" />{t("ptClearFilters")}
+            </Button>
+          )}
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[1fr_repeat(3,minmax(0,180px))]">
           <div className="relative">
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("ptSearchPlaceholder")} className="ps-9" />
           </div>
-          <StaticSelect label={t("ptAllCourses")} />
-          <StaticSelect label={t("ptAllGroups")} />
-          <StaticSelect label={t("ptAllTypes")} />
-          <StaticSelect label={t("ptAllMethods")} />
+          <Select value={course} onValueChange={setCourse}>
+            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("ptAllCourses")}</SelectItem>
+              {courses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={ptype} onValueChange={setPtype}>
+            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("ptAllTypes")}</SelectItem>
+              <SelectItem value="2">{t("ptType2")}</SelectItem>
+              <SelectItem value="3">{t("ptType3")}</SelectItem>
+              <SelectItem value="4plus">{t("ptType4plus")}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={pstatus} onValueChange={setPstatus}>
+            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("ptAllStatuses")}</SelectItem>
+              <SelectItem value="active">{t("ptStatusActive")}</SelectItem>
+              <SelectItem value="overdue">{t("ptStatusOverdue")}</SelectItem>
+              <SelectItem value="completed">{t("ptStatusCompleted")}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+            <Checkbox checked={allSelected ? true : someSelected ? "indeterminate" : false} onCheckedChange={toggleAll} disabled={rows.length === 0} />
+            {selected.size > 0 ? t("ptSelectedCount", { n: selected.size }) : t("ptShowingPlans", { n: rows.length })}
+          </label>
           <div className="inline-flex rounded-lg border p-0.5">
             <button onClick={() => setView("list")} className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium", view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}><List className="size-4" />{t("ptList")}</button>
             <button onClick={() => setView("grid")} className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium", view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}><LayoutGrid className="size-4" />{t("ptGrid")}</button>
           </div>
-          <Button variant="outline" size="sm" className="h-9 gap-1.5"><Columns3 className="size-4" />{t("columnsBtn")}</Button>
         </div>
 
         {rows.length === 0 ? (
@@ -109,75 +227,104 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
             <p className="font-semibold">{t("ptNoMatch")}</p>
             <p className="text-sm text-muted-foreground">{t("ptTryAnother")}</p>
           </div>
-        ) : view === "list" ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-3 py-2.5 text-start font-semibold">{t("colStudent")}</th>
-                  <th className="px-3 py-2.5 text-start font-semibold">{t("colGroup")}</th>
-                  <th className="px-3 py-2.5 text-end font-semibold">{t("colFees")}</th>
-                  <th className="px-3 py-2.5 text-start font-semibold">{t("colPaymentType")}</th>
-                  {Array.from({ length: maxInstall }).map((_, i) => (
-                    <th key={i} className="px-3 py-2.5 text-center font-semibold">{t("colInstall", { n: i + 1 })}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((p) => (
-                  <tr key={p.id} className="border-b last:border-0">
-                    <td className="px-3 py-3"><p className="font-medium">{p.studentName}</p><p className="text-xs text-muted-foreground">{p.studentEmail}</p></td>
-                    <td className="px-3 py-3 text-muted-foreground">{p.group ?? "—"}</td>
-                    <td className="px-3 py-3 text-end font-medium tabular-nums">{formatCurrency(p.amount, p.currency)}</td>
-                    <td className="px-3 py-3 text-muted-foreground">{p.type === "installment" ? t("typeInstallment") : t("typeOneOff")}</td>
-                    {Array.from({ length: maxInstall }).map((_, i) => {
-                      const inst = p.installments?.[i];
-                      return (
-                        <td key={i} className="px-3 py-3 text-center">
-                          {inst ? <InstallCell inst={inst} /> : <span className="text-muted-foreground">—</span>}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className={cn(view === "grid" ? "grid gap-4 md:grid-cols-2 2xl:grid-cols-3" : "space-y-3")}>
             {rows.map((p) => (
-              <div key={p.id} className="space-y-2 rounded-xl border p-4">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">{p.studentName}</p>
-                  <span className="text-sm font-medium tabular-nums">{formatCurrency(p.amount, p.currency)}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">{p.group}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {(p.installments ?? []).map((inst) => <InstallCell key={inst.index} inst={inst} />)}
-                </div>
-              </div>
+              <PlanCard key={p.id} plan={p} t={t} wide={view === "list"} selected={selected.has(p.id)} onToggle={() => toggleOne(p.id)} />
             ))}
           </div>
         )}
+      </div>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="sticky bottom-4 z-30 mx-auto flex w-fit flex-wrap items-center gap-2 rounded-full border bg-card/95 px-3 py-2 shadow-lg backdrop-blur">
+          <span className="ps-1 text-sm font-medium">{t("ptSelectedCount", { n: selected.size })}</span>
+          <span className="h-5 w-px bg-border" />
+          <Button size="sm" className="h-8 gap-1.5" onClick={sendReminders}><Bell className="size-3.5" />{t("ptSendReminders")}</Button>
+          <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={exportCsv}><Download className="size-3.5" />{t("ptExportSelected")}</Button>
+          <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-muted-foreground" onClick={() => setSelected(new Set())}><X className="size-3.5" />{t("ptClearSelection")}</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlanCard({
+  plan, t, wide, selected, onToggle,
+}: {
+  plan: Invoice;
+  t: (k: string, vals?: Record<string, string | number>) => string;
+  wide: boolean;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const inst = plan.installments ?? [];
+  const paid = inst.filter((i) => i.status === "PAID").reduce((s, i) => s + i.amount, 0);
+  const pct = plan.amount > 0 ? Math.min(100, Math.round((paid / plan.amount) * 100)) : 0;
+  const remaining = Math.max(0, plan.amount - paid);
+  const status = planStatusOf(inst);
+  const statusLabel = t(status === "active" ? "ptStatusActive" : status === "overdue" ? "ptStatusOverdue" : "ptStatusCompleted");
+
+  return (
+    <div className={cn("space-y-3 rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/30", selected && "border-primary/50 ring-1 ring-primary/30")}>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Checkbox checked={selected} onCheckedChange={onToggle} className="shrink-0" />
+          <Avatar className="size-9 border"><AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">{getInitials(plan.studentName)}</AvatarFallback></Avatar>
+          <div className="min-w-0">
+            <p className="truncate font-medium leading-tight">{plan.studentName}</p>
+            <p className="truncate text-xs text-muted-foreground">{plan.group || plan.studentEmail}</p>
+          </div>
+        </div>
+        <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium", PLAN_STATUS_STYLE[status])}>{statusLabel}</span>
+      </div>
+
+      {/* Amounts */}
+      <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/40 p-2.5 text-center">
+        <Stat label={t("ptColTotal")} value={formatCurrency(plan.amount, plan.currency)} />
+        <Stat label={t("ptColPaid")} value={formatCurrency(paid, plan.currency)} tone="text-success" />
+        <Stat label={t("ptColRemaining")} value={formatCurrency(remaining, plan.currency)} tone={remaining > 0 ? "text-warning" : "text-muted-foreground"} />
+      </div>
+
+      {/* Progress */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-medium text-muted-foreground">{t("ptProgress")}</span>
+          <span className="font-semibold tabular-nums">{pct}%</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div className={cn("h-full rounded-full transition-all", status === "overdue" ? "bg-destructive" : status === "completed" ? "bg-success" : "bg-primary")} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      {/* Installment timeline */}
+      <div className={cn("flex flex-wrap gap-2", wide && "sm:grid sm:grid-cols-4 lg:grid-cols-6")}>
+        {inst.map((i) => <InstallChip key={i.index} inst={i} t={t} />)}
       </div>
     </div>
   );
 }
 
-function InstallCell({ inst }: { inst: Installment }) {
+function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <span className={cn("inline-flex flex-col items-center rounded-md px-2 py-1 text-xs tabular-nums", INST_STYLE[inst.status])}>
-      <span className="font-medium">{formatCurrency(inst.amount, "EGP")}</span>
-      <span className="text-[0.6rem] opacity-80">{inst.dueDate}</span>
-    </span>
+    <div className="min-w-0">
+      <p className="truncate text-[0.62rem] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={cn("truncate text-sm font-semibold tabular-nums", tone)}>{value}</p>
+    </div>
   );
 }
 
-function StaticSelect({ label }: { label: string }) {
+function InstallChip({ inst, t }: { inst: Installment; t: (k: string, vals?: Record<string, string | number>) => string }) {
+  const s = INST_STYLE[inst.status];
   return (
-    <Select defaultValue="all">
-      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-      <SelectContent><SelectItem value="all">{label}</SelectItem></SelectContent>
-    </Select>
+    <div className={cn("flex items-center gap-2 rounded-lg border px-2.5 py-1.5", s.box)}>
+      <s.icon className="size-3.5 shrink-0" />
+      <div className="min-w-0 leading-tight">
+        <p className="text-xs font-semibold tabular-nums">{formatCurrency(inst.amount, "EGP")}</p>
+        <p className="truncate text-[0.62rem] opacity-80">{t("ptInstallShort", { n: inst.index })} · {inst.paidDate || inst.dueDate}</p>
+      </div>
+    </div>
   );
 }

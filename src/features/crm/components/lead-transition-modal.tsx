@@ -58,19 +58,19 @@ export function LeadTransitionModal({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[88vh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="border-b px-6 py-4">
           <DialogTitle className="flex items-center gap-2">
             <span>{TITLE_EMOJI[targetStage]}</span>{t(titleKey)}
           </DialogTitle>
           <DialogDescription>{t(descKey)}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6 md:grid-cols-[1fr_280px]">
+        <div className="grid flex-1 gap-6 overflow-y-auto p-6 md:grid-cols-[1fr_300px]">
           <div className="space-y-4">
             {targetStage === "contacted" && (
-              <>
-                <div className="space-y-1.5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label>{t("contactChannel")} <span className="text-destructive">*</span></Label>
                   <div className="flex flex-wrap gap-2">
                     {channels.map((c) => (
@@ -103,40 +103,32 @@ export function LeadTransitionModal({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label>{t("notesLabel")}</Label>
-                  <Textarea placeholder={t("contactedNotesPlaceholder")} className="min-h-24" />
+                  <Textarea placeholder={t("contactedNotesPlaceholder")} className="min-h-20" />
                 </div>
-              </>
+              </div>
             )}
 
             {targetStage === "enrolled" && (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label>{t("categoryLabel")} <span className="text-destructive">*</span></Label>
-                    <Select><SelectTrigger><SelectValue placeholder={t("selectCategoryPh")} /></SelectTrigger>
-                      <SelectContent>{["Healthcare", "Business", "Finance"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>{t("subCategoryLabel")} <span className="text-destructive">*</span></Label>
-                    <Select><SelectTrigger><SelectValue placeholder={t("selectSubCategoryPh")} /></SelectTrigger>
-                      <SelectContent>{["Healthcare Quality", "Infection Control"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>{t("categoryLabel")} <span className="text-destructive">*</span></Label>
+                  <Select><SelectTrigger><SelectValue placeholder={t("selectCategoryPh")} /></SelectTrigger>
+                    <SelectContent>{["Healthcare", "Business", "Finance"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("subCategoryLabel")} <span className="text-destructive">*</span></Label>
+                  <Select><SelectTrigger><SelectValue placeholder={t("selectSubCategoryPh")} /></SelectTrigger>
+                    <SelectContent>{["Healthcare Quality", "Infection Control"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("groupLabelField")} <span className="text-destructive">*</span></Label>
                   <Select><SelectTrigger><SelectValue placeholder={t("selectGroupPh")} /></SelectTrigger>
                     <SelectContent>{["CPHQ-G42", "CPHQ-G41", "CIC-2026"].map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>{t("paymentVerification")} <span className="text-destructive">*</span></Label>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm">
-                    <Checkbox checked={verified} onCheckedChange={(c) => setVerified(Boolean(c))} />{t("paymentVerifiedCheck")}
-                  </label>
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("priceLabel")}</Label>
@@ -147,11 +139,17 @@ export function LeadTransitionModal({
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>{t("paymentVerification")} <span className="text-destructive">*</span></Label>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm">
+                    <Checkbox checked={verified} onCheckedChange={(c) => setVerified(Boolean(c))} />{t("paymentVerifiedCheck")}
+                  </label>
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label>{t("paymentReceipt")}</Label>
                   <Button type="button" variant="outline" className="gap-1.5"><Paperclip className="size-4" />{t("attachReceipt")}</Button>
                 </div>
-              </>
+              </div>
             )}
 
             {targetStage === "lost" && (
@@ -170,7 +168,7 @@ export function LeadTransitionModal({
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("whatHappened")}</Label>
-                  <Textarea placeholder={t("lostObjectionPlaceholder")} className="min-h-24" />
+                  <Textarea placeholder={t("lostObjectionPlaceholder")} className="min-h-20" />
                 </div>
                 <p className="rounded-lg border border-destructive/30 bg-destructive/8 p-3 text-xs text-destructive">{t("lostWarning")}</p>
               </>
@@ -178,7 +176,7 @@ export function LeadTransitionModal({
           </div>
 
           {/* Lead summary */}
-          <div className="rounded-xl border bg-muted/30 p-4">
+          <div className="h-fit rounded-xl border bg-muted/30 p-4">
             <div className="flex items-center gap-2.5">
               <Avatar className="size-9 border"><AvatarFallback className="bg-primary/10 text-xs text-primary">{getInitials(lead.fullName)}</AvatarFallback></Avatar>
               <p className="font-medium">{lead.fullName}</p>
@@ -199,7 +197,7 @@ export function LeadTransitionModal({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t bg-muted/20 px-6 py-4">
           <Button variant="outline" onClick={onCancel}>{t("cancelBtn")}</Button>
           <Button onClick={onConfirm} disabled={targetStage === "enrolled" && !verified}>{t("confirmMove")}</Button>
         </DialogFooter>

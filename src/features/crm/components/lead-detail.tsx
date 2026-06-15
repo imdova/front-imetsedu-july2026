@@ -177,7 +177,9 @@ export function LeadDetail({
     if (!draft.trim()) return;
     if (channel === "note") {
       setSaving(true);
-      const res = await dal.crm.updateLeadFields(lead.id, { dataPatch: { note: draft.trim() } });
+      // Append to the lead's activity timeline (kept forever, server-timestamped)
+      // rather than overwriting a single pinned-note field.
+      const res = await dal.crm.addLeadActivity(lead.id, draft.trim());
       setSaving(false);
       if (res.ok) {
         setLead(res.data);
@@ -237,8 +239,10 @@ export function LeadDetail({
 
   const plan = lead.paymentPlan;
   const pct = plan ? Math.round((plan.paid / plan.totalAmount) * 100) : 0;
-  // Pipeline-stage moves surfaced in the history card.
+  // Pipeline-stage moves surfaced in the history card (left column) only.
   const pipelineMoves = lead.activities.filter((a) => a.kind === "stage");
+  // Everything else (notes, calls, emails, form events) goes in the timeline.
+  const timelineActivities = lead.activities.filter((a) => a.kind !== "stage");
 
   return (
     <div className="space-y-5">
@@ -340,6 +344,22 @@ export function LeadDetail({
                   <p className="mt-1 font-medium">{lead.createdAt}</p>
                 </CardContent>
               </Card>
+              {pipelineMoves.length > 0 && (
+                <Card>
+                  <CardHeader><CardTitle className="text-base">{t("pipelineHistory")}</CardTitle></CardHeader>
+                  <CardContent className="space-y-2.5">
+                    {pipelineMoves.map((m) => (
+                      <div key={m.id} className="flex items-start gap-2 text-sm">
+                        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><ArrowRightLeft className="size-3" /></span>
+                        <div className="min-w-0">
+                          <p className="font-medium leading-tight">{displayActivityText(m.text, tv, tr)}</p>
+                          <p className="text-xs text-muted-foreground" title={m.ago}>{m.at ? fmtDateTime(m.at, locale) : m.ago}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Middle: composer + history + timeline */}
@@ -368,36 +388,25 @@ export function LeadDetail({
                 </CardContent>
               </Card>
 
-              {pipelineMoves.length > 0 && (
-                <Card>
-                  <CardHeader><CardTitle>{t("pipelineHistory")}</CardTitle></CardHeader>
-                  <CardContent className="space-y-2.5">
-                    {pipelineMoves.map((m) => (
-                      <div key={m.id} className="flex items-center gap-2 text-sm">
-                        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><ArrowRightLeft className="size-3" /></span>
-                        <span className="font-medium">{displayActivityText(m.text, tv, tr)}</span>
-                        <span className="ms-auto text-xs text-muted-foreground" title={m.ago}>{m.at ? fmtDateTime(m.at, locale) : m.ago}</span>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-
               <Card>
                 <CardHeader><CardTitle>{t("activityTimeline")}</CardTitle></CardHeader>
                 <CardContent>
-                  <ol className="relative space-y-5 ps-6 before:absolute before:inset-y-1 before:start-[9px] before:w-px before:bg-border">
-                    {lead.activities.map((a) => {
-                      const Icon = ACTIVITY_ICON[a.kind];
-                      return (
-                        <li key={a.id} className="relative">
-                          <span className="absolute -start-6 grid size-5 place-items-center rounded-full bg-primary/10 text-primary ring-4 ring-background"><Icon className="size-3" /></span>
-                          <p className="text-sm">{displayActivityText(a.text, tv, tr)}</p>
-                          <p className="text-xs text-muted-foreground" title={a.ago}>{a.at ? fmtDateTime(a.at, locale) : a.ago}</p>
-                        </li>
-                      );
-                    })}
-                  </ol>
+                  {timelineActivities.length > 0 ? (
+                    <ol className="relative space-y-5 ps-6 before:absolute before:inset-y-1 before:start-[9px] before:w-px before:bg-border">
+                      {timelineActivities.map((a) => {
+                        const Icon = ACTIVITY_ICON[a.kind];
+                        return (
+                          <li key={a.id} className="relative">
+                            <span className="absolute -start-6 grid size-5 place-items-center rounded-full bg-primary/10 text-primary ring-4 ring-background"><Icon className="size-3" /></span>
+                            <p className="text-sm">{displayActivityText(a.text, tv, tr)}</p>
+                            <p className="text-xs text-muted-foreground" title={a.ago}>{a.at ? fmtDateTime(a.at, locale) : a.ago}</p>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  ) : (
+                    <p className="py-6 text-center text-sm text-muted-foreground">{t("noActivityYet")}</p>
+                  )}
                 </CardContent>
               </Card>
             </div>

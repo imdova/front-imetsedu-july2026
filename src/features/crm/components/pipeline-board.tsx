@@ -9,7 +9,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  LayoutGrid, Table2, TrendingUp, Filter, GraduationCap, MapPin, Phone, MessageCircle, Mail,
+  LayoutGrid, Table2, TrendingUp, Filter, GraduationCap, MapPin, Phone, MessageCircle, Mail, ArrowUpRight, SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +20,8 @@ import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -304,33 +306,122 @@ function LeadCardInner({ lead, t, tr, dragging, onOpen }: { lead: Lead; t: any; 
 }
 
 /* ───────────────────────── Table ───────────────────────── */
+const TABLE_COLS = ["stage", "priority", "course", "specialty", "source", "counselor", "deal", "created"] as const;
+type TableCol = (typeof TABLE_COLS)[number];
+const COL_END: Record<string, boolean> = { deal: true };
+const TABLE_COLS_LS = "crm:pipeline-table-cols-v1";
+
 function TableView({ leads, t, tr, basePath, router }: any) {
+  const rows: Lead[] = leads;
+  // Column visibility (persisted). Lead + open columns are always shown.
+  const [visible, setVisible] = React.useState<Record<TableCol, boolean>>(
+    () => Object.fromEntries(TABLE_COLS.map((c) => [c, true])) as Record<TableCol, boolean>,
+  );
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TABLE_COLS_LS);
+      if (raw) setVisible((prev) => ({ ...prev, ...JSON.parse(raw) }));
+    } catch { /* ignore */ }
+  }, []);
+  const setCol = (c: TableCol, on: boolean) =>
+    setVisible((prev) => {
+      const next = { ...prev, [c]: on };
+      try { localStorage.setItem(TABLE_COLS_LS, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  const resetCols = () => {
+    const all = Object.fromEntries(TABLE_COLS.map((c) => [c, true])) as Record<TableCol, boolean>;
+    setVisible(all);
+    try { localStorage.removeItem(TABLE_COLS_LS); } catch { /* ignore */ }
+  };
+
+  const label: Record<TableCol, string> = {
+    stage: t("colStage"), priority: t("colPriority"), course: t("sumCourse"), specialty: t("fSpecialty"),
+    source: t("sumSource"), counselor: t("colCounselor"), deal: t("colDeal"), created: t("colCreated"),
+  };
+  const shown = TABLE_COLS.filter((c) => visible[c]);
+
+  const cell = (c: TableCol, l: Lead) => {
+    switch (c) {
+      case "stage":
+        return <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"><span className={cn("size-2 rounded-full", STAGE_ACCENT[l.stageKey])} />{tr(STAGE_LABEL_KEY[l.stageKey])}</span>;
+      case "priority":
+        return <div className="flex items-center gap-1.5"><PriorityBadge priority={l.priority} /><span className="rounded bg-muted px-1.5 text-xs font-semibold tabular-nums">{l.score}</span></div>;
+      case "course":
+        return <span className="line-clamp-1 max-w-[180px] text-muted-foreground">{l.coursesOfInterest[0] ?? "—"}</span>;
+      case "specialty":
+        return <span className="text-muted-foreground">{l.specialty || "—"}</span>;
+      case "source":
+        return l.source ? <Badge variant="secondary" className="font-normal">{l.source}</Badge> : <span className="text-muted-foreground">—</span>;
+      case "counselor":
+        return <span className="inline-flex items-center gap-1.5 text-muted-foreground"><span className="grid size-5 place-items-center rounded-full bg-chart-2/20 text-[0.55rem] font-semibold text-chart-2">{getInitials(l.counselorName)}</span>{l.counselorName}</span>;
+      case "deal":
+        return l.paymentPlan?.totalAmount
+          ? <span className="font-medium tabular-nums">{formatCurrency(l.paymentPlan.totalAmount, l.paymentPlan.currency ?? "EGP")}</span>
+          : <span className="text-muted-foreground">—</span>;
+      case "created":
+        return <span className="text-xs text-muted-foreground">{l.createdAt}</span>;
+    }
+  };
+
   return (
-    <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="px-4 py-3 text-start font-semibold">{t("colLead")}</th>
-            <th className="px-4 py-3 text-start font-semibold">{t("colStage")}</th>
-            <th className="px-4 py-3 text-start font-semibold">{t("colPriority")}</th>
-            <th className="px-4 py-3 text-center font-semibold">{t("colScore")}</th>
-            <th className="px-4 py-3 text-start font-semibold">{t("sumCourse")}</th>
-            <th className="px-4 py-3 text-start font-semibold">{t("colCounselor")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {leads.map((l: Lead) => (
-            <tr key={l.id} className="cursor-pointer border-b last:border-0 hover:bg-muted/30" onClick={() => router.push(`${basePath}/leads/${l.id}`)}>
-              <td className="px-4 py-3"><p className="font-medium">{l.fullName}</p><p className="text-xs text-muted-foreground" dir="ltr">{l.phone}</p></td>
-              <td className="px-4 py-3"><Badge variant="secondary">{tr(STAGE_LABEL_KEY[l.stageKey])}</Badge></td>
-              <td className="px-4 py-3"><PriorityBadge priority={l.priority} /></td>
-              <td className="px-4 py-3 text-center tabular-nums">{l.score}</td>
-              <td className="px-4 py-3 text-muted-foreground">{l.coursesOfInterest[0] ?? "—"}</td>
-              <td className="px-4 py-3 text-muted-foreground">{l.counselorName}</td>
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">{t("tableCount", { n: rows.length })}</p>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-1.5"><SlidersHorizontal className="size-4" />{t("columnsBtn")}</Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-2">
+            <div className="flex items-center justify-between px-1 pb-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("columnsBtn")}</p>
+              <button onClick={resetCols} className="text-xs font-medium text-primary hover:underline">{t("resetColumns")}</button>
+            </div>
+            <div className="space-y-0.5">
+              {TABLE_COLS.map((c) => (
+                <label key={c} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                  <Checkbox checked={visible[c]} onCheckedChange={(v) => setCol(c, v === true)} />
+                  {label[c]}
+                </label>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+      <div className="overflow-x-auto rounded-xl border">
+        <table className="w-full text-sm" style={{ minWidth: `${320 + shown.length * 130}px` }}>
+          <thead>
+            <tr className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-3 text-start font-semibold">{t("colLead")}</th>
+              {shown.map((c) => (
+                <th key={c} className={cn("px-4 py-3 font-semibold", COL_END[c] ? "text-end" : "text-start")}>{label[c]}</th>
+              ))}
+              <th className="px-4 py-3 text-end font-semibold"><span className="sr-only">{t("colOpen")}</span></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((l: Lead) => (
+              <tr key={l.id} className="group cursor-pointer border-b last:border-0 hover:bg-muted/30" onClick={() => router.push(`${basePath}/leads/${l.id}`)}>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="size-8 border"><AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">{getInitials(l.fullName)}</AvatarFallback></Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium leading-tight">{l.fullName}</p>
+                      <p className="truncate text-xs text-muted-foreground tabular-nums" dir="ltr">{l.phoneCountryCode}{l.phone}</p>
+                    </div>
+                  </div>
+                </td>
+                {shown.map((c) => (
+                  <td key={c} className={cn("px-4 py-3", COL_END[c] && "text-end")}>{cell(c, l)}</td>
+                ))}
+                <td className="px-4 py-3 text-end">
+                  <ArrowUpRight className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 rtl:-scale-x-100" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
