@@ -2156,6 +2156,8 @@
     "newLead": "New lead",
     "createLead": "Create lead",
     "saveLead": "Save lead",
+    "createLeadBtn": "Create lead",
+    "addPhone": "Add a phone number to continue",
     "saveAndAdd": "Save & add another",
     "leadCreated": "Lead “{name}” created",
     "pipelineTitle": "Pipeline",

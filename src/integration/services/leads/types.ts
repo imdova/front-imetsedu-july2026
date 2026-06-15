@@ -135,7 +135,7 @@ export interface Lead {
 /* ── DTOs ────────────────────────────────────────────────────────────── */
 
 export interface CreateLeadDto {
-  fullName: string;
+  fullName?: string;
   email?: string;
   phone?: string;
   phoneCountryCode?: string;

@@ -128,7 +128,7 @@ export const createLead = async (
   input: db.CreateLeadInput,
 ): Promise<Result<db.Lead>> => {
   const res = await leadsSvc.createLead({
-    fullName: input.fullName,
+    fullName: input.fullName || undefined,
     email: input.email || undefined,
     phone: input.phone || undefined,
     phoneCountryCode: input.phoneCountryCode || undefined,

@@ -2156,6 +2156,8 @@
     "newLead": "عميل محتمل جديد",
     "createLead": "إنشاء عميل محتمل",
     "saveLead": "حفظ العميل",
+    "createLeadBtn": "إنشاء عميل",
+    "addPhone": "أضف رقم هاتف للمتابعة",
     "saveAndAdd": "حفظ وإضافة آخر",
     "leadCreated": "تم إنشاء العميل «{name}»",
     "pipelineTitle": "خط الأنابيب",

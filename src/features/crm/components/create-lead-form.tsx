@@ -70,12 +70,13 @@ const COUNTRIES = [
 ] as const;
 
 const schema = z.object({
-  fullName: z.string().trim().min(2, "Required"),
+  // Phone is the only required field — everything else is optional.
+  fullName: z.string().trim(),
   email: z.union([z.string().trim().email(), z.literal("")]),
   phoneCountryCode: z.string().trim().min(1),
   phone: z.string().trim().min(6, "Required"),
   whatsAppCountryCode: z.string().trim().min(1),
-  whatsApp: z.string().trim().min(6, "Required"),
+  whatsApp: z.string().trim(),
   country: z.string(),
   specialty: z.string(),
   educationLevel: z.string(),
@@ -168,7 +169,7 @@ export function CreateLeadForm({
   // Section fill counters for the progress badges.
   const contactFilled = [v.fullName, v.email, v.phone, v.whatsApp, v.country, v.specialty, v.dateOfBirth, v.gender].filter(Boolean).length;
   const assignFilled = [v.source, v.targetPipeline !== "none" ? v.targetPipeline : "", v.counselorId !== "none" ? v.counselorId : ""].filter(Boolean).length;
-  const canSubmit = !!v.phone && !!v.whatsApp && v.fullName.trim().length >= 2;
+  const canSubmit = v.phone.trim().replace(/\D/g, "").length >= 6;
   const age = ageFromDob(v.dateOfBirth);
 
   const checkDuplicate = async (phone: string) => {
@@ -197,7 +198,7 @@ export function CreateLeadForm({
   const submit = (addAnother: boolean) =>
     form.handleSubmit(async (values) => {
       const res = await dal.crm.createLead({
-        fullName: values.fullName,
+        fullName: values.fullName || undefined,
         email: values.email,
         phone: values.phone,
         phoneCountryCode: values.phoneCountryCode,
@@ -343,7 +344,7 @@ export function CreateLeadForm({
             <div className="grid gap-5 sm:grid-cols-2">
               <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("fFullName")}<span className="ms-0.5 text-destructive">*</span></FormLabel>
+                  <FormLabel>{t("fFullName")}</FormLabel>
                   <FormControl><Input placeholder="e.g. John Doe" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -359,7 +360,7 @@ export function CreateLeadForm({
               {phoneRow("phoneCountryCode", "phone", t("fPhone"), true, checkDuplicate)}
 
               <div className="space-y-2">
-                {phoneRow("whatsAppCountryCode", "whatsApp", t("fWhatsApp"), true)}
+                {phoneRow("whatsAppCountryCode", "whatsApp", t("fWhatsApp"), false)}
                 <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
                   <Checkbox onCheckedChange={(c) => sameAsPhone(c === true)} /> {t("sameAsPhone")}
                 </label>
@@ -519,7 +520,7 @@ export function CreateLeadForm({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5 lg:col-span-2">
           <p className={cn("inline-flex items-center gap-2 text-sm", canSubmit ? "text-muted-foreground" : "text-warning")}>
             {!canSubmit && <AlertTriangle className="size-4" />}
-            {canSubmit ? t("readyToCreate") : t("addPhoneWhatsApp")}
+            {canSubmit ? t("readyToCreate") : t("addPhone")}
           </p>
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" onClick={() => router.push(`${basePath}/leads`)}>
@@ -532,7 +533,7 @@ export function CreateLeadForm({
             <Button type="button" onClick={() => submit(false)}
               disabled={!canSubmit || form.formState.isSubmitting} className="gap-1.5">
               {form.formState.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-              {t("saveLead")}
+              {t("createLeadBtn")}
             </Button>
           </div>
         </div>

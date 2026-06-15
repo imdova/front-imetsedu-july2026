@@ -313,8 +313,8 @@ export async function checkPhone(phone: string): Promise<Lead | null> {
 }
 
 export interface CreateLeadInput {
-  fullName: string;
-  email: string;
+  fullName?: string;
+  email?: string;
   phone: string;
   phoneCountryCode: string;
   whatsApp?: string;
@@ -340,8 +340,8 @@ export async function createLead(input: CreateLeadInput): Promise<Lead> {
   const counselor = COUNSELORS.find((c) => c.id === input.counselorId) ?? COUNSELORS[0];
   const lead: Lead = {
     id: createId("lead"),
-    fullName: input.fullName,
-    email: input.email,
+    fullName: input.fullName ?? "",
+    email: input.email ?? "",
     phone: input.phone,
     phoneCountryCode: input.phoneCountryCode,
     whatsApp: input.whatsApp,
