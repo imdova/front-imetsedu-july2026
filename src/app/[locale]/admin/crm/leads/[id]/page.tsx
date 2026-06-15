@@ -16,11 +16,12 @@ export default async function AdminLeadDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations("Crm");
 
-  const [leadRes, pipelineRes, pipelinesRes, coursesRes] = await Promise.all([
+  const [leadRes, pipelineRes, pipelinesRes, coursesRes, groupsRes] = await Promise.all([
     dal.crm.fetchLead(id),
     dal.crm.fetchPipeline(),
     dal.crm.fetchLeadPipelines(),
     dal.courses.fetchCourses(),
+    dal.groups.fetchGroups(),
   ]);
 
   if (!leadRes.ok || !leadRes.data) notFound();
@@ -33,6 +34,8 @@ export default async function AdminLeadDetailPage({
     value: c.id,
     label: c.titleEn || c.titleAr || c.slug,
   }));
+  // Real groups for the "enrolled" transition (lead is added to the chosen group).
+  const groupOptions = (groupsRes.ok ? groupsRes.data : []).map((g) => ({ value: g.id, label: g.title }));
 
   // Stage lists for each pipeline the lead belongs to (per-pipeline status menu).
   const stageRes = await Promise.all(
@@ -54,6 +57,7 @@ export default async function AdminLeadDetailPage({
         assignablePipelines={assignablePipelines}
         pipelineStages={pipelineStages}
         courseOptions={courseOptions}
+        groupOptions={groupOptions}
       />
     </div>
   );

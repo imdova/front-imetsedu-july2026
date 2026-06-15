@@ -13,10 +13,12 @@ export default async function AdminPipelinePage({
   setRequestLocale(locale);
   const t = await getTranslations("Crm");
 
-  const [leadsRes, pipelineRes] = await Promise.all([
+  const [leadsRes, pipelineRes, groupsRes] = await Promise.all([
     dal.crm.fetchLeads(),
     dal.crm.fetchPipeline(),
+    dal.groups.fetchGroups(),
   ]);
+  const groupOptions = (groupsRes.ok ? groupsRes.data : []).map((g) => ({ value: g.id, label: g.title }));
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6">
@@ -25,6 +27,7 @@ export default async function AdminPipelinePage({
         leads={leadsRes.ok ? leadsRes.data : []}
         stages={pipelineRes.ok ? pipelineRes.data.stages : []}
         basePath="/admin/crm"
+        groupOptions={groupOptions}
       />
     </div>
   );
