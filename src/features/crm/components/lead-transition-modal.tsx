@@ -208,7 +208,7 @@ export function LeadTransitionModal({
         <DialogFooter className="border-t bg-muted/20 px-6 py-4">
           <Button variant="outline" onClick={onCancel}>{t("cancelBtn")}</Button>
           <Button
-            onClick={() => onConfirm(targetStage === "enrolled" ? { groupId: group || undefined } : undefined)}
+            onClick={() => onConfirm(targetStage === "enrolled" && groupOptions.length > 0 ? { groupId: group || undefined } : undefined)}
             disabled={targetStage === "enrolled" && (!verified || (groupOptions.length > 0 && !group))}
           >
             {t("confirmMove")}

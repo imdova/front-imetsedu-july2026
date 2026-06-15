@@ -2380,6 +2380,7 @@
     "setPwSent": "Set-password email sent to {name}",
     "backToLeads": "Back to leads",
     "stageMoved": "Lead moved to {stage}",
+    "addedToGroup": "Lead added to the group's student list",
     "selectCounselor": "Select counselor",
     "tabOverview": "Overview",
     "tabPayment": "Payment",

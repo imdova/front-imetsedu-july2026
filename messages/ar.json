@@ -2380,6 +2380,7 @@
     "setPwSent": "تم إرسال بريد تعيين كلمة المرور إلى {name}",
     "backToLeads": "العودة إلى العملاء",
     "stageMoved": "تم نقل العميل إلى {stage}",
+    "addedToGroup": "تمت إضافة العميل إلى قائمة طلاب المجموعة",
     "selectCounselor": "اختر المستشار",
     "tabOverview": "نظرة عامة",
     "tabPayment": "الدفع",
