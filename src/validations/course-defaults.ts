@@ -1,0 +1,74 @@
+import type { CourseFormValues } from "./course-schema";
+import { createId } from "@/lib/utils";
+
+const emptyPricing = { price: 0, salePrice: 0, discount: 0 };
+
+/** Default values for a fresh course (matches the form's reset state). */
+export function makeDefaultCourseValues(): CourseFormValues {
+  return {
+    titleEn: "",
+    titleAr: "",
+    slug: "",
+    category: "",
+    subcategory: "",
+    difficulty: "Beginner",
+    programType: "",
+    attendanceMode: "online-zoom",
+    descriptionEn: "",
+    descriptionAr: "",
+    previewVideoUrl: "",
+    image: "",
+    courseOverviewFile: "",
+    pricing: {
+      egp: { ...emptyPricing },
+      sar: { ...emptyPricing },
+      usd: { ...emptyPricing },
+    },
+    students: 0,
+    lectures: 0,
+    duration: "",
+    language: ["English"],
+    instructorIds: [],
+    tags: [],
+    isActive: true,
+    isFeatured: false,
+    isBestseller: false,
+    isTopRated: false,
+    webhookUrl: "",
+    seo: {
+      metaTitleEn: "",
+      metaTitleAr: "",
+      metaDescriptionEn: "",
+      metaDescriptionAr: "",
+      metaKeywordsEn: [],
+      metaKeywordsAr: [],
+    },
+    whatYouWillLearnEn: [],
+    whatYouWillLearnAr: [],
+    whoCanAttendEn: "",
+    whoCanAttendAr: "",
+    modules: [
+      {
+        id: createId("mod"),
+        titleEn: "Module 1: Introduction",
+        titleAr: "",
+        order: 0,
+        lessons: [
+          {
+            id: createId("les"),
+            lesson_type: "video",
+            titleEn: "Welcome & Course Overview",
+            titleAr: "",
+            order: 0,
+            isFreePreview: true,
+          },
+        ],
+      },
+    ],
+    status: "draft",
+    gallery: [],
+    videosReviews: [],
+    imagesReviews: [],
+    textReviews: [],
+  };
+}

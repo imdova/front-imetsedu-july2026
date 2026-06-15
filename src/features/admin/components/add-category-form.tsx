@@ -1,0 +1,222 @@
+"use client";
+
+import * as React from "react";
+import { useTranslations } from "next-intl";
+import { ListChecks, Upload, Plus, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { useRouter } from "@/i18n/navigation";
+import { dal } from "@/lib/dal";
+import type { CreateCategoryInput } from "@integration/services/categories";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+
+const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+export function AddCategoryForm() {
+  const t = useTranslations("Admin");
+  const router = useRouter();
+
+  const [nameEn, setNameEn] = React.useState("");
+  const [nameAr, setNameAr] = React.useState("");
+  const [slug, setSlug] = React.useState("");
+  const [slugEdited, setSlugEdited] = React.useState(false);
+  const [headlineEn, setHeadlineEn] = React.useState("");
+  const [headlineAr, setHeadlineAr] = React.useState("");
+  const [descEn, setDescEn] = React.useState("");
+  const [descAr, setDescAr] = React.useState("");
+  const [metaTitleEn, setMetaTitleEn] = React.useState("");
+  const [metaTitleAr, setMetaTitleAr] = React.useState("");
+  const [metaDescEn, setMetaDescEn] = React.useState("");
+  const [metaDescAr, setMetaDescAr] = React.useState("");
+  const [kwEn, setKwEn] = React.useState<string[]>([]);
+  const [kwAr, setKwAr] = React.useState<string[]>([]);
+  const [kwEnInput, setKwEnInput] = React.useState("");
+  const [kwArInput, setKwArInput] = React.useState("");
+  const [faqs, setFaqs] = React.useState<{ q: string; a: string }[]>([]);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  const onNameEn = (v: string) => {
+    setNameEn(v);
+    if (!slugEdited) setSlug(slugify(v));
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nameAr.trim() || !nameEn.trim() || !slug.trim()) {
+      toast.error(t("catRequiredError"));
+      return;
+    }
+
+    const seo: CreateCategoryInput["seo"] = {};
+    if (metaTitleEn.trim()) seo.metaTitleEn = metaTitleEn.trim();
+    if (metaTitleAr.trim()) seo.metaTitleAr = metaTitleAr.trim();
+    if (metaDescEn.trim()) seo.metaDescriptionEn = metaDescEn.trim();
+    if (metaDescAr.trim()) seo.metaDescriptionAr = metaDescAr.trim();
+    if (kwEn.length) seo.metaKeywordsEn = kwEn;
+    if (kwAr.length) seo.metaKeywordsAr = kwAr;
+
+    const cleanFaqs = faqs
+      .filter((f) => f.q.trim() || f.a.trim())
+      .map((f) => ({ questionEn: f.q.trim(), questionAr: f.q.trim(), answerEn: f.a.trim(), answerAr: f.a.trim() }));
+
+    const input: CreateCategoryInput = {
+      nameEn: nameEn.trim(),
+      nameAr: nameAr.trim(),
+      slug: slug.trim(),
+      ...(headlineEn.trim() ? { headlineEn: headlineEn.trim() } : {}),
+      ...(headlineAr.trim() ? { headlineAr: headlineAr.trim() } : {}),
+      ...(descEn.trim() ? { descriptionEn: descEn.trim() } : {}),
+      ...(descAr.trim() ? { descriptionAr: descAr.trim() } : {}),
+      ...(Object.keys(seo).length ? { seo } : {}),
+      ...(cleanFaqs.length ? { faqs: cleanFaqs } : {}),
+      isActive: true,
+    };
+
+    setSubmitting(true);
+    const res = await dal.courseTaxonomy.createCourseCategory(input);
+    setSubmitting(false);
+    if (res.ok) {
+      toast.success(t("categorySaved"));
+      router.push("/admin/courses/settings");
+    } else {
+      toast.error(res.error);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-6 pb-8">
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        {/* Left column */}
+        <div className="space-y-6">
+          {/* Category Setup */}
+          <Card>
+            <CardContent className="space-y-5 pt-6">
+              <h2 className="inline-flex items-center gap-2 font-heading text-lg font-bold">
+                <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary"><ListChecks className="size-5" /></span>
+                {t("categorySetup")}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>{t("catNameAr")} <span className="text-destructive">*</span></Label>
+                  <Input dir="rtl" value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder={t("catNameArPh")} required />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("catNameEn")} <span className="text-destructive">*</span></Label>
+                  <Input value={nameEn} onChange={(e) => onNameEn(e.target.value)} placeholder={t("catNameEnPh")} required />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("catSlug")} <span className="text-destructive">*</span></Label>
+                <Input value={slug} onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }} placeholder={t("catSlugPh")} required />
+                <p className="text-xs text-muted-foreground">{t("catSlugHint")}</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("catIcon")}</Label>
+                <Button type="button" variant="outline" className="gap-1.5" onClick={() => toast.info(t("catUploadIcon"))}><Upload className="size-4" />{t("catUploadIcon")}</Button>
+                <p className="text-xs text-muted-foreground">{t("catIconHint")}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* SEO */}
+          <Card>
+            <CardContent className="space-y-5 pt-6">
+              <div>
+                <h2 className="font-heading text-lg font-bold">{t("catSeoTitle")}</h2>
+                <p className="text-sm text-muted-foreground">{t("catSeoHint")}</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5"><Label dir="rtl" className="block text-end">{t("catMetaTitleAr")}</Label><Input dir="rtl" value={metaTitleAr} onChange={(e) => setMetaTitleAr(e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>{t("catMetaTitleEn")}</Label><Input value={metaTitleEn} onChange={(e) => setMetaTitleEn(e.target.value)} placeholder={t("catMetaTitleEnPh")} /></div>
+                <div className="space-y-1.5"><Label dir="rtl" className="block text-end">{t("catMetaDescAr")}</Label><Textarea dir="rtl" value={metaDescAr} onChange={(e) => setMetaDescAr(e.target.value)} className="min-h-24" /></div>
+                <div className="space-y-1.5"><Label>{t("catMetaDescEn")}</Label><Textarea value={metaDescEn} onChange={(e) => setMetaDescEn(e.target.value)} placeholder={t("catMetaDescEnPh")} className="min-h-24" /></div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <KeywordField label={t("catKeywordsAr")} placeholder={t("catKeywordsArPh")} dir="rtl" value={kwAr} input={kwArInput} setInput={setKwArInput} onAdd={(k) => setKwAr((p) => [...p, k])} onRemove={(i) => setKwAr((p) => p.filter((_, idx) => idx !== i))} />
+                <KeywordField label={t("catKeywordsEn")} placeholder={t("catKeywordsEnPh")} value={kwEn} input={kwEnInput} setInput={setKwEnInput} onAdd={(k) => setKwEn((p) => [...p, k])} onRemove={(i) => setKwEn((p) => p.filter((_, idx) => idx !== i))} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* FAQ */}
+          <Card>
+            <CardContent className="space-y-4 pt-6">
+              <div>
+                <h2 className="font-heading text-lg font-bold">{t("catFaqTitle")}</h2>
+                <p className="text-sm text-muted-foreground">{t("catFaqHint")}</p>
+              </div>
+              {faqs.map((f, i) => (
+                <div key={i} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
+                  <Input value={f.q} placeholder="Q" onChange={(e) => setFaqs((p) => p.map((x, idx) => (idx === i ? { ...x, q: e.target.value } : x)))} />
+                  <div className="flex gap-2">
+                    <Input value={f.a} placeholder="A" onChange={(e) => setFaqs((p) => p.map((x, idx) => (idx === i ? { ...x, a: e.target.value } : x)))} />
+                    <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0 text-destructive" onClick={() => setFaqs((p) => p.filter((_, idx) => idx !== i))}><X className="size-4" /></Button>
+                  </div>
+                </div>
+              ))}
+              <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-primary" onClick={() => setFaqs((p) => [...p, { q: "", a: "" }])}><Plus className="size-4" />{t("catAddFaq")}</Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right column */}
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="space-y-3 pt-6">
+              <p className="font-semibold">{t("catHeadlines")}</p>
+              <Input dir="rtl" value={headlineAr} onChange={(e) => setHeadlineAr(e.target.value)} placeholder={t("catHeadlineAr")} />
+              <Input value={headlineEn} onChange={(e) => setHeadlineEn(e.target.value)} placeholder={t("catHeadlineEn")} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="space-y-4 pt-6">
+              <p className="font-semibold">{t("catDescription")} <span className="text-destructive">*</span></p>
+              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">AR</Label><Textarea dir="rtl" value={descAr} onChange={(e) => setDescAr(e.target.value)} placeholder={t("catDescAr")} className="min-h-28" /></div>
+              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">EN</Label><Textarea value={descEn} onChange={(e) => setDescEn(e.target.value)} placeholder={t("catDescEn")} className="min-h-28" /></div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-3">
+        <Button type="reset" variant="outline" disabled={submitting}>{t("catReset")}</Button>
+        <Button type="submit" disabled={submitting} className="gap-1.5">
+          {submitting && <Loader2 className="size-4 animate-spin" />}
+          {t("catCreate")}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function KeywordField({
+  label, placeholder, dir, value, input, setInput, onAdd, onRemove,
+}: {
+  label: string; placeholder: string; dir?: "rtl" | "ltr"; value: string[]; input: string;
+  setInput: (v: string) => void; onAdd: (k: string) => void; onRemove: (i: number) => void;
+}) {
+  const add = () => { if (input.trim()) { onAdd(input.trim()); setInput(""); } };
+  return (
+    <div className="space-y-1.5">
+      <Label dir={dir} className={dir === "rtl" ? "block text-end" : undefined}>{label}</Label>
+      <div className="flex gap-2">
+        <Input dir={dir} value={input} placeholder={placeholder} onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        <Button type="button" variant="outline" size="icon" className="size-9 shrink-0" onClick={add}><Plus className="size-4" /></Button>
+      </div>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {value.map((k, i) => (
+            <span key={i} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+              {k}<button type="button" onClick={() => onRemove(i)}><X className="size-3" /></button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
