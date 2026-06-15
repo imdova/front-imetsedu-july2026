@@ -34,6 +34,10 @@ export interface Invoice {
   issuedDate: string;
   dueDate: string;
   group?: string;
+  /** The course selected in the installment plan (for the invoice line item). */
+  courseId?: string;
+  courseTitle?: string;
+  courseThumbnail?: string;
   installments?: Installment[];
 }
 

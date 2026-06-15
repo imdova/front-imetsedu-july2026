@@ -5,11 +5,11 @@ import { dal } from "@/lib/dal";
 import { Button } from "@/components/ui/button";
 import { KpiGrid } from "@/features/dashboard/components/kpi-grid";
 import { RevenueChart } from "@/features/dashboard/components/revenue-chart";
-import { OpenReportsCard } from "@/features/dashboard/components/open-reports-card";
-import { JobsByCountry } from "@/features/dashboard/components/jobs-by-country";
-import { SpecialtyBars } from "@/features/dashboard/components/specialty-bars";
-import { QueueCard } from "@/features/dashboard/components/queue-card";
 import { AuditEventsCard } from "@/features/dashboard/components/audit-events-card";
+import {
+  TopCoursesCard, LeadPipelineCard, RecentTransactionsCard, TopCounselorsCard, AlertsCard,
+  LmsOverviewCard, StudentsByCountryCard, ActiveBatchesCard,
+} from "@/features/dashboard/components/lms-insights";
 
 export async function generateMetadata({
   params,
@@ -33,31 +33,40 @@ export default async function DashboardPage({
   const [
     kpisRes,
     revenueRes,
-    reportsRes,
-    countryRes,
-    categoryRes,
-    verificationRes,
-    reviewRes,
+    topCoursesRes,
+    pipelineRes,
+    recentTxnsRes,
+    counselorsRes,
+    alertsRes,
     auditRes,
+    lmsRes,
+    countryRes,
+    batchesRes,
   ] = await Promise.all([
     dal.platform.fetchKpis(),
     dal.platform.fetchRevenueSeries(),
-    dal.platform.fetchOpenReports(),
-    dal.platform.fetchCountryBars(),
-    dal.platform.fetchCategoryBars(),
-    dal.platform.fetchVerificationQueue(),
-    dal.platform.fetchReviewQueue(),
+    dal.platform.fetchTopCourses(),
+    dal.platform.fetchLeadPipeline(),
+    dal.platform.fetchRecentTransactions(),
+    dal.platform.fetchTopCounselors(),
+    dal.platform.fetchAlerts(),
     dal.platform.fetchAuditEvents(),
+    dal.platform.fetchLmsOverview(),
+    dal.platform.fetchStudentsByCountry(),
+    dal.platform.fetchActiveBatches(),
   ]);
 
   const kpis = kpisRes.ok ? kpisRes.data : [];
   const revenue = revenueRes.ok ? revenueRes.data : [];
-  const reports = reportsRes.ok ? reportsRes.data : [];
-  const country = countryRes.ok ? countryRes.data : [];
-  const category = categoryRes.ok ? categoryRes.data : [];
-  const verification = verificationRes.ok ? verificationRes.data : [];
-  const review = reviewRes.ok ? reviewRes.data : [];
+  const topCourses = topCoursesRes.ok ? topCoursesRes.data : [];
+  const pipeline = pipelineRes.ok ? pipelineRes.data : [];
+  const recentTxns = recentTxnsRes.ok ? recentTxnsRes.data : [];
+  const counselors = counselorsRes.ok ? counselorsRes.data : [];
+  const alerts = alertsRes.ok ? alertsRes.data : [];
   const audit = auditRes.ok ? auditRes.data : [];
+  const lmsOverview = lmsRes.ok ? lmsRes.data : { active: 0, draft: 0, totalStudents: 0, avgCompletion: 0 };
+  const byCountry = countryRes.ok ? countryRes.data : [];
+  const batches = batchesRes.ok ? batchesRes.data : [];
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
@@ -78,35 +87,32 @@ export default async function DashboardPage({
       {/* KPI tiles */}
       <KpiGrid kpis={kpis} />
 
-      {/* Chart + open reports */}
+      {/* Revenue chart + priority alerts */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RevenueChart data={revenue} />
         </div>
-        <OpenReportsCard reports={reports} />
+        <AlertsCard alerts={alerts} />
       </div>
 
-      {/* Demand charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <JobsByCountry data={country} />
-        <SpecialtyBars data={category} />
-      </div>
-
-      {/* Queues + audit */}
+      {/* LMS overview + top courses + lead pipeline */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <QueueCard
-          title={t("verificationQueueTitle")}
-          subtitle={t("companiesWaiting", { count: verification.length })}
-          viewAllLabel={t("viewAll")}
-          items={verification}
-        />
-        <QueueCard
-          title={t("reviewQueueTitle")}
-          subtitle={t("pendingCount", { count: 12 })}
-          viewAllLabel={t("viewAll")}
-          items={review}
-        />
+        <LmsOverviewCard data={lmsOverview} />
+        <TopCoursesCard courses={topCourses} />
+        <LeadPipelineCard rows={pipeline} />
+      </div>
+
+      {/* Recent transactions + counselors + audit */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <RecentTransactionsCard txns={recentTxns} />
+        <TopCounselorsCard counselors={counselors} />
         <AuditEventsCard events={audit} />
+      </div>
+
+      {/* Students by country + active batches */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <StudentsByCountryCard rows={byCountry} />
+        <ActiveBatchesCard batches={batches} />
       </div>
     </div>
   );

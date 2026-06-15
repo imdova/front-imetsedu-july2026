@@ -8,7 +8,6 @@ import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
 import type { Invoice } from "@/lib/db/finance";
-import { dal } from "@/lib/dal";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { InvoiceStatusBadge } from "./finance-badges";
+import { MarkAsPaidModal } from "./mark-as-paid-modal";
 
 export function InvoicesTable({
   initialData,
@@ -33,14 +33,8 @@ export function InvoicesTable({
   const t = useTranslations("Finance");
   const router = useRouter();
   const [rows, setRows] = React.useState<Invoice[]>(initialData);
-
-  const markPaid = async (inv: Invoice) => {
-    const res = await dal.finance.markInvoicePaid(inv.id);
-    if (res.ok && res.data) {
-      setRows((prev) => prev.map((r) => (r.id === inv.id ? res.data! : r)));
-      toast.success(t("markPaidDone"));
-    }
-  };
+  // Marking paid requires a receipt upload, so it routes through the modal.
+  const [markTarget, setMarkTarget] = React.useState<Invoice | null>(null);
 
   const columns = React.useMemo<ColumnDef<Invoice>[]>(
     () => [
@@ -140,7 +134,7 @@ export function InvoicesTable({
                   <DropdownMenuItem onClick={() => router.push(`${basePath}/invoices/${inv.id}`)}>
                     <Eye className="size-4" /> {t("colInvoice")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => markPaid(inv)} disabled={inv.status === "paid"}>
+                  <DropdownMenuItem onClick={() => setMarkTarget(inv)} disabled={inv.status === "paid"}>
                     <CheckCircle2 className="size-4" /> {t("markPaid")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => toast.success(t("reminderSent"))}>
@@ -161,6 +155,21 @@ export function InvoicesTable({
     [t, router, basePath],
   );
 
-  return <DataTable columns={columns} data={rows} pageSize={10}
-    emptyState={<p className="text-sm text-muted-foreground">{t("noResults")}</p>} />;
+  return (
+    <>
+      <DataTable columns={columns} data={rows} pageSize={10}
+        emptyState={<p className="text-sm text-muted-foreground">{t("noResults")}</p>} />
+      {markTarget && (
+        <MarkAsPaidModal
+          invoice={markTarget}
+          open={!!markTarget}
+          onOpenChange={(o) => !o && setMarkTarget(null)}
+          onConfirmed={(updated) => {
+            setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+            setMarkTarget(null);
+          }}
+        />
+      )}
+    </>
+  );
 }

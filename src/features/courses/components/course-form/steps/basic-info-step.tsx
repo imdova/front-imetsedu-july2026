@@ -50,6 +50,8 @@ interface Props {
   categories: CategoryLookup[];
   instructors: InstructorLookup[];
   tags: LookupItem[];
+  /** Program-type options from live course variables (falls back to defaults). */
+  programTypes?: { value: string; label: string }[];
   column?: "main" | "sidebar";
 }
 
@@ -57,6 +59,7 @@ export function BasicInfoStep({
   categories,
   instructors,
   tags,
+  programTypes,
   column = "main",
 }: Props) {
   if (column === "sidebar") {
@@ -65,15 +68,23 @@ export function BasicInfoStep({
     );
   }
 
-  return <BasicInfoMain categories={categories} />;
+  return <BasicInfoMain categories={categories} programTypes={programTypes} />;
 }
 
-function BasicInfoMain({ categories }: { categories: CategoryLookup[] }) {
+function BasicInfoMain({
+  categories,
+  programTypes,
+}: {
+  categories: CategoryLookup[];
+  programTypes?: { value: string; label: string }[];
+}) {
   const { control, setValue, getValues } = useFormContext<CourseFormValues>();
   const t = useTranslations("CourseForm");
   const selectedCategory = useWatch({ control, name: "category" });
   const subcategories =
     categories.find((c) => c.id === selectedCategory)?.subcategories ?? [];
+  // Prefer live program types; keep the static list as a fallback.
+  const programOptions = programTypes?.length ? programTypes : PROGRAM_TYPE_OPTIONS;
 
   const regenerateSlug = () =>
     setValue("slug", slugify(getValues("titleEn")), { shouldValidate: true });
@@ -279,7 +290,7 @@ function BasicInfoMain({ categories }: { categories: CategoryLookup[] }) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {PROGRAM_TYPE_OPTIONS.map((p) => (
+                    {programOptions.map((p) => (
                       <SelectItem key={p.value} value={p.value}>
                         {p.label}
                       </SelectItem>

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
+import { programTypeOptions } from "@/lib/courses/program-types";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { CourseForm } from "@/features/courses/components/course-form/course-form";
@@ -26,11 +27,13 @@ export default async function NewCoursePage({
   setRequestLocale(locale);
   const t = await getTranslations("CourseForm");
 
-  const [categoriesRes, instructorsRes, tagsRes] = await Promise.all([
+  const [categoriesRes, instructorsRes, tagsRes, variablesRes] = await Promise.all([
     dal.lookups.fetchCategories(),
     dal.lookups.fetchInstructors(),
     dal.lookups.fetchTags(),
+    dal.courseTaxonomy.fetchCourseVariables(),
   ]);
+  const programTypes = programTypeOptions(variablesRes.ok ? variablesRes.data : []);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-8">
@@ -48,6 +51,7 @@ export default async function NewCoursePage({
         categories={categoriesRes.ok ? categoriesRes.data : []}
         instructors={instructorsRes.ok ? instructorsRes.data : []}
         tags={tagsRes.ok ? tagsRes.data : []}
+        programTypes={programTypes}
       />
     </div>
   );

@@ -32,6 +32,8 @@ interface CourseFormProps {
   categories: CategoryLookup[];
   instructors: InstructorLookup[];
   tags: LookupItem[];
+  /** Program-type select options sourced from live course variables. */
+  programTypes?: { value: string; label: string }[];
   /** When editing, the existing course id and prefilled values. */
   courseId?: string;
   initial?: Partial<CourseFormValues>;
@@ -41,6 +43,7 @@ export function CourseForm({
   categories,
   instructors,
   tags,
+  programTypes,
   courseId,
   initial,
 }: CourseFormProps) {
@@ -149,6 +152,7 @@ export function CourseForm({
                   categories={categories}
                   instructors={instructors}
                   tags={tags}
+                  programTypes={programTypes}
                 />
               )}
               {step === 1 && <StructureStep column="main" />}

@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
+import { programTypeOptions } from "@/lib/courses/program-types";
 import type { CourseFormValues } from "@/validations/course-schema";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -19,15 +20,17 @@ export default async function EditCoursePage({
   const t = await getTranslations("CourseForm");
   const tc = await getTranslations("Courses");
 
-  const [courseRes, categoriesRes, instructorsRes, tagsRes] = await Promise.all([
+  const [courseRes, categoriesRes, instructorsRes, tagsRes, variablesRes] = await Promise.all([
     dal.courses.fetchCourseForEdit(id),
     dal.lookups.fetchCategories(),
     dal.lookups.fetchInstructors(),
     dal.lookups.fetchTags(),
+    dal.courseTaxonomy.fetchCourseVariables(),
   ]);
 
   if (!courseRes.ok || !courseRes.data) notFound();
   const initial: Partial<CourseFormValues> = courseRes.data;
+  const programTypes = programTypeOptions(variablesRes.ok ? variablesRes.data : []);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-8">
@@ -47,6 +50,7 @@ export default async function EditCoursePage({
         categories={categoriesRes.ok ? categoriesRes.data : []}
         instructors={instructorsRes.ok ? instructorsRes.data : []}
         tags={tagsRes.ok ? tagsRes.data : []}
+        programTypes={programTypes}
       />
     </div>
   );

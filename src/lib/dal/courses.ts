@@ -113,11 +113,19 @@ export async function updateCourse(
 }
 
 /** Map the full form payload to a backend-whitelisted PATCH body. Strips
- * client-only ids (modules/lessons) and form-only fields (difficulty, variables)
- * that the strict (`forbidNonWhitelisted`) backend DTO would otherwise reject. */
+ * client-only ids (modules/lessons) and the form-only `difficulty` field that
+ * the strict (`forbidNonWhitelisted`) backend DTO would otherwise reject.
+ * Form-only fields with no schema column (program type, attendance mode) are
+ * persisted as STRING entries in the course's `variables` map so they survive a
+ * round-trip; array-valued `language` is omitted (the map only holds strings). */
 function toFullUpdatePayload(d: CourseFormData): Record<string, unknown> {
   const VALID_LESSON = ["video", "quiz"] as const;
+  const variables: Record<string, string> = {};
+  for (const [k, v] of Object.entries(d.variables ?? {})) {
+    if (typeof v === "string" && v) variables[k] = v;
+  }
   return {
+    variables: Object.keys(variables).length ? variables : undefined,
     titleAr: d.titleAr,
     titleEn: d.titleEn,
     slug: d.slug,

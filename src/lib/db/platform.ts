@@ -59,6 +59,16 @@ export interface AuditEvent {
   ago: string;
 }
 
+/* ── Live LMS dashboard sections (GET /dashboard/*) ── */
+export interface TopCourse { name: string; revenue: number; enrollments: number }
+export interface DashCounselor { name: string; image?: string; totalLeads: number; enrolled: number; conversionRate: number }
+export interface RecentTxn { id: string; number: string; customer: string; amount: number; currency: string; status: string }
+export interface PipelineRow { key: string; count: number; percentage: number }
+export interface DashAlert { type: string; title: string; description: string; action: string; link: string }
+export interface LmsOverview { active: number; draft: number; totalStudents: number; avgCompletion: number }
+export interface CountryStat { country: string; count: number }
+export interface ActiveBatch { title: string; enrolled: number; capacity: number }
+
 const kpis: Kpi[] = [
   { key: "enrollments", labelKey: "kpiEnrollments", value: "1,284", icon: "CircleCheckBig", tone: "primary", subKey: "kpiNorthStar", delta: 12.4 },
   { key: "activeCourses", labelKey: "kpiActiveCourses", value: "784", icon: "Briefcase", tone: "success", delta: 6.8 },

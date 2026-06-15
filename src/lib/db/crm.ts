@@ -450,8 +450,14 @@ export interface CrmStats {
   pipelineValue: number;
   byStage: { key: string; name: string; count: number }[];
   bySource: { source: string; count: number }[];
-  byCounselor: { name: string; initials: string; leads: number; conversion: number }[];
+  byCounselor: { name: string; initials: string; leads: number; conversion: number; hot?: number }[];
   overdueFollowUps: number;
+  /** Leads with score ≥ 80 or warm/hot priority. */
+  hotLeads?: number;
+  /** Leads still being worked (not enrolled/lost). */
+  inFlight?: number;
+  /** 10 most recent leads for the activity feed. */
+  recentLeads?: Lead[];
 }
 
 export async function getCrmStats(): Promise<CrmStats> {

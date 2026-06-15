@@ -1,11 +1,12 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Users, UserPlus, TrendingUp, Wallet, CalendarClock } from "lucide-react";
+import { Users, UserPlus, TrendingUp, Wallet, CalendarClock, Flame, Activity, GraduationCap } from "lucide-react";
 
-import type { CrmStats } from "@/lib/db/crm";
-import { cn, formatCompact, formatCurrency } from "@/lib/utils";
+import type { CrmStats, Lead } from "@/lib/db/crm";
+import { cn, formatCompact, formatCurrency, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -19,10 +20,13 @@ export function CrmDashboard({ stats }: { stats: CrmStats }) {
   const tr = t as unknown as (k: string) => string;
   const maxStage = Math.max(...stats.byStage.map((s) => s.count), 1);
   const maxSource = Math.max(...stats.bySource.map((s) => s.count), 1);
+  const recentLeads = stats.recentLeads ?? [];
 
   const kpis = [
     { label: t("kpiTotalLeads"), value: `${stats.totalLeads}`, icon: Users, tone: "bg-primary/10 text-primary" },
     { label: t("kpiNewThisWeek"), value: `${stats.newThisWeek}`, icon: UserPlus, tone: "bg-chart-3/15 text-chart-3" },
+    { label: t("kpiHotLeads"), value: `${stats.hotLeads ?? 0}`, icon: Flame, tone: "bg-destructive/12 text-destructive" },
+    { label: t("kpiInFlight"), value: `${stats.inFlight ?? 0}`, icon: Activity, tone: "bg-chart-2/15 text-chart-2" },
     { label: t("kpiConversion"), value: `${stats.conversionRate}%`, icon: TrendingUp, tone: "bg-success/12 text-success" },
     { label: t("kpiPipelineValue"), value: formatCurrency(stats.pipelineValue, "EGP"), icon: Wallet, tone: "bg-warning/18 text-warning" },
     { label: t("kpiOverdue"), value: `${stats.overdueFollowUps}`, icon: CalendarClock, tone: "bg-destructive/12 text-destructive" },
@@ -105,6 +109,11 @@ export function CrmDashboard({ stats }: { stats: CrmStats }) {
                   </AvatarFallback>
                 </Avatar>
                 <span className="flex-1 text-sm font-medium">{c.name}</span>
+                {c.hot ? (
+                  <Badge className="gap-1 border-transparent bg-destructive/12 text-[0.65rem] text-destructive">
+                    <Flame className="size-3" />{t("hotCount", { n: c.hot })}
+                  </Badge>
+                ) : null}
                 <span className="text-sm text-muted-foreground">
                   {formatCompact(c.leads)} {t("leadsCol")}
                 </span>
@@ -114,6 +123,61 @@ export function CrmDashboard({ stats }: { stats: CrmStats }) {
               </li>
             ))}
           </ul>
+        </CardContent>
+      </Card>
+
+      {/* Recent leads activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("recentLeadsTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentLeads.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">{t("recentLeadsEmpty")}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-sm">
+                <thead>
+                  <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2.5 text-start font-semibold">{t("colLead")}</th>
+                    <th className="px-3 py-2.5 text-start font-semibold">{t("colStage")}</th>
+                    <th className="px-3 py-2.5 text-start font-semibold">{t("sumCourse")}</th>
+                    <th className="px-3 py-2.5 text-start font-semibold">{t("sumSource")}</th>
+                    <th className="px-3 py-2.5 text-end font-semibold">{t("colCreated")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentLeads.map((l: Lead) => (
+                    <tr key={l.id} className="border-b last:border-0">
+                      <td className="px-3 py-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar className="size-8 border"><AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">{getInitials(l.fullName)}</AvatarFallback></Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium leading-tight">{l.fullName}</p>
+                            <p className="truncate text-xs text-muted-foreground tabular-nums" dir="ltr">{l.phoneCountryCode}{l.phone}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium">
+                          <span className={cn("size-2 rounded-full", STAGE_ACCENT[l.stageKey])} />
+                          {tr(STAGE_LABEL_KEY[l.stageKey])}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                          <GraduationCap className="size-3.5 shrink-0" />
+                          <span className="line-clamp-1 max-w-[180px]">{l.courseNames?.[0] ?? "—"}</span>
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-muted-foreground">{l.source || "—"}</td>
+                      <td className="px-3 py-2.5 text-end text-xs text-muted-foreground">{l.createdAt}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -18,6 +18,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+
+/** Fixed specialty options for the public application form. */
+const SPECIALTIES = ["Doctor", "Dentist", "Pharmacist", "Nurse", "Technician", "Others"] as const;
 
 const COUNTRY_CODES = [
   { dial: "+20", flag: "🇪🇬" },
@@ -99,7 +105,14 @@ export function CourseApplyDialog({
           </div>
           <div className="space-y-1.5">
             <Label>{t("applySpecialty")}</Label>
-            <Input value={form.specialty} onChange={(e) => set("specialty", e.target.value)} placeholder={t("applySpecialtyPh")} />
+            <Select value={form.specialty} onValueChange={(v) => set("specialty", v)}>
+              <SelectTrigger><SelectValue placeholder={t("applySpecialtyPh")} /></SelectTrigger>
+              <SelectContent>
+                {SPECIALTIES.map((s) => (
+                  <SelectItem key={s} value={s}>{t(`spec${s}` as never)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>{t("applyPhone")} <span className="text-destructive">*</span></Label>

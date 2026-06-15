@@ -228,11 +228,18 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
             <p className="text-sm text-muted-foreground">{t("ptTryAnother")}</p>
           </div>
         ) : (
-          <div className={cn(view === "grid" ? "grid gap-4 md:grid-cols-2 2xl:grid-cols-3" : "space-y-3")}>
-            {rows.map((p) => (
-              <PlanCard key={p.id} plan={p} t={t} wide={view === "list"} selected={selected.has(p.id)} onToggle={() => toggleOne(p.id)} />
-            ))}
-          </div>
+          view === "grid" ? (
+            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+              {rows.map((p) => (
+                <PlanCard key={p.id} plan={p} t={t} selected={selected.has(p.id)} onToggle={() => toggleOne(p.id)} />
+              ))}
+            </div>
+          ) : (
+            <PlanTable
+              rows={rows} t={t} selected={selected} onToggle={toggleOne}
+              allSelected={allSelected} someSelected={someSelected} toggleAll={toggleAll}
+            />
+          )
         )}
       </div>
 
@@ -250,12 +257,92 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
   );
 }
 
+/** Tabular payment-plans view (à la the old project): one row per plan with the
+ * student, course/group, fees, progress, status and per-installment cells. */
+function PlanTable({
+  rows, t, selected, onToggle, allSelected, someSelected, toggleAll,
+}: {
+  rows: Invoice[];
+  t: (k: string, vals?: Record<string, string | number>) => string;
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+  allSelected: boolean;
+  someSelected: boolean;
+  toggleAll: () => void;
+}) {
+  const maxInstall = Math.max(1, ...rows.map((p) => p.installments?.length ?? 0));
+  return (
+    <div className="overflow-x-auto rounded-xl border">
+      <table className="w-full text-sm" style={{ minWidth: `${720 + maxInstall * 120}px` }}>
+        <thead>
+          <tr className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+            <th className="w-10 px-3 py-3"><Checkbox checked={allSelected ? true : someSelected ? "indeterminate" : false} onCheckedChange={toggleAll} /></th>
+            <th className="px-3 py-3 text-start font-semibold">{t("colStudent")}</th>
+            <th className="px-3 py-3 text-start font-semibold">{t("colGroup")}</th>
+            <th className="px-3 py-3 text-end font-semibold">{t("ptColTotal")}</th>
+            <th className="px-3 py-3 text-start font-semibold">{t("ptProgress")}</th>
+            <th className="px-3 py-3 text-start font-semibold">{t("colStatus")}</th>
+            {Array.from({ length: maxInstall }).map((_, i) => (
+              <th key={i} className="px-3 py-3 text-center font-semibold">{t("colInstall", { n: i + 1 })}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => {
+            const inst = p.installments ?? [];
+            const paid = inst.filter((i) => i.status === "PAID").reduce((s, i) => s + i.amount, 0);
+            const pct = p.amount > 0 ? Math.min(100, Math.round((paid / p.amount) * 100)) : 0;
+            const status = planStatusOf(inst);
+            const isSel = selected.has(p.id);
+            return (
+              <tr key={p.id} className={cn("border-b last:border-0 hover:bg-muted/20", isSel && "bg-primary/[0.04]")}>
+                <td className="px-3 py-3"><Checkbox checked={isSel} onCheckedChange={() => onToggle(p.id)} /></td>
+                <td className="px-3 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="size-8 border"><AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">{getInitials(p.studentName)}</AvatarFallback></Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium leading-tight">{p.studentName}</p>
+                      <p className="truncate text-xs text-muted-foreground">{p.studentEmail}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-3 py-3 text-muted-foreground">{p.group ?? "—"}</td>
+                <td className="px-3 py-3 text-end font-medium tabular-nums">{formatCurrency(p.amount, p.currency)}</td>
+                <td className="px-3 py-3">
+                  <div className="flex min-w-[120px] items-center gap-2">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                      <div className={cn("h-full rounded-full", status === "overdue" ? "bg-destructive" : status === "completed" ? "bg-success" : "bg-primary")} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-xs font-semibold tabular-nums text-muted-foreground">{pct}%</span>
+                  </div>
+                </td>
+                <td className="px-3 py-3">
+                  <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-medium", PLAN_STATUS_STYLE[status])}>
+                    {t(status === "active" ? "ptStatusActive" : status === "overdue" ? "ptStatusOverdue" : "ptStatusCompleted")}
+                  </span>
+                </td>
+                {Array.from({ length: maxInstall }).map((_, i) => {
+                  const it = inst[i];
+                  return (
+                    <td key={i} className="px-3 py-3">
+                      {it ? <InstallChip inst={it} t={t} /> : <span className="grid place-items-center text-muted-foreground">—</span>}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function PlanCard({
-  plan, t, wide, selected, onToggle,
+  plan, t, selected, onToggle,
 }: {
   plan: Invoice;
   t: (k: string, vals?: Record<string, string | number>) => string;
-  wide: boolean;
   selected: boolean;
   onToggle: () => void;
 }) {
@@ -300,7 +387,7 @@ function PlanCard({
       </div>
 
       {/* Installment timeline */}
-      <div className={cn("flex flex-wrap gap-2", wide && "sm:grid sm:grid-cols-4 lg:grid-cols-6")}>
+      <div className="flex flex-wrap gap-2">
         {inst.map((i) => <InstallChip key={i.index} inst={i} t={t} />)}
       </div>
     </div>

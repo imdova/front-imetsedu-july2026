@@ -16,8 +16,24 @@ export default async function AdminInvoiceDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations("Finance");
 
-  const res = await dal.finance.fetchInvoice(id);
+  const [res, coursesRes] = await Promise.all([
+    dal.finance.fetchInvoice(id),
+    dal.courses.fetchCourses(),
+  ]);
   if (!res.ok || !res.data) notFound();
+
+  // Resolve the plan's course thumbnail/title from the live courses catalogue
+  // (the invoice payload carries only the course id + title, no image).
+  const invoice = res.data;
+  const courses = coursesRes.ok ? coursesRes.data : [];
+  const course =
+    courses.find((c) => c.id === invoice.courseId) ??
+    (invoice.courseTitle
+      ? courses.find((c) => c.titleEn === invoice.courseTitle || c.titleAr === invoice.courseTitle)
+      : undefined);
+  const enriched = course
+    ? { ...invoice, courseTitle: invoice.courseTitle ?? course.titleEn, courseThumbnail: course.thumbnailUrl }
+    : invoice;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-5">
@@ -27,7 +43,7 @@ export default async function AdminInvoiceDetailPage({
           {t("backToInvoices")}
         </Link>
       </Button>
-      <InvoiceDetail invoice={res.data} />
+      <InvoiceDetail invoice={enriched} />
     </div>
   );
 }

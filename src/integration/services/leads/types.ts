@@ -156,7 +156,6 @@ export interface CreateLeadDto {
   stage?: string;
   estimatedValue?: number;
   tags?: string[];
-  courseInterestId?: string;
   courseInterestName?: string;
   courseInterest?: string;
   data?: LeadData;

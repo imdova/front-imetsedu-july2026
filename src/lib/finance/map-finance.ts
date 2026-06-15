@@ -26,6 +26,9 @@ export function mapInvoice(raw: any): Invoice {
   const inv = raw?.invoice ?? {};
   const status: InvoiceStatus = STATUS_MAP[inv.status ?? raw.installment?.status?.toLowerCase?.()] ?? "sent";
   const amount = inv.totalDue ?? raw.installment?.amount ?? 0;
+  // The backend projects the plan's course as `{ _id, titleEn, titleAr }` (no
+  // image), so we carry id + title here and resolve the thumbnail page-side.
+  const course = Array.isArray(raw.courses) ? raw.courses[0] : undefined;
   return {
     id: inv._id ?? raw._id,
     number: inv.invoiceNumber ?? "—",
@@ -39,6 +42,8 @@ export function mapInvoice(raw: any): Invoice {
     issuedDate: fmtDate(inv.issueDate ?? raw.paymentPlan?.createdAt),
     dueDate: fmtDate(inv.dueDate ?? raw.installment?.dueDate),
     group: raw.group?.title,
+    courseId: course?._id ?? course?.id,
+    courseTitle: course?.titleEn ?? course?.titleAr ?? raw.paymentPlan?.courseName,
   };
 }
 

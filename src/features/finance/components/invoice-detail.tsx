@@ -4,24 +4,16 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
   Send, CheckCircle2, Printer, Download, Ban, Trash2, Paperclip,
-  GraduationCap, Mail, CalendarDays, Clock, UploadCloud, ImageIcon, FileText, X,
+  GraduationCap, Mail, CalendarDays, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Invoice } from "@/lib/db/finance";
-import { dal } from "@/lib/dal";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { InvoiceStatusBadge } from "./finance-badges";
-
-interface Receipt {
-  name: string;
-  paidOn: string;
-  url: string | null; // object URL for images; null for non-image files (e.g. PDF)
-  size: string;
-}
+import { MarkAsPaidModal, ReceiptPreview, type Receipt } from "./mark-as-paid-modal";
 
 export function InvoiceDetail({ invoice: initial }: { invoice: Invoice }) {
   const t = useTranslations("Finance");
@@ -29,48 +21,8 @@ export function InvoiceDetail({ invoice: initial }: { invoice: Invoice }) {
   const [markOpen, setMarkOpen] = React.useState(false);
   const [receipt, setReceipt] = React.useState<Receipt | null>(null);
 
-  // staged file inside the modal, before confirming
-  const [staged, setStaged] = React.useState<Receipt | null>(null);
-  const [dragOver, setDragOver] = React.useState(false);
-
   const isPaid = invoice.status === "paid";
   const terms = "Vodafone Cash";
-
-  // Clean up any object URLs we created.
-  React.useEffect(() => () => {
-    if (staged?.url) URL.revokeObjectURL(staged.url);
-  }, [staged]);
-
-  const acceptFile = (f: File | undefined | null) => {
-    if (!f) return;
-    const tooBig = f.size > 10 * 1024 * 1024;
-    if (tooBig) {
-      toast.error(t("receiptTooLarge"));
-      return;
-    }
-    const isImage = f.type.startsWith("image/");
-    setStaged({
-      name: f.name,
-      paidOn: invoice.dueDate,
-      url: isImage ? URL.createObjectURL(f) : null,
-      size: formatBytes(f.size),
-    });
-  };
-
-  const closeModal = () => {
-    setStaged(null);
-    setMarkOpen(false);
-  };
-
-  const confirmPaid = async () => {
-    if (!staged) return;
-    const res = await dal.finance.markInvoicePaid(invoice.id);
-    if (res.ok && res.data) setInvoice(res.data);
-    setReceipt(staged);
-    setStaged(null);
-    setMarkOpen(false);
-    toast.success(t("markPaidDone"));
-  };
 
   return (
     <div className="space-y-5">
@@ -146,8 +98,16 @@ export function InvoiceDetail({ invoice: initial }: { invoice: Invoice }) {
                 <tr className="border-t">
                   <td className="py-3">
                     <span className="inline-flex items-center gap-2.5">
-                      <span className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary"><GraduationCap className="size-4" /></span>
-                      {invoice.group ?? "Tuition"}
+                      {invoice.courseThumbnail ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={invoice.courseThumbnail} alt={invoice.courseTitle ?? ""} className="size-10 shrink-0 rounded-md border object-cover" />
+                      ) : (
+                        <span className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary"><GraduationCap className="size-4" /></span>
+                      )}
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{invoice.courseTitle ?? invoice.group ?? t("invTuition")}</span>
+                        {invoice.group && invoice.courseTitle && <span className="block truncate text-xs text-muted-foreground">{invoice.group}</span>}
+                      </span>
                     </span>
                   </td>
                   <td className="py-3 text-center tabular-nums">1</td>
@@ -219,60 +179,13 @@ export function InvoiceDetail({ invoice: initial }: { invoice: Invoice }) {
         </div>
       </div>
 
-      {/* Mark as Paid modal */}
-      <Dialog open={markOpen} onOpenChange={(o) => (o ? setMarkOpen(true) : closeModal())}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-lg bg-success/15 text-success"><CheckCircle2 className="size-5" /></span>
-              <span>{t("markAsPaid")}<br /><span className="text-sm font-normal text-muted-foreground">{invoice.number}</span></span>
-            </DialogTitle>
-            <DialogDescription>{t("markPaidDesc")}</DialogDescription>
-          </DialogHeader>
-
-          {staged ? (
-            <div className="space-y-3 rounded-xl border p-3">
-              <ReceiptPreview receipt={staged} className="h-48" />
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="inline-flex min-w-0 items-center gap-1.5">
-                  <Paperclip className="size-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate font-medium">{staged.name}</span>
-                  <span className="shrink-0 text-muted-foreground">({staged.size})</span>
-                </span>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-destructive" onClick={() => setStaged(null)}>
-                  <X className="size-4" />{t("removeReceipt")}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <label
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => { e.preventDefault(); setDragOver(false); acceptFile(e.dataTransfer.files?.[0]); }}
-              className={cn(
-                "grid cursor-pointer place-items-center gap-2 rounded-xl border-2 border-dashed py-10 text-center transition-colors",
-                dragOver ? "border-primary bg-primary/5" : "hover:bg-muted/30",
-              )}
-            >
-              <div className="flex items-center gap-2 text-muted-foreground"><UploadCloud className="size-7" /><ImageIcon className="size-7" /></div>
-              <p className="font-medium">{t("dropReceipt")}</p>
-              <p className="text-xs text-muted-foreground">{t("receiptFormats")}</p>
-              <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => acceptFile(e.target.files?.[0])} />
-            </label>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={closeModal}>{t("cancelInvoice")}</Button>
-            <Button
-              className="gap-1.5 bg-success text-white hover:bg-success/90 disabled:opacity-60"
-              onClick={confirmPaid}
-              disabled={!staged}
-            >
-              <CheckCircle2 className="size-4" />{t("confirmPayment")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Mark as Paid modal — requires a receipt upload before confirming */}
+      <MarkAsPaidModal
+        invoice={invoice}
+        open={markOpen}
+        onOpenChange={setMarkOpen}
+        onConfirmed={(updated, r) => { setInvoice(updated); setReceipt(r); }}
+      />
     </div>
   );
 }
@@ -295,24 +208,3 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Renders the attached receipt: the image itself, or a file tile for PDFs. */
-function ReceiptPreview({ receipt, className }: { receipt: Receipt; className?: string }) {
-  if (receipt.url) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={receipt.url} alt={receipt.name} className={cn("w-full rounded-lg border bg-muted/40 object-contain", className)} />
-    );
-  }
-  return (
-    <div className={cn("grid place-items-center gap-1.5 rounded-lg border bg-muted/40 text-muted-foreground", className)}>
-      <FileText className="size-9 opacity-50" />
-      <span className="max-w-[80%] truncate text-xs">{receipt.name}</span>
-    </div>
-  );
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
