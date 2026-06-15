@@ -33,6 +33,7 @@ export function toCourseSubcategory(raw: any): CourseSubcategory {
     ...toTaxonomyRow(raw),
     parentId: raw?.parentCategory?._id ?? raw?.parentCategory ?? raw?.parentCategoryId ?? "",
     parentName: raw?.parentCategory?.nameEn ?? raw?.parentCategory?.nameAr ?? "—",
+    slug: raw?.slug ?? "",
   };
 }
 

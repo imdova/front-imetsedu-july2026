@@ -19,6 +19,7 @@ export interface TaxonomyRow {
 export interface CourseSubcategory extends TaxonomyRow {
   parentId: string;
   parentName: string;
+  slug?: string;
 }
 
 const categories: TaxonomyRow[] = [

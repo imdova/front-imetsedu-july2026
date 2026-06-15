@@ -79,19 +79,10 @@ export function CourseForm({
   const submit = (status: "draft" | "published") =>
     form.handleSubmit(async (values) => {
       if (isEdit && courseId) {
-        const res = await dal.courses.updateCourse(courseId, {
-          titleEn: values.titleEn,
-          titleAr: values.titleAr,
-          slug: values.slug,
-          category: values.category,
-          difficulty: values.difficulty,
-          priceEGP: values.pricing.egp.price,
-          salePriceEGP: values.pricing.egp.salePrice,
-          isFeatured: values.isFeatured,
-          isBestseller: values.isBestseller,
-          isTopRated: values.isTopRated,
-          status,
-        });
+        const res = await dal.courses.updateCourseForm(
+          courseId,
+          toCoursePayload({ ...values, status }),
+        );
         if (res.ok) {
           toast.success(
             status === "published"

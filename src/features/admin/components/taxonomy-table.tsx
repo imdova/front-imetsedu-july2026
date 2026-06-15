@@ -20,7 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-type Row = TaxonomyRow & Partial<Pick<CourseSubcategory, "parentName">>;
+type Row = TaxonomyRow & Partial<Pick<CourseSubcategory, "parentName" | "parentId" | "slug">>;
 type Kind = "category" | "subcategory" | "tag";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -44,17 +44,82 @@ export function TaxonomyTable({
   const [dragIndex, setDragIndex] = React.useState<number | null>(null);
   const pageSize = 10;
 
-  // Inline add dialog (sub-categories + tags; categories use the dedicated page).
+  // Inline add/edit dialog (sub-categories + tags; categories use the dedicated page for create).
   const [addOpen, setAddOpen] = React.useState(false);
+  const [editRow, setEditRow] = React.useState<Row | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const [downloading, setDownloading] = React.useState(false);
   const [form, setForm] = React.useState({ nameEn: "", nameAr: "", slug: "", parentId: "", slugEdited: false });
 
-  const resetForm = () => setForm({ nameEn: "", nameAr: "", slug: "", parentId: "", slugEdited: false });
+  const resetForm = () => {
+    setForm({ nameEn: "", nameAr: "", slug: "", parentId: "", slugEdited: false });
+    setEditRow(null);
+  };
 
   const onAddClick = () => {
     if (addHref) { router.push(addHref); return; }
     resetForm();
     setAddOpen(true);
+  };
+
+  const openEdit = (r: Row) => {
+    setEditRow(r);
+    setForm({
+      nameEn: r.nameEn,
+      nameAr: r.nameAr,
+      slug: r.slug ?? slugify(r.nameEn),
+      parentId: r.parentId ?? "",
+      slugEdited: Boolean(r.slug),
+    });
+    setAddOpen(true);
+  };
+
+  const closeForm = () => {
+    setAddOpen(false);
+    resetForm();
+  };
+
+  const updateRow = async () => {
+    if (!editRow) return;
+    if (!form.nameEn.trim() || !form.nameAr.trim()) { toast.error(t("csNameRequired")); return; }
+    if (kind === "subcategory" && !form.parentId) { toast.error(t("csParentRequired")); return; }
+    setSaving(true);
+    let updated: Row | null = null;
+    let error: string | null = null;
+    if (kind === "tag") {
+      const res = await dal.courseTaxonomy.updateCourseTag(editRow.id, {
+        nameEn: form.nameEn.trim(),
+        nameAr: form.nameAr.trim(),
+      });
+      if (res.ok) updated = res.data;
+      else error = res.error;
+    } else if (kind === "subcategory") {
+      const res = await dal.courseTaxonomy.updateCourseSubcategory(editRow.id, {
+        nameEn: form.nameEn.trim(),
+        nameAr: form.nameAr.trim(),
+        slug: form.slug.trim() || slugify(form.nameEn),
+        parentCategory: form.parentId,
+      });
+      if (res.ok) {
+        const parentName = parentCategories.find((p) => p.id === form.parentId)?.name;
+        updated = parentName ? { ...res.data, parentName } : res.data;
+      } else error = res.error;
+    } else {
+      const res = await dal.courseTaxonomy.updateCourseCategory(editRow.id, {
+        nameEn: form.nameEn.trim(),
+        nameAr: form.nameAr.trim(),
+      });
+      if (res.ok) updated = res.data;
+      else error = res.error;
+    }
+    setSaving(false);
+    if (updated) {
+      setRows((p) => p.map((r) => (r.id === editRow.id ? { ...r, ...updated } : r)));
+      toast.success(t("csUpdated", { name: updated.nameEn }));
+      closeForm();
+    } else if (error) {
+      toast.error(error);
+    }
   };
 
   const createRow = async () => {
@@ -83,8 +148,7 @@ export function TaxonomyTable({
     if (created) {
       setRows((p) => [created as Row, ...p]);
       toast.success(t("csCreated", { name: created.nameEn }));
-      setAddOpen(false);
-      resetForm();
+      closeForm();
     } else if (error) {
       toast.error(error);
     }
@@ -94,13 +158,89 @@ export function TaxonomyTable({
   const pageRows = filtered.slice(page * pageSize, page * pageSize + pageSize);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
 
-  const toggle = (id: string) => {
-    setRows((p) => p.map((r) => (r.id === id ? { ...r, active: !r.active } : r)));
-    toast.success(t("csStatusToggled"));
+  const toggle = async (id: string) => {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    const next = !row.active;
+    const prev = rows;
+    setRows((p) => p.map((r) => (r.id === id ? { ...r, active: next } : r)));
+    let res;
+    if (kind === "tag") {
+      res = await dal.courseTaxonomy.toggleCourseTagActive(id);
+    } else if (kind === "subcategory") {
+      res = await dal.courseTaxonomy.updateCourseSubcategory(id, { isActive: next });
+    } else {
+      res = await dal.courseTaxonomy.updateCourseCategory(id, { isActive: next });
+    }
+    if (res.ok) {
+      if (kind === "subcategory") {
+        const sub = res.data as CourseSubcategory;
+        const parentName = parentCategories.find((p) => p.id === sub.parentId)?.name ?? row.parentName;
+        setRows((p) => p.map((r) => (r.id === id ? { ...sub, parentName } : r)));
+      } else {
+        setRows((p) => p.map((r) => (r.id === id ? { ...r, ...res.data } : r)));
+      }
+      toast.success(t("csStatusToggled"));
+    } else {
+      setRows(prev);
+      toast.error(res.error);
+    }
   };
-  const duplicate = (r: Row) => {
-    setRows((p) => [{ ...r, id: `${r.id}_copy`, nameEn: `${r.nameEn} (copy)` }, ...p]);
-    toast.success(t("csDuplicated", { name: r.nameEn }));
+
+  const duplicate = async (r: Row) => {
+    let created: Row | null = null;
+    let error: string | null = null;
+    if (kind === "tag") {
+      const res = await dal.courseTaxonomy.createCourseTag({
+        nameEn: `${r.nameEn} (copy)`,
+        nameAr: `${r.nameAr} (copy)`,
+        isActive: r.active,
+      });
+      if (res.ok) created = res.data;
+      else error = res.error;
+    } else if (kind === "subcategory") {
+      const res = await dal.courseTaxonomy.duplicateCourseSubcategory(r.id);
+      if (res.ok) {
+        const parentName = parentCategories.find((p) => p.id === res.data.parentId)?.name ?? r.parentName;
+        created = { ...res.data, parentName };
+      } else error = res.error;
+    } else {
+      const res = await dal.courseTaxonomy.duplicateCourseCategory(r.id);
+      if (res.ok) created = res.data;
+      else error = res.error;
+    }
+    if (created) {
+      setRows((p) => [created as Row, ...p]);
+      toast.success(t("csDuplicated", { name: r.nameEn }));
+    } else if (error) {
+      toast.error(error);
+    }
+  };
+
+  const download = async () => {
+    if (kind === "tag") {
+      const header = "nameEn,nameAr,rank,courses,active\n";
+      const body = rows.map((r) =>
+        `"${r.nameEn.replace(/"/g, '""')}","${r.nameAr.replace(/"/g, '""')}",${r.rank},${r.courses},${r.active}`,
+      ).join("\n");
+      const blob = new Blob([header + body], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tags.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t("csvExported"));
+      return;
+    }
+    setDownloading(true);
+    const call = kind === "subcategory"
+      ? dal.courseTaxonomy.downloadCourseSubcategories
+      : dal.courseTaxonomy.downloadCourseCategories;
+    const res = await call();
+    setDownloading(false);
+    if (res.ok) toast.success(t("csDownloadStarted"));
+    else toast.error(res.error);
   };
   const remove = async (r: Row) => {
     const prev = rows;
@@ -118,17 +258,31 @@ export function TaxonomyTable({
     }
   };
 
-  const onDrop = (targetId: string) => {
+  const onDrop = async (targetId: string) => {
     if (dragIndex === null) return;
     const dragged = filtered[dragIndex];
     const targetIdx = rows.findIndex((r) => r.id === targetId);
     const fromIdx = rows.findIndex((r) => r.id === dragged.id);
     if (fromIdx === -1 || targetIdx === -1 || fromIdx === targetIdx) return;
+    const prev = rows;
     const next = [...rows];
     next.splice(targetIdx, 0, next.splice(fromIdx, 1)[0]);
-    setRows(next.map((r, i) => ({ ...r, rank: i })));
+    const reordered = next.map((r, i) => ({ ...r, rank: i }));
+    setRows(reordered);
     setDragIndex(null);
-    toast.success(t("csReordered"));
+    if (kind === "tag") {
+      toast.success(t("csReordered"));
+      return;
+    }
+    const newRank = reordered.findIndex((r) => r.id === dragged.id);
+    const res = kind === "subcategory"
+      ? await dal.courseTaxonomy.updateCourseSubcategory(dragged.id, { priority: newRank })
+      : await dal.courseTaxonomy.updateCourseCategory(dragged.id, { rank: newRank });
+    if (res.ok) toast.success(t("csReordered"));
+    else {
+      setRows(prev);
+      toast.error(res.error);
+    }
   };
 
   return (
@@ -138,7 +292,10 @@ export function TaxonomyTable({
           {allLabel}<span className="grid size-6 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground tabular-nums">{rows.length}</span>
         </h2>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-1.5"><Download className="size-4" />{t("csDownload")}</Button>
+          <Button variant="outline" className="gap-1.5" onClick={download} disabled={downloading}>
+            {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+            {t("csDownload")}
+          </Button>
           <Button className="gap-1.5" onClick={onAddClick}>
             <Plus className="size-4" />{t("csAddNew")}
           </Button>
@@ -195,7 +352,7 @@ export function TaxonomyTable({
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="size-8 text-primary" onClick={() => toast.info(t("csEdit"))}><Pencil className="size-4" /></Button>
+                    <Button variant="ghost" size="icon" className="size-8 text-primary" onClick={() => openEdit(r)}><Pencil className="size-4" /></Button>
                     <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => remove(r)}><Trash2 className="size-4" /></Button>
                     <Button variant="ghost" size="icon" className="size-8 text-primary" onClick={() => duplicate(r)}><Copy className="size-4" /></Button>
                   </div>
@@ -217,10 +374,10 @@ export function TaxonomyTable({
         </div>
       </div>
 
-      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) resetForm(); }}>
+      <Dialog open={addOpen} onOpenChange={(o) => { if (!o) closeForm(); else setAddOpen(true); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("csAddNew")}</DialogTitle>
+            <DialogTitle>{editRow ? t("csEdit") : t("csAddNew")}</DialogTitle>
             <DialogDescription>{allLabel}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -256,10 +413,10 @@ export function TaxonomyTable({
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={saving}>{t("catReset")}</Button>
-            <Button onClick={createRow} disabled={saving} className="gap-1.5">
+            <Button variant="outline" onClick={closeForm} disabled={saving}>{t("catReset")}</Button>
+            <Button onClick={editRow ? updateRow : createRow} disabled={saving} className="gap-1.5">
               {saving && <Loader2 className="size-4 animate-spin" />}
-              {t("create")}
+              {editRow ? t("csSaveChanges") : t("create")}
             </Button>
           </DialogFooter>
         </DialogContent>

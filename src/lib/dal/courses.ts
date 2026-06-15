@@ -11,7 +11,9 @@ import { ok, fail, toMessage, type Result } from "@integration/lib/api-client";
 import * as coursesSvc from "@integration/services/courses";
 import * as db from "@/lib/db/courses";
 import { mapCourse } from "@/lib/courses/map-course";
+import { mapCourseToForm } from "@/lib/courses/map-course-form";
 import type { CourseFormData, CourseRow } from "@/types";
+import type { CourseFormValues } from "@/validations/course-schema";
 
 /** LIVE: courses from GET /courses (public), mapped to the UI shape. */
 export async function fetchCourses(
@@ -52,6 +54,20 @@ const unwrap = (d: unknown): unknown =>
     ? (d as { data: unknown }).data
     : d;
 
+/** LIVE: single course mapped to the *edit form's* view-model (all fields). */
+export async function fetchCourseForEdit(
+  id: string,
+): Promise<Result<Partial<CourseFormValues> | null>> {
+  const res = await coursesSvc.getCourseById(id);
+  if (!res.ok) return res;
+  try {
+    const raw = unwrap(res.data);
+    return ok(raw ? mapCourseToForm(raw) : null);
+  } catch (err) {
+    return fail(toMessage(err, "Failed to load course"));
+  }
+}
+
 /** LIVE: create a course via POST /courses. The form payload already matches the
  * backend DTO; form-only fields are dropped so strict validation doesn't reject. */
 export async function createCourse(
@@ -88,6 +104,75 @@ export async function updateCourse(
   patch: Partial<CourseRow>,
 ): Promise<Result<CourseRow | null>> {
   const res = await coursesSvc.updateCourse(id, toUpdatePayload(patch));
+  if (!res.ok) return res;
+  try {
+    return ok(res.data ? mapCourse(unwrap(res.data)) : null);
+  } catch (err) {
+    return fail(toMessage(err, "Failed to update course"));
+  }
+}
+
+/** Map the full form payload to a backend-whitelisted PATCH body. Strips
+ * client-only ids (modules/lessons) and form-only fields (difficulty, variables)
+ * that the strict (`forbidNonWhitelisted`) backend DTO would otherwise reject. */
+function toFullUpdatePayload(d: CourseFormData): Record<string, unknown> {
+  const VALID_LESSON = ["video", "quiz"] as const;
+  return {
+    titleAr: d.titleAr,
+    titleEn: d.titleEn,
+    slug: d.slug,
+    category: d.category || undefined,
+    subcategory: d.subcategory || undefined,
+    descriptionAr: d.descriptionAr,
+    descriptionEn: d.descriptionEn,
+    whoCanAttendAr: d.whoCanAttendAr,
+    whoCanAttendEn: d.whoCanAttendEn,
+    whatYouWillLearnAr: d.whatYouWillLearnAr,
+    whatYouWillLearnEn: d.whatYouWillLearnEn,
+    pricing: d.pricing,
+    image: d.image,
+    gallery: d.gallery,
+    students: d.students,
+    lectures: d.lectures,
+    duration: d.duration,
+    tags: d.tags,
+    seo: d.seo,
+    instructorIds: d.instructorIds,
+    modules: (d.modules ?? []).map((m) => ({
+      titleAr: m.titleAr,
+      titleEn: m.titleEn,
+      order: m.order,
+      lessons: (m.lessons ?? []).map((l) => ({
+        lesson_type: (VALID_LESSON as readonly string[]).includes(l.lesson_type)
+          ? l.lesson_type
+          : "video",
+        titleAr: l.titleAr,
+        titleEn: l.titleEn,
+        order: l.order,
+        videoUrl: l.videoUrl || undefined,
+        isFreePreview: l.isFreePreview,
+        duration: l.duration || undefined,
+      })),
+    })),
+    textReviews: d.textReviews,
+    videosReviews: d.videosReviews,
+    imagesReviews: d.imagesReviews,
+    previewVideoUrl: d.previewVideoUrl || undefined,
+    courseOverview: d.courseOverview || undefined,
+    status: d.status,
+    isActive: d.isActive,
+    isFeatured: d.isFeatured,
+    isBestseller: d.isBestseller,
+    isTopRated: d.isTopRated,
+  };
+}
+
+/** LIVE: update a course from the full edit form via PATCH /courses/:id. */
+export async function updateCourseForm(
+  id: string,
+  data: CourseFormData,
+): Promise<Result<CourseRow | null>> {
+  const res = await coursesSvc.updateCourse(id, toFullUpdatePayload(data));
   if (!res.ok) return res;
   try {
     return ok(res.data ? mapCourse(unwrap(res.data)) : null);

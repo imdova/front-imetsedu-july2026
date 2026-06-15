@@ -1751,6 +1751,8 @@
     "csDuplicated": "تم نسخ {name}",
     "csDeleted": "تم حذف {name}",
     "csCreated": "تم إنشاء {name}",
+    "csUpdated": "تم تحديث {name}",
+    "csDownloadStarted": "بدأ التحميل",
     "csNameRequired": "الاسم بالإنجليزية والعربية مطلوب",
     "csParentRequired": "اختر فئة رئيسية",
     "csReordered": "تم تحديث الترتيب",

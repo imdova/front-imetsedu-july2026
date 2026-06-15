@@ -4,9 +4,9 @@ import * as categoriesSvc from "@integration/services/categories";
 import * as subCategoriesSvc from "@integration/services/sub-categories";
 import * as tagsSvc from "@integration/services/tags";
 import * as courseVariablesSvc from "@integration/services/course-variables";
-import type { CreateCategoryInput } from "@integration/services/categories";
-import type { CreateSubCategoryInput } from "@integration/services/sub-categories";
-import type { CreateTagInput } from "@integration/services/tags";
+import type { CreateCategoryInput, UpdateCategoryInput } from "@integration/services/categories";
+import type { CreateSubCategoryInput, UpdateSubCategoryInput } from "@integration/services/sub-categories";
+import type { CreateTagInput, UpdateTagInput } from "@integration/services/tags";
 import type { TaxonomyRow, CourseSubcategory, CourseVariable } from "@/lib/db/course-taxonomy";
 import { toTaxonomyRow, toCourseSubcategory, toCourseVariable } from "@/lib/courses/map-taxonomy";
 
@@ -73,6 +73,82 @@ export const createCourseTag = async (
     return fail(toMessage(err, "Failed to create tag"));
   }
 };
+
+/** LIVE: update taxonomy entries (admin only). */
+export const updateCourseCategory = async (
+  id: string,
+  input: UpdateCategoryInput,
+): Promise<Result<TaxonomyRow>> => {
+  const res = await categoriesSvc.updateCategory(id, input);
+  if (!res.ok) return res;
+  try {
+    return ok(toTaxonomyRow(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to update category"));
+  }
+};
+
+export const updateCourseSubcategory = async (
+  id: string,
+  input: UpdateSubCategoryInput,
+): Promise<Result<CourseSubcategory>> => {
+  const res = await subCategoriesSvc.updateSubCategory(id, input);
+  if (!res.ok) return res;
+  try {
+    return ok(toCourseSubcategory(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to update sub-category"));
+  }
+};
+
+export const updateCourseTag = async (
+  id: string,
+  input: UpdateTagInput,
+): Promise<Result<TaxonomyRow>> => {
+  const res = await tagsSvc.updateTag(id, input);
+  if (!res.ok) return res;
+  try {
+    return ok(toTaxonomyRow(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to update tag"));
+  }
+};
+
+/** LIVE: duplicate taxonomy entries (admin only). */
+export const duplicateCourseCategory = async (id: string): Promise<Result<TaxonomyRow>> => {
+  const res = await categoriesSvc.duplicateCategory(id);
+  if (!res.ok) return res;
+  try {
+    return ok(toTaxonomyRow(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to duplicate category"));
+  }
+};
+
+export const duplicateCourseSubcategory = async (id: string): Promise<Result<CourseSubcategory>> => {
+  const res = await subCategoriesSvc.duplicateSubCategory(id);
+  if (!res.ok) return res;
+  try {
+    return ok(toCourseSubcategory(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to duplicate sub-category"));
+  }
+};
+
+/** LIVE: toggle tag active status (admin only). */
+export const toggleCourseTagActive = async (id: string): Promise<Result<TaxonomyRow>> => {
+  const res = await tagsSvc.toggleTagStatus(id);
+  if (!res.ok) return res;
+  try {
+    return ok(toTaxonomyRow(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to toggle tag status"));
+  }
+};
+
+/** LIVE: download taxonomy spreadsheets (admin only). */
+export const downloadCourseCategories = () => categoriesSvc.downloadCategories();
+export const downloadCourseSubcategories = () => subCategoriesSvc.downloadSubCategories();
 
 /** LIVE: delete taxonomy entries (admin only). */
 export const deleteCourseCategory = (id: string) => categoriesSvc.deleteCategory(id);

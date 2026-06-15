@@ -1751,6 +1751,8 @@
     "csDuplicated": "{name} duplicated",
     "csDeleted": "{name} deleted",
     "csCreated": "{name} created",
+    "csUpdated": "{name} updated",
+    "csDownloadStarted": "Download started",
     "csNameRequired": "English and Arabic names are required",
     "csParentRequired": "Select a parent category",
     "csReordered": "Order updated",
