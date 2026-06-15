@@ -32,6 +32,8 @@ export interface Invoice {
   currency: Currency;
   status: InvoiceStatus;
   issuedDate: string;
+  /** ISO issue date for client-side date-range filtering. */
+  issuedAtISO?: string;
   dueDate: string;
   group?: string;
   /** The course selected in the installment plan (for the invoice line item). */

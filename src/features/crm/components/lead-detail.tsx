@@ -107,12 +107,14 @@ export function LeadDetail({
   assignablePipelines = [],
   pipelineStages = [],
   courseOptions = [],
+  groupOptions = [],
 }: {
   lead: Lead;
   stages: PipelineStage[];
   assignablePipelines?: { id: string; title: string }[];
   pipelineStages?: PipelineStageList[];
   courseOptions?: { value: string; label: string }[];
+  groupOptions?: { value: string; label: string }[];
 }) {
   const t = useTranslations("Crm");
   const locale = useLocale();
@@ -126,35 +128,54 @@ export function LeadDetail({
   const [fuOpen, setFuOpen] = React.useState(false);
   const [fuNote, setFuNote] = React.useState("");
   const [fuDate, setFuDate] = React.useState("");
+  const [fuTime, setFuTime] = React.useState("");
   const [fuSaving, setFuSaving] = React.useState(false);
+  // Completing a follow-up opens a comment dialog (holds the target id).
+  const [doneFu, setDoneFu] = React.useState<string | null>(null);
+  const [doneNote, setDoneNote] = React.useState("");
+  const [doneSaving, setDoneSaving] = React.useState(false);
   // A pending gated stage move, held while its qualification modal is open.
-  const [pendingStage, setPendingStage] = React.useState<{ targetStage: GatedStage; run: () => Promise<void> } | null>(null);
+  const [pendingStage, setPendingStage] = React.useState<{ targetStage: GatedStage; run: (data?: { groupId?: string }) => Promise<void> } | null>(null);
+
+  /** Add the lead to a group's roster (so it appears in the group's student list). */
+  const enrollInGroup = async (groupId: string) => {
+    const r = await dal.groups.addLeadToGroup(groupId, lead.id);
+    if (r.ok) toast.success(t("addedToGroup"));
+    else toast.error(r.error);
+  };
 
   /** Schedule a new follow-up — appended to lead.data.followUps via PATCH. */
   const addFollowUp = async () => {
     if (!fuDate) { toast.error(t("fuDateRequired")); return; }
     setFuSaving(true);
-    const label = new Date(fuDate).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric", year: "numeric" });
+    const dueDateTime = fuTime ? `${fuDate}T${fuTime}` : fuDate;
+    const label = new Date(dueDateTime).toLocaleString(
+      locale === "ar" ? "ar-EG" : "en-US",
+      fuTime
+        ? { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }
+        : { month: "short", day: "numeric", year: "numeric" },
+    );
     const followUps = [
       ...lead.followUps,
-      { id: createId("fu"), note: fuNote.trim(), date: label, dueDate: fuDate, status: "upcoming" as const },
+      { id: createId("fu"), note: fuNote.trim(), date: label, dueDate: dueDateTime, status: "upcoming" as const },
     ];
     const res = await dal.crm.updateLeadFields(lead.id, { dataPatch: { followUps } });
     setFuSaving(false);
     if (res.ok) {
       setLead(res.data);
-      setFuOpen(false); setFuNote(""); setFuDate("");
+      setFuOpen(false); setFuNote(""); setFuDate(""); setFuTime("");
       toast.success(t("fuAdded"));
     } else {
       toast.error(res.error);
     }
   };
 
-  const doMoveStage = async (stageKey: string) => {
+  const doMoveStage = async (stageKey: string, groupId?: string) => {
     const res = await dal.crm.updateLeadStage(lead.id, stageKey);
     if (res.ok && res.data) {
       setLead(res.data);
       toast.success(t("stageMoved", { stage: tr(STAGE_LABEL_KEY[stageKey]) }));
+      if (stageKey === "enrolled" && groupId) await enrollInGroup(groupId);
     } else if (!res.ok) {
       toast.error(res.error);
     }
@@ -162,7 +183,7 @@ export function LeadDetail({
   // Gated stages (contacted/enrolled/lost) open their qualification modal first,
   // mirroring the pipeline board; other stages move immediately.
   const moveStage = (stageKey: string) => {
-    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: () => doMoveStage(stageKey) });
+    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: (data) => doMoveStage(stageKey, data?.groupId) });
     else void doMoveStage(stageKey);
   };
 
@@ -212,25 +233,39 @@ export function LeadDetail({
     else if (!res.ok) toast.error(res.error);
   };
 
-  const doMoveStageInPipeline = async (pipelineId: string, stageKey: string, stageName: string) => {
+  const doMoveStageInPipeline = async (pipelineId: string, stageKey: string, stageName: string, groupId?: string) => {
     const res = await dal.crm.setLeadStageInPipeline(lead.id, pipelineId, stageKey);
     if (res.ok && res.data) {
       setLead(res.data);
       toast.success(t("stageMoved", { stage: stageName }));
+      if (stageKey === "enrolled" && groupId) await enrollInGroup(groupId);
     } else if (!res.ok) {
       toast.error(res.error);
     }
   };
   const moveStageInPipeline = (pipelineId: string, stageKey: string, stageName: string) => {
-    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: () => doMoveStageInPipeline(pipelineId, stageKey, stageName) });
+    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: (data) => doMoveStageInPipeline(pipelineId, stageKey, stageName, data?.groupId) });
     else void doMoveStageInPipeline(pipelineId, stageKey, stageName);
   };
 
-  const completeFollowUp = async (id: string) => {
-    const followUps = lead.followUps.map((f) => (f.id === id ? { ...f, status: "done" as const } : f));
+  /** Complete a follow-up: log it to the activity timeline (server-stamped
+   * date + time) with its comment, then remove it from the follow-up list. */
+  const completeFollowUp = async () => {
+    if (!doneFu) return;
+    const target = lead.followUps.find((f) => f.id === doneFu);
+    setDoneSaving(true);
+    const comment = doneNote.trim();
+    const text = comment ? t("fuDoneActivity", { note: comment }) : t("fuDoneActivityNoNote");
+    // 1. Append a timeline activity (kept forever, server-timestamped).
+    const a = await dal.crm.addLeadActivity(lead.id, text, target?.note || undefined);
+    if (!a.ok) { setDoneSaving(false); toast.error(a.error); return; }
+    // 2. Remove the follow-up from the alerts list (it now lives in the timeline).
+    const followUps = lead.followUps.filter((f) => f.id !== doneFu);
     const res = await dal.crm.updateLeadFields(lead.id, { dataPatch: { followUps } });
+    setDoneSaving(false);
     if (res.ok) {
       setLead(res.data);
+      setDoneFu(null); setDoneNote("");
       toast.success(t("doneBtn"));
     } else {
       toast.error(res.error);
@@ -243,6 +278,10 @@ export function LeadDetail({
   const pipelineMoves = lead.activities.filter((a) => a.kind === "stage");
   // Everything else (notes, calls, emails, form events) goes in the timeline.
   const timelineActivities = lead.activities.filter((a) => a.kind !== "stage");
+  // Resolve a course-of-interest id to its title (the lead carries ids; names
+  // come from the populated list or the page's course catalogue).
+  const courseLabel = (id: string, i: number) =>
+    courseOptions.find((o) => o.value === id)?.label ?? lead.courseNames?.[i] ?? id;
 
   return (
     <div className="space-y-5">
@@ -331,8 +370,12 @@ export function LeadDetail({
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("courseInterest")}</p>
                     {lead.coursesOfInterest.length ? (
-                      <div className="rounded-xl bg-gradient-to-r from-primary to-[oklch(0.55_0.2_295)] px-4 py-3 text-sm font-medium text-white">
-                        <GraduationCap className="mb-1 size-4" />{lead.coursesOfInterest[0]}
+                      <div className="space-y-2">
+                        {lead.coursesOfInterest.map((cid, i) => (
+                          <div key={cid} className="rounded-xl bg-gradient-to-r from-primary to-[oklch(0.55_0.2_295)] px-4 py-3 text-sm font-medium text-white">
+                            <GraduationCap className="mb-1 size-4" />{courseLabel(cid, i)}
+                          </div>
+                        ))}
                       </div>
                     ) : <p className="text-sm text-muted-foreground">—</p>}
                   </div>
@@ -429,9 +472,14 @@ export function LeadDetail({
                       </Badge>
                       <p className="text-sm font-medium">{f.date}</p>
                       <p className="text-sm text-muted-foreground">{f.note || t("noNote")}</p>
+                      {f.doneNote && (
+                        <p className="rounded-lg bg-success/8 px-2.5 py-1.5 text-xs text-success">
+                          <span className="font-semibold">{t("fuOutcome")}:</span> {f.doneNote}
+                        </p>
+                      )}
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info(t("updateLabel"))}><FileText className="size-3.5" />{t("updateLabel")}</Button>
-                        <Button variant="outline" size="sm" className="gap-1.5 text-success" disabled={f.status === "done"} onClick={() => completeFollowUp(f.id)}><CheckCircle2 className="size-3.5" />{t("doneBtn")}</Button>
+                        <Button variant="outline" size="sm" className="gap-1.5 text-success" disabled={f.status === "done"} onClick={() => { setDoneFu(f.id); setDoneNote(f.doneNote ?? ""); }}><CheckCircle2 className="size-3.5" />{t("doneBtn")}</Button>
                       </div>
                     </div>
                   ))}
@@ -443,7 +491,7 @@ export function LeadDetail({
 
         {/* ───── Payment ───── */}
         <TabsContent value="payment" className="mt-5">
-          <LeadPaymentTab leadName={lead.fullName} leadId={lead.id} plan={plan} pct={pct} onUpdated={setLead} courseOptions={courseOptions} />
+          <LeadPaymentTab leadName={lead.fullName} leadId={lead.id} plans={lead.paymentPlans ?? (plan ? [plan] : [])} onUpdated={setLead} courseOptions={courseOptions} />
         </TabsContent>
 
         {/* ───── Certificate ───── */}
@@ -489,16 +537,22 @@ export function LeadDetail({
       </Tabs>
 
       {/* Add / schedule follow-up */}
-      <Dialog open={fuOpen} onOpenChange={(o) => { setFuOpen(o); if (!o) { setFuNote(""); setFuDate(""); } }}>
+      <Dialog open={fuOpen} onOpenChange={(o) => { setFuOpen(o); if (!o) { setFuNote(""); setFuDate(""); setFuTime(""); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("addFollowUp")}</DialogTitle>
             <DialogDescription>{t("fuModalHint")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>{t("fuDate")} <span className="text-destructive">*</span></Label>
-              <Input type="date" value={fuDate} onChange={(e) => setFuDate(e.target.value)} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{t("fuDate")} <span className="text-destructive">*</span></Label>
+                <Input type="date" value={fuDate} onChange={(e) => setFuDate(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("fuTime")}</Label>
+                <Input type="time" value={fuTime} onChange={(e) => setFuTime(e.target.value)} />
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>{t("fuNote")}</Label>
@@ -514,12 +568,33 @@ export function LeadDetail({
         </DialogContent>
       </Dialog>
 
+      {/* Mark follow-up done — capture an optional comment */}
+      <Dialog open={!!doneFu} onOpenChange={(o) => { if (!o) { setDoneFu(null); setDoneNote(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("fuDoneTitle")}</DialogTitle>
+            <DialogDescription>{t("fuDoneHint")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label>{t("fuDoneComment")}</Label>
+            <Textarea rows={3} value={doneNote} onChange={(e) => setDoneNote(e.target.value)} placeholder={t("fuDoneCommentPh")} />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDoneFu(null)} disabled={doneSaving}>{t("cancel")}</Button>
+            <Button onClick={completeFollowUp} disabled={doneSaving} className="gap-1.5 bg-success text-white hover:bg-success/90">
+              {doneSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}{t("fuDoneConfirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Stage-transition qualification modal (same as the pipeline board) */}
       {pendingStage && (
         <LeadTransitionModal
           lead={lead}
           targetStage={pendingStage.targetStage}
-          onConfirm={() => { void pendingStage.run(); setPendingStage(null); }}
+          groupOptions={groupOptions}
+          onConfirm={(data) => { void pendingStage.run(data); setPendingStage(null); }}
           onCancel={() => setPendingStage(null)}
         />
       )}

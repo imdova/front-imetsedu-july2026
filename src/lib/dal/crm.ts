@@ -50,7 +50,6 @@ export const fetchLeads = async (filters: db.LeadFilters = {}): Promise<Result<d
     search: f(filters.search),
     stage: filters.stage && filters.stage !== "all" ? (REVERSE_STAGE[filters.stage] ?? filters.stage) : undefined,
     priority: f(filters.priority),
-    source: f(filters.source),
     counselor: f(filters.counselorId),
     pipeline: f(filters.pipeline),
     dateRange: f(filters.dateRange),
@@ -58,7 +57,9 @@ export const fetchLeads = async (filters: db.LeadFilters = {}): Promise<Result<d
   if (!res.ok) return res;
   try {
     let rows = (Array.isArray(res.data?.data) ? res.data.data : []).map(mapLead);
-    // Client-side narrowing for fields the backend can't query.
+    // Client-side narrowing for fields the backend can't query (or that it
+    // enum-validates, like `source`, which would reject custom CRM sources).
+    if (f(filters.source)) rows = rows.filter((r) => r.source === filters.source);
     if (f(filters.specialty)) rows = rows.filter((r) => r.specialty === filters.specialty);
     if (f(filters.country)) rows = rows.filter((r) => r.country === filters.country);
     if (f(filters.courseId)) rows = rows.filter((r) => r.coursesOfInterest.includes(filters.courseId!));
@@ -210,6 +211,52 @@ export const updateLeadFields = async (
     return ok(mapLead(res.data));
   } catch (err) {
     return fail(toMessage(err, "Failed to update lead"));
+  }
+};
+
+/** LIVE: add or update ONE payment plan in `lead.data.paymentPlans` without
+ * disturbing the others. Reads the lead's current raw plans first, then writes
+ * the full array back (so a lead can carry several plans). Pass `index` to edit
+ * an existing plan, omit it to append a new one. */
+export const savePaymentPlan = async (
+  leadId: string,
+  plan: Record<string, unknown>,
+  index?: number,
+): Promise<Result<db.Lead>> => {
+  const cur = await leadsSvc.getLeadById(leadId);
+  const data = (cur.ok && (cur.data as { data?: Record<string, unknown> })?.data) || {};
+  const plans: unknown[] = Array.isArray((data as { paymentPlans?: unknown[] }).paymentPlans)
+    ? [...(data as { paymentPlans: unknown[] }).paymentPlans]
+    : [];
+  if (typeof index === "number" && index >= 0 && index < plans.length) plans[index] = plan;
+  else plans.push(plan);
+  const res = await leadsSvc.updateLead(leadId, { data: { ...data, paymentPlans: plans } } as never);
+  if (!res.ok) return res;
+  try {
+    return ok(mapLead(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to save payment plan"));
+  }
+};
+
+/** LIVE: remove ONE payment plan (by index) from `lead.data.paymentPlans`. */
+export const deletePaymentPlan = async (
+  leadId: string,
+  index: number,
+): Promise<Result<db.Lead>> => {
+  const cur = await leadsSvc.getLeadById(leadId);
+  const data = (cur.ok && (cur.data as { data?: Record<string, unknown> })?.data) || {};
+  const plans: unknown[] = Array.isArray((data as { paymentPlans?: unknown[] }).paymentPlans)
+    ? [...(data as { paymentPlans: unknown[] }).paymentPlans]
+    : [];
+  if (index < 0 || index >= plans.length) return fail("Payment plan not found");
+  plans.splice(index, 1);
+  const res = await leadsSvc.updateLead(leadId, { data: { ...data, paymentPlans: plans } } as never);
+  if (!res.ok) return res;
+  try {
+    return ok(mapLead(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to delete payment plan"));
   }
 };
 

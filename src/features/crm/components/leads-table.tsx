@@ -46,14 +46,26 @@ interface Props {
   counselors: Counselor[];
   pipelines: Option[];
   courseOptions: Option[];
+  /** Real lead-source options from CRM settings (falls back to seeds). */
+  sourceOptions?: string[];
   basePath: string;
 }
 
-const RANGES = ["today", "yesterday", "7_days", "month", "year"] as const;
+const RANGES = [
+  "today", "yesterday", "this_week", "last_week", "this_month", "last_month", "3_months", "custom",
+] as const;
 type Range = (typeof RANGES)[number] | "all";
 
+/** Monday-start week boundary for a given date (local time). */
+function startOfWeek(d: Date): number {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dow = (x.getDay() + 6) % 7; // 0 = Monday
+  x.setDate(x.getDate() - dow);
+  return x.getTime();
+}
+
 /** Client-side date-range test against the lead's ISO created timestamp. */
-function inRange(iso: string | undefined, range: Range): boolean {
+function inRange(iso: string | undefined, range: Range, custom?: { from: string; to: string }): boolean {
   if (range === "all") return true;
   if (!iso) return false;
   const d = new Date(iso);
@@ -61,18 +73,27 @@ function inRange(iso: string | undefined, range: Range): boolean {
   const now = new Date();
   const day = 86_400_000;
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const sow = startOfWeek(now);
   const ts = d.getTime();
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   switch (range) {
     case "today": return ts >= startOfToday;
     case "yesterday": return ts >= startOfToday - day && ts < startOfToday;
-    case "7_days": return ts >= startOfToday - 6 * day;
-    case "month": return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    case "year": return d.getFullYear() === now.getFullYear();
+    case "this_week": return ts >= sow;
+    case "last_week": return ts >= sow - 7 * day && ts < sow;
+    case "this_month": return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    case "last_month": return d.getFullYear() === lastMonth.getFullYear() && d.getMonth() === lastMonth.getMonth();
+    case "3_months": return ts >= startOfToday - 89 * day;
+    case "custom": {
+      const from = custom?.from ? new Date(`${custom.from}T00:00:00`).getTime() : -Infinity;
+      const to = custom?.to ? new Date(`${custom.to}T23:59:59`).getTime() : Infinity;
+      return ts >= from && ts <= to;
+    }
     default: return true;
   }
 }
 
-export function LeadsTable({ initialData, stages, counselors, pipelines, courseOptions, basePath }: Props) {
+export function LeadsTable({ initialData, stages, counselors, pipelines, courseOptions, sourceOptions, basePath }: Props) {
   const t = useTranslations("Crm");
   const tc = useTranslations("Common");
   const router = useRouter();
@@ -90,6 +111,8 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   const [courseId, setCourseId] = React.useState("all");
   const [pipeline, setPipeline] = React.useState("all");
   const [range, setRange] = React.useState<Range>("all");
+  const [customFrom, setCustomFrom] = React.useState("");
+  const [customTo, setCustomTo] = React.useState("");
   const [quickTab, setQuickTab] = React.useState<"all" | "unassigned" | "overdue" | "today">("all");
 
   // Distinct specialty / country values present in the data (so filter values
@@ -102,6 +125,13 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
     () => Array.from(new Set(initialData.map((r) => r.country).filter(Boolean))).map((c) => ({ value: c, label: c })),
     [initialData],
   );
+  // Real source options from CRM settings, unioned with any sources present on
+  // the leads (so every value in the table is filterable). Falls back to seeds.
+  const sourceFilterOptions = React.useMemo(() => {
+    const base = sourceOptions?.length ? sourceOptions : SOURCES;
+    const present = initialData.map((r) => r.source).filter(Boolean) as string[];
+    return Array.from(new Set([...base, ...present])).map((s) => ({ value: s, label: s }));
+  }, [sourceOptions, initialData]);
 
   const counts = React.useMemo(() => ({
     all: rows.length,
@@ -111,12 +141,12 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   }), [rows]);
 
   const displayRows = React.useMemo(() => {
-    let r = rows.filter((row) => inRange(row.createdAtISO, range));
+    let r = rows.filter((row) => inRange(row.createdAtISO, range, { from: customFrom, to: customTo }));
     if (quickTab === "unassigned") r = r.filter((row) => !row.counselorId);
     else if (quickTab === "overdue") r = r.filter((row) => row.followUps.some((f) => f.status === "overdue"));
     else if (quickTab === "today") r = r.filter((row) => row.followUps.some((f) => f.status === "today"));
     return r;
-  }, [rows, quickTab, range]);
+  }, [rows, quickTab, range, customFrom, customTo]);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -239,6 +269,13 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
             {t(`range_${r}` as never)}
           </button>
         ))}
+        {range === "custom" && (
+          <div className="flex items-center gap-1.5">
+            <Input type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="h-9 w-auto" aria-label={t("rangeFrom")} />
+            <span className="text-sm text-muted-foreground">{t("rangeTo")}</span>
+            <Input type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="h-9 w-auto" aria-label={t("rangeTo")} />
+          </div>
+        )}
       </div>
 
       {/* Filter grid */}
@@ -246,7 +283,7 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
         <Filter label={t("filterPriority")} value={priority} onChange={setPriority} all={t("allPriorities")}
           options={[{ value: "hot", label: t("priorityHot") }, { value: "warm", label: t("priorityWarm") }, { value: "cold", label: t("priorityCold") }]} />
         <Filter label={t("filterSource")} value={source} onChange={setSource} all={t("allSources")}
-          options={SOURCES.map((s) => ({ value: s, label: s }))} />
+          options={sourceFilterOptions} />
         <Filter label={t("filterCounselor")} value={counselorId} onChange={setCounselorId} all={t("everyone")}
           options={counselors.map((c) => ({ value: c.id, label: c.name }))} />
         <Filter label={t("filterCourse")} value={courseId} onChange={setCourseId} all={t("allCourses")}

@@ -20,12 +20,15 @@ import { PriorityBadge } from "./lead-badges";
 const TITLE_EMOJI: Record<string, string> = { contacted: "📞", enrolled: "✨", lost: "✖️" };
 
 export function LeadTransitionModal({
-  lead, targetStage, onConfirm, onCancel,
+  lead, targetStage, onConfirm, onCancel, groupOptions = [],
 }: {
   lead: Lead;
   targetStage: "contacted" | "enrolled" | "lost";
-  onConfirm: () => void;
+  /** On enrolled, the chosen group id is passed back so the lead can be added to it. */
+  onConfirm: (data?: { groupId?: string }) => void;
   onCancel: () => void;
+  /** Real groups for the "enrolled" group selector. */
+  groupOptions?: { value: string; label: string }[];
 }) {
   const t = useTranslations("Crm");
 
@@ -38,6 +41,7 @@ export function LeadTransitionModal({
   const [reason, setReason] = React.useState<string>("ghosted");
   // enrolled state
   const [verified, setVerified] = React.useState(false);
+  const [group, setGroup] = React.useState("");
 
   const channels = [
     { key: "call", label: t("channelCall"), icon: Phone },
@@ -126,8 +130,12 @@ export function LeadTransitionModal({
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("groupLabelField")} <span className="text-destructive">*</span></Label>
-                  <Select><SelectTrigger><SelectValue placeholder={t("selectGroupPh")} /></SelectTrigger>
-                    <SelectContent>{["CPHQ-G42", "CPHQ-G41", "CIC-2026"].map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+                  <Select value={group} onValueChange={setGroup}>
+                    <SelectTrigger><SelectValue placeholder={t("selectGroupPh")} /></SelectTrigger>
+                    <SelectContent>
+                      {(groupOptions.length ? groupOptions : [{ value: "CPHQ-G42", label: "CPHQ-G42" }, { value: "CPHQ-G41", label: "CPHQ-G41" }, { value: "CIC-2026", label: "CIC-2026" }])
+                        .map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
@@ -199,7 +207,12 @@ export function LeadTransitionModal({
 
         <DialogFooter className="border-t bg-muted/20 px-6 py-4">
           <Button variant="outline" onClick={onCancel}>{t("cancelBtn")}</Button>
-          <Button onClick={onConfirm} disabled={targetStage === "enrolled" && !verified}>{t("confirmMove")}</Button>
+          <Button
+            onClick={() => onConfirm(targetStage === "enrolled" ? { groupId: group || undefined } : undefined)}
+            disabled={targetStage === "enrolled" && (!verified || (groupOptions.length > 0 && !group))}
+          >
+            {t("confirmMove")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

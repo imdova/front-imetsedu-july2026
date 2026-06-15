@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { CreditCard, ChevronDown, ChevronUp, Plus, Receipt, Loader2 } from "lucide-react";
+import { CreditCard, ChevronDown, ChevronUp, Plus, Receipt, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Lead, PaymentPlanSummary, PlanInstallmentStatus } from "@/lib/db/crm";
@@ -42,15 +42,23 @@ const PAYMENT_METHODS = ["Vodafone Cash", "Bank transfer", "Card", "Fawry", "Cas
 interface LeadPaymentTabProps {
   leadName: string;
   leadId: string;
-  plan: PaymentPlanSummary | undefined;
-  pct: number;
+  plans: PaymentPlanSummary[];
   onUpdated?: (lead: Lead) => void;
   courseOptions?: { value: string; label: string }[];
 }
 
-export function LeadPaymentTab({ leadName, leadId, plan, pct, onUpdated, courseOptions = [] }: LeadPaymentTabProps) {
+export function LeadPaymentTab({ leadName, leadId, plans, onUpdated, courseOptions = [] }: LeadPaymentTabProps) {
   const t = useTranslations("Crm");
-  const [modalOpen, setModalOpen] = React.useState(false);
+  const [modal, setModal] = React.useState<{ open: boolean; plan?: PaymentPlanSummary; index?: number }>({ open: false });
+  const [deleting, setDeleting] = React.useState<number | null>(null);
+
+  const onDelete = async (i: number) => {
+    setDeleting(i);
+    const res = await dal.crm.deletePaymentPlan(leadId, i);
+    setDeleting(null);
+    if (res.ok && res.data) { toast.success(t("ppDeleted")); onUpdated?.(res.data); }
+    else if (!res.ok) toast.error(res.error);
+  };
 
   return (
     <div className="space-y-5">
@@ -61,35 +69,59 @@ export function LeadPaymentTab({ leadName, leadId, plan, pct, onUpdated, courseO
           </h2>
           <p className="text-sm text-muted-foreground">{t("paymentTabSubtitle")}</p>
         </div>
-        <Button className="gap-1.5" onClick={() => setModalOpen(true)}>
+        <Button className="gap-1.5" onClick={() => setModal({ open: true })}>
           <Plus className="size-4" />
-          {plan ? t("ppEditPlan") : t("addPaymentPlan")}
+          {t("addPaymentPlan")}
         </Button>
       </div>
 
-      {plan ? (
-        <div className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
-          <PaymentPlanPanel plan={plan} pct={pct} />
-          <div className="space-y-6">
-            <InstallmentRoadmap plan={plan} />
-            <PlanSummaryCard plan={plan} />
-          </div>
+      {plans.length ? (
+        <div className="space-y-8">
+          {plans.map((p, i) => {
+            const pct = p.totalAmount ? Math.round((p.paid / p.totalAmount) * 100) : 0;
+            return (
+              <div key={i} className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                  <p className="font-heading text-base font-semibold">
+                    {plans.length > 1 && <span className="text-muted-foreground">{t("ppPlanN", { n: i + 1 })} · </span>}
+                    {p.courseName}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setModal({ open: true, plan: p, index: i })}>
+                      <Pencil className="size-3.5" />{t("ppEditPlan")}
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" disabled={deleting === i} onClick={() => onDelete(i)}>
+                      {deleting === i ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}{t("ppDelete")}
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
+                  <PaymentPlanPanel plan={p} pct={pct} />
+                  <div className="space-y-6">
+                    <InstallmentRoadmap plan={p} />
+                    <PlanSummaryCard plan={p} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="rounded-xl border border-dashed py-16 text-center">
           <p className="text-muted-foreground">{t("noPaymentPlan")}</p>
-          <Button variant="outline" className="mt-4 gap-1.5" onClick={() => setModalOpen(true)}>
+          <Button variant="outline" className="mt-4 gap-1.5" onClick={() => setModal({ open: true })}>
             <Plus className="size-4" />{t("addPaymentPlan")}
           </Button>
         </div>
       )}
 
       <PaymentPlanModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
+        open={modal.open}
+        onOpenChange={(o) => setModal((m) => ({ ...m, open: o }))}
         leadId={leadId}
-        existing={plan}
-        onSaved={(lead) => { onUpdated?.(lead); setModalOpen(false); }}
+        existing={modal.plan}
+        index={modal.index}
+        onSaved={(lead) => { onUpdated?.(lead); setModal({ open: false }); }}
         courseOptions={courseOptions}
       />
     </div>
@@ -400,12 +432,14 @@ function defaultDueDates(n: number): string[] {
 }
 
 function PaymentPlanModal({
-  open, onOpenChange, leadId, existing, onSaved, courseOptions = [],
+  open, onOpenChange, leadId, existing, index, onSaved, courseOptions = [],
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   leadId: string;
   existing?: PaymentPlanSummary;
+  /** Index of the plan being edited; omit to append a new plan. */
+  index?: number;
   onSaved: (lead: Lead) => void;
   courseOptions?: { value: string; label: string }[];
 }) {
@@ -473,7 +507,7 @@ function PaymentPlanModal({
         status: "SCHEDULED",
       })),
     };
-    const res = await dal.crm.updateLeadFields(leadId, { dataPatch: { paymentPlans: [plan] } });
+    const res = await dal.crm.savePaymentPlan(leadId, plan, index);
     setSaving(false);
     if (res.ok && res.data) {
       toast.success(existing ? t("ppUpdated") : t("ppCreated"));

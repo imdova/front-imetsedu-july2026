@@ -40,8 +40,12 @@ export type FollowUpStatus = "overdue" | "today" | "upcoming" | "done";
 export interface FollowUp {
   id: string;
   note: string;
-  date: string; // human label
+  date: string; // human label (date, or date + time)
   status: FollowUpStatus;
+  /** ISO due date/time — status (today/overdue/upcoming) is derived from this. */
+  dueDate?: string;
+  /** Comment captured when the follow-up is marked done. */
+  doneNote?: string;
 }
 
 export type PlanInstallmentStatus = "PAID" | "UPCOMING" | "DUE";
@@ -95,7 +99,10 @@ export interface Lead {
   pinnedNote?: string;
   activities: LeadActivity[];
   followUps: FollowUp[];
+  /** First payment plan (kept for cards/board that show a single plan). */
   paymentPlan?: PaymentPlanSummary;
+  /** All payment plans on the lead (a lead may have several). */
+  paymentPlans?: PaymentPlanSummary[];
   /** Recruitment pipelines this lead belongs to. */
   assignedPipelineIds: string[];
   /** Per-pipeline membership with the lead's current backend stage key in each. */

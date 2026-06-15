@@ -51,11 +51,13 @@ const STAGE_PROBABILITY: Record<string, number> = {
 };
 
 export function PipelineBoard({
-  leads, stages, basePath,
+  leads, stages, basePath, groupOptions = [],
 }: {
   leads: Lead[];
   stages: PipelineStage[];
   basePath: string;
+  /** Real groups for the "enrolled" transition modal's group selector. */
+  groupOptions?: { value: string; label: string }[];
 }) {
   const t = useTranslations("Crm");
   const tr = t as unknown as (k: string) => string;
@@ -92,14 +94,22 @@ export function PipelineBoard({
 
   const activeLead = activeId ? Object.values(board).flat().find((l) => l.id === activeId) : null;
 
-  const commitMove = async (lead: Lead, from: string, to: string) => {
+  const commitMove = async (lead: Lead, from: string, to: string, groupId?: string) => {
     setBoard((prev) => ({
       ...prev,
       [from]: prev[from].filter((l) => l.id !== lead.id),
       [to]: [{ ...lead, stageKey: to }, ...prev[to]],
     }));
     const res = await dal.crm.updateLeadStage(lead.id, to);
-    if (res.ok) toast.success(t("stageMoved", { stage: tr(STAGE_LABEL_KEY[to]) }));
+    if (res.ok) {
+      toast.success(t("stageMoved", { stage: tr(STAGE_LABEL_KEY[to]) }));
+      // Enrolling adds the lead to the chosen group's roster.
+      if (to === "enrolled" && groupId) {
+        const r = await dal.groups.addLeadToGroup(groupId, lead.id);
+        if (r.ok) toast.success(t("addedToGroup"));
+        else toast.error(r.error);
+      }
+    }
   };
 
   async function onDragEnd(e: DragEndEvent) {
@@ -159,7 +169,8 @@ export function PipelineBoard({
         <LeadTransitionModal
           lead={pending.lead}
           targetStage={pending.to}
-          onConfirm={() => { void commitMove(pending.lead, pending.from, pending.to); setPending(null); }}
+          groupOptions={groupOptions}
+          onConfirm={(data) => { void commitMove(pending.lead, pending.from, pending.to, data?.groupId); setPending(null); }}
           onCancel={() => setPending(null)}
         />
       )}

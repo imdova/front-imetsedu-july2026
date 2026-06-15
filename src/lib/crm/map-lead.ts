@@ -7,6 +7,7 @@ import type {
   LeadActivity,
   ActivityKind,
   FollowUp,
+  FollowUpStatus,
   PaymentPlanSummary,
   PlanInstallment,
   PlanInstallmentStatus,
@@ -41,6 +42,21 @@ function relativeTime(iso?: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
+/** Derive a follow-up's live status from its due date (calendar-day compare,
+ * timezone-safe). A `done` follow-up stays done. Falls back to the stored
+ * status when no parseable due date is present. */
+function followUpStatus(f: any): FollowUpStatus {
+  if (f?.status === "done") return "done";
+  const due = typeof f?.dueDate === "string" ? f.dueDate.slice(0, 10) : "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return (f?.status as FollowUpStatus) ?? "upcoming";
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  if (due < today) return "overdue";
+  if (due === today) return "today";
+  return "upcoming";
+}
+
 function activityKind(action: string): ActivityKind {
   const a = action.toLowerCase();
   if (a.includes("stage")) return "stage";
@@ -58,9 +74,8 @@ const PLAN_STATUS: Record<string, PlanInstallmentStatus> = {
   DUE: "DUE",
 };
 
-function mapPaymentPlan(raw: any): PaymentPlanSummary | undefined {
-  const plan = raw?.data?.paymentPlans?.[0];
-  if (!plan) return undefined;
+/** Map one raw payment plan to the UI summary. */
+function mapOnePlan(plan: any, raw: any): PaymentPlanSummary {
   const installments: PlanInstallment[] = (plan.installments ?? []).map((it: any, i: number) => ({
     index: it.index ?? i + 1,
     label: it.label ?? (i === 0 ? "First installment" : "Installment"),
@@ -79,6 +94,12 @@ function mapPaymentPlan(raw: any): PaymentPlanSummary | undefined {
     method: plan.paymentMethod,
     installments,
   };
+}
+
+/** Map every payment plan on the lead (a lead may carry several). */
+function mapPaymentPlans(raw: any): PaymentPlanSummary[] {
+  const plans = raw?.data?.paymentPlans;
+  return Array.isArray(plans) ? plans.filter(Boolean).map((p: any) => mapOnePlan(p, raw)) : [];
 }
 
 function formatDate(iso?: string): string {
@@ -101,7 +122,9 @@ export function mapLead(raw: any): Lead {
     id: f.id ?? `fu_${i}`,
     note: f.note ?? "",
     date: f.date ?? formatDate(f.dueDate),
-    status: f.status ?? "upcoming",
+    status: followUpStatus(f),
+    dueDate: f.dueDate || undefined,
+    doneNote: f.doneNote || undefined,
   }));
 
   return {
@@ -137,7 +160,8 @@ export function mapLead(raw: any): Lead {
     pinnedNote: raw.data?.note || undefined,
     activities,
     followUps,
-    paymentPlan: mapPaymentPlan(raw),
+    paymentPlan: mapPaymentPlans(raw)[0],
+    paymentPlans: mapPaymentPlans(raw),
     assignedPipelineIds: pipelines.map((p) => p._id ?? p.id).filter(Boolean),
     pipelines: pipelines
       .map((p) => ({ id: p._id ?? p.id, title: p.title ?? "Pipeline", stage: p.stage ?? "" }))

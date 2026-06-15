@@ -141,3 +141,12 @@ export const fetchGroup = async (id: string): Promise<Result<GroupDetail | null>
     return fail(toMessage(err, "Failed to load group"));
   }
 };
+
+/** LIVE: enroll a lead into a group (POST /groups/:id/students/:leadId). The
+ * backend resolves the lead → user (creating one if needed) and adds it to the
+ * group's roster, so an enrolled lead shows up in the group's student list. */
+export const addLeadToGroup = async (groupId: string, leadId: string): Promise<Result<boolean>> => {
+  const res = await groupsSvc.addStudentToGroup(groupId, leadId);
+  if (!res.ok) return res;
+  return ok(true);
+};

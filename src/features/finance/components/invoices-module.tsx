@@ -11,7 +11,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { InvoicesTable } from "./invoices-table";
 
-const STATUSES = ["draft", "sent", "paid", "overdue", "cancelled"] as const;
+const STATUSES = ["draft", "sent", "partial", "paid", "overdue"] as const;
+const RANGES = ["all", "today", "7_days", "month", "year"] as const;
+type Range = (typeof RANGES)[number];
+
+/** Client-side date-range test against the invoice's ISO issue date. */
+function invInRange(iso: string | undefined, range: Range): boolean {
+  if (range === "all") return true;
+  if (!iso) return false;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return false;
+  const now = new Date();
+  const day = 86_400_000;
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const ts = d.getTime();
+  switch (range) {
+    case "today": return ts >= startOfToday;
+    case "7_days": return ts >= startOfToday - 6 * day;
+    case "month": return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    case "year": return d.getFullYear() === now.getFullYear();
+    default: return true;
+  }
+}
 
 export function InvoicesModule({
   invoices, stats, basePath,
@@ -24,12 +45,14 @@ export function InvoicesModule({
   const [tab, setTab] = React.useState<"all" | "installments" | "manual">("all");
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<string | null>(null);
+  const [range, setRange] = React.useState<Range>("all");
 
   const byTab = invoices.filter((i) =>
     tab === "all" ? true : tab === "installments" ? i.type === "installment" : i.type === "one-off");
 
   const filtered = byTab.filter((i) => {
     if (status && i.status !== status) return false;
+    if (!invInRange(i.issuedAtISO, range)) return false;
     if (search) {
       const q = search.toLowerCase();
       return i.number.toLowerCase().includes(q) || i.studentName.toLowerCase().includes(q) || i.studentEmail.toLowerCase().includes(q);
@@ -104,9 +127,11 @@ export function InvoicesModule({
           );
         })}
         <div className="ms-auto flex items-center gap-2">
-          <Select defaultValue="all">
-            <SelectTrigger className="h-9 w-32"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="all">{t("allTime")}</SelectItem></SelectContent>
+          <Select value={range} onValueChange={(v) => setRange(v as Range)}>
+            <SelectTrigger className="h-9 w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {RANGES.map((r) => <SelectItem key={r} value={r}>{t(`invRange_${r}` as never)}</SelectItem>)}
+            </SelectContent>
           </Select>
           <Button variant="outline" size="sm" className="h-9 gap-1.5"><Columns3 className="size-4" />{t("columnsBtn")}</Button>
         </div>

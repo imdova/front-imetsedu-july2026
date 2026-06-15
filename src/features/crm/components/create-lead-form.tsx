@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   AlertTriangle,
   Save,
@@ -51,6 +51,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { NATIONALITIES, nationalityLabel, normalizeNationality } from "@/constants/nationalities";
 import {
   Form,
   FormControl,
@@ -184,11 +185,17 @@ export function CreateLeadForm({
   specialtyOptions?: string[];
 }) {
   const t = useTranslations("Crm");
+  const locale = useLocale();
   const router = useRouter();
   const isEdit = !!editLead;
   const specialtyList = specialtyOptions?.length ? specialtyOptions : SPECIALTIES;
   const sourceList = sourceOptions?.length ? sourceOptions : SOURCES;
   const [duplicate, setDuplicate] = React.useState<{ id: string; fullName: string } | null>(null);
+
+  const nationalityOptions = React.useMemo(
+    () => NATIONALITIES.map((n) => ({ value: n.value, label: nationalityLabel(n, locale) })),
+    [locale],
+  );
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
@@ -200,7 +207,7 @@ export function CreateLeadForm({
           phone: editLead.phone ?? "",
           whatsAppCountryCode: editLead.phoneCountryCode || "+20",
           whatsApp: editLead.whatsApp ?? "",
-          country: editLead.country || "EG",
+          country: normalizeNationality(editLead.country),
           specialty: editLead.specialty ?? "",
           educationLevel: editLead.educationLevel ?? "",
           source: editLead.source ?? "",
@@ -220,7 +227,7 @@ export function CreateLeadForm({
           phone: "",
           whatsAppCountryCode: "+20",
           whatsApp: "",
-          country: "EG",
+          country: "",
           specialty: "",
           educationLevel: "",
           source: "",
@@ -467,7 +474,7 @@ export function CreateLeadForm({
                 </label>
               </div>
 
-              {selectField("country", t("fCountry"), COUNTRIES.map((c) => ({ value: c.code, label: `${c.flag} ${c.name}` })), t("selectCountry"))}
+              {selectField("country", t("fNationality"), nationalityOptions, t("selectNationality"))}
               {selectField("specialty", t("fSpecialty"), specialtyList.map((s) => ({ value: s, label: s })), t("selectSpecialty"), iconForSpecialty)}
 
               <FormField control={form.control} name="dateOfBirth" render={({ field }) => (

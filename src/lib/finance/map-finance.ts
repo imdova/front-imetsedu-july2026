@@ -40,6 +40,7 @@ export function mapInvoice(raw: any): Invoice {
     currency: (inv.currency ?? raw.paymentPlan?.currency ?? "EGP") as Currency,
     status,
     issuedDate: fmtDate(inv.issueDate ?? raw.paymentPlan?.createdAt),
+    issuedAtISO: inv.issueDate ?? raw.paymentPlan?.createdAt ?? undefined,
     dueDate: fmtDate(inv.dueDate ?? raw.installment?.dueDate),
     group: raw.group?.title,
     courseId: course?._id ?? course?.id,
