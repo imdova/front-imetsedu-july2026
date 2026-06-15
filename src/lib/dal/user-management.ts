@@ -3,6 +3,7 @@
  * (a frontend catalog, no backend equivalent) is now wired LIVE. */
 import { ok, fail, toMessage, api, type Result } from "@integration/lib/api-client";
 import * as rolesSvc from "@integration/services/roles";
+import * as invitationsSvc from "@integration/services/invitations";
 import * as db from "@/lib/db/user-management";
 import type { UmUser, UmStats, UmDepartment, UmRole, UmInvitation } from "@/lib/db/user-management";
 import type { UserDetail } from "@/lib/db/admin";
@@ -175,6 +176,12 @@ export const inviteUmUser = async (input: {
   if (!res.ok) return res;
   return ok({ email: input.email });
 };
+
+/** PUBLIC: an invitee accepts their invitation by setting a password. The
+ * backend resolves name/email/role from the token, so only the password is
+ * needed (POST /user-management/invitations/accept). */
+export const acceptInvitation = (token: string, password: string): Promise<Result<void>> =>
+  invitationsSvc.acceptInvitation(token, password);
 
 export const resendUmInvite = (invitationId: string): Promise<Result<void>> =>
   api.patch<void>(`/user-management/invitations/${invitationId}/resend`, {});

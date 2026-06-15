@@ -2,9 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import {
-  Search, MoreHorizontal, Send, Ban, Trash2, Mail, RefreshCw,
-} from "lucide-react";
+import { Search, Ban, Trash2, Mail, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import type { UmInvitation, UmInvitationStatus } from "@/lib/db/user-management";
@@ -13,9 +11,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const STATUS_STYLE: Record<UmInvitationStatus, string> = {
@@ -129,22 +124,22 @@ export function InvitationsTable({ initial }: { initial: UmInvitation[] }) {
                     <span className="size-1.5 rounded-full bg-current" />{statusLabel(i.status)}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-end">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-8"><MoreHorizontal className="size-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {i.status !== "accepted" && (
-                        <DropdownMenuItem onClick={() => resend(i)}><RefreshCw className="size-4" />{t("umActionResend")}</DropdownMenuItem>
-                      )}
-                      {i.status === "pending" && (
-                        <DropdownMenuItem onClick={() => cancel(i)}><Ban className="size-4" />{t("umActionCancel")}</DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="destructive" onClick={() => remove(i)}><Trash2 className="size-4" />{t("umActionDelete")}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-1.5">
+                    {i.status !== "accepted" && (
+                      <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => resend(i)}>
+                        <RefreshCw className="size-3.5" />{t("umActionResend")}
+                      </Button>
+                    )}
+                    {i.status === "pending" && (
+                      <Button variant="outline" size="sm" className="h-8 gap-1.5 text-destructive hover:text-destructive" onClick={() => cancel(i)}>
+                        <Ban className="size-3.5" />{t("umActionCancel")}
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-destructive" onClick={() => remove(i)} aria-label={t("umActionDelete")} title={t("umActionDelete")}>
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
