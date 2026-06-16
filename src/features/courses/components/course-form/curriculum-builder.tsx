@@ -12,6 +12,8 @@ import {
   FileText,
   ListChecks,
   AlignLeft,
+  Link,
+  Clock,
 } from "lucide-react";
 
 import type { CourseFormValues } from "@/validations/course-schema";
@@ -259,69 +261,124 @@ interface LessonRowProps {
 
 function LessonRow({ lesson, handle, t, onPatch, onRemove }: LessonRowProps) {
   const Icon = LESSON_ICONS[lesson.lesson_type];
+  const [open, setOpen] = React.useState(false);
 
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-lg border bg-background p-2",
+        "rounded-lg border bg-background",
         handle.isDragging && "ring-1 ring-primary/30",
       )}
     >
-      <button
-        type="button"
-        className="cursor-grab touch-none text-muted-foreground/50 hover:text-foreground active:cursor-grabbing"
-        aria-label="Drag lesson"
-        {...handle.attributes}
-        {...handle.listeners}
-      >
-        <GripVertical className="size-4" />
-      </button>
+      {/* main row */}
+      <div className="flex items-center gap-2 p-2">
+        <button
+          type="button"
+          className="cursor-grab touch-none text-muted-foreground/50 hover:text-foreground active:cursor-grabbing"
+          aria-label="Drag lesson"
+          {...handle.attributes}
+          {...handle.listeners}
+        >
+          <GripVertical className="size-4" />
+        </button>
 
-      <span className="grid size-7 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
-        <Icon className="size-3.5" />
-      </span>
+        <span className="grid size-7 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+          <Icon className="size-3.5" />
+        </span>
 
-      <Input
-        value={lesson.titleEn}
-        onChange={(e) => onPatch({ titleEn: e.target.value })}
-        placeholder={t("lessonTitle")}
-        className="h-8 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0 dark:bg-transparent"
-      />
-
-      <Select
-        value={lesson.lesson_type}
-        onValueChange={(v) => onPatch({ lesson_type: v as LessonType })}
-      >
-        <SelectTrigger size="sm" className="w-[110px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {LESSON_TYPE_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {t(LESSON_TYPE_LABEL[o.value])}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Switch
-          checked={lesson.isFreePreview}
-          onCheckedChange={(v) => onPatch({ isFreePreview: v })}
+        <Input
+          value={lesson.titleEn}
+          onChange={(e) => onPatch({ titleEn: e.target.value })}
+          placeholder={t("lessonTitle")}
+          className="h-8 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
-        <span className="hidden lg:inline">{t("free")}</span>
-      </label>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-8 text-muted-foreground hover:text-destructive"
-        onClick={onRemove}
-        aria-label="Delete lesson"
-      >
-        <Trash2 className="size-4" />
-      </Button>
+        <Select
+          value={lesson.lesson_type}
+          onValueChange={(v) => onPatch({ lesson_type: v as LessonType })}
+        >
+          <SelectTrigger size="sm" className="w-27.5">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {LESSON_TYPE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {t(LESSON_TYPE_LABEL[o.value])}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Switch
+            checked={lesson.isFreePreview}
+            onCheckedChange={(v) => onPatch({ isFreePreview: v })}
+          />
+          <span className="hidden lg:inline">{t("free")}</span>
+        </label>
+
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-label={open ? "Collapse" : "Expand"}
+          className="text-muted-foreground/60 hover:text-foreground"
+        >
+          <ChevronDown
+            className={cn(
+              "size-4 transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8 text-muted-foreground hover:text-destructive"
+          onClick={onRemove}
+          aria-label="Delete lesson"
+        >
+          <Trash2 className="size-4" />
+        </Button>
+      </div>
+
+      {/* expandable details */}
+      {open && (
+        <div className="grid gap-3 border-t px-3 py-3 sm:grid-cols-2">
+          <div className="flex items-center gap-2">
+            <Input
+              dir="rtl"
+              value={lesson.titleAr ?? ""}
+              onChange={(e) => onPatch({ titleAr: e.target.value })}
+              placeholder={t("lessonTitleAr")}
+              className="h-8 text-sm"
+            />
+          </div>
+
+          {lesson.lesson_type === "video" && (
+            <div className="flex items-center gap-2 sm:col-span-2">
+              <Link className="size-4 shrink-0 text-muted-foreground" />
+              <Input
+                value={lesson.videoUrl ?? ""}
+                onChange={(e) => onPatch({ videoUrl: e.target.value })}
+                placeholder={t("lessonVideoUrl")}
+                className="h-8 text-sm"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <Clock className="size-4 shrink-0 text-muted-foreground" />
+            <Input
+              value={lesson.duration ?? ""}
+              onChange={(e) => onPatch({ duration: e.target.value })}
+              placeholder={t("lessonDuration")}
+              className="h-8 text-sm"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

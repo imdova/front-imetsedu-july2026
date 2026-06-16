@@ -8,7 +8,6 @@ import {
   PlayCircle,
   CheckCircle2,
   Globe,
-  FileText,
 } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -68,11 +67,6 @@ export default async function CourseDetailPage({
     "Earn a verifiable, employer-recognized certificate",
     "Access lifetime updates and a peer community",
   ];
-
-  const modules = Array.from({ length: 6 }, (_, i) => ({
-    title: `Module ${i + 1}: ${["Foundations", "Core Concepts", "Applied Practice", "Advanced Techniques", "Case Studies", "Capstone"][i]}`,
-    lessons: 4 + (i % 3),
-  }));
 
   const related = courses
     .filter((c) => c.id !== course.id && c.category === course.category)
@@ -220,31 +214,14 @@ export default async function CourseDetailPage({
               </ul>
             </div>
 
-            <div>
-              <h2 className="font-heading text-xl font-semibold">{t("curriculum")}</h2>
-              <div className="mt-4">
-                {course.modules?.length ? (
+            {course.modules?.length ? (
+              <div>
+                <h2 className="font-heading text-xl font-semibold">{t("curriculum")}</h2>
+                <div className="mt-4">
                   <CourseCurriculum modules={course.modules} locale={locale} />
-                ) : (
-                  <ul className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70">
-                    {modules.map((m) => (
-                      <li
-                        key={m.title}
-                        className="flex items-center justify-between gap-3 bg-card px-4 py-3.5"
-                      >
-                        <span className="inline-flex items-center gap-2.5 text-sm font-medium">
-                          <FileText className="size-4 text-muted-foreground" />
-                          {m.title}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {m.lessons} {t("lessons")}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                </div>
               </div>
-            </div>
+            ) : null}
 
             <div>
               <h2 className="font-heading text-xl font-semibold">{t("aboutInstructor")}</h2>

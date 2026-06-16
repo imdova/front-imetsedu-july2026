@@ -60,9 +60,6 @@ export function CourseCurriculum({
                           {lt}
                         </span>
                         <span className="inline-flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                          {l.isFreePreview && (
-                            <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary">{t("freePreview")}</span>
-                          )}
                           {l.duration && <span className="tabular-nums">{l.duration}</span>}
                           {!l.isFreePreview && <Lock className="size-3" />}
                         </span>

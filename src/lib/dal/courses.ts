@@ -68,13 +68,42 @@ export async function fetchCourseForEdit(
   }
 }
 
-/** LIVE: create a course via POST /courses. The form payload already matches the
- * backend DTO; form-only fields are dropped so strict validation doesn't reject. */
+/** LIVE: create a course via POST /courses. Strips form-only / client-only
+ * fields so the strict backend DTO doesn't reject the request. */
 export async function createCourse(
   data: CourseFormData,
 ): Promise<Result<CourseRow>> {
-  const { variables: _v, webhookUrl: _w, courseOverview: _c, ...payload } =
-    data as CourseFormData & { variables?: unknown; webhookUrl?: unknown; courseOverview?: unknown };
+  const {
+    variables: _v,
+    webhookUrl: _w,
+    courseOverview: _c,
+    difficulty: _d,
+    ...rest
+  } = data as CourseFormData & {
+    variables?: unknown;
+    webhookUrl?: unknown;
+    courseOverview?: unknown;
+  };
+  const VALID_LESSON = ["video", "quiz"] as const;
+  const payload = {
+    ...rest,
+    modules: (rest.modules ?? []).map(({ id: _id, ...m }) => ({
+      titleAr: m.titleAr || m.titleEn,
+      titleEn: m.titleEn || m.titleAr,
+      order: m.order,
+      lessons: (m.lessons ?? []).map(({ id: _id, ...l }) => ({
+        lesson_type: (VALID_LESSON as readonly string[]).includes(l.lesson_type)
+          ? l.lesson_type
+          : "video",
+        titleAr: l.titleAr || l.titleEn,
+        titleEn: l.titleEn || l.titleAr,
+        order: l.order,
+        videoUrl: l.videoUrl || undefined,
+        isFreePreview: l.isFreePreview,
+        duration: l.duration || undefined,
+      })),
+    })),
+  };
   const res = await coursesSvc.createCourse(payload);
   if (!res.ok) return res;
   try {
@@ -147,15 +176,15 @@ function toFullUpdatePayload(d: CourseFormData): Record<string, unknown> {
     seo: d.seo,
     instructorIds: d.instructorIds,
     modules: (d.modules ?? []).map((m) => ({
-      titleAr: m.titleAr,
-      titleEn: m.titleEn,
+      titleAr: m.titleAr || m.titleEn,
+      titleEn: m.titleEn || m.titleAr,
       order: m.order,
       lessons: (m.lessons ?? []).map((l) => ({
         lesson_type: (VALID_LESSON as readonly string[]).includes(l.lesson_type)
           ? l.lesson_type
           : "video",
-        titleAr: l.titleAr,
-        titleEn: l.titleEn,
+        titleAr: l.titleAr || l.titleEn,
+        titleEn: l.titleEn || l.titleAr,
         order: l.order,
         videoUrl: l.videoUrl || undefined,
         isFreePreview: l.isFreePreview,

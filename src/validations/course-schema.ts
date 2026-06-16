@@ -11,34 +11,16 @@ import { z } from "zod";
  * `makeDefaultCourseValues()` instead, so input === output and typing stays sound.
  */
 
-const urlOrEmpty = z
-  .string()
-  .trim()
-  .refine((v) => v === "" || /^https?:\/\/.+/.test(v), {
-    message: "Enter a valid URL",
-  });
+const urlOrEmpty = z.string().trim();
 
-const youtubeOrEmpty = z
-  .string()
-  .trim()
-  .refine(
-    (v) =>
-      v === "" ||
-      /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/.test(v),
-    { message: "Enter a valid YouTube URL" },
-  );
+const youtubeOrEmpty = z.string().trim();
 
 /** One currency block (price / sale price / discount). */
-const pricingDetailSchema = z
-  .object({
-    price: z.coerce.number().min(0, "Must be ≥ 0"),
-    salePrice: z.coerce.number().min(0, "Must be ≥ 0"),
-    discount: z.coerce.number().min(0).max(100, "0–100 only"),
-  })
-  .refine((d) => d.salePrice === 0 || d.salePrice <= d.price, {
-    message: "Sale price must be ≤ price",
-    path: ["salePrice"],
-  });
+const pricingDetailSchema = z.object({
+  price: z.coerce.number().min(0),
+  salePrice: z.coerce.number().min(0),
+  discount: z.coerce.number().min(0).max(100),
+});
 
 export const textReviewSchema = z.object({
   reviewerName: z.string().trim(),
@@ -60,7 +42,7 @@ export const imageReviewSchema = z.object({
 export const lessonSchema = z.object({
   id: z.string(),
   lesson_type: z.enum(["video", "quiz", "pdf", "text"]),
-  titleEn: z.string().trim().min(1, "Lesson title is required"),
+  titleEn: z.string().trim(),
   titleAr: z.string().trim(),
   order: z.number().int().nonnegative(),
   videoUrl: z.string().trim().optional(),
@@ -71,7 +53,7 @@ export const lessonSchema = z.object({
 /** A curriculum module containing ordered lessons. */
 export const moduleSchema = z.object({
   id: z.string(),
-  titleEn: z.string().trim().min(1, "Module title is required"),
+  titleEn: z.string().trim(),
   titleAr: z.string().trim(),
   order: z.number().int().nonnegative(),
   lessons: z.array(lessonSchema),
@@ -79,31 +61,27 @@ export const moduleSchema = z.object({
 
 export const courseFormSchema = z.object({
   /* --- Identification --- */
-  titleEn: z.string().trim().min(3, "Course title is required"),
-  titleAr: z.string().trim().min(3, "العنوان مطلوب"),
-  slug: z
-    .string()
-    .trim()
-    .min(3, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lowercase, hyphenated, no spaces"),
+  titleEn: z.string().trim(),
+  titleAr: z.string().trim(),
+  slug: z.string().trim(),
 
   /* --- Classification --- */
-  category: z.string().min(1, "Select a category"),
-  subcategory: z.string().min(1, "Select a subcategory"),
+  category: z.string(),
+  subcategory: z.string(),
   difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]),
-  programType: z.string().min(1, "Select a program type"),
+  programType: z.string(),
   attendanceMode: z.enum(["online-zoom", "offline"]),
 
   /* --- Content --- */
-  descriptionEn: z.string().trim().min(20, "Add a detailed description"),
+  descriptionEn: z.string().trim(),
   descriptionAr: z.string().trim(),
 
   /* --- Media --- */
   previewVideoUrl: youtubeOrEmpty,
-  image: z.string().trim().min(1, "A cover image is required"),
+  image: z.string().trim(),
   courseOverviewFile: z.string().trim(),
 
-  /* --- Pricing (EGP required, SAR/USD optional) --- */
+  /* --- Pricing --- */
   pricing: z.object({
     egp: pricingDetailSchema,
     sar: pricingDetailSchema,
@@ -113,10 +91,8 @@ export const courseFormSchema = z.object({
   /* --- Sidebar stats & meta --- */
   students: z.coerce.number().int().min(0),
   lectures: z.coerce.number().int().min(0),
-  duration: z.string().trim().min(1, "Duration is required"),
-  language: z
-    .array(z.enum(["English", "Arabic", "French", "Spanish"]))
-    .min(1, "Pick at least one language"),
+  duration: z.string().trim(),
+  language: z.array(z.enum(["English", "Arabic", "French", "Spanish"])),
 
   /* --- Relations --- */
   instructorIds: z.array(z.string()),
@@ -133,25 +109,20 @@ export const courseFormSchema = z.object({
 
   /* --- SEO --- */
   seo: z.object({
-    metaTitleEn: z.string().trim().max(60, "≤ 60 characters recommended"),
+    metaTitleEn: z.string().trim(),
     metaTitleAr: z.string().trim(),
-    metaDescriptionEn: z
-      .string()
-      .trim()
-      .max(160, "≤ 160 characters recommended"),
+    metaDescriptionEn: z.string().trim(),
     metaDescriptionAr: z.string().trim(),
     metaKeywordsEn: z.array(z.string()),
     metaKeywordsAr: z.array(z.string()),
   }),
 
   /* --- Step 2: Structure --- */
-  whatYouWillLearnEn: z
-    .array(z.string().trim().min(1))
-    .min(1, "Add at least one learning outcome"),
+  whatYouWillLearnEn: z.array(z.string().trim()),
   whatYouWillLearnAr: z.array(z.string().trim()),
   whoCanAttendEn: z.string().trim(),
   whoCanAttendAr: z.string().trim(),
-  modules: z.array(moduleSchema).min(1, "Add at least one module"),
+  modules: z.array(moduleSchema),
 
   /* --- Step 3: Media & Reviews (optional) --- */
   gallery: z.array(z.string()),

@@ -2,24 +2,29 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { ListChecks, Upload, Plus, X, Loader2 } from "lucide-react";
+import { ListChecks, Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import type { CreateCategoryInput } from "@integration/services/categories";
+import type { CreateSubCategoryInput } from "@integration/services/sub-categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
-const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-export interface CategoryInitial {
+export interface SubcategoryInitial {
   nameEn?: string;
   nameAr?: string;
   slug?: string;
+  parentCategory?: string;
   headlineEn?: string;
   headlineAr?: string;
   descriptionEn?: string;
@@ -33,21 +38,22 @@ export interface CategoryInitial {
   faqs?: { questionEn?: string; questionAr?: string; answerEn?: string; answerAr?: string }[];
 }
 
-interface AddCategoryFormProps {
-  /** When provided the form PATCHes the existing category instead of POSTing. */
-  categoryId?: string;
-  initial?: CategoryInitial;
+interface AddSubcategoryFormProps {
+  subcategoryId?: string;
+  initial?: SubcategoryInitial;
+  parentCategories: { id: string; name: string }[];
 }
 
-export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = {}) {
+export function AddSubcategoryForm({ subcategoryId, initial, parentCategories }: AddSubcategoryFormProps) {
   const t = useTranslations("Admin");
   const router = useRouter();
-  const isEdit = Boolean(categoryId);
+  const isEdit = Boolean(subcategoryId);
 
   const [nameEn, setNameEn] = React.useState(initial?.nameEn ?? "");
   const [nameAr, setNameAr] = React.useState(initial?.nameAr ?? "");
   const [slug, setSlug] = React.useState(initial?.slug ?? "");
   const [slugEdited, setSlugEdited] = React.useState(Boolean(initial?.slug));
+  const [parentId, setParentId] = React.useState(initial?.parentCategory ?? "");
   const [headlineEn, setHeadlineEn] = React.useState(initial?.headlineEn ?? "");
   const [headlineAr, setHeadlineAr] = React.useState(initial?.headlineAr ?? "");
   const [descEn, setDescEn] = React.useState(initial?.descriptionEn ?? "");
@@ -73,7 +79,7 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const seo: CreateCategoryInput["seo"] = {};
+    const seo: CreateSubCategoryInput["seo"] = {};
     if (metaTitleEn.trim()) seo.metaTitleEn = metaTitleEn.trim();
     if (metaTitleAr.trim()) seo.metaTitleAr = metaTitleAr.trim();
     if (metaDescEn.trim()) seo.metaDescriptionEn = metaDescEn.trim();
@@ -83,12 +89,16 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
 
     const cleanFaqs = faqs
       .filter((f) => f.q.trim() || f.a.trim())
-      .map((f) => ({ questionEn: f.q.trim(), questionAr: f.q.trim(), answerEn: f.a.trim(), answerAr: f.a.trim() }));
+      .map((f) => ({
+        questionEn: f.q.trim(), questionAr: f.q.trim(),
+        answerEn: f.a.trim(), answerAr: f.a.trim(),
+      }));
 
-    const input: CreateCategoryInput = {
+    const input: CreateSubCategoryInput = {
       nameEn: nameEn.trim(),
       nameAr: nameAr.trim(),
-      slug: slug.trim(),
+      slug: slug.trim() || slugify(nameEn),
+      parentCategory: parentId,
       ...(headlineEn.trim() ? { headlineEn: headlineEn.trim() } : {}),
       ...(headlineAr.trim() ? { headlineAr: headlineAr.trim() } : {}),
       ...(descEn.trim() ? { descriptionEn: descEn.trim() } : {}),
@@ -100,10 +110,10 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
 
     setSubmitting(true);
     let res;
-    if (isEdit && categoryId) {
-      res = await dal.courseTaxonomy.updateCourseCategory(categoryId, input);
+    if (isEdit && subcategoryId) {
+      res = await dal.courseTaxonomy.updateCourseSubcategory(subcategoryId, input);
     } else {
-      res = await dal.courseTaxonomy.createCourseCategory(input);
+      res = await dal.courseTaxonomy.createCourseSubcategory(input);
     }
     setSubmitting(false);
     if (res.ok) {
@@ -119,32 +129,46 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         {/* Left column */}
         <div className="space-y-6">
-          {/* Category Setup */}
+          {/* Setup */}
           <Card>
             <CardContent className="space-y-5 pt-6">
               <h2 className="inline-flex items-center gap-2 font-heading text-lg font-bold">
-                <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary"><ListChecks className="size-5" /></span>
+                <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <ListChecks className="size-5" />
+                </span>
                 {t("categorySetup")}
               </h2>
+
+              <div className="space-y-1.5">
+                <Label>{t("csColParent")} <span className="text-destructive">*</span></Label>
+                <Select value={parentId} onValueChange={setParentId}>
+                  <SelectTrigger><SelectValue placeholder={t("csColParent")} /></SelectTrigger>
+                  <SelectContent>
+                    {parentCategories.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>{t("catNameAr")} <span className="text-destructive">*</span></Label>
-                  <Input dir="rtl" value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder={t("catNameArPh")} required />
+                  <Input dir="rtl" value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder={t("catNameArPh")} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("catNameEn")} <span className="text-destructive">*</span></Label>
-                  <Input value={nameEn} onChange={(e) => onNameEn(e.target.value)} placeholder={t("catNameEnPh")} required />
+                  <Input value={nameEn} onChange={(e) => onNameEn(e.target.value)} placeholder={t("catNameEnPh")} />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>{t("catSlug")} <span className="text-destructive">*</span></Label>
-                <Input value={slug} onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }} placeholder={t("catSlugPh")} required />
+                <Label>{t("catSlug")}</Label>
+                <Input
+                  value={slug}
+                  onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }}
+                  placeholder={t("catSlugPh")}
+                />
                 <p className="text-xs text-muted-foreground">{t("catSlugHint")}</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t("catIcon")}</Label>
-                <Button type="button" variant="outline" className="gap-1.5" onClick={() => toast.info(t("catUploadIcon"))}><Upload className="size-4" />{t("catUploadIcon")}</Button>
-                <p className="text-xs text-muted-foreground">{t("catIconHint")}</p>
               </div>
             </CardContent>
           </Card>
@@ -157,14 +181,32 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
                 <p className="text-sm text-muted-foreground">{t("catSeoHint")}</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5"><Label dir="rtl" className="block text-end">{t("catMetaTitleAr")}</Label><Input dir="rtl" value={metaTitleAr} onChange={(e) => setMetaTitleAr(e.target.value)} /></div>
-                <div className="space-y-1.5"><Label>{t("catMetaTitleEn")}</Label><Input value={metaTitleEn} onChange={(e) => setMetaTitleEn(e.target.value)} placeholder={t("catMetaTitleEnPh")} /></div>
-                <div className="space-y-1.5"><Label dir="rtl" className="block text-end">{t("catMetaDescAr")}</Label><Textarea dir="rtl" value={metaDescAr} onChange={(e) => setMetaDescAr(e.target.value)} className="min-h-24" /></div>
-                <div className="space-y-1.5"><Label>{t("catMetaDescEn")}</Label><Textarea value={metaDescEn} onChange={(e) => setMetaDescEn(e.target.value)} placeholder={t("catMetaDescEnPh")} className="min-h-24" /></div>
+                <div className="space-y-1.5">
+                  <Label dir="rtl" className="block text-end">{t("catMetaTitleAr")}</Label>
+                  <Input dir="rtl" value={metaTitleAr} onChange={(e) => setMetaTitleAr(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("catMetaTitleEn")}</Label>
+                  <Input value={metaTitleEn} onChange={(e) => setMetaTitleEn(e.target.value)} placeholder={t("catMetaTitleEnPh")} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label dir="rtl" className="block text-end">{t("catMetaDescAr")}</Label>
+                  <Textarea dir="rtl" value={metaDescAr} onChange={(e) => setMetaDescAr(e.target.value)} className="min-h-24" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("catMetaDescEn")}</Label>
+                  <Textarea value={metaDescEn} onChange={(e) => setMetaDescEn(e.target.value)} placeholder={t("catMetaDescEnPh")} className="min-h-24" />
+                </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <KeywordField label={t("catKeywordsAr")} placeholder={t("catKeywordsArPh")} dir="rtl" value={kwAr} input={kwArInput} setInput={setKwArInput} onAdd={(k) => setKwAr((p) => [...p, k])} onRemove={(i) => setKwAr((p) => p.filter((_, idx) => idx !== i))} />
-                <KeywordField label={t("catKeywordsEn")} placeholder={t("catKeywordsEnPh")} value={kwEn} input={kwEnInput} setInput={setKwEnInput} onAdd={(k) => setKwEn((p) => [...p, k])} onRemove={(i) => setKwEn((p) => p.filter((_, idx) => idx !== i))} />
+                <KeywordField label={t("catKeywordsAr")} placeholder={t("catKeywordsArPh")} dir="rtl"
+                  value={kwAr} input={kwArInput} setInput={setKwArInput}
+                  onAdd={(k) => setKwAr((p) => [...p, k])}
+                  onRemove={(i) => setKwAr((p) => p.filter((_, idx) => idx !== i))} />
+                <KeywordField label={t("catKeywordsEn")} placeholder={t("catKeywordsEnPh")}
+                  value={kwEn} input={kwEnInput} setInput={setKwEnInput}
+                  onAdd={(k) => setKwEn((p) => [...p, k])}
+                  onRemove={(i) => setKwEn((p) => p.filter((_, idx) => idx !== i))} />
               </div>
             </CardContent>
           </Card>
@@ -181,11 +223,17 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
                   <Input value={f.q} placeholder="Q" onChange={(e) => setFaqs((p) => p.map((x, idx) => (idx === i ? { ...x, q: e.target.value } : x)))} />
                   <div className="flex gap-2">
                     <Input value={f.a} placeholder="A" onChange={(e) => setFaqs((p) => p.map((x, idx) => (idx === i ? { ...x, a: e.target.value } : x)))} />
-                    <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0 text-destructive" onClick={() => setFaqs((p) => p.filter((_, idx) => idx !== i))}><X className="size-4" /></Button>
+                    <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0 text-destructive"
+                      onClick={() => setFaqs((p) => p.filter((_, idx) => idx !== i))}>
+                      <X className="size-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-primary" onClick={() => setFaqs((p) => [...p, { q: "", a: "" }])}><Plus className="size-4" />{t("catAddFaq")}</Button>
+              <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-primary"
+                onClick={() => setFaqs((p) => [...p, { q: "", a: "" }])}>
+                <Plus className="size-4" />{t("catAddFaq")}
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -201,9 +249,15 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
           </Card>
           <Card>
             <CardContent className="space-y-4 pt-6">
-              <p className="font-semibold">{t("catDescription")} <span className="text-destructive">*</span></p>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">AR</Label><Textarea dir="rtl" value={descAr} onChange={(e) => setDescAr(e.target.value)} placeholder={t("catDescAr")} className="min-h-28" /></div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">EN</Label><Textarea value={descEn} onChange={(e) => setDescEn(e.target.value)} placeholder={t("catDescEn")} className="min-h-28" /></div>
+              <p className="font-semibold">{t("catDescription")}</p>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">AR</Label>
+                <Textarea dir="rtl" value={descAr} onChange={(e) => setDescAr(e.target.value)} placeholder={t("catDescAr")} className="min-h-28" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">EN</Label>
+                <Textarea value={descEn} onChange={(e) => setDescEn(e.target.value)} placeholder={t("catDescEn")} className="min-h-28" />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -213,7 +267,7 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
         <Button type="reset" variant="outline" disabled={submitting}>{t("catReset")}</Button>
         <Button type="submit" disabled={submitting} className="gap-1.5">
           {submitting && <Loader2 className="size-4 animate-spin" />}
-          {t("catCreate")}
+          {isEdit ? t("csSaveChanges") : t("catCreate")}
         </Button>
       </div>
     </form>
@@ -233,7 +287,9 @@ function KeywordField({
       <div className="flex gap-2">
         <Input dir={dir} value={input} placeholder={placeholder} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
-        <Button type="button" variant="outline" size="icon" className="size-9 shrink-0" onClick={add}><Plus className="size-4" /></Button>
+        <Button type="button" variant="outline" size="icon" className="size-9 shrink-0" onClick={add}>
+          <Plus className="size-4" />
+        </Button>
       </div>
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pt-1">

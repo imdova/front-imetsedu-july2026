@@ -63,6 +63,15 @@ export function TaxonomyTable({
   };
 
   const openEdit = (r: Row) => {
+    if (kind === "category") {
+      router.push(`/admin/courses/settings/category/${r.id}`);
+      return;
+    }
+    if (kind === "subcategory") {
+      router.push(`/admin/courses/settings/subcategory/${r.id}`);
+      return;
+    }
+    // tags: keep inline dialog
     setEditRow(r);
     setForm({
       nameEn: r.nameEn,

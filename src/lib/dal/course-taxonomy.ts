@@ -30,6 +30,12 @@ export const fetchCourseCategories = (): Promise<Result<TaxonomyRow[]>> =>
   mapList(categoriesSvc.listCategories, toTaxonomyRow, "Failed to load categories");
 export const fetchCourseSubcategories = (): Promise<Result<CourseSubcategory[]>> =>
   mapList(subCategoriesSvc.listSubCategories, toCourseSubcategory, "Failed to load sub-categories");
+
+export const fetchCourseCategory = async (id: string): Promise<Result<any>> =>
+  categoriesSvc.getCategoryById(id);
+
+export const fetchCourseSubcategory = async (id: string): Promise<Result<any>> =>
+  subCategoriesSvc.getSubCategoryById(id);
 export const fetchCourseTags = (): Promise<Result<TaxonomyRow[]>> =>
   mapList(tagsSvc.listTags, toTaxonomyRow, "Failed to load tags");
 export const fetchCourseVariables = (): Promise<Result<CourseVariable[]>> =>

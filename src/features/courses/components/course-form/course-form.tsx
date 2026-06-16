@@ -12,7 +12,6 @@ import { useRouter } from "@/i18n/navigation";
 
 import {
   courseFormSchema,
-  STEP_FIELDS,
   type CourseFormValues,
 } from "@/validations/course-schema";
 import { makeDefaultCourseValues } from "@/validations/course-defaults";
@@ -65,53 +64,45 @@ export function CourseForm({
     mode: "onTouched",
   });
 
-  const goNext = async () => {
-    const fields = STEP_FIELDS[step];
-    if (fields.length > 0) {
-      const valid = await form.trigger(fields, { shouldFocus: true });
-      if (!valid) {
-        toast.error(t("fixFields"));
-        return;
-      }
-    }
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  };
+  const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
 
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = (status: "draft" | "published") =>
-    form.handleSubmit(async (values) => {
-      if (isEdit && courseId) {
-        const res = await dal.courses.updateCourseForm(
-          courseId,
-          toCoursePayload({ ...values, status }),
-        );
+    form.handleSubmit(
+      async (values) => {
+        if (isEdit && courseId) {
+          const res = await dal.courses.updateCourseForm(
+            courseId,
+            toCoursePayload({ ...values, status }),
+          );
+          if (res.ok) {
+            toast.success(
+              status === "published"
+                ? t("published", { title: values.titleEn })
+                : t("draftSaved", { title: values.titleEn }),
+            );
+            router.push("/admin/courses");
+          } else {
+            toast.error(res.error);
+          }
+          return;
+        }
+
+        const payload = toCoursePayload({ ...values, status });
+        const res = await dal.courses.createCourse(payload);
         if (res.ok) {
           toast.success(
             status === "published"
-              ? t("published", { title: values.titleEn })
-              : t("draftSaved", { title: values.titleEn }),
+              ? t("published", { title: res.data.titleEn })
+              : t("draftSaved", { title: res.data.titleEn }),
           );
           router.push("/admin/courses");
         } else {
           toast.error(res.error);
         }
-        return;
-      }
-
-      const payload = toCoursePayload({ ...values, status });
-      const res = await dal.courses.createCourse(payload);
-      if (res.ok) {
-        toast.success(
-          status === "published"
-            ? t("published", { title: res.data.titleEn })
-            : t("draftSaved", { title: res.data.titleEn }),
-        );
-        router.push("/admin/courses");
-      } else {
-        toast.error(res.error);
-      }
-    })();
+      },
+    )();
 
   const isLast = step === STEPS.length - 1;
   const submitting = form.formState.isSubmitting;
