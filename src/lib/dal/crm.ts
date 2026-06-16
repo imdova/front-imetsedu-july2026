@@ -140,9 +140,6 @@ export const createLead = async (
     specialty: input.specialty || undefined,
     educationLevel: input.educationLevel || undefined,
     source: input.source || undefined,
-    "6a05e1f537c10d66e58aff55": input.specialty || undefined,
-    "6a0608f837c10d66e58b01da": input.educationLevel || undefined,
-    "6a05eda937c10d66e58b0154": input.source || undefined,
     dateOfBirth: input.dateOfBirth || undefined,
     gender: input.gender,
     coursesOfInterest: input.coursesOfInterest?.length ? input.coursesOfInterest : undefined,
@@ -177,9 +174,6 @@ export const updateLead = async (
     specialty: input.specialty || undefined,
     educationLevel: input.educationLevel || undefined,
     source: input.source || undefined,
-    "6a05e1f537c10d66e58aff55": input.specialty || undefined,
-    "6a0608f837c10d66e58b01da": input.educationLevel || undefined,
-    "6a05eda937c10d66e58b0154": input.source || undefined,
     dateOfBirth: input.dateOfBirth || undefined,
     gender: input.gender,
     coursesOfInterest: input.coursesOfInterest?.length ? input.coursesOfInterest : undefined,
@@ -397,6 +391,43 @@ export const fetchPipelineStages = async (
     });
   } catch (err) {
     return fail(toMessage(err, "Failed to load pipeline"));
+  }
+};
+
+/** LIVE: Kanban view for a specific pipeline (GET /crm/pipelines/:id/view).
+ * Returns the pipeline metadata + leads already grouped by stage. */
+export const fetchPipelineView = async (
+  id: string,
+): Promise<Result<{
+  pipeline: { id: string; title: string; stages: db.PipelineStage[] };
+  leads: db.Lead[];
+}>> => {
+  const res = await leadsSvc.getPipelineView(id);
+  if (!res.ok) return res;
+  try {
+    const data = res.data as {
+      pipeline?: { _id?: string; title?: string; stages?: { key: string; name: string; order?: number }[] };
+      stages?: Record<string, unknown[]>;
+    };
+    const p = data.pipeline ?? {};
+    const stages: db.PipelineStage[] = ((p.stages ?? []) as { key: string; name: string; order?: number }[])
+      .slice()
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((s) => ({ key: s.key, name: s.name, order: s.order ?? 0 }));
+
+    const leads: db.Lead[] = Object.entries(data.stages ?? {}).flatMap(([stageKey, rows]) =>
+      (rows as unknown[]).map((raw) => {
+        const lead = mapLead(raw);
+        return { ...lead, stageKey };
+      }),
+    );
+
+    return ok({
+      pipeline: { id: p._id ?? id, title: p.title ?? "Pipeline", stages },
+      leads,
+    });
+  } catch (err) {
+    return fail(toMessage(err, "Failed to load pipeline view"));
   }
 };
 

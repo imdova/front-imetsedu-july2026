@@ -30,7 +30,7 @@ export function PipelinesInventory({
 }) {
   const t = useTranslations("Crm");
   const router = useRouter();
-  const openPipeline = () => router.push("/admin/crm/pipeline");
+  const openPipeline = (pipelineId: string) => router.push(`/admin/crm/pipeline/${pipelineId}`);
 
   const canArchive = usePermission("crm.pipelines.archive");
   const canCreate = usePermission("crm.pipelines.create");
@@ -158,7 +158,7 @@ export function PipelinesInventory({
                 {filtered.map((p) => (
                   <tr key={p.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30">
                     <td className="px-6 py-4">
-                      <button type="button" onClick={openPipeline}
+                      <button type="button" onClick={() => openPipeline(p.id)}
                         className="text-start font-medium text-primary hover:underline">
                         {p.title}
                       </button>
@@ -172,7 +172,7 @@ export function PipelinesInventory({
                     <td className="px-4 py-4 text-center"><Switch checked={p.archived} onCheckedChange={() => toggleArchive(p)} disabled={!canArchive} /></td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={openPipeline}><LayoutGrid className="size-3.5" />{t("open")}</Button>
+                        <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => openPipeline(p.id)}><LayoutGrid className="size-3.5" />{t("open")}</Button>
                         <Button variant="ghost" size="sm" className="h-8 gap-1.5" disabled={!canEdit}><Pencil className="size-3.5" />{t("edit")}</Button>
                         <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-destructive" onClick={() => setDelTarget(p)} disabled={!canDelete}><Trash2 className="size-3.5" />{t("delete")}</Button>
                       </div>
