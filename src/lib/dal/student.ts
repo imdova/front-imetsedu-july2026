@@ -15,6 +15,7 @@ import {
   mapEnrolledCourse, mapSchedule, mapCertificate, mapStudentNotification,
   mapStudentAssignment, mapInstallment, mapTranscriptRow, mapGradesFromTranscripts,
 } from "@/lib/student/map-portal";
+import type { AssignmentKpis } from "@/lib/db/student";
 
 async function wrap<T>(fn: () => Promise<T>, msg: string): Promise<Result<T>> {
   try {
@@ -67,6 +68,29 @@ export const fetchAssignments = (): Promise<Result<StudentAssignment[]>> =>
   live("/student-portal/assignments", (d) => arr<unknown>(d).map(mapStudentAssignment), "Failed to load assignments");
 export const fetchAssignment = (id: string): Promise<Result<StudentAssignment | null>> =>
   live(`/student-portal/assignments/${id}`, (d) => (d ? mapStudentAssignment(d) : null), "Failed to load assignment");
+
+export interface AssignmentsWithKpis {
+  assignments: StudentAssignment[];
+  kpis: AssignmentKpis;
+}
+export const fetchAssignmentsWithKpis = async (): Promise<Result<AssignmentsWithKpis>> => {
+  const res = await api.get<unknown>("/student-portal/assignments");
+  if (!res.ok) return res;
+  try {
+    const raw = res.data as any;
+    const rawArr = Array.isArray(raw) ? raw : (raw?.data ?? []);
+    return ok({
+      assignments: rawArr.map(mapStudentAssignment),
+      kpis: {
+        inProgress: raw?.kpis?.inProgress ?? 0,
+        deadlines: raw?.kpis?.deadlines ?? 0,
+        averageGrade: raw?.kpis?.averageGrade ?? 0,
+      },
+    });
+  } catch (err) {
+    return fail(toMessage(err, "Failed to load assignments"));
+  }
+};
 export const fetchInstallments = (): Promise<Result<InstallmentLine[]>> =>
   live("/student-portal/payments", (d) => arr<unknown>(d).map(mapInstallment), "Failed to load installments");
 export const fetchTranscript = (): Promise<Result<TranscriptRow[]>> =>
@@ -107,6 +131,13 @@ export const submitAssignment = async (
 ): Promise<Result<{ ok: true }>> => {
   const res = await api.post<unknown>(`/student-portal/assignments/${id}/submit`, input);
   return res.ok ? ok({ ok: true }) : res;
+};
+
+/** LIVE: PATCH progress (0-100) to /student-portal/courses/:id/progress. */
+export const updateCourseProgress = async (courseId: string, progress: number): Promise<Result<void>> => {
+  const clamped = Math.min(100, Math.max(0, Math.round(progress)));
+  const res = await api.patch<void>(`/student-portal/courses/${courseId}/progress`, { progress: clamped });
+  return res.ok ? ok(undefined) : res;
 };
 
 // No backend equivalent yet — remain on dummy data.

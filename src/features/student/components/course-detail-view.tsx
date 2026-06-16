@@ -19,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { CoursePlayer } from "./course-player";
 
 type Tab = "overview" | "materials" | "assignments" | "certificate" | "feedback";
 
@@ -32,14 +31,21 @@ export function CourseDetailView({
   certificates?: Certificate[];
 }) {
   const t = useTranslations("Student");
+  const router = useRouter();
   const [tab, setTab] = React.useState<Tab>("overview");
 
-  // Lesson player (opens over the page; "Continue" resumes the first incomplete lesson).
+  // Navigate to the full-page classroom (lessons) or the quiz runner (quizzes).
   const allLessons = course.modules.flatMap((m) => m.lessons);
-  const firstIncomplete = (allLessons.find((l) => !l.completed) ?? allLessons[0])?.id;
-  const [playerOpen, setPlayerOpen] = React.useState(false);
-  const [startLesson, setStartLesson] = React.useState<string | undefined>(undefined);
-  const play = (lessonId?: string) => { setStartLesson(lessonId ?? firstIncomplete); setPlayerOpen(true); };
+  const firstIncompleteSlug = (allLessons.find((l) => !l.completed) ?? allLessons[0])?.lessonSlug ?? "m0-i0";
+  const play = (lessonSlug?: string) => {
+    const slug = lessonSlug ?? firstIncompleteSlug;
+    const lesson = allLessons.find((l) => l.lessonSlug === slug);
+    if (lesson?.type === "quiz" && lesson.quizId) {
+      router.push(`/student/quiz/${lesson.quizId}` as never);
+    } else {
+      router.push(`/classroom/${course.id}/${slug}` as never);
+    }
+  };
 
   const totalLessons = course.totalLessons || course.modules.reduce((n, m) => n + m.lessons.length, 0);
   const openCount = assignments.filter((a) => a.status === "pending").length;
@@ -71,7 +77,7 @@ export function CourseDetailView({
           </div>
           <div className="flex flex-col items-end gap-2">
             <span className="text-xs text-muted-foreground">{t("cdLastAccessed")}: —</span>
-            <Button className="gap-2" disabled={allLessons.length === 0} onClick={() => play()}><Play className="size-4" />{t("cdContinueLearning")}</Button>
+            <Button className="gap-2" disabled={allLessons.length === 0} onClick={() => play(firstIncompleteSlug)} ><Play className="size-4" />{t("cdContinueLearning")}</Button>
           </div>
         </div>
       </div>
@@ -93,13 +99,6 @@ export function CourseDetailView({
       {tab === "assignments" && <AssignmentsTab assignments={assignments} t={t} />}
       {tab === "certificate" && <CertificateTab certificates={certificates} t={t} />}
       {tab === "feedback" && <FeedbackTab courseId={course.id} title={course.title} t={t} />}
-
-      {/* Lesson player */}
-      <Dialog open={playerOpen} onOpenChange={setPlayerOpen}>
-        <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto">
-          <CoursePlayer course={course} initialLessonId={startLesson} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -107,7 +106,7 @@ export function CourseDetailView({
 type T = ReturnType<typeof useTranslations>;
 
 /* ───────────── Overview ───────────── */
-function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse; liveEvents: ScheduleEvent[]; t: T; onPlay: (lessonId?: string) => void }) {
+function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse; liveEvents: ScheduleEvent[]; t: T; onPlay: (lessonSlug?: string) => void }) {
   const [open, setOpen] = React.useState<Set<number>>(() => new Set([0]));
   const toggle = (i: number) => setOpen((p) => { const n = new Set(p); n.has(i) ? n.delete(i) : n.add(i); return n; });
   const next = liveEvents[0];
@@ -130,7 +129,7 @@ function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse
               {open.has(i) && (
                 <div className="divide-y divide-border/60">
                   {m.lessons.map((l) => (
-                    <button key={l.id} type="button" onClick={() => onPlay(l.id)}
+                    <button key={l.id} type="button" onClick={() => onPlay(l.lessonSlug)}
                       className="flex w-full items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-primary/5">
                       {l.type === "quiz"
                         ? <HelpCircle className="size-5 shrink-0 text-primary" />

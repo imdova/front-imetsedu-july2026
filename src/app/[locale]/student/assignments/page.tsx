@@ -8,11 +8,13 @@ export default async function StudentAssignmentsPage({ params }: { params: Promi
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Student");
-  const res = await dal.student.fetchAssignments();
+  const res = await dal.student.fetchAssignmentsWithKpis();
+  const assignments = res.ok ? res.data.assignments : [];
+  const kpis = res.ok ? res.data.kpis : undefined;
   return (
-    <div className="mx-auto max-w-[1100px] space-y-6">
+    <div className="mx-auto max-w-300 space-y-6">
       <PageHeader title={t("assignmentsTitle")} description={t("assignmentsSubtitle")} />
-      <AssignmentsList items={res.ok ? res.data : []} />
+      <AssignmentsList items={assignments} kpis={kpis} />
     </div>
   );
 }

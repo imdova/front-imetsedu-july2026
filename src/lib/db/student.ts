@@ -8,11 +8,15 @@ import { respond, delay, clone } from "./delay";
 export type LessonType = "video" | "pdf" | "quiz" | "text";
 export interface Lesson {
   id: string;
+  /** Positional slug used to deep-link into the classroom: `m{mi}-i{ii}`. */
+  lessonSlug: string;
   title: string;
   type: LessonType;
   duration: string;
   completed: boolean;
   videoId?: string;
+  /** Raw contentType from the API (e.g. "youtube_url", "vdocipher_embed"). */
+  contentType?: string;
   /** Backend Quiz id for `type: "quiz"` lessons — deep-links the player's "Start quiz". */
   quizId?: string;
 }
@@ -114,6 +118,7 @@ function makeModules(prefix: string, completedCount: number): { modules: Module[
       const type: LessonType = l === 3 ? "quiz" : l === 2 ? "pdf" : "video";
       return {
         id: `${prefix}-l${m}-${l}`,
+        lessonSlug: `m${m}-i${l}`,
         title: `${type === "quiz" ? "Quiz" : type === "pdf" ? "Reading" : "Lesson"} ${m + 1}.${l + 1}`,
         type,
         duration: type === "video" ? `${8 + l * 3} min` : type === "quiz" ? "10 min" : "5 min",
@@ -219,9 +224,37 @@ export const getStudentDashboard = () => respond(dashboard);
 /*  Assignments, billing detail, transcript, favorites (portal gaps)            */
 /* -------------------------------------------------------------------------- */
 export type StudentAssignmentStatus = "pending" | "submitted" | "graded";
+export interface AssignmentSubmission {
+  _id?: string;
+  status?: string;
+  score?: number;
+  letterGrade?: string;
+  feedback?: string;
+  assignmentFileUrl?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  submissionDate?: string;
+}
+export interface AssignmentKpis {
+  inProgress: number;
+  deadlines: number;
+  averageGrade: number;
+}
 export interface StudentAssignment {
-  id: string; title: string; course: string; dueDate: string;
-  status: StudentAssignmentStatus; grade?: number; maxGrade: number; description: string;
+  id: string;
+  title: string;
+  course: string;
+  dueDate: string;
+  rawDueDate?: string;
+  status: StudentAssignmentStatus;
+  grade?: number;
+  maxGrade: number;
+  description: string;
+  priority?: "urgent" | "regular";
+  files?: string[];
+  submission?: AssignmentSubmission;
+  groupTitle?: string;
 }
 export interface PaymentMethod { id: string; type: "card" | "bank"; brand: string; last4: string; isDefault: boolean }
 export interface InstallmentLine { index: number; amount: number; currency: "EGP"; dueDate: string; status: "PAID" | "DUE" | "SCHEDULED" }

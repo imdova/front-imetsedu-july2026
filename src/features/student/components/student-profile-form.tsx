@@ -1,12 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
-import { User, Mail, MapPin, GraduationCap, Link2, Camera, Briefcase } from "lucide-react";
+import {
+  User, Mail, GraduationCap, Link2, Camera, Briefcase,
+  Stethoscope, BarChart3, Cpu, Megaphone,
+} from "lucide-react";
 
 import { dal } from "@/lib/dal";
 import { getInitials } from "@/lib/utils";
+import { useCrmVariables } from "@/hooks/use-crm-variables";
+import { NATIONALITIES, nationalityLabel, normalizeNationality } from "@/constants/nationalities";
 import type { StudentProfile, StudentProfileForm } from "@/lib/student/map-profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,36 +19,69 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PhoneCodeSelect } from "@/components/shared/phone-code-select";
+import { SearchableSelect } from "@/components/shared/searchable-select";
 
-const COUNTRY_CODES = [
-  ["EG", "+20"], ["SA", "+966"], ["AE", "+971"], ["BH", "+973"], ["KW", "+965"], ["QA", "+974"], ["OM", "+968"],
-] as const;
-const SPECIALTIES = ["Dentist", "Physician", "Pharmacist", "Nurse", "Lab Specialist", "Physiotherapist", "Other"];
-const EDUCATION = ["High School", "Diploma", "Bachelor", "Master", "MBA", "PhD"];
+/* ─── Fallback option lists (used when CRM variables are not loaded yet) ─── */
+const SPECIALTIES_FALLBACK = ["Dentist", "Physician", "Pharmacist", "Nurse", "Lab Specialist", "Physiotherapist", "Other"];
+const EDUCATION_FALLBACK = ["High School", "Diploma", "Bachelor", "Master", "MBA", "PhD"];
+
+/* ─── Matches the same icon-picking logic as create-lead-form ─────────────── */
+function iconForSpecialty(value: string): React.ElementType {
+  const s = value.toLowerCase();
+  if (/(health|medical|nurs|clinic|quality|cphq|patient|dentist|pharma|physio|lab)/.test(s)) return Stethoscope;
+  if (/(data|analyt|statistic)/.test(s)) return BarChart3;
+  if (/(it|tech|software|comput|develop|engineer)/.test(s)) return Cpu;
+  if (/(market|brand|advert)/.test(s)) return Megaphone;
+  return Briefcase;
+}
 
 function toForm(p: StudentProfile): StudentProfileForm {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { memberSince, isActive, completion, ...form } = p;
-  return form;
+  return { ...form, country: normalizeNationality(form.country) };
 }
 
 function ageOf(dob: string): string {
   if (!dob) return "";
   const d = new Date(dob);
   if (Number.isNaN(d.getTime())) return "";
-  const diff = Date.now() - d.getTime();
-  const age = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+  const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000));
   return age > 0 && age < 120 ? String(age) : "";
 }
 
 export function StudentProfileForm({ profile }: { profile: StudentProfile }) {
   const t = useTranslations("Student");
   const tc = useTranslations("Common");
+  const locale = useLocale();
+
   const [form, setForm] = React.useState<StudentProfileForm>(() => toForm(profile));
   const [sameWa, setSameWa] = React.useState(profile.whatsApp === profile.phone);
   const [busy, setBusy] = React.useState(false);
 
-  const set = <K extends keyof StudentProfileForm>(k: K, v: StudentProfileForm[K]) => setForm((f) => ({ ...f, [k]: v }));
+  /* ── CRM variable options (same source as create-lead-form) ── */
+  const { getOptionsById, isMounted: varsMounted } = useCrmVariables();
+
+  const specialtyList = React.useMemo(() => {
+    if (!varsMounted) return SPECIALTIES_FALLBACK;
+    const opts = getOptionsById("6a05e1f537c10d66e58aff55");
+    return opts.length ? opts.map((o: any) => o.nameEn ?? o.name ?? String(o)) : SPECIALTIES_FALLBACK;
+  }, [getOptionsById, varsMounted]);
+
+  const educationList = React.useMemo(() => {
+    if (!varsMounted) return EDUCATION_FALLBACK;
+    const opts = getOptionsById("6a0608f837c10d66e58b01da");
+    return opts.length ? opts.map((o: any) => o.nameEn ?? o.name ?? String(o)) : EDUCATION_FALLBACK;
+  }, [getOptionsById, varsMounted]);
+
+  const nationalityOptions = React.useMemo(
+    () => NATIONALITIES.map((n) => ({ value: n.value, label: nationalityLabel(n, locale) })),
+    [locale],
+  );
+
+  /* ── Helpers ── */
+  const set = <K extends keyof StudentProfileForm>(k: K, v: StudentProfileForm[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
   const dirty = JSON.stringify(form) !== JSON.stringify(toForm(profile));
 
   const completion = (() => {
@@ -61,21 +99,31 @@ export function StudentProfileForm({ profile }: { profile: StudentProfile }) {
   };
   const discard = () => { setForm(toForm(profile)); setSameWa(profile.whatsApp === profile.phone); };
 
-  const codeSelect = (value: string, onChange: (v: string) => void, disabled?: boolean) => (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger className="w-[110px] shrink-0"><SelectValue /></SelectTrigger>
-      <SelectContent>
-        {COUNTRY_CODES.map(([c, code]) => <SelectItem key={c} value={code}>{c} {code}</SelectItem>)}
-      </SelectContent>
-    </Select>
-  );
-
-  const optionSelect = (value: string, onChange: (v: string) => void, options: string[], placeholder: string) => {
+  /* ── Select with per-option icon (matches create-lead-form selectField) ── */
+  const selectWithIcons = (
+    value: string,
+    onChange: (v: string) => void,
+    options: string[],
+    placeholder: string,
+    iconFor?: (v: string) => React.ElementType,
+  ) => {
     const opts = value && !options.includes(value) ? [value, ...options] : options;
     return (
       <Select value={value || undefined} onValueChange={onChange}>
         <SelectTrigger className="w-full"><SelectValue placeholder={placeholder} /></SelectTrigger>
-        <SelectContent>{opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+        <SelectContent>
+          {opts.map((o) => {
+            const Icon = iconFor ? iconFor(o) : null;
+            return (
+              <SelectItem key={o} value={o}>
+                <span className="inline-flex items-center gap-2">
+                  {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
+                  {o}
+                </span>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
       </Select>
     );
   };
@@ -136,28 +184,44 @@ export function StudentProfileForm({ profile }: { profile: StudentProfile }) {
                   <Input type="email" value={form.email} readOnly className="ps-9 bg-muted/30" />
                 </div>
               </Field>
+
+              {/* Phone — matches create-lead-form: PhoneCodeSelect + number input */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label={tc("phone")} required>
                   <div className="flex gap-2" dir="ltr">
-                    {codeSelect(form.phoneCountryCode, (v) => set("phoneCountryCode", v))}
-                    <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+                    <PhoneCodeSelect value={form.phoneCountryCode} onChange={(v) => set("phoneCountryCode", v)} />
+                    <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(555) 000-0000" dir="ltr" />
                   </div>
                 </Field>
                 <Field label={t("whatsapp")}>
                   <div className="flex gap-2" dir="ltr">
-                    {codeSelect(sameWa ? form.phoneCountryCode : form.whatsAppCountryCode, (v) => set("whatsAppCountryCode", v), sameWa)}
-                    <Input value={sameWa ? form.phone : form.whatsApp} onChange={(e) => set("whatsApp", e.target.value)} disabled={sameWa} />
+                    <PhoneCodeSelect
+                      value={sameWa ? form.phoneCountryCode : form.whatsAppCountryCode}
+                      onChange={(v) => set("whatsAppCountryCode", v)}
+                      disabled={sameWa}
+                    />
+                    <Input
+                      value={sameWa ? form.phone : form.whatsApp}
+                      onChange={(e) => set("whatsApp", e.target.value)}
+                      disabled={sameWa}
+                      placeholder="(555) 000-0000"
+                      dir="ltr"
+                    />
                   </div>
                   <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
                     <Checkbox checked={sameWa} onCheckedChange={(c) => setSameWa(!!c)} />{t("sameAsPhone")}
                   </label>
                 </Field>
               </div>
+
+              {/* Nationality — matches create-lead-form: SearchableSelect with NATIONALITIES */}
               <Field label={t("country")}>
-                <div className="relative">
-                  <MapPin className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={form.country} onChange={(e) => set("country", e.target.value)} className="ps-9" />
-                </div>
+                <SearchableSelect
+                  value={form.country}
+                  onChange={(v) => set("country", v)}
+                  options={nationalityOptions}
+                  placeholder={t("selectNationality")}
+                />
               </Field>
             </div>
           </section>
@@ -166,8 +230,14 @@ export function StudentProfileForm({ profile }: { profile: StudentProfile }) {
           <section className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm">
             <SectionHead icon={<GraduationCap className="size-4" />} title={t("educationCareer")} sub={t("educationCareerSub")} />
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label={t("specialtyField")}>{optionSelect(form.specialty, (v) => set("specialty", v), SPECIALTIES, t("selectSpecialty"))}</Field>
-              <Field label={t("educationLevel")}>{optionSelect(form.educationLevel, (v) => set("educationLevel", v), EDUCATION, t("selectLevel"))}</Field>
+              {/* Specialty — matches create-lead-form: Select with per-option icon */}
+              <Field label={t("specialtyField")}>
+                {selectWithIcons(form.specialty, (v) => set("specialty", v), specialtyList, t("selectSpecialty"), iconForSpecialty)}
+              </Field>
+              {/* Education level — matches create-lead-form: plain Select */}
+              <Field label={t("educationLevel")}>
+                {selectWithIcons(form.educationLevel, (v) => set("educationLevel", v), educationList, t("selectLevel"))}
+              </Field>
               <div className="sm:col-span-2">
                 <Field label={t("jobTitle")}>
                   <div className="relative">

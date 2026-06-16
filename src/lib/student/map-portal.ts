@@ -5,7 +5,7 @@
 import type {
   EnrolledCourse, Module, Lesson, ScheduleEvent, EventKind, Certificate,
   Notification, NotificationType, StudentAssignment, StudentAssignmentStatus,
-  InstallmentLine, TranscriptRow, Grade,
+  AssignmentSubmission, InstallmentLine, TranscriptRow, Grade,
 } from "@/lib/db/student";
 
 const FALLBACK_THUMB = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=240&fit=crop";
@@ -28,12 +28,26 @@ function rel(iso?: string): string {
 }
 
 /* ── Courses ── */
-function mapLesson(it: any, i: number): Lesson {
+function mapLesson(it: any, mi: number, ii: number): Lesson {
   const type = it?.type === "quiz" ? "quiz" : it?.type === "pdf" ? "pdf" : it?.type === "text" ? "text" : "video";
-  return { id: it?._id ?? it?.id ?? `l${i}`, title: it?.title ?? it?.titleEn ?? "Lesson", type, duration: it?.duration ?? "—", completed: !!it?.completed, videoId: it?.videoId, quizId: it?.quizId ? String(it.quizId) : undefined };
+  return {
+    id: it?._id ?? it?.id ?? `l${ii}`,
+    lessonSlug: `m${mi}-i${ii}`,
+    title: it?.title ?? it?.titleEn ?? "Lesson",
+    type,
+    duration: it?.duration ?? "—",
+    completed: !!it?.completed,
+    videoId: it?.contentUrl ?? it?.videoId,
+    contentType: it?.contentType,
+    quizId: it?.quiz?._id ?? (it?.quizId ? String(it.quizId) : undefined),
+  };
 }
-function mapModule(m: any, i: number): Module {
-  return { id: m?._id ?? m?.id ?? `m${i}`, title: m?.title ?? m?.titleEn ?? "Module", lessons: (m?.items ?? m?.lessons ?? []).map(mapLesson) };
+function mapModule(m: any, mi: number): Module {
+  return {
+    id: m?._id ?? m?.id ?? `m${mi}`,
+    title: m?.title ?? m?.titleEn ?? "Module",
+    lessons: (m?.items ?? m?.lessons ?? []).map((it: any, ii: number) => mapLesson(it, mi, ii)),
+  };
 }
 export function mapEnrolledCourse(c: any): EnrolledCourse {
   const thumb = Array.isArray(c?.thumbnail) ? c.thumbnail[0] : c?.thumbnail ?? c?.image;
@@ -117,21 +131,44 @@ export function mapStudentNotification(raw: any): Notification {
 
 /* ── Assignments ── */
 function asgStatus(raw: any): StudentAssignmentStatus {
+  const subStatus = String(raw?.submission?.status ?? "").toLowerCase();
+  if (subStatus === "approved") return "graded";
+  if (raw?.submission) return "submitted";
   const s = String(raw?.status ?? "").toLowerCase();
   if (s === "graded") return "graded";
   if (s === "submitted") return "submitted";
   return "pending";
 }
 export function mapStudentAssignment(raw: any): StudentAssignment {
+  const sub = raw?.submission;
+  const submission: AssignmentSubmission | undefined = sub
+    ? {
+        _id: sub?._id ?? undefined,
+        status: sub?.status,
+        score: sub?.score,
+        letterGrade: sub?.letterGrade,
+        feedback: sub?.feedback,
+        assignmentFileUrl: sub?.assignmentFileUrl,
+        notes: sub?.notes,
+        createdAt: sub?.createdAt,
+        updatedAt: sub?.updatedAt,
+        submissionDate: sub?.submissionDate,
+      }
+    : undefined;
   return {
     id: raw?._id ?? raw?.id ?? "",
     title: raw?.title ?? raw?.titleEn ?? "—",
-    course: raw?.courseTitle ?? raw?.course?.title ?? "—",
+    course: raw?.courseTitle ?? raw?.course?.title ?? raw?.group?.title ?? "—",
     dueDate: fmtDate(raw?.dueDate),
+    rawDueDate: raw?.dueDate ?? undefined,
     status: asgStatus(raw),
     grade: raw?.grade ?? raw?.score,
     maxGrade: raw?.maxGrade ?? 100,
     description: raw?.description ?? "",
+    priority: raw?.priority === "urgent" ? "urgent" : "regular",
+    files: Array.isArray(raw?.files) && raw.files.length > 0 ? raw.files : undefined,
+    submission,
+    groupTitle: raw?.group?.title ?? undefined,
   };
 }
 
