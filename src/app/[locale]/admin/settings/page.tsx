@@ -7,19 +7,21 @@ export default async function AdminSettingsPage({ params }: { params: Promise<{ 
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [intgRes, themeRes] = await Promise.all([
+  const [intgRes, themeRes, siteRes] = await Promise.all([
     dal.siteSettings.fetchIntegrations(),
     dal.siteSettings.fetchTheme(),
+    dal.siteSettings.fetchSiteSettings(),
   ]);
 
   const theme = themeRes.ok ? themeRes.data : {
     primaryColor: "#1111D4", accentColor: "#FBBF24", systemHighlight: "#62a0ea",
     headingFont: "Poppins", bodyFont: "Inter", radius: "square" as const,
   };
+  const siteSettings = siteRes.ok ? siteRes.data.settings : undefined;
 
   return (
     <div className="mx-auto max-w-[1500px]">
-      <SettingsConsole integrations={intgRes.ok ? intgRes.data : []} theme={theme} />
+      <SettingsConsole integrations={intgRes.ok ? intgRes.data : []} theme={theme} siteSettings={siteSettings} />
     </div>
   );
 }

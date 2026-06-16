@@ -17,7 +17,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-export function PublicHeader() {
+export function PublicHeader({ logoLight }: { logoLight?: string }) {
   const pathname = usePathname();
   const tn = useTranslations("Nav");
   const tm = useTranslations("Marketing");
@@ -36,12 +36,18 @@ export function PublicHeader() {
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] text-white shadow-md shadow-primary/25">
-            <GraduationCap className="size-5" />
-          </span>
-          <span className="text-base font-semibold tracking-tight">
-            {BRAND.fullName}
-          </span>
+          {logoLight ? (
+            <img src={logoLight} alt={BRAND.fullName} className="h-9 max-w-[160px] object-contain" />
+          ) : (
+            <>
+              <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] text-white shadow-md shadow-primary/25">
+                <GraduationCap className="size-5" />
+              </span>
+              <span className="text-base font-semibold tracking-tight">
+                {BRAND.fullName}
+              </span>
+            </>
+          )}
         </Link>
 
         <nav className="ms-6 hidden items-center gap-1 lg:flex">

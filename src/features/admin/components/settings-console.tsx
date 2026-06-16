@@ -6,10 +6,11 @@ import {
   Settings, Palette, Puzzle, TrendingUp, Shield, Wrench, Code2, Webhook,
   Folder, Eye, Image as ImageIcon, UploadCloud, Pencil, ChevronRight, Save,
   Search, Share2, BarChart3, Video, Lock, MessageCircle, Rocket, X, RefreshCw, CheckCircle2,
+  Globe, Mail, MapPin, Power, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { Integration, BrandingTheme, IntegrationGroup } from "@/lib/db/site-settings";
+import type { Integration, BrandingTheme, IntegrationGroup, SiteSettings } from "@/lib/db/site-settings";
 import { dal } from "@/lib/dal";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,9 +26,9 @@ const FONTS = ["Poppins", "Inter", "Roboto", "Lato", "Montserrat", "Nunito"];
 
 type Section = "general" | "branding" | "integrations" | "marketing" | "security" | "maintenance" | "api" | "webhooks";
 
-export function SettingsConsole({ integrations, theme: initialTheme }: { integrations: Integration[]; theme: BrandingTheme }) {
+export function SettingsConsole({ integrations, theme: initialTheme, siteSettings: initialSite }: { integrations: Integration[]; theme: BrandingTheme; siteSettings?: SiteSettings }) {
   const t = useTranslations("Admin");
-  const [section, setSection] = React.useState<Section>("branding");
+  const [section, setSection] = React.useState<Section>("general");
 
   const siteItems: { key: Section; label: string; icon: React.ReactNode }[] = [
     { key: "general", label: t("setNavGeneral"), icon: <Settings className="size-4" /> },
@@ -74,7 +75,8 @@ export function SettingsConsole({ integrations, theme: initialTheme }: { integra
 
         {/* Content */}
         <div className="min-w-0 p-5 lg:p-7">
-          {section === "branding" ? <BrandingPanel theme={initialTheme} />
+          {section === "general" ? <GeneralPanel initialSite={initialSite} />
+            : section === "branding" ? <BrandingPanel theme={initialTheme} />
             : section === "integrations" ? <IntegrationsPanel integrations={integrations} />
             : <PlaceholderPanel section={section} />}
         </div>
@@ -104,12 +106,38 @@ function SideLink({ label, icon, active, onClick }: { label: string; icon: React
 }
 
 /* ───────────────────────────── Branding panel ────────────────────────────── */
+
+const RADIUS_CSS: Record<BrandingTheme["radius"], string> = {
+  square: "0.125rem", modern: "0.375rem", soft: "0.625rem", round: "1rem",
+};
+
+/** Apply brand colors + radius to CSS custom properties so the whole UI updates live. */
+function applyBrandingToDom(state: BrandingTheme) {
+  const root = document.documentElement;
+  root.style.setProperty("--primary", state.primaryColor);
+  root.style.setProperty("--sidebar-primary", state.primaryColor);
+  root.style.setProperty("--radius", RADIUS_CSS[state.radius]);
+  // Update favicon <link> tag in <head> if a favicon URL is provided.
+  if (state.favicon) {
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    // Append timestamp to bust the browser's aggressive favicon cache.
+    link.href = `${state.favicon}?v=${Date.now()}`;
+  }
+}
+
 function BrandingPanel({ theme }: { theme: BrandingTheme }) {
   const t = useTranslations("Admin");
-  // `saved` is the last persisted baseline; `state` is the working draft.
   const [saved, setSaved] = React.useState(theme);
   const [state, setState] = React.useState(theme);
   const [pending, setPending] = React.useState(false);
+  const [uploadingLight, setUploadingLight] = React.useState(false);
+  const [uploadingDark, setUploadingDark] = React.useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = React.useState(false);
   const set = <K extends keyof BrandingTheme>(k: K, v: BrandingTheme[K]) => setState((s) => ({ ...s, [k]: v }));
   const radii: BrandingTheme["radius"][] = ["square", "modern", "soft", "round"];
   const radiusPx: Record<BrandingTheme["radius"], string> = { square: "2px", modern: "6px", soft: "10px", round: "16px" };
@@ -121,12 +149,29 @@ function BrandingPanel({ theme }: { theme: BrandingTheme }) {
     setPending(false);
     if (res.ok) {
       setSaved(state);
+      applyBrandingToDom(state);
       toast.success(t("brandSaved"));
     } else {
       toast.error(res.error);
     }
   };
   const discard = () => setState(saved);
+
+  const uploadAsset = async (
+    file: File,
+    field: "logoLight" | "logoDark" | "favicon",
+    setUploading: (v: boolean) => void,
+  ) => {
+    setUploading(true);
+    const res = await dal.upload.uploadFile(file);
+    setUploading(false);
+    if (res.ok) {
+      set(field, res.data.url);
+      toast.success(field === "favicon" ? t("brandFaviconUploaded") : t("brandLogoUploaded"));
+    } else {
+      toast.error(res.error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -138,7 +183,9 @@ function BrandingPanel({ theme }: { theme: BrandingTheme }) {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={discard} disabled={!dirty || pending}>{t("setDiscard")}</Button>
-          <Button onClick={save} disabled={!dirty || pending}>{pending ? t("setSaving") : t("setSaveChanges")}</Button>
+          <Button onClick={save} disabled={!dirty || pending}>
+            {pending ? <><Loader2 className="size-4 animate-spin" />{t("setSaving")}</> : t("setSaveChanges")}
+          </Button>
         </div>
       </div>
 
@@ -146,16 +193,32 @@ function BrandingPanel({ theme }: { theme: BrandingTheme }) {
         {/* Visual Assets */}
         <div className="space-y-4">
           <SectionLabel icon={<Folder className="size-4" />}>{t("brandVisualAssets")}</SectionLabel>
-          <AssetCard title={t("brandPrimaryLogo")} filename="1780330603377-40uj6otj7…" t={t} />
-          <AssetCard title={t("brandSecondaryLogo")} filename="1780330644914-tmvt1jxild…" t={t} dark />
-          <div className="rounded-xl border border-border/70 p-4">
-            <p className="text-sm font-semibold">{t("brandHero")}</p>
-            <div className="mt-3 grid place-items-center rounded-xl border-2 border-dashed border-border/70 bg-muted/20 px-4 py-8 text-center">
-              <UploadCloud className="size-7 text-primary" />
-              <p className="mt-2 text-sm font-medium text-primary">{t("brandUpload")}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{t("brandUploadHint")}</p>
-            </div>
-          </div>
+          <LogoCard
+            title={t("brandPrimaryLogo")}
+            url={state.logoLight}
+            uploading={uploadingLight}
+            onUpload={(f) => uploadAsset(f, "logoLight", setUploadingLight)}
+            onRemove={() => set("logoLight", undefined)}
+            t={t}
+          />
+          <LogoCard
+            title={t("brandSecondaryLogo")}
+            url={state.logoDark}
+            uploading={uploadingDark}
+            onUpload={(f) => uploadAsset(f, "logoDark", setUploadingDark)}
+            onRemove={() => set("logoDark", undefined)}
+            dark
+            t={t}
+          />
+          <LogoCard
+            title={t("brandFavicon")}
+            url={state.favicon}
+            uploading={uploadingFavicon}
+            onUpload={(f) => uploadAsset(f, "favicon", setUploadingFavicon)}
+            onRemove={() => set("favicon", undefined)}
+            favicon
+            t={t}
+          />
         </div>
 
         {/* Theme Customization */}
@@ -195,7 +258,7 @@ function BrandingPanel({ theme }: { theme: BrandingTheme }) {
                   <div className="h-2.5 w-3/4 rounded bg-muted" /><div className="h-2.5 w-1/2 rounded bg-muted" /><div className="h-2.5 w-2/3 rounded bg-muted" />
                 </div>
                 <div className="relative h-8 w-full rounded" style={{ background: state.accentColor }}>
-                  <span className="absolute -top-3 end-2 grid size-9 place-items-center rounded-full text-white shadow-md" style={{ background: state.primaryColor }}>+</span>
+                  <span className="absolute -top-3 inset-e-2 grid size-9 place-items-center rounded-full text-white shadow-md" style={{ background: state.primaryColor }}>+</span>
                 </div>
               </div>
             </div>
@@ -203,7 +266,10 @@ function BrandingPanel({ theme }: { theme: BrandingTheme }) {
           </div>
           <div className="rounded-2xl border border-border/70 p-4">
             <p className="text-xs text-muted-foreground">{t("brandLogoPreview")}</p>
-            <p className="mt-2 text-xl font-bold tracking-tight" style={{ color: state.primaryColor, fontFamily: state.headingFont }}>IMETS</p>
+            {state.logoLight
+              ? <img src={state.logoLight} alt="logo" className="mt-2 h-10 object-contain" />
+              : <p className="mt-2 text-xl font-bold tracking-tight" style={{ color: state.primaryColor, fontFamily: state.headingFont }}>IMETS</p>
+            }
             <p className="text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">school of business</p>
           </div>
         </div>
@@ -215,26 +281,55 @@ function BrandingPanel({ theme }: { theme: BrandingTheme }) {
         </span>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={discard} disabled={!dirty || pending}>{t("setDiscard")}</Button>
-          <Button onClick={save} disabled={!dirty || pending}>{pending ? t("setSaving") : t("setSaveChanges")}</Button>
+          <Button onClick={save} disabled={!dirty || pending}>
+            {pending ? <><Loader2 className="size-4 animate-spin" />{t("setSaving")}</> : t("setSaveChanges")}
+          </Button>
         </div>
       </div>
     </div>
   );
 }
 
-function AssetCard({ title, filename, t, dark }: { title: string; filename: string; t: (k: string) => string; dark?: boolean }) {
+function LogoCard({ title, url, uploading, onUpload, onRemove, dark, favicon, t }: {
+  title: string;
+  url?: string;
+  uploading: boolean;
+  onUpload: (f: File) => void;
+  onRemove: () => void;
+  dark?: boolean;
+  favicon?: boolean;
+  t: (k: string) => string;
+}) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
   return (
     <div className="rounded-xl border border-border/70 p-4">
       <p className="text-sm font-semibold">{title}</p>
-      <div className={cn("mt-3 grid place-items-center rounded-lg border border-border/60 px-4 py-6", dark ? "bg-slate-800" : "bg-muted/20")}>
-        <span className={cn("text-2xl font-bold tracking-tight", dark ? "text-white" : "text-primary")}>IMETS</span>
+      <div className={cn(
+        "mt-3 grid place-items-center rounded-lg border border-border/60 relative",
+        favicon ? "px-4 py-4" : "px-4 py-6",
+        dark ? "bg-slate-800" : "bg-muted/20",
+      )}>
+        {uploading
+          ? <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          : url
+            ? <img
+                src={url}
+                alt={title}
+                className={favicon ? "size-10 rounded object-contain" : "max-h-14 max-w-full object-contain"}
+              />
+            : (
+              <button type="button" onClick={() => inputRef.current?.click()} className="flex flex-col items-center gap-1">
+                <UploadCloud className="size-7 text-primary" />
+                <span className="text-xs font-medium text-primary">{t("brandUpload")}</span>
+              </button>
+            )
+        }
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2 text-xs">
-        <span className="truncate text-muted-foreground">{filename}</span>
-        <span className="flex shrink-0 items-center gap-2">
-          <button type="button" className="font-medium text-primary hover:underline">{t("brandChange")}</button>
-          <button type="button" className="font-medium text-destructive hover:underline">{t("brandRemove")}</button>
-        </span>
+      {favicon && <p className="mt-1 text-[11px] text-muted-foreground">{t("brandFaviconHint")}</p>}
+      <div className="mt-2 flex items-center justify-end gap-2 text-xs">
+        <input ref={inputRef} type="file" accept="image/*,.ico" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="font-medium text-primary hover:underline">{t("brandChange")}</button>
+        {url && <button type="button" onClick={onRemove} className="font-medium text-destructive hover:underline">{t("brandRemove")}</button>}
       </div>
     </div>
   );
@@ -376,6 +471,144 @@ function IntegrationSetupModal({ integration, onClose }: { integration: Integrat
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ─────────────────────────── General Settings panel ──────────────────────── */
+const DEFAULT_SITE_FORM: SiteSettings = {
+  sitename: "", supportEmail: "", physicalAddress: "",
+  seoTitle: "", metaDescription: "", keywords: "", maintenanceMode: false,
+};
+
+function GeneralPanel({ initialSite }: { initialSite?: SiteSettings }) {
+  const t = useTranslations("Admin");
+  const [saved, setSaved] = React.useState<SiteSettings>(initialSite ?? DEFAULT_SITE_FORM);
+  const [form, setForm] = React.useState<SiteSettings>(initialSite ?? DEFAULT_SITE_FORM);
+  const [pending, setPending] = React.useState(false);
+  const set = <K extends keyof SiteSettings>(k: K, v: SiteSettings[K]) => setForm((s) => ({ ...s, [k]: v }));
+  const dirty = JSON.stringify(saved) !== JSON.stringify(form);
+
+  const save = async () => {
+    setPending(true);
+    const res = await dal.siteSettings.saveSiteSettings(form);
+    setPending(false);
+    if (res.ok) {
+      setSaved(form);
+      toast.success(t("generalSaved"));
+    } else {
+      toast.error(res.error);
+    }
+  };
+  const discard = () => setForm(saved);
+
+  return (
+    <div className="space-y-6">
+      <Breadcrumb crumbs={[t("setBreadSettings"), t("setGeneralTitle")]} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">{t("setGeneralTitle")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("setGeneralSub")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={discard} disabled={!dirty || pending}>{t("setDiscard")}</Button>
+          <Button onClick={save} disabled={!dirty || pending} className="gap-1.5">
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {pending ? t("setSaving") : t("setSaveChanges")}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <SettingField icon={<Globe className="size-4" />} label={t("generalSiteName")} hint={t("generalSiteNameHint")}>
+          <Input value={form.sitename} onChange={(e) => set("sitename", e.target.value)} placeholder="IMETS School of Business" />
+        </SettingField>
+
+        <SettingField icon={<Mail className="size-4" />} label={t("generalSupportEmail")} hint={t("generalSupportEmailHint")}>
+          <Input type="email" dir="ltr" value={form.supportEmail} onChange={(e) => set("supportEmail", e.target.value)} placeholder="support@example.com" />
+        </SettingField>
+
+        <SettingField icon={<MapPin className="size-4" />} label={t("generalAddress")} hint={t("generalAddressHint")} className="sm:col-span-2">
+          <Input value={form.physicalAddress} onChange={(e) => set("physicalAddress", e.target.value)} placeholder="123 Main St, Cairo, Egypt" />
+        </SettingField>
+
+        <SettingField icon={<Globe className="size-4" />} label={t("generalSeoTitle")} hint={t("generalSeoTitleHint")} className="sm:col-span-2">
+          <Input value={form.seoTitle} onChange={(e) => set("seoTitle", e.target.value)} placeholder="IMETS School of Business | Online Courses" />
+        </SettingField>
+
+        <SettingField icon={<Globe className="size-4" />} label={t("generalMetaDesc")} hint={t("generalMetaDescHint")} className="sm:col-span-2">
+          <textarea
+            rows={3}
+            value={form.metaDescription}
+            onChange={(e) => set("metaDescription", e.target.value)}
+            placeholder="Explore online business and healthcare courses..."
+            className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </SettingField>
+
+        <SettingField icon={<Globe className="size-4" />} label={t("generalKeywords")} hint={t("generalKeywordsHint")} className="sm:col-span-2">
+          <Input value={form.keywords} onChange={(e) => set("keywords", e.target.value)} placeholder="online courses, MBA, CPHQ, healthcare, business" />
+        </SettingField>
+
+        <div className="sm:col-span-2">
+          <div className="flex items-center justify-between rounded-xl border border-border/70 p-4">
+            <div className="flex items-center gap-3">
+              <span className={cn("grid size-9 place-items-center rounded-lg", form.maintenanceMode ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground")}>
+                <Power className="size-4" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold">{t("generalMaintenance")}</p>
+                <p className="text-xs text-muted-foreground">{t("generalMaintenanceHint")}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.maintenanceMode}
+              onClick={() => set("maintenanceMode", !form.maintenanceMode)}
+              className={cn(
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                form.maintenanceMode ? "bg-warning" : "bg-muted",
+              )}
+            >
+              <span className={cn("pointer-events-none inline-block size-5 rounded-full bg-background shadow-lg ring-0 transition-transform", form.maintenanceMode ? "translate-x-5 rtl:-translate-x-5" : "translate-x-0")} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4">
+        <span className={cn("inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide", dirty ? "text-warning" : "text-success")}>
+          <span className={cn("size-2 rounded-full", dirty ? "bg-warning" : "bg-success")} />
+          {dirty ? t("setUnsaved") : t("brandChangesLive")}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={discard} disabled={!dirty || pending}>{t("setDiscard")}</Button>
+          <Button onClick={save} disabled={!dirty || pending} className="gap-1.5">
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {pending ? t("setSaving") : t("setSaveChanges")}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingField({ icon, label, hint, children, className }: {
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      <div className="flex items-center gap-1.5">
+        <span className="text-primary">{icon}</span>
+        <Label className="text-sm font-semibold">{label}</Label>
+      </div>
+      {children}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
   );
 }
 

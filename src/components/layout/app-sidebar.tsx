@@ -17,6 +17,8 @@ interface AppSidebarProps {
   homeHref?: string;
   /** i18n key (Common namespace) for the small label under the brand. */
   taglineKey?: string;
+  logoLight?: string;
+  logoDark?: string;
 }
 
 /** Desktop collapsible sidebar rail (hidden on < lg, where the sheet is used). */
@@ -24,6 +26,8 @@ export function AppSidebar({
   nav = ADMIN_NAV,
   homeHref = "/admin/dashboard",
   taglineKey = "adminConsole",
+  logoLight,
+  logoDark,
 }: AppSidebarProps) {
   const { sidebarCollapsed, toggleSidebar } = useUi();
   const t = useTranslations();
@@ -40,11 +44,19 @@ export function AppSidebar({
           sidebarCollapsed && "justify-center px-0",
         )}
       >
-        <Link href={homeHref} className="flex items-center gap-2.5">
-          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] text-white shadow-md shadow-primary/25 ring-1 ring-white/10">
-            <GraduationCap className="size-5" />
-          </span>
-          {!sidebarCollapsed && (
+        <Link href={homeHref} className="flex items-center gap-2.5 min-w-0">
+          {logoLight ? (
+            <img
+              src={logoLight}
+              alt={BRAND.fullName}
+              className={cn("shrink-0 object-contain", sidebarCollapsed ? "h-8 w-8" : "h-9 max-w-[140px]")}
+            />
+          ) : (
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] text-white shadow-md shadow-primary/25 ring-1 ring-white/10">
+              <GraduationCap className="size-5" />
+            </span>
+          )}
+          {!sidebarCollapsed && !logoLight && (
             <span className="flex flex-col leading-tight">
               <span className="text-sm font-semibold">{BRAND.fullName}</span>
               <span className="text-[11px] text-sidebar-foreground/60">

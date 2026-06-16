@@ -5,6 +5,7 @@ export interface GeneralSettingsSite {
   favicon?: string;
   seoTitle?: string;
   metaDescription?: string;
+  keywords?: string;
   maintenanceMode?: boolean;
 }
 

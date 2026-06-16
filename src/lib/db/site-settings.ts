@@ -28,6 +28,26 @@ export interface Integration {
   status: IntegrationStatus;
 }
 
+export interface SiteSettings {
+  sitename: string;
+  supportEmail: string;
+  physicalAddress: string;
+  seoTitle: string;
+  metaDescription: string;
+  keywords: string;
+  maintenanceMode: boolean;
+}
+
+export const DEFAULT_SITE: SiteSettings = {
+  sitename: "",
+  supportEmail: "",
+  physicalAddress: "",
+  seoTitle: "",
+  metaDescription: "",
+  keywords: "",
+  maintenanceMode: false,
+};
+
 export interface BrandingTheme {
   primaryColor: string;
   accentColor: string;
@@ -35,6 +55,9 @@ export interface BrandingTheme {
   headingFont: string;
   bodyFont: string;
   radius: "square" | "modern" | "soft" | "round";
+  logoLight?: string;
+  logoDark?: string;
+  favicon?: string;
 }
 
 export const DEFAULT_THEME: BrandingTheme = {
@@ -75,6 +98,8 @@ export function mapTheme(b?: GeneralSettingsBranding): BrandingTheme {
     headingFont: b.headingFont ?? DEFAULT_THEME.headingFont,
     bodyFont: b.bodyFont ?? DEFAULT_THEME.bodyFont,
     radius: toRadius(b.borderRadius),
+    logoLight: b.logoLight,
+    logoDark: b.logoDark,
   };
 }
 
@@ -87,6 +112,8 @@ export function themeToBranding(t: BrandingTheme): GeneralSettingsBranding {
     headingFont: t.headingFont,
     bodyFont: t.bodyFont,
     borderRadius: RADIUS_PX[t.radius],
+    logoLight: t.logoLight,
+    logoDark: t.logoDark,
   };
 }
 
@@ -125,9 +152,39 @@ async function loadSettings(): Promise<GeneralSettings | null> {
   return cachedSettings;
 }
 
+export async function getSiteSettings(): Promise<{ settings: SiteSettings; id?: string }> {
+  const s = await loadSettings();
+  return {
+    settings: {
+      sitename: s?.site?.sitename ?? DEFAULT_SITE.sitename,
+      supportEmail: s?.site?.supportEmail ?? DEFAULT_SITE.supportEmail,
+      physicalAddress: s?.site?.physicalAddress ?? DEFAULT_SITE.physicalAddress,
+      seoTitle: s?.site?.seoTitle ?? DEFAULT_SITE.seoTitle,
+      metaDescription: s?.site?.metaDescription ?? DEFAULT_SITE.metaDescription,
+      keywords: s?.site?.keywords ?? DEFAULT_SITE.keywords,
+      maintenanceMode: s?.site?.maintenanceMode ?? DEFAULT_SITE.maintenanceMode,
+    },
+    id: s?._id,
+  };
+}
+
+export async function saveSiteSettingsDb(site: SiteSettings): Promise<GeneralSettings> {
+  const existing = await getGeneralSettings();
+  const current = existing.ok ? existing.data : null;
+  const next: Omit<GeneralSettings, "_id" | "createdAt" | "updatedAt"> = {
+    ...(current ?? {}),
+    site: { ...(current?.site ?? {}), ...site },
+  };
+  delete (next as Record<string, unknown>)._id;
+  const res = await saveGeneralSettings(next, current?._id);
+  if (!res.ok) throw new Error(res.error);
+  cachedSettings = res.data;
+  return res.data;
+}
+
 export async function getTheme(): Promise<BrandingTheme> {
   const s = await loadSettings();
-  return mapTheme(s?.branding);
+  return { ...mapTheme(s?.branding), favicon: s?.site?.favicon };
 }
 
 export async function getIntegrations(): Promise<Integration[]> {
@@ -139,13 +196,18 @@ export async function getIntegrations(): Promise<Integration[]> {
   }));
 }
 
-/** Persist branding theme back to the `/general-settings` document. */
+/** Persist branding theme back to the `/general-settings` document.
+ * Also saves favicon → site.favicon since it lives outside the branding block. */
 export async function saveTheme(theme: BrandingTheme): Promise<GeneralSettings> {
   const existing = await getGeneralSettings();
   const current = existing.ok ? existing.data : null;
   const next: Omit<GeneralSettings, "_id" | "createdAt" | "updatedAt"> = {
     ...(current ?? {}),
     branding: { ...(current?.branding ?? {}), ...themeToBranding(theme) },
+    site: {
+      ...(current?.site ?? {}),
+      ...(theme.favicon !== undefined ? { favicon: theme.favicon } : {}),
+    },
   };
   delete (next as Record<string, unknown>)._id;
   const res = await saveGeneralSettings(next, current?._id);

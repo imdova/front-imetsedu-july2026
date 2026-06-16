@@ -11,32 +11,47 @@ import { ApiBootstrap } from "@/components/providers/api-bootstrap";
 import { configureServerApiClient } from "@/lib/api-client.server";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getTheme, getSiteSettings } from "@/lib/db/site-settings";
 
 // Configure the server-side integration client (cookie bearer token) once.
 configureServerApiClient();
 
+const RADIUS_CSS: Record<string, string> = {
+  square: "0.125rem", modern: "0.375rem", soft: "0.625rem", round: "1rem",
+};
+
 const geistSans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-// Display face for headings — pairs with Geist for a distinct, modern brand feel.
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-heading",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
 });
 
-// Arabic typeface — applied automatically to [dir="rtl"] / [lang="ar"] content.
 const cairo = Cairo({ variable: "--font-arabic", subsets: ["arabic", "latin"] });
 
-export const metadata: Metadata = {
-  title: {
-    default: "IMETS School of Business",
-    template: "%s · IMETS School of Business",
-  },
-  description:
-    "IMETS School of Business — a modern online courses platform for professional and executive education.",
-  metadataBase: new URL("https://imetsedu.com"),
-};
+/** Dynamic metadata pulled from general-settings. */
+export async function generateMetadata(): Promise<Metadata> {
+  const [{ settings }, theme] = await Promise.all([
+    getSiteSettings().catch(() => ({ settings: null })),
+    getTheme().catch(() => null),
+  ]);
+  const siteName = settings?.sitename || "IMETS School of Business";
+  const seoTitle = settings?.seoTitle || siteName;
+  const description = settings?.metaDescription ||
+    "IMETS School of Business — a modern online courses platform for professional and executive education.";
+  const keywords = settings?.keywords || undefined;
+  const faviconUrl = theme?.favicon;
+
+  return {
+    title: { default: seoTitle, template: `%s · ${siteName}` },
+    description,
+    ...(keywords ? { keywords } : {}),
+    ...(faviconUrl ? { icons: { icon: faviconUrl, shortcut: faviconUrl } } : {}),
+    metadataBase: new URL("https://imetsedu.com"),
+  };
+}
 
 /** Pre-render both locales at build time. */
 export function generateStaticParams() {
@@ -53,14 +68,26 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
 
-  // Enable static rendering for this locale.
   setRequestLocale(locale);
+
+  // Fetch branding server-side and inject as inline CSS variables on <html>.
+  // Inline styles on the root element cascade to everything beneath it, which
+  // is the correct way to inject dynamic CSS variables without a <style> tag.
+  const theme = await getTheme().catch(() => null);
+  const brandingVars = theme
+    ? ({
+        "--primary": theme.primaryColor,
+        "--sidebar-primary": theme.primaryColor,
+        "--radius": RADIUS_CSS[theme.radius] ?? "0.75rem",
+      } as React.CSSProperties)
+    : undefined;
 
   return (
     <html
       lang={locale}
       dir={isRtl(locale) ? "rtl" : "ltr"}
       suppressHydrationWarning
+      style={brandingVars}
       className={`${geistSans.variable} ${geistMono.variable} ${jakarta.variable} ${cairo.variable} h-full antialiased`}
     >
       <body
