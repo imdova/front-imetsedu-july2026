@@ -1,7 +1,10 @@
 import { api, type Result } from "@integration/services/http/client";
 
-/** Coarse system role as returned by the backend User model. */
-export type BackendRole = "admin" | "user" | "instructor";
+/** Coarse system role as returned by the backend User model — matches the
+ * backend enum `['USER','ADMIN']`. The three app users are derived from these:
+ * admin + no staffRole = super-admin, admin + staffRole = staff member (both
+ * under /admin), user = student. */
+export type BackendRole = "admin" | "user";
 
 export type StaffRolePermissions = Record<string, boolean>;
 

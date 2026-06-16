@@ -6,25 +6,18 @@
 import type { AuthResponse, AuthUserDto, BackendRole } from "@integration/services/auth";
 import type { AuthUser, StaffRole } from "@/store/slices/auth-slice";
 
-export type AppRole = AuthUser["role"]; // "admin" | "instructor" | "staff" | "student"
+export type AppRole = AuthUser["role"];
 
 /**
- * Map a backend coarse role to this app's routing role.
- *
- * Mirrors old codebase constants/auth.ts redirectMap exactly:
- *   - role="admin" (both super-admin AND staff members) → "admin" → /admin/dashboard
- *   - role="instructor"                                 → "instructor"
- *   - role="user"                                       → "student" (or "staff" if has staffRole)
- *
- * The distinction between super-admin and staff is made by staffRole presence:
- *   - staffRole === null  → super-admin → all permissions granted
- *   - staffRole is object → staff member → filtered permissions
- * This check happens in sidebar-nav (hasAccess) and components (!user?.staffRole).
+ * Map a backend coarse role (admin | user) to this app's routing role — the
+ * old project's exact 3-user model:
+ *   - role="admin", staffRole===null  → super-admin (Admin)  → /admin
+ *   - role="admin", staffRole=object  → staff member (Staff) → /admin (filtered)
+ *   - role="user"                     → Student               → /student
  */
 export function mapRole(role: BackendRole, staffRole?: StaffRole | null): AppRole {
-  if (role === "admin") return "admin"; // both super-admin and staff
-  if (role === "instructor") return "instructor";
-  // backend role === "user": student (or legacy staff schema)
+  if (role === "admin") return "admin"; // both super-admin and staff → /admin
+  // backend role === "user": a staffRole object marks a staff member; else student
   if (staffRole !== undefined && staffRole !== null) return "staff";
   return "student";
 }
