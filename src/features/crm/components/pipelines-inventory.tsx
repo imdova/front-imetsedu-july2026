@@ -2,17 +2,23 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { GitBranch, Users, Trophy, DollarSign, TrendingUp, LayoutGrid, Pencil, Trash2, Plus, Search } from "lucide-react";
+import { GitBranch, Users, Trophy, DollarSign, TrendingUp, LayoutGrid, Pencil, Trash2, Plus, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import type { PipelineSummary, PipelineInventoryStats } from "@/lib/db/crm";
+import { dal } from "@/lib/dal";
 import { useRouter } from "@/i18n/navigation";
 import { cn, formatCompact, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 
 export function PipelinesInventory({
   initial,
@@ -27,6 +33,43 @@ export function PipelinesInventory({
   const [rows, setRows] = React.useState(initial);
   const [tab, setTab] = React.useState<"active" | "archived">("active");
   const [search, setSearch] = React.useState("");
+
+  // New-pipeline modal
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [title, setTitle] = React.useState("");
+  const [desc, setDesc] = React.useState("");
+  const [isPrimary, setIsPrimary] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [delTarget, setDelTarget] = React.useState<PipelineSummary | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+
+  const submitCreate = async () => {
+    if (!title.trim()) { toast.error(t("pipelineTitleRequired")); return; }
+    setSaving(true);
+    const res = await dal.crm.createPipeline({ title: title.trim(), description: desc.trim() || undefined, isPrimary });
+    setSaving(false);
+    if (res.ok) {
+      setRows((prev) => [res.data, ...prev]);
+      setCreateOpen(false); setTitle(""); setDesc(""); setIsPrimary(false);
+      toast.success(t("pipelineCreated", { title: res.data.title }));
+    } else {
+      toast.error(res.error);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!delTarget) return;
+    setDeleting(true);
+    const res = await dal.crm.deletePipeline(delTarget.id);
+    setDeleting(false);
+    if (res.ok) {
+      setRows((prev) => prev.filter((r) => r.id !== delTarget.id));
+      toast.success(t("pipelineDeleted", { title: delTarget.title }));
+      setDelTarget(null);
+    } else {
+      toast.error(res.error);
+    }
+  };
 
   const filtered = rows.filter(
     (p) => (tab === "active" ? !p.archived : p.archived) && p.title.toLowerCase().includes(search.toLowerCase()),
@@ -59,7 +102,7 @@ export function PipelinesInventory({
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchPipelines")} className="w-56 ps-9" />
           </div>
-          <Button className="gap-1.5"><Plus className="size-4" />{t("newPipeline")}</Button>
+          <Button className="gap-1.5" onClick={() => setCreateOpen(true)}><Plus className="size-4" />{t("newPipeline")}</Button>
         </div>
       </div>
 
@@ -125,7 +168,7 @@ export function PipelinesInventory({
                       <div className="flex items-center justify-end gap-1.5">
                         <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={openPipeline}><LayoutGrid className="size-3.5" />{t("open")}</Button>
                         <Button variant="ghost" size="sm" className="h-8 gap-1.5"><Pencil className="size-3.5" />{t("edit")}</Button>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-destructive" onClick={() => toast.error(t("delete"))}><Trash2 className="size-3.5" />{t("delete")}</Button>
+                        <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-destructive" onClick={() => setDelTarget(p)}><Trash2 className="size-3.5" />{t("delete")}</Button>
                       </div>
                     </td>
                   </tr>
@@ -135,6 +178,52 @@ export function PipelinesInventory({
           </div>
         </CardContent>
       </Card>
+
+      {/* New pipeline */}
+      <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setTitle(""); setDesc(""); setIsPrimary(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("newPipeline")}</DialogTitle>
+            <DialogDescription>{t("newPipelineHint")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t("pipelineTitleLabel")} <span className="text-destructive">*</span></Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("pipelineTitlePh")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("pipelineDescLabel")}</Label>
+              <Textarea rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t("pipelineDescPh")} />
+            </div>
+            <label className="flex cursor-pointer items-center justify-between rounded-lg border p-3">
+              <span className="text-sm font-medium">{t("pipelinePrimary")}</span>
+              <Switch checked={isPrimary} onCheckedChange={setIsPrimary} />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={saving}>{t("cancel")}</Button>
+            <Button onClick={submitCreate} disabled={!title.trim() || saving} className="gap-1.5">
+              {saving ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}{t("createPipelineBtn")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete pipeline confirm */}
+      <Dialog open={!!delTarget} onOpenChange={(o) => !o && setDelTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("deletePipelineTitle")}</DialogTitle>
+            <DialogDescription>{t("deletePipelineDesc", { title: delTarget?.title ?? "" })}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDelTarget(null)} disabled={deleting}>{t("cancel")}</Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleting} className="gap-1.5">
+              {deleting && <Loader2 className="size-4 animate-spin" />}{t("delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

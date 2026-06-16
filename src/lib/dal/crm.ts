@@ -439,8 +439,68 @@ export const fetchCrmFieldOptions = async (): Promise<Result<{ sources: string[]
   }
 };
 
-export const fetchPipelineInventory = () => wrap(db.getPipelineInventory, "Failed to load pipelines");
-export const fetchPipelineInventoryStats = () => wrap(db.getPipelineInventoryStats, "Failed to load pipeline stats");
+/** Map a backend pipeline (from GET /crm/pipelines `data[]`) to the inventory row. */
+function mapPipelineSummary(p: any): db.PipelineSummary {
+  const leads = p?.leadsCount ?? 0;
+  const enrollments = p?.enrollmentsCount ?? 0;
+  return {
+    id: p?._id ?? p?.id ?? "",
+    title: p?.title ?? "Pipeline",
+    source: p?.salesAgent?.name ?? "Custom",
+    createdAt: p?.createdAt
+      ? new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "—",
+    leads,
+    enrollments,
+    revenue: p?.revenue ?? 0,
+    currency: "EGP",
+    conversion: leads > 0 ? Math.round((enrollments / leads) * 100) : 0,
+    archived: p?.isActive === false,
+  };
+}
+
+/** LIVE: all pipelines with per-pipeline lead/enrollment/revenue stats (GET /crm/pipelines). */
+export const fetchPipelineInventory = async (): Promise<Result<db.PipelineSummary[]>> => {
+  const res = await leadsSvc.listPipelines();
+  if (!res.ok) return res;
+  try {
+    return ok((res.data?.data ?? []).map(mapPipelineSummary));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to load pipelines"));
+  }
+};
+
+/** LIVE: aggregate pipeline KPIs (the `stats` block of GET /crm/pipelines). */
+export const fetchPipelineInventoryStats = async (): Promise<Result<db.PipelineInventoryStats>> => {
+  const res = await leadsSvc.listPipelines();
+  if (!res.ok) return res;
+  const s = (res.data?.stats ?? {}) as Record<string, number>;
+  const data = res.data?.data ?? [];
+  return ok({
+    totalPipelines: s.totalPipelines ?? data.length,
+    activePipelines: data.filter((p: any) => p?.isActive !== false).length,
+    totalLeads: s.totalLeads ?? 0,
+    totalEnrollments: s.totalEnrollments ?? 0,
+    totalRevenue: s.totalRevenue ?? 0,
+    avgConversion: Math.round(s.avgConversion ?? 0),
+  });
+};
+
+/** LIVE: create a pipeline (POST /crm/pipelines). Returns the new inventory row. */
+export const createPipeline = async (
+  input: { title: string; description?: string; isPrimary?: boolean },
+): Promise<Result<db.PipelineSummary>> => {
+  const res = await leadsSvc.createPipeline(input);
+  if (!res.ok) return res;
+  try {
+    return ok(mapPipelineSummary(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to create pipeline"));
+  }
+};
+
+/** LIVE: delete a pipeline (DELETE /crm/pipelines/:id). */
+export const deletePipeline = (id: string): Promise<Result<void>> => leadsSvc.deletePipeline(id);
 
 /** LIVE: email a "set your password" invite to the lead's user account
  * (POST /students/send-set-password). The backend resolves the lead → user. */
