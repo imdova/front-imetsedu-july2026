@@ -6,7 +6,7 @@ import { dal } from "@/lib/dal";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { LeadsTable } from "@/features/crm/components/leads-table";
-import { requirePermission, getSessionUser } from "@/lib/permission-guard";
+import { requirePermission, getSessionUser, can } from "@/lib/permission-guard";
 
 export default async function AdminLeadsPage({
   params,
@@ -20,6 +20,7 @@ export default async function AdminLeadsPage({
   const user = await getSessionUser();
   const isStaff = user?.staffRole !== null && user?.staffRole !== undefined;
   const counselorId = isStaff ? (user?.staffId ?? user?.id) : undefined;
+  const canCreate = await can("crm.leads.create");
 
   const t = await getTranslations("Crm");
 
@@ -43,12 +44,14 @@ export default async function AdminLeadsPage({
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
       <PageHeader title={t("leadsTitle")} description={t("leadsSubtitle")}>
-        <Button asChild className="gap-1.5">
-          <Link href="/admin/crm/leads/new">
-            <Plus className="size-4" />
-            {t("newLead")}
-          </Link>
-        </Button>
+        {canCreate && (
+          <Button asChild className="gap-1.5">
+            <Link href="/admin/crm/leads/new">
+              <Plus className="size-4" />
+              {t("newLead")}
+            </Link>
+          </Button>
+        )}
       </PageHeader>
       <LeadsTable
         initialData={leadsRes.ok ? leadsRes.data : []}

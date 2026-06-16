@@ -16,6 +16,8 @@ export interface StaffRole {
 
 export interface AuthUserDto {
   id: string;
+  /** Backend uses Mongo `_id`; normalized to `id` in getProfile(). */
+  _id?: string;
   name: string;
   email: string;
   role: BackendRole;
@@ -51,18 +53,22 @@ export function register(input: {
 }
 
 /**
- * GET /auth/profile — current user (requires a valid bearer token).
- * Pass `accessToken` explicitly when calling right after login (before the
- * token is stored in Zustand) — mirrors old codebase AuthDAL.getCurrentUser(token).
+ * GET /users/me — current authenticated user profile (requires a bearer token).
+ * Returns the staffRole + fine-grained permissions used by the guards. Pass
+ * `accessToken` explicitly when calling right after login (before the token is
+ * in Zustand) — mirrors old codebase AuthDAL.getCurrentUser(token). The backend
+ * returns Mongo `_id`; we normalize it to `id`.
  */
-export function getProfile(accessToken?: string): Promise<Result<AuthUserDto>> {
-  if (accessToken) {
-    return api.get<AuthUserDto>("/auth/profile", {
-      requireAuth: false,
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-  }
-  return api.get<AuthUserDto>("/auth/profile");
+export async function getProfile(accessToken?: string): Promise<Result<AuthUserDto>> {
+  const res = accessToken
+    ? await api.get<AuthUserDto>("/users/me", {
+        requireAuth: false,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+    : await api.get<AuthUserDto>("/users/me");
+  if (!res.ok) return res;
+  const d = res.data;
+  return { ...res, data: { ...d, id: d.id ?? d._id ?? "" } };
 }
 
 export function refresh(refreshToken: string): Promise<Result<AuthResponse>> {

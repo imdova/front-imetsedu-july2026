@@ -22,6 +22,18 @@ export async function getSessionUser(): Promise<AuthUser | null> {
 }
 
 /**
+ * Server-side boolean permission check (does NOT redirect). Use to conditionally
+ * render an action control in a server component (e.g. a "New lead" button).
+ * Super-admins (staffRole === null) and not-yet-hydrated sessions return true.
+ */
+export async function can(permission: string): Promise<boolean> {
+  const user = await getSessionUser();
+  if (!user) return true;
+  if (user.staffRole === null || user.staffRole === undefined) return true;
+  return user.staffRole.permissions?.[permission] === true;
+}
+
+/**
  * Server-side permission check for page.tsx files.
  * Call at the top of any server page/layout that requires a specific permission.
  *

@@ -195,6 +195,8 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
     return () => clearTimeout(id);
   }, [load, initialData, active]);
 
+  const canExport = usePermission("crm.leads.export");
+
   const onExport = async () => {
     setExporting(true);
     const res = await dal.crm.exportLeads();
@@ -277,10 +279,12 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
             </button>
           ))}
         </div>
-        <Button variant="outline" size="sm" className="mb-1 gap-1.5" onClick={onExport} disabled={exporting}>
-          <Download className="size-4" />
-          {t("exportData")}
-        </Button>
+        {canExport && (
+          <Button variant="outline" size="sm" className="mb-1 gap-1.5" onClick={onExport} disabled={exporting}>
+            <Download className="size-4" />
+            {t("exportData")}
+          </Button>
+        )}
       </div>
 
       {/* Date-range chips */}
@@ -426,7 +430,8 @@ function BulkBar({
 }) {
   const canAssign = usePermission("crm.leads.assign");
   const canEdit = usePermission("crm.leads.edit");
-  if (!canAssign && !canEdit) return null;
+  const canDelete = usePermission("crm.leads.delete");
+  if (!canAssign && !canEdit && !canDelete) return null;
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
       <span className="text-sm font-medium text-primary">{t("nSelected", { n: count })}</span>
@@ -445,7 +450,7 @@ function BulkBar({
           items={pipelines} onPick={onPipeline} empty={t("bulkNoPipelines")} />
       )}
 
-      {canEdit && (
+      {canDelete && (
         <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" disabled={busy} onClick={onDelete}>
           <Trash2 className="size-4" />{t("bulkDelete")}
         </Button>

@@ -31,6 +31,7 @@ import { toast } from "sonner";
 
 import type { Lead, PipelineStage, ActivityKind, FollowUpStatus } from "@/lib/db/crm";
 import { dal } from "@/lib/dal";
+import { usePermission } from "@/hooks/use-permission";
 import { cn, getInitials, createId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -123,6 +124,11 @@ export function LeadDetail({
   const locale = useLocale();
   const tr = t as unknown as (k: string) => string;
   const tv = t as unknown as (k: string, vals?: Record<string, string>) => string;
+  // Action-button permission gates (hidden/disabled when not permitted).
+  const canEdit = usePermission("crm.leads.edit");
+  const canNote = usePermission("crm.leads.add_note");
+  const canAssign = usePermission("crm.leads.assign");
+  const canCert = usePermission("lms.certificates.upload");
   const { stages: crmStages, getDisplayName } = usePipelineStages(stages);
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -370,8 +376,8 @@ export function LeadDetail({
           <ActionBtn icon={Phone} label={t("actCall")} href={`tel:${lead.phoneCountryCode}${lead.phone}`} />
           <ActionBtn icon={MessageCircle} label={t("actWhatsApp")} href={`https://wa.me/${(lead.whatsApp ?? lead.phone).replace(/\D/g, "")}`} external />
           <ActionBtn icon={Mail} label={t("actEmail")} href={`mailto:${lead.email}`} />
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setFuOpen(true)}><CalendarDays className="size-4" />{t("actSchedule")}</Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setChannel("note")}><StickyNote className="size-4" />{t("actNote")}</Button>
+          {canEdit && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setFuOpen(true)}><CalendarDays className="size-4" />{t("actSchedule")}</Button>}
+          {canNote && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setChannel("note")}><StickyNote className="size-4" />{t("actNote")}</Button>}
           <div className="ms-auto flex flex-wrap items-center justify-end gap-2">
             {/* Admin-only: manage which pipelines this lead belongs to */}
             {isAdmin && (
@@ -381,13 +387,13 @@ export function LeadDetail({
                 onSave={assignPipelines}
               />
             )}
-            <PipelineStatusMenu
+            {canEdit && <PipelineStatusMenu
               pipelines={lead.pipelines ?? []}
               pipelineStages={pipelineStages}
               fallbackLabel={getDisplayName(lead.stageKey)}
               onMove={moveStageInPipeline}
               t={t}
-            />
+            />}
           </div>
         </div>
       </div>
@@ -414,6 +420,8 @@ export function LeadDetail({
                       onChange={(e) => setJobTitle(e.target.value)}
                       onBlur={saveJobTitle}
                       placeholder={t("jobTitlePlaceholder")}
+                      readOnly={!canEdit}
+                      disabled={!canEdit}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -522,7 +530,7 @@ export function LeadDetail({
                   </div>
                   <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={t("notePlaceholder")} className="min-h-28" />
                   <div className="mt-3 flex justify-end">
-                    <Button onClick={saveComposer} disabled={!draft.trim() || saving}>{channel === "note" ? t("saveNote") : t("actSchedule")}</Button>
+                    <Button onClick={saveComposer} disabled={!draft.trim() || saving || (channel === "note" && !canNote)}>{channel === "note" ? t("saveNote") : t("actSchedule")}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -560,7 +568,7 @@ export function LeadDetail({
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2 text-base"><CalendarDays className="size-4 text-primary" />{t("followUpAlerts")}</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <Button variant="outline" size="sm" className="w-full gap-1.5 text-primary" onClick={() => setFuOpen(true)}><Plus className="size-4" />{t("addFollowUp")}</Button>
+                  {canEdit && <Button variant="outline" size="sm" className="w-full gap-1.5 text-primary" onClick={() => setFuOpen(true)}><Plus className="size-4" />{t("addFollowUp")}</Button>}
                   {lead.followUps.map((f) => (
                     <div key={f.id} className="space-y-2 rounded-xl border p-3">
                       <Badge className={cn("border-transparent", FOLLOWUP_STYLE[f.status])}>
@@ -609,7 +617,7 @@ export function LeadDetail({
                     </Select>
                   </div>
                   <input ref={groupCertRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { void uploadCert(e.target.files?.[0], "group"); e.target.value = ""; }} />
-                  <Button className="w-full gap-1.5" disabled={certUploading !== null} onClick={() => groupCertRef.current?.click()}>
+                  <Button className="w-full gap-1.5" disabled={certUploading !== null || !canCert} onClick={() => groupCertRef.current?.click()}>
                     {certUploading === "group" ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}{t("choosePdf")}
                   </Button>
                   <p className="text-xs text-muted-foreground">{t("reuploadGroup")}</p>
@@ -619,7 +627,7 @@ export function LeadDetail({
                 <CardContent className="space-y-3 pt-6">
                   <p className="inline-flex items-center gap-1.5 font-semibold"><Award className="size-4" />{t("lmsCertificate")}</p>
                   <input ref={lmsCertRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => { void uploadCert(e.target.files?.[0], "lms"); e.target.value = ""; }} />
-                  <Button variant="secondary" className="w-full gap-1.5" disabled={certUploading !== null} onClick={() => lmsCertRef.current?.click()}>
+                  <Button variant="secondary" className="w-full gap-1.5" disabled={certUploading !== null || !canCert} onClick={() => lmsCertRef.current?.click()}>
                     {certUploading === "lms" ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}{t("choosePdf")}
                   </Button>
                   <p className="text-xs text-muted-foreground">{t("reuploadLms")}</p>
