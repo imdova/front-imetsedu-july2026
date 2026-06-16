@@ -42,19 +42,13 @@ export interface AuthSlice {
   logout: () => void;
 }
 
-// A seeded admin so the console renders a signed-in shell out of the box.
-const DEMO_ADMIN: AuthUser = {
-  id: "usr_admin",
-  name: "Ahmed Habib",
-  email: "ahmed.habib@imetsedu.com",
-  role: "admin",
-  staffRole: null, // null = super-admin = all permissions
-};
-
 export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
   set,
 ) => ({
-  user: DEMO_ADMIN,
+  // Like the old project: start unauthenticated (no demo seed). The real user is
+  // restored from the persisted store (localStorage) on the client and from the
+  // session cookie server-side; login + PermissionsRefresher populate it.
+  user: null,
   setUser: (user) => set({ user }),
   logout: () => set({ user: null }),
 });

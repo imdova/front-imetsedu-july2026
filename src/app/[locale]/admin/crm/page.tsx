@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
+import { requirePermission } from "@/lib/permission-guard";
 import { PageHeader } from "@/components/shared/page-header";
 import { CrmDashboard } from "@/features/crm/components/crm-dashboard";
 
@@ -11,6 +12,7 @@ export default async function AdminCrmDashboardPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  await requirePermission("crm.dashboard.view");
   const t = await getTranslations("Crm");
 
   const res = await dal.crm.fetchCrmStats();
