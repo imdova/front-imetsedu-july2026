@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { AdminBootstrap } from "@/components/layout/admin-bootstrap";
+import { PermissionsRefresher } from "@/components/layout/permissions-refresher";
 
 /**
  * Admin console shell: collapsible sidebar rail + sticky header + scrollable
@@ -23,6 +24,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-svh bg-muted/30">
       <AdminBootstrap />
+      <PermissionsRefresher />
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader />

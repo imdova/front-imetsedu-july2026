@@ -12,6 +12,7 @@ import type {
   PaymentPlanSummary,
   PlanInstallment,
   PlanInstallmentStatus,
+  PipelineHistoryEntry,
 } from "@/lib/db/crm";
 import type { LeadPriority } from "@/lib/crm/scoring";
 
@@ -118,6 +119,14 @@ export function mapLead(raw: any): Lead {
     text: a.action ?? "",
     ago: relativeTime(a.performedAt),
     at: a.performedAt ?? a.createdAt ?? undefined,
+    notes: a.notes ?? a.note ?? undefined,
+  }));
+  const pipelineHistory: PipelineHistoryEntry[] = (raw.data?.pipelineHistory ?? []).map((h: any) => ({
+    stage: h.stage ?? "",
+    at: h.at ?? "",
+    pipelineId: h.pipelineId ?? undefined,
+    pipelineName: h.pipelineName ?? undefined,
+    logData: h.logData ?? undefined,
   }));
   const followUps: FollowUp[] = (raw.data?.followUps ?? []).map((f: any, i: number) => ({
     id: f.id ?? `fu_${i}`,
@@ -144,9 +153,9 @@ export function mapLead(raw: any): Lead {
     phoneCountryCode: raw.phoneCountryCode ?? "",
     whatsApp: raw.whatsApp,
     country: raw.country ?? "",
-    specialty: raw.specialty,
-    educationLevel: raw.educationLevel,
-    source: raw.source ?? "—",
+    specialty: raw.specialty ?? raw["6a05e1f537c10d66e58aff55"],
+    educationLevel: raw.educationLevel ?? raw["6a0608f837c10d66e58b01da"],
+    source: raw.source ?? raw["6a05eda937c10d66e58b0154"] ?? "—",
     gender: raw.gender,
     // The backend populates coursesOfInterest with {_id, titleEn, titleAr};
     // keep ids for the form, expose names for the list column.
@@ -176,5 +185,7 @@ export function mapLead(raw: any): Lead {
     pipelines: pipelines
       .map((p) => ({ id: p._id ?? p.id, title: p.title ?? "Pipeline", stage: p.stage ?? "" }))
       .filter((p) => p.id),
+    pipelineHistory,
+    rawData: raw.data ?? undefined,
   };
 }

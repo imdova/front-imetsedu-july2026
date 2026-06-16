@@ -5,12 +5,15 @@ import { useTranslations } from "next-intl";
 import { FileText, Wallet, AlertTriangle, TrendingUp, Search, Layers, ListChecks, Columns3, Receipt } from "lucide-react";
 
 import type { Invoice, FinanceStats } from "@/lib/db/finance";
+import { mapInvoice, mapFinanceStats } from "@/lib/finance/map-finance";
+import { getInvoices } from "@integration/services/invoices";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { InvoicesTable } from "./invoices-table";
 
+const EMPTY_STATS: FinanceStats = { collected: 0, outstanding: 0, overdue: 0, refunded: 0 };
 const STATUSES = ["draft", "sent", "partial", "paid", "overdue"] as const;
 const RANGES = ["all", "today", "7_days", "month", "year"] as const;
 type Range = (typeof RANGES)[number];
@@ -35,17 +38,42 @@ function invInRange(iso: string | undefined, range: Range): boolean {
 }
 
 export function InvoicesModule({
-  invoices, stats, basePath,
+  invoices: serverInvoices = [],
+  stats: serverStats = EMPTY_STATS,
+  basePath,
 }: {
-  invoices: Invoice[];
-  stats: FinanceStats;
+  invoices?: Invoice[];
+  stats?: FinanceStats;
   basePath: string;
 }) {
   const t = useTranslations("Finance");
+  const [invoices, setInvoices] = React.useState<Invoice[]>(serverInvoices);
+  const [stats, setStats] = React.useState<FinanceStats>(serverStats);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [tab, setTab] = React.useState<"all" | "installments" | "manual">("all");
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<string | null>(null);
   const [range, setRange] = React.useState<Range>("all");
+
+  React.useEffect(() => {
+    let active = true;
+    async function load() {
+      setIsLoading(true);
+      try {
+        const res = await getInvoices({ limit: 200 });
+        if (!active) return;
+        if (res.ok && res.data) {
+          setInvoices((res.data.data ?? []).map(mapInvoice));
+          setStats(mapFinanceStats(res.data.stats));
+        }
+      } catch {
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+    load();
+    return () => { active = false; };
+  }, []);
 
   const byTab = invoices.filter((i) =>
     tab === "all" ? true : tab === "installments" ? i.type === "installment" : i.type === "one-off");
@@ -138,7 +166,12 @@ export function InvoicesModule({
       </div>
 
       {/* Table or empty state */}
-      {filtered.length > 0 ? (
+      {isLoading ? (
+        <div className="grid place-items-center gap-1.5 py-16 text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+          <p className="text-sm text-muted-foreground">{t("loadingInvoices")}</p>
+        </div>
+      ) : filtered.length > 0 ? (
         <InvoicesTable initialData={filtered} basePath={basePath} />
       ) : (
         <div className="grid place-items-center gap-2 rounded-xl border border-dashed py-20 text-center">

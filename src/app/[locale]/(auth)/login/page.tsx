@@ -41,7 +41,14 @@ export default function LoginPage() {
       toast.error(res.error || t("loginFailed"));
       return;
     }
-    const user = toAuthUser(res.data);
+    // Fetch full profile with the token passed explicitly — mirrors old codebase:
+    // AuthDAL.getCurrentUser(result.data.access_token)
+    // This is critical: the token isn't in Zustand yet so getProfile() must
+    // receive it as a parameter, otherwise staffRole comes back empty and the
+    // user is incorrectly mapped as "student" instead of "staff".
+    const profileResult = await authDal.getProfile(res.data.access_token);
+    const profile = profileResult.ok ? profileResult.data : null;
+    const user = toAuthUser(res.data, profile);
     setUser(user);
     persistSessionCookie(user);
     if (res.data.refresh_token) persistRefreshToken(res.data.refresh_token);

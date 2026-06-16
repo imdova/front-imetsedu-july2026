@@ -1,6 +1,6 @@
 export interface CrmSetting {
-  id: string;
-  _id?: string;
+  _id: string;       // primary field returned by the API
+  id?: string;       // alias – may be absent in raw API responses
   nameAr: string;
   nameEn: string;
   options: string[];

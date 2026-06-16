@@ -6,6 +6,7 @@ import { dal } from "@/lib/dal";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { LeadsTable } from "@/features/crm/components/leads-table";
+import { requirePermission, getSessionUser } from "@/lib/permission-guard";
 
 export default async function StaffLeadsPage({
   params,
@@ -14,20 +15,28 @@ export default async function StaffLeadsPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  
+  await requirePermission("crm.leads.view");
+  const user = await getSessionUser();
+  const counselorId = user?.staffId || user?.id;
+
   const t = await getTranslations("Crm");
 
-  const [leadsRes, pipelineRes, counselorsRes, pipelinesRes, coursesRes] = await Promise.all([
-    dal.crm.fetchLeads(),
+  const [leadsRes, pipelineRes, counselorsRes, pipelinesRes, coursesRes, fieldOptsRes] = await Promise.all([
+    dal.crm.fetchLeads({ counselorId }),
     dal.crm.fetchPipeline(),
     dal.crm.fetchCounselors(),
     dal.crm.fetchLeadPipelines(),
     dal.courses.fetchCourses(),
+    dal.crm.fetchCrmFieldOptions(),
   ]);
 
   const courseOptions = (coursesRes.ok ? coursesRes.data : []).map((c) => ({
     value: c.id,
     label: c.titleEn || c.titleAr || c.slug,
   }));
+  const sourceOptions = fieldOptsRes.ok ? fieldOptsRes.data.sources : [];
+  const specialtyOptions = fieldOptsRes.ok ? fieldOptsRes.data.specialties : [];
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
@@ -45,6 +54,8 @@ export default async function StaffLeadsPage({
         counselors={counselorsRes.ok ? counselorsRes.data : []}
         pipelines={pipelinesRes.ok ? pipelinesRes.data : []}
         courseOptions={courseOptions}
+        sourceOptions={sourceOptions}
+        specialtyOptions={specialtyOptions}
         basePath="/staff"
       />
     </div>

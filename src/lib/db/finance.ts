@@ -41,6 +41,10 @@ export interface Invoice {
   courseTitle?: string;
   courseThumbnail?: string;
   installments?: Installment[];
+  method?: string;
+  paymentReceipt?: any;
+  studentId?: string;
+  installmentIndex?: number;
 }
 
 export interface Payment {

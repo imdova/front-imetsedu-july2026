@@ -54,13 +54,15 @@ import { PriorityBadge } from "./lead-badges";
 import { PaymentCard, PaymentCardEmpty } from "./payment-card";
 import { AssignPipelineTrigger } from "./assign-pipeline-dialog";
 import { LeadPaymentTab } from "./lead-payment-tab";
-import { LeadTransitionModal } from "./lead-transition-modal";
+import { LeadTransitionModal, type TransitionLogData } from "./lead-transition-modal";
 
 const GATED_STAGES = ["contacted", "enrolled", "lost"] as const;
 type GatedStage = (typeof GATED_STAGES)[number];
 const isGated = (stageKey: string): stageKey is GatedStage =>
   (GATED_STAGES as readonly string[]).includes(stageKey);
+import { usePipelineStages } from "@/hooks/use-pipeline-stages";
 import { STAGE_LABEL_KEY } from "../lib/maps";
+import { useAuth } from "@/store";
 
 const ACTIVITY_ICON: Record<ActivityKind, React.ElementType> = {
   call: Phone, whatsapp: MessageCircle, email: Mail, note: StickyNote, stage: ArrowRightLeft, form: FileText,
@@ -114,13 +116,25 @@ export function LeadDetail({
   stages: PipelineStage[];
   assignablePipelines?: { id: string; title: string }[];
   pipelineStages?: PipelineStageList[];
-  courseOptions?: { value: string; label: string }[];
+  courseOptions?: { value: string; label: string; image?: string }[];
   groupOptions?: { value: string; label: string }[];
 }) {
   const t = useTranslations("Crm");
   const locale = useLocale();
   const tr = t as unknown as (k: string) => string;
   const tv = t as unknown as (k: string, vals?: Record<string, string>) => string;
+  const { stages: crmStages, getDisplayName } = usePipelineStages(stages);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  const displayActivityTextLocal = React.useCallback((text: string) => {
+    const m = text.match(/^Stage changed to\s+(.+)$/i);
+    if (!m) return text;
+    const key = m[1].trim();
+    const label = getDisplayName(key);
+    return tv("pipelineMovedTo", { stage: label });
+  }, [getDisplayName, tv]);
+
   const [lead, setLead] = React.useState(initial);
   const [channel, setChannel] = React.useState<"note" | "whatsapp" | "email" | "sms">("note");
   const [draft, setDraft] = React.useState("");
@@ -136,7 +150,7 @@ export function LeadDetail({
   const [doneNote, setDoneNote] = React.useState("");
   const [doneSaving, setDoneSaving] = React.useState(false);
   // A pending gated stage move, held while its qualification modal is open.
-  const [pendingStage, setPendingStage] = React.useState<{ targetStage: GatedStage; run: (data?: { groupId?: string }) => Promise<void> } | null>(null);
+  const [pendingStage, setPendingStage] = React.useState<{ targetStage: GatedStage; run: (data?: TransitionLogData) => Promise<void> } | null>(null);
 
   /** Add the lead to a group's roster (so it appears in the group's student list). */
   const enrollInGroup = async (groupId: string) => {
@@ -193,12 +207,12 @@ export function LeadDetail({
     }
   };
 
-  const doMoveStage = async (stageKey: string, groupId?: string) => {
-    const res = await dal.crm.updateLeadStage(lead.id, stageKey);
+  const doMoveStage = async (stageKey: string, logData?: TransitionLogData) => {
+    const res = await dal.crm.updateLeadStage(lead.id, stageKey, logData, lead.pipelineHistory);
     if (res.ok && res.data) {
       setLead(res.data);
-      toast.success(t("stageMoved", { stage: tr(STAGE_LABEL_KEY[stageKey]) }));
-      if (stageKey === "enrolled" && groupId) await enrollInGroup(groupId);
+      toast.success(t("stageMoved", { stage: getDisplayName(stageKey) }));
+      if (stageKey === "enrolled" && logData?.groupId) await enrollInGroup(logData.groupId);
     } else if (!res.ok) {
       toast.error(res.error);
     }
@@ -206,7 +220,7 @@ export function LeadDetail({
   // Gated stages (contacted/enrolled/lost) open their qualification modal first,
   // mirroring the pipeline board; other stages move immediately.
   const moveStage = (stageKey: string) => {
-    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: (data) => doMoveStage(stageKey, data?.groupId) });
+    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: (data) => doMoveStage(stageKey, data) });
     else void doMoveStage(stageKey);
   };
 
@@ -256,18 +270,23 @@ export function LeadDetail({
     else if (!res.ok) toast.error(res.error);
   };
 
-  const doMoveStageInPipeline = async (pipelineId: string, stageKey: string, stageName: string, groupId?: string) => {
-    const res = await dal.crm.setLeadStageInPipeline(lead.id, pipelineId, stageKey);
+  const doMoveStageInPipeline = async (pipelineId: string, stageKey: string, stageName: string, logData?: TransitionLogData) => {
+    const pipelineName = lead.pipelines?.find((p) => p.id === pipelineId)?.title;
+    const res = await dal.crm.setLeadStageInPipeline(lead.id, pipelineId, stageKey, pipelineName, logData, lead.pipelineHistory);
     if (res.ok && res.data) {
-      setLead(res.data);
+      const updated = res.data;
+      const updatedPipelines = (updated.pipelines ?? lead.pipelines ?? []).map((p) =>
+        p.id === pipelineId ? { ...p, stage: stageKey } : p,
+      );
+      setLead({ ...updated, pipelines: updatedPipelines });
       toast.success(t("stageMoved", { stage: stageName }));
-      if (stageKey === "enrolled" && groupId) await enrollInGroup(groupId);
+      if (stageKey === "enrolled" && logData?.groupId) await enrollInGroup(logData.groupId);
     } else if (!res.ok) {
       toast.error(res.error);
     }
   };
   const moveStageInPipeline = (pipelineId: string, stageKey: string, stageName: string) => {
-    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: (data) => doMoveStageInPipeline(pipelineId, stageKey, stageName, data?.groupId) });
+    if (isGated(stageKey)) setPendingStage({ targetStage: stageKey, run: (data) => doMoveStageInPipeline(pipelineId, stageKey, stageName, data) });
     else void doMoveStageInPipeline(pipelineId, stageKey, stageName);
   };
 
@@ -297,9 +316,13 @@ export function LeadDetail({
 
   const plan = lead.paymentPlan;
   const pct = plan ? Math.round((plan.paid / plan.totalAmount) * 100) : 0;
-  // Pipeline-stage moves surfaced in the history card (left column) only.
-  const pipelineMoves = lead.activities.filter((a) => a.kind === "stage");
-  // Everything else (notes, calls, emails, form events) goes in the timeline.
+  const courseImageFor = (courseName: string) => courseOptions.find((o) => o.label === courseName)?.image;
+  // Use the raw backend data directly (mirrors how the reference project reads apiLead.data.pipelineHistory).
+  const rawPipelineHistory: any[] = Array.isArray(lead.rawData?.pipelineHistory) ? lead.rawData.pipelineHistory : [];
+  // Fallback: activity-based stage moves for leads that pre-date the pipelineHistory system.
+  const stageMoveActivities = lead.activities.filter((a) => a.kind === "stage");
+  const hasPipelineHistory = rawPipelineHistory.length > 0 || stageMoveActivities.length > 0;
+  // Everything except stage moves goes in the timeline.
   const timelineActivities = lead.activities.filter((a) => a.kind !== "stage");
   // Resolve a course-of-interest id to its title (the lead carries ids; names
   // come from the populated list or the page's course catalogue).
@@ -350,15 +373,18 @@ export function LeadDetail({
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setFuOpen(true)}><CalendarDays className="size-4" />{t("actSchedule")}</Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setChannel("note")}><StickyNote className="size-4" />{t("actNote")}</Button>
           <div className="ms-auto flex flex-wrap items-center justify-end gap-2">
-            <AssignPipelineTrigger
-              pipelines={assignablePipelines}
-              assignedIds={lead.assignedPipelineIds}
-              onSave={assignPipelines}
-            />
+            {/* Admin-only: manage which pipelines this lead belongs to */}
+            {isAdmin && (
+              <AssignPipelineTrigger
+                pipelines={assignablePipelines}
+                assignedIds={lead.assignedPipelineIds}
+                onSave={assignPipelines}
+              />
+            )}
             <PipelineStatusMenu
               pipelines={lead.pipelines ?? []}
               pipelineStages={pipelineStages}
-              fallbackLabel={tr(STAGE_LABEL_KEY[lead.stageKey])}
+              fallbackLabel={getDisplayName(lead.stageKey)}
               onMove={moveStageInPipeline}
               t={t}
             />
@@ -410,19 +436,66 @@ export function LeadDetail({
                   <p className="mt-1 font-medium">{lead.createdAt}</p>
                 </CardContent>
               </Card>
-              {pipelineMoves.length > 0 && (
+              {hasPipelineHistory && (
                 <Card>
                   <CardHeader><CardTitle className="text-base">{t("pipelineHistory")}</CardTitle></CardHeader>
-                  <CardContent className="space-y-2.5">
-                    {pipelineMoves.map((m) => (
-                      <div key={m.id} className="flex items-start gap-2 text-sm">
-                        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><ArrowRightLeft className="size-3" /></span>
-                        <div className="min-w-0">
-                          <p className="font-medium leading-tight">{displayActivityText(m.text, tv, tr)}</p>
-                          <p className="text-xs text-muted-foreground" title={m.ago}>{m.at ? fmtDateTime(m.at, locale) : m.ago}</p>
-                        </div>
-                      </div>
-                    ))}
+                  <CardContent className="space-y-3">
+                    {rawPipelineHistory.length > 0
+                      ? rawPipelineHistory.map((item: any, idx: number) => {
+                          const ld = item.logData || {};
+                          const note = ld.note || ld.notes || ld.lossNote;
+                          const SKIP = new Set(["notes","note","lossNote","at","stage","pipelineId","pipeline","isQualified","paymentReceiptUrl","paymentVerified","paymentReceiptName","paymentReceiptFileName","paymentReceiptMimeType","paymentReceiptDataBase64"]);
+                          const dynamicEntries = Object.entries(ld).filter(([k, v]) => !SKIP.has(k) && v !== null && v !== undefined && v !== "" && v !== false);
+                          const hasData = note || ld.isQualified !== undefined || ld.paymentVerified || ld.paymentReceiptUrl || dynamicEntries.length > 0;
+                          const labelFor = (k: string) => k.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
+                          return (
+                          <div key={`${item.stage}-${idx}`} className="flex items-start gap-2 text-sm">
+                            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><ArrowRightLeft className="size-3" /></span>
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-medium leading-tight">{tv("pipelineMovedTo", { stage: getDisplayName(item.stage) })}</p>
+                                {item.pipelineName && (
+                                  <span className="inline-block rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] text-indigo-700">{item.pipelineName}</span>
+                                )}
+                              </div>
+                              {hasData && (
+                                <div className="rounded-md border border-indigo-100/50 bg-indigo-50/50 p-2 space-y-1.5">
+                                  {note && <p className="text-xs italic text-muted-foreground">&ldquo;{note}&rdquo;</p>}
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {ld.isQualified !== undefined && (
+                                      <span className={cn("rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase", ld.isQualified === "yes" ? "border-green-200 bg-green-100/70 text-green-800" : "border-red-200 bg-red-100/70 text-red-700")}>
+                                        {ld.isQualified === "yes" ? "✓ Qualified" : "✗ Not Qualified"}
+                                      </span>
+                                    )}
+                                    {ld.paymentVerified && (
+                                      <span className="rounded border border-green-200 bg-green-100/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-green-800">Payment verified</span>
+                                    )}
+                                    {ld.paymentReceiptUrl && (
+                                      <a href={ld.paymentReceiptUrl} target="_blank" rel="noreferrer" className="rounded border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-orange-700 underline">View Receipt 📄</a>
+                                    )}
+                                    {dynamicEntries.map(([k, v]) => (
+                                      <span key={k} className="rounded border border-indigo-200/50 bg-indigo-100/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-indigo-700">
+                                        {typeof v === "boolean" ? labelFor(k) : `${labelFor(k)}: ${v}`}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              <p className="text-xs text-muted-foreground">{item.at ? fmtDateTime(item.at, locale) : "—"}</p>
+                            </div>
+                          </div>
+                          );
+                        })
+                      : stageMoveActivities.map((m) => (
+                          <div key={m.id} className="flex items-start gap-2 text-sm">
+                            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"><ArrowRightLeft className="size-3" /></span>
+                            <div className="min-w-0">
+                              <p className="font-medium leading-tight">{displayActivityTextLocal(m.text)}</p>
+                              <p className="text-xs text-muted-foreground">{m.at ? fmtDateTime(m.at, locale) : m.ago}</p>
+                            </div>
+                          </div>
+                        ))
+                    }
                   </CardContent>
                 </Card>
               )}
@@ -464,7 +537,7 @@ export function LeadDetail({
                         return (
                           <li key={a.id} className="relative">
                             <span className="absolute -start-6 grid size-5 place-items-center rounded-full bg-primary/10 text-primary ring-4 ring-background"><Icon className="size-3" /></span>
-                            <p className="text-sm">{displayActivityText(a.text, tv, tr)}</p>
+                            <p className="text-sm">{displayActivityTextLocal(a.text)}</p>
                             <p className="text-xs text-muted-foreground" title={a.ago}>{a.at ? fmtDateTime(a.at, locale) : a.ago}</p>
                           </li>
                         );
@@ -480,7 +553,7 @@ export function LeadDetail({
             {/* Right: payment + follow-ups */}
             <div className="space-y-6">
               {plan ? (
-                <PaymentCard plan={plan} pct={pct} />
+                <PaymentCard plan={plan} pct={pct} courseImage={courseImageFor(plan.courseName)} />
               ) : (
                 <PaymentCardEmpty />
               )}
@@ -697,14 +770,14 @@ function PipelineStatusMenu({
 }) {
   const [open, setOpen] = React.useState(false);
   const [view, setView] = React.useState<string | null>(null);
+  const { getDisplayName } = usePipelineStages();
 
   const stagesFor = (id: string) => pipelineStages.find((p) => p.id === id)?.stages ?? [];
   const currentStageKey = (id: string) => pipelines.find((p) => p.id === id)?.stage;
 
   // Trigger label = current stage in the primary pipeline.
   const primary = pipelines[0];
-  const current =
-    (primary && stagesFor(primary.id).find((s) => s.key === primary.stage)?.name) || fallbackLabel;
+  const current = primary ? getDisplayName(primary.stage) : fallbackLabel;
 
   const active = view ? pipelineStages.find((p) => p.id === view) : null;
 
@@ -746,15 +819,16 @@ function PipelineStatusMenu({
             {(active?.stages ?? []).map((s) => {
               const isCurrent = currentStageKey(view) === s.key;
               const isLost = `${s.key} ${s.name}`.toLowerCase().includes("lost");
+              const displayName = getDisplayName(s.key);
               return (
                 <DropdownMenuItem
                   key={s.key}
                   disabled={isCurrent}
-                  onSelect={() => onMove(view, s.key, s.name)}
+                  onSelect={() => onMove(view, s.key, displayName)}
                   className={cn("gap-2", isLost && "text-destructive focus:text-destructive")}
                 >
                   <span className={cn("size-2 rounded-full", stageDot(s.key, s.name))} />
-                  {s.name}
+                  {displayName}
                   {isCurrent && <Check className="ms-auto size-4 text-primary" />}
                 </DropdownMenuItem>
               );

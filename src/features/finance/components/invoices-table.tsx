@@ -65,7 +65,7 @@ export function InvoicesTable({
         accessorKey: "type",
         header: t("colType"),
         cell: ({ row }) => {
-          const n = row.original.installments?.length ?? 0;
+          const n = row.original.installments?.length ?? "";
           return (
             <Badge variant="secondary" className="font-normal">
               {row.original.type === "installment"

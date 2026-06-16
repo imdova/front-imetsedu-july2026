@@ -1,7 +1,6 @@
 import { Receipt, Download } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { dal } from "@/lib/dal";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { PaymentTracking } from "@/features/admin/components/payment-tracking";
@@ -15,8 +14,6 @@ export default async function AdminPaymentTrackingPage({
   setRequestLocale(locale);
   const t = await getTranslations("Admin");
 
-  const res = await dal.finance.fetchInvoices();
-
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
       <div>
@@ -26,7 +23,7 @@ export default async function AdminPaymentTrackingPage({
           <Button variant="outline" className="gap-1.5"><Download className="size-4" />{t("exportBtn")}</Button>
         </PageHeader>
       </div>
-      <PaymentTracking invoices={res.ok ? res.data : []} />
+      <PaymentTracking />
     </div>
   );
 }

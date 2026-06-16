@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
 import { PipelinesInventory } from "@/features/crm/components/pipelines-inventory";
+import { requirePermission } from "@/lib/permission-guard";
 
 export default async function AdminPipelinesInventoryPage({
   params,
@@ -10,6 +11,8 @@ export default async function AdminPipelinesInventoryPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+
+  await requirePermission("crm.pipelines.view");
 
   const [invRes, statsRes] = await Promise.all([
     dal.crm.fetchPipelineInventory(),

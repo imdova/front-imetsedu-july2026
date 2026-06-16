@@ -12,6 +12,16 @@ export interface NavItem {
   href: string;
   icon: string; // lucide icon name, resolved in the sidebar
   badge?: string;
+  /**
+   * If set, the item is only shown when the user has AT LEAST ONE of these
+   * permission keys (mirrors old codebase AdminSidebarPanel hasAccess logic).
+   */
+  requiredPermissions?: string[];
+  /**
+   * If true, the item is hidden from any user who HAS a staffRole
+   * (i.e. it is reserved for super-admins only).
+   */
+  adminOnly?: boolean;
 }
 
 export interface NavSection {
@@ -29,79 +39,80 @@ export const ADMIN_NAV: NavSection[] = [
   {
     labelKey: "sectionCrm",
     items: [
-      { titleKey: "crmDashboard", href: "/admin/crm", icon: "LayoutDashboard" },
-      { titleKey: "leads", href: "/admin/crm/leads", icon: "Target" },
-      { titleKey: "pipeline", href: "/admin/crm/pipeline", icon: "KanbanSquare" },
-      { titleKey: "allPipelines", href: "/admin/crm/pipelines", icon: "GitBranch" },
-      { titleKey: "paymentTracking", href: "/admin/crm/payment-tracking", icon: "Wallet" },
-      { titleKey: "invoices", href: "/admin/crm/invoices", icon: "ReceiptText" },
-      { titleKey: "crmSettings", href: "/admin/crm/settings", icon: "SlidersHorizontal" },
+      { titleKey: "crmDashboard", href: "/admin/crm", icon: "LayoutDashboard", requiredPermissions: ["crm.dashboard.view"] },
+      { titleKey: "leads", href: "/admin/crm/leads", icon: "Target", requiredPermissions: ["crm.leads.view"] },
+      { titleKey: "pipeline", href: "/admin/crm/pipeline", icon: "KanbanSquare", requiredPermissions: ["crm.pipelines.view"] },
+      { titleKey: "allPipelines", href: "/admin/crm/pipelines", icon: "GitBranch", requiredPermissions: ["crm.pipelines.view"] },
+      { titleKey: "paymentTracking", href: "/admin/crm/payment-tracking", icon: "Wallet", requiredPermissions: ["finance.payment_tracking.view"] },
+      { titleKey: "invoices", href: "/admin/crm/invoices", icon: "ReceiptText", requiredPermissions: ["finance.invoices.view"] },
+      { titleKey: "crmSettings", href: "/admin/crm/settings", icon: "SlidersHorizontal", adminOnly: true },
     ],
   },
   {
     labelKey: "sectionCourses",
     items: [
-      { titleKey: "courses", href: "/admin/courses", icon: "GraduationCap" },
-      { titleKey: "newCourse", href: "/admin/courses/new", icon: "Plus" },
-      { titleKey: "registrations", href: "/admin/courses/registrations", icon: "UserPlus" },
-      { titleKey: "courseSettings", href: "/admin/courses/settings", icon: "SlidersHorizontal" },
+      { titleKey: "courses", href: "/admin/courses", icon: "GraduationCap", requiredPermissions: ["lms.courses.view"] },
+      { titleKey: "newCourse", href: "/admin/courses/new", icon: "Plus", requiredPermissions: ["lms.courses.create"] },
+      { titleKey: "registrations", href: "/admin/courses/registrations", icon: "UserPlus", requiredPermissions: ["lms.courses.view"] },
+      { titleKey: "courseSettings", href: "/admin/courses/settings", icon: "SlidersHorizontal", adminOnly: true },
     ],
   },
   {
     labelKey: "sectionLms",
     items: [
-      { titleKey: "lms", href: "/admin/lms", icon: "Play" },
-      { titleKey: "lmsSettings", href: "/admin/lms/settings", icon: "SlidersHorizontal" },
+      { titleKey: "lms", href: "/admin/lms", icon: "Play", requiredPermissions: ["lms.courses.view"] },
+      { titleKey: "lmsSettings", href: "/admin/lms/settings", icon: "SlidersHorizontal", adminOnly: true },
     ],
   },
   {
     labelKey: "sectionGroups",
     items: [
-      { titleKey: "groups", href: "/admin/groups", icon: "UsersRound" },
-      { titleKey: "groupSettings", href: "/admin/groups/settings", icon: "SlidersHorizontal" },
+      { titleKey: "groups", href: "/admin/groups", icon: "UsersRound", requiredPermissions: ["crm.groups.view"] },
+      { titleKey: "groupSettings", href: "/admin/groups/settings", icon: "SlidersHorizontal", adminOnly: true },
     ],
   },
   {
     labelKey: "sectionAssessment",
     items: [
-      { titleKey: "quizzes", href: "/admin/quizzes", icon: "ListChecks" },
-      { titleKey: "assignments", href: "/admin/assignments", icon: "ClipboardList" },
-      { titleKey: "certificates", href: "/admin/certificates", icon: "Award" },
-      { titleKey: "events", href: "/admin/events", icon: "CalendarDays" },
+      { titleKey: "quizzes", href: "/admin/quizzes", icon: "ListChecks", adminOnly: true },
+      { titleKey: "assignments", href: "/admin/assignments", icon: "ClipboardList", adminOnly: true },
+      { titleKey: "certificates", href: "/admin/certificates", icon: "Award", requiredPermissions: ["lms.certificates.view"] },
+      { titleKey: "events", href: "/admin/events", icon: "CalendarDays", adminOnly: true },
     ],
   },
   {
     labelKey: "sectionUsers",
     items: [
-      { titleKey: "users", href: "/admin/users", icon: "UserCog" },
-      { titleKey: "roles", href: "/admin/users/roles", icon: "ShieldCheck" },
+      { titleKey: "users", href: "/admin/users", icon: "UserCog", adminOnly: true },
+      { titleKey: "roles", href: "/admin/users/roles", icon: "ShieldCheck", adminOnly: true },
     ],
   },
   {
     labelKey: "sectionPeople",
     items: [
-      { titleKey: "students", href: "/admin/students", icon: "GraduationCap" },
-      { titleKey: "instructors", href: "/admin/instructors", icon: "Users" },
+      { titleKey: "students", href: "/admin/students", icon: "GraduationCap", requiredPermissions: ["students.directory.view"] },
+      { titleKey: "instructors", href: "/admin/instructors", icon: "Users", adminOnly: true },
     ],
   },
   {
     labelKey: "sectionTransactions",
     items: [
-      { titleKey: "transactions", href: "/admin/transactions", icon: "Wallet" },
-      { titleKey: "payments", href: "/admin/payments", icon: "CreditCard" },
-      { titleKey: "refunds", href: "/admin/refunds", icon: "Undo2" },
+      { titleKey: "transactions", href: "/admin/transactions", icon: "Wallet", requiredPermissions: ["finance.refunds.view", "finance.invoices.view"] },
+      { titleKey: "payments", href: "/admin/payments", icon: "CreditCard", requiredPermissions: ["finance.invoices.view"] },
+      { titleKey: "refunds", href: "/admin/refunds", icon: "Undo2", requiredPermissions: ["finance.refunds.view"] },
     ],
   },
   {
     labelKey: "sectionAdministration",
     items: [
       { titleKey: "notifications", href: "/admin/notifications", icon: "Bell" },
-      { titleKey: "whatsapp", href: "/admin/whatsapp-templates", icon: "Mail" },
-      { titleKey: "settings", href: "/admin/settings", icon: "Settings" },
-      { titleKey: "reports", href: "/admin/reports", icon: "ChartLine" },
+      { titleKey: "whatsapp", href: "/admin/whatsapp-templates", icon: "Mail", adminOnly: true },
+      { titleKey: "settings", href: "/admin/settings", icon: "Settings", adminOnly: true },
+      { titleKey: "reports", href: "/admin/reports", icon: "ChartLine", adminOnly: true },
     ],
   },
 ];
+
 
 export const STUDENT_NAV: NavSection[] = [
   {

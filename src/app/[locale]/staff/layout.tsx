@@ -5,6 +5,7 @@ import { STAFF_NAV } from "@/constants/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { AdminBootstrap } from "@/components/layout/admin-bootstrap";
+import { PermissionsRefresher } from "@/components/layout/permissions-refresher";
 
 /** Staff workspace shell — CRM / finance / teaching nav. */
 export default async function StaffLayout({
@@ -20,6 +21,7 @@ export default async function StaffLayout({
   return (
     <div className="flex min-h-svh bg-muted/30">
       <AdminBootstrap />
+      <PermissionsRefresher />
       <AppSidebar
         nav={STAFF_NAV}
         homeHref="/staff/crm"

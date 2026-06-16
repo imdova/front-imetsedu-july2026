@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { Button } from "@/components/ui/button";
 import { LeadDetail } from "@/features/crm/components/lead-detail";
+import { requirePermission, getSessionUser } from "@/lib/permission-guard";
 
 export default async function LeadDetailPage({
   params,
@@ -14,6 +15,11 @@ export default async function LeadDetailPage({
 }) {
   const { locale, id } = await params;
   setRequestLocale(locale);
+  
+  await requirePermission("crm.leads.view");
+  const user = await getSessionUser();
+  const isStaff = user?.staffRole !== null && user?.staffRole !== undefined;
+
   const t = await getTranslations("Crm");
 
   const [leadRes, pipelineRes, pipelinesRes, coursesRes] = await Promise.all([
@@ -25,6 +31,14 @@ export default async function LeadDetailPage({
 
   if (!leadRes.ok || !leadRes.data) notFound();
 
+  // Enforce staff isolation: staff can only view leads assigned to them.
+  if (isStaff) {
+    const userStaffId = user?.staffId ?? user?.id;
+    if (leadRes.data.counselorId !== userStaffId) {
+      notFound();
+    }
+  }
+
   const assignablePipelines = (pipelinesRes.ok ? pipelinesRes.data : []).map((p) => ({
     id: p.value,
     title: p.label,
@@ -32,6 +46,7 @@ export default async function LeadDetailPage({
   const courseOptions = (coursesRes.ok ? coursesRes.data : []).map((c) => ({
     value: c.id,
     label: c.titleEn || c.titleAr || c.slug,
+    image: c.thumbnailUrl,
   }));
 
   const stageRes = await Promise.all(

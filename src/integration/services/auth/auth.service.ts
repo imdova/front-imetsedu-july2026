@@ -3,6 +3,14 @@ import { api, type Result } from "@integration/services/http/client";
 /** Coarse system role as returned by the backend User model. */
 export type BackendRole = "admin" | "user" | "instructor";
 
+export type StaffRolePermissions = Record<string, boolean>;
+
+export interface StaffRole {
+  _id: string;
+  title: string;
+  permissions: StaffRolePermissions;
+}
+
 export interface AuthUserDto {
   id: string;
   name: string;
@@ -10,6 +18,8 @@ export interface AuthUserDto {
   role: BackendRole;
   image?: string;
   avatarUrl?: string;
+  /** Populated for non-super-admin staff — carries the fine-grained permissions object. */
+  staffRole?: StaffRole | null;
 }
 
 /** Shape of POST /auth/login | /auth/register | /auth/refresh. */
@@ -37,8 +47,18 @@ export function register(input: {
   return api.post<AuthResponse>("/auth/register", input, { requireAuth: false });
 }
 
-/** GET /auth/profile — current user (requires a valid bearer token). */
-export function getProfile(): Promise<Result<AuthUserDto>> {
+/**
+ * GET /auth/profile — current user (requires a valid bearer token).
+ * Pass `accessToken` explicitly when calling right after login (before the
+ * token is stored in Zustand) — mirrors old codebase AuthDAL.getCurrentUser(token).
+ */
+export function getProfile(accessToken?: string): Promise<Result<AuthUserDto>> {
+  if (accessToken) {
+    return api.get<AuthUserDto>("/auth/profile", {
+      requireAuth: false,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  }
   return api.get<AuthUserDto>("/auth/profile");
 }
 
