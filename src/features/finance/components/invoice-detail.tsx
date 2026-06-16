@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceStatusBadge } from "./finance-badges";
 import { MarkAsPaidModal, ReceiptPreview, type Receipt, formatBytes } from "./mark-as-paid-modal";
 
-export function InvoiceDetail({ invoice: initial, id }: { invoice?: Invoice; id?: string }) {
+export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { invoice?: Invoice; id?: string; logoLight?: string; logoDark?: string }) {
   const t = useTranslations("Finance");
   const [invoice, setInvoice] = React.useState<Invoice | null>(initial ?? null);
   const [isLoading, setIsLoading] = React.useState(!initial);
@@ -231,8 +231,15 @@ export function InvoiceDetail({ invoice: initial, id }: { invoice?: Invoice; id?
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="grid size-9 place-items-center rounded-lg bg-gradient-to-br from-primary to-[oklch(0.55_0.2_286)] text-white"><GraduationCap className="size-5" /></span>
-                  <span className="font-heading text-lg font-bold">IMETS</span>
+                  {logoLight ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoLight} alt="Logo" className="h-9 max-w-40 object-contain" />
+                  ) : (
+                    <>
+                      <span className="grid size-9 place-items-center rounded-lg bg-linear-to-br from-primary to-[oklch(0.55_0.2_286)] text-white"><GraduationCap className="size-5" /></span>
+                      <span className="font-heading text-lg font-bold">IMETS</span>
+                    </>
+                  )}
                 </div>
                 <p className="mt-3 font-semibold">{t("invCompanyName")}</p>
                 <p className="text-sm text-muted-foreground">{t("invCompanyAddr")}</p>
