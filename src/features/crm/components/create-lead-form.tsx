@@ -255,7 +255,7 @@ export function CreateLeadForm({
 
   // Section fill counters for the progress badges.
   const contactFilled = [v.fullName, v.email, v.phone, v.whatsApp, v.country, v.specialty, v.dateOfBirth, v.gender].filter(Boolean).length;
-  const assignFilled = [v.source, v.targetPipeline !== "none" ? v.targetPipeline : "", v.counselorId !== "none" ? v.counselorId : ""].filter(Boolean).length;
+  const assignFilled = [v.source, v.counselorId !== "none" ? v.counselorId : ""].filter(Boolean).length;
   const canSubmit = v.phone.trim().replace(/\D/g, "").length >= 6;
   const age = ageFromDob(v.dateOfBirth);
 
@@ -579,15 +579,11 @@ export function CreateLeadForm({
                 <Megaphone className="size-4 text-primary" />
                 {t("secAssignment")}
               </h2>
-              {sectionBadge(t("filledBadge", { n: assignFilled, total: 3 }), assignFilled >= 2 ? "ok" : "muted")}
+              {sectionBadge(t("filledBadge", { n: assignFilled, total: 2 }), assignFilled >= 1 ? "ok" : "muted")}
             </header>
 
             <div className="space-y-5">
               {selectField("source", t("leadSource"), sourceList.map((s) => ({ value: s, label: s })), t("selectSource"), iconForSource)}
-              {selectField("targetPipeline", t("targetPipeline"), [
-                { value: "none", label: t("noPipelineOption") },
-                ...pipelines,
-              ], t("noPipelineOption"))}
               {selectField("counselorId", t("fCounselor"), [
                 { value: "none", label: t("notAssigned") },
                 ...counselors.map((c) => ({ value: c.id, label: c.name })),
