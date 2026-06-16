@@ -13,6 +13,8 @@ export interface Lesson {
   duration: string;
   completed: boolean;
   videoId?: string;
+  /** Backend Quiz id for `type: "quiz"` lessons — deep-links the player's "Start quiz". */
+  quizId?: string;
 }
 export interface Module {
   id: string;

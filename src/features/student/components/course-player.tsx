@@ -17,7 +17,17 @@ const LESSON_ICON: Record<LessonType, React.ElementType> = {
   video: PlayCircle, pdf: FileText, quiz: ListChecks, text: AlignLeft,
 };
 
-export function CoursePlayer({ course }: { course: EnrolledCourse }) {
+/** Resolve a lesson's `videoId` (a YouTube id/URL or a direct file URL) to a playable source. */
+function videoSource(videoId?: string): { kind: "youtube" | "file"; src: string } | null {
+  if (!videoId) return null;
+  const yt = videoId.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (yt) return { kind: "youtube", src: `https://www.youtube.com/embed/${yt[1]}?rel=0&playsinline=1` };
+  if (/^[A-Za-z0-9_-]{11}$/.test(videoId)) return { kind: "youtube", src: `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1` };
+  if (/^https?:\/\//.test(videoId)) return { kind: "file", src: videoId };
+  return null;
+}
+
+export function CoursePlayer({ course, initialLessonId }: { course: EnrolledCourse; initialLessonId?: string }) {
   const t = useTranslations("Student");
   const allLessons = course.modules.flatMap((m) => m.lessons);
   const firstIncomplete = allLessons.find((l) => !l.completed) ?? allLessons[0];
@@ -25,7 +35,9 @@ export function CoursePlayer({ course }: { course: EnrolledCourse }) {
   const [completed, setCompleted] = React.useState<Set<string>>(
     () => new Set(allLessons.filter((l) => l.completed).map((l) => l.id)),
   );
-  const [currentId, setCurrentId] = React.useState(firstIncomplete?.id);
+  const [currentId, setCurrentId] = React.useState(initialLessonId ?? firstIncomplete?.id);
+  // Jump to a lesson when the caller (curriculum click / Continue) changes it.
+  React.useEffect(() => { if (initialLessonId) setCurrentId(initialLessonId); }, [initialLessonId]);
 
   const current = allLessons.find((l) => l.id === currentId);
   const currentIndex = allLessons.findIndex((l) => l.id === currentId);
@@ -40,21 +52,32 @@ export function CoursePlayer({ course }: { course: EnrolledCourse }) {
   };
 
   const Icon = current ? LESSON_ICON[current.type] : PlayCircle;
+  const vid = current?.type === "video" ? videoSource(current.videoId) : null;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       {/* Player */}
       <div className="space-y-4">
         <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-950">
-          <div className="absolute inset-0 grid place-items-center text-white/90">
-            <div className="text-center">
-              <Icon className="mx-auto size-16 opacity-80" />
-              <p className="mt-3 text-sm text-white/70">{current?.title}</p>
-            </div>
-          </div>
-          <span className="absolute bottom-3 start-3 inline-flex items-center gap-1.5 rounded-md bg-black/50 px-2 py-1 text-[0.7rem] text-white/80">
-            <Lock className="size-3" /> {t("secureVideoNote")}
-          </span>
+          {vid?.kind === "youtube" ? (
+            // eslint-disable-next-line jsx-a11y/iframe-has-title
+            <iframe src={vid.src} title={current?.title} className="absolute inset-0 size-full" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+          ) : vid?.kind === "file" ? (
+            <video src={vid.src} controls controlsList="nodownload" className="absolute inset-0 size-full bg-black" />
+          ) : (
+            <>
+              <div className="absolute inset-0 grid place-items-center text-white/90">
+                <div className="text-center">
+                  <Icon className="mx-auto size-16 opacity-80" />
+                  <p className="mt-3 text-sm text-white/70">{current?.title}</p>
+                  {current?.type === "video" && <p className="mt-1 text-xs text-white/50">{t("cdNoVideoYet")}</p>}
+                </div>
+              </div>
+              <span className="absolute bottom-3 start-3 inline-flex items-center gap-1.5 rounded-md bg-black/50 px-2 py-1 text-[0.7rem] text-white/80">
+                <Lock className="size-3" /> {t("secureVideoNote")}
+              </span>
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -64,8 +87,8 @@ export function CoursePlayer({ course }: { course: EnrolledCourse }) {
           </div>
           <div className="flex items-center gap-2">
             {current?.type === "quiz" ? (
-              <Button asChild className="gap-1.5">
-                <Link href="/student/quiz/qz1">
+              <Button asChild className="gap-1.5" disabled={!current.quizId}>
+                <Link href={`/student/quiz/${current.quizId ?? ""}`}>
                   <ListChecks className="size-4" /> {t("startQuiz")}
                 </Link>
               </Button>

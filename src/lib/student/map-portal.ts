@@ -30,7 +30,7 @@ function rel(iso?: string): string {
 /* ── Courses ── */
 function mapLesson(it: any, i: number): Lesson {
   const type = it?.type === "quiz" ? "quiz" : it?.type === "pdf" ? "pdf" : it?.type === "text" ? "text" : "video";
-  return { id: it?._id ?? it?.id ?? `l${i}`, title: it?.title ?? it?.titleEn ?? "Lesson", type, duration: it?.duration ?? "—", completed: !!it?.completed, videoId: it?.videoId };
+  return { id: it?._id ?? it?.id ?? `l${i}`, title: it?.title ?? it?.titleEn ?? "Lesson", type, duration: it?.duration ?? "—", completed: !!it?.completed, videoId: it?.videoId, quizId: it?.quizId ? String(it.quizId) : undefined };
 }
 function mapModule(m: any, i: number): Module {
   return { id: m?._id ?? m?.id ?? `m${i}`, title: m?.title ?? m?.titleEn ?? "Module", lessons: (m?.items ?? m?.lessons ?? []).map(mapLesson) };

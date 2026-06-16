@@ -36,6 +36,7 @@ import {
   Plus,
   SlidersHorizontal,
   GitBranch,
+  Coins,
   type LucideIcon,
 } from "lucide-react";
 
@@ -81,6 +82,7 @@ export const ICONS: Record<string, LucideIcon> = {
   Plus,
   SlidersHorizontal,
   GitBranch,
+  Coins,
 };
 
 export function getIcon(name: string): LucideIcon {

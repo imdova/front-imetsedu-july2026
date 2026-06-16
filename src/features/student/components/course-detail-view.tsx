@@ -5,13 +5,13 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
   Play, PlayCircle, HelpCircle, ChevronDown, Video, CalendarDays, Search, Download,
-  Send, Award, FileText, UploadCloud, MessageSquare, Building2,
+  Send, Award, FileText, UploadCloud, MessageSquare, Building2, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import type { EnrolledCourse, ScheduleEvent, StudentAssignment } from "@/lib/db/student";
+import type { EnrolledCourse, ScheduleEvent, StudentAssignment, Certificate } from "@/lib/db/student";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,18 +19,27 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { CoursePlayer } from "./course-player";
 
 type Tab = "overview" | "materials" | "assignments" | "certificate" | "feedback";
 
 export function CourseDetailView({
-  course, assignments, liveEvents,
+  course, assignments, liveEvents, certificates = [],
 }: {
   course: EnrolledCourse;
   assignments: StudentAssignment[];
   liveEvents: ScheduleEvent[];
+  certificates?: Certificate[];
 }) {
   const t = useTranslations("Student");
   const [tab, setTab] = React.useState<Tab>("overview");
+
+  // Lesson player (opens over the page; "Continue" resumes the first incomplete lesson).
+  const allLessons = course.modules.flatMap((m) => m.lessons);
+  const firstIncomplete = (allLessons.find((l) => !l.completed) ?? allLessons[0])?.id;
+  const [playerOpen, setPlayerOpen] = React.useState(false);
+  const [startLesson, setStartLesson] = React.useState<string | undefined>(undefined);
+  const play = (lessonId?: string) => { setStartLesson(lessonId ?? firstIncomplete); setPlayerOpen(true); };
 
   const totalLessons = course.totalLessons || course.modules.reduce((n, m) => n + m.lessons.length, 0);
   const openCount = assignments.filter((a) => a.status === "pending").length;
@@ -62,7 +71,7 @@ export function CourseDetailView({
           </div>
           <div className="flex flex-col items-end gap-2">
             <span className="text-xs text-muted-foreground">{t("cdLastAccessed")}: —</span>
-            <Button className="gap-2" onClick={() => setTab("overview")}><Play className="size-4" />{t("cdContinueLearning")}</Button>
+            <Button className="gap-2" disabled={allLessons.length === 0} onClick={() => play()}><Play className="size-4" />{t("cdContinueLearning")}</Button>
           </div>
         </div>
       </div>
@@ -79,11 +88,18 @@ export function CourseDetailView({
         ))}
       </div>
 
-      {tab === "overview" && <OverviewTab course={course} liveEvents={liveEvents} t={t} />}
+      {tab === "overview" && <OverviewTab course={course} liveEvents={liveEvents} t={t} onPlay={play} />}
       {tab === "materials" && <MaterialsTab course={course} t={t} />}
       {tab === "assignments" && <AssignmentsTab assignments={assignments} t={t} />}
-      {tab === "certificate" && <CertificateTab t={t} />}
+      {tab === "certificate" && <CertificateTab certificates={certificates} t={t} />}
       {tab === "feedback" && <FeedbackTab courseId={course.id} title={course.title} t={t} />}
+
+      {/* Lesson player */}
+      <Dialog open={playerOpen} onOpenChange={setPlayerOpen}>
+        <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto">
+          <CoursePlayer course={course} initialLessonId={startLesson} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -91,7 +107,7 @@ export function CourseDetailView({
 type T = ReturnType<typeof useTranslations>;
 
 /* ───────────── Overview ───────────── */
-function OverviewTab({ course, liveEvents, t }: { course: EnrolledCourse; liveEvents: ScheduleEvent[]; t: T }) {
+function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse; liveEvents: ScheduleEvent[]; t: T; onPlay: (lessonId?: string) => void }) {
   const [open, setOpen] = React.useState<Set<number>>(() => new Set([0]));
   const toggle = (i: number) => setOpen((p) => { const n = new Set(p); n.has(i) ? n.delete(i) : n.add(i); return n; });
   const next = liveEvents[0];
@@ -114,13 +130,17 @@ function OverviewTab({ course, liveEvents, t }: { course: EnrolledCourse; liveEv
               {open.has(i) && (
                 <div className="divide-y divide-border/60">
                   {m.lessons.map((l) => (
-                    <div key={l.id} className="flex items-center gap-3 px-4 py-3">
+                    <button key={l.id} type="button" onClick={() => onPlay(l.id)}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-primary/5">
                       {l.type === "quiz"
                         ? <HelpCircle className="size-5 shrink-0 text-primary" />
                         : <PlayCircle className="size-5 shrink-0 text-muted-foreground" />}
                       <span className="flex-1 text-sm font-medium">{l.title}</span>
-                      {l.type === "quiz" && <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-bold uppercase text-primary">{t("cdQuiz")}</span>}
-                    </div>
+                      {l.completed && <CheckCircle2 className="size-4 shrink-0 text-success" />}
+                      {l.type === "quiz"
+                        ? <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-bold uppercase text-primary">{t("cdQuiz")}</span>
+                        : <Play className="size-4 shrink-0 text-muted-foreground" />}
+                    </button>
                   ))}
                 </div>
               )}
@@ -316,12 +336,34 @@ function SubmitModal({ assignment, onClose, t }: { assignment: StudentAssignment
 }
 
 /* ───────────── Certificate ───────────── */
-function CertificateTab({ t }: { t: T }) {
+function CertificateTab({ certificates, t }: { certificates: Certificate[]; t: T }) {
+  if (certificates.length === 0) {
+    return (
+      <div className="grid place-items-center rounded-2xl border border-dashed border-border/70 bg-card py-20 text-center">
+        <Award className="size-12 text-muted-foreground/40" />
+        <p className="mt-3 font-semibold">{t("cdCertTitle")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("cdCertEmpty")}</p>
+      </div>
+    );
+  }
   return (
-    <div className="grid place-items-center rounded-2xl border border-dashed border-border/70 bg-card py-20 text-center">
-      <Award className="size-12 text-muted-foreground/40" />
-      <p className="mt-3 font-semibold">{t("cdCertTitle")}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{t("cdCertEmpty")}</p>
+    <div className="space-y-3">
+      {certificates.map((c) => (
+        <div key={c.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-success/30 bg-success/[0.04] p-5 shadow-sm">
+          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-success/15 text-success"><Award className="size-6" /></span>
+          <div className="min-w-0 flex-1">
+            <p className="font-heading text-lg font-bold">{t("cdCertIssued")}</p>
+            <p className="text-sm text-muted-foreground tabular-nums">{c.code} · {c.issuedAt}</p>
+          </div>
+          {c.link ? (
+            <Button asChild className="gap-1.5">
+              <a href={c.link} target="_blank" rel="noreferrer" download><Download className="size-4" />{t("cdCertDownload")}</a>
+            </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground">{t("cdCertProcessing")}</span>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

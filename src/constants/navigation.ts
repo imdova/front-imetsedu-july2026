@@ -132,6 +132,7 @@ export const STUDENT_NAV: NavSection[] = [
       { titleKey: "certificates", href: "/student/certificates", icon: "Award" },
       { titleKey: "favorites", href: "/student/favorites", icon: "Heart" },
       { titleKey: "billing", href: "/student/billing", icon: "ReceiptText" },
+      { titleKey: "payments", href: "/student/installments", icon: "Coins" },
       { titleKey: "paymentMethods", href: "/student/payment-methods", icon: "CreditCard" },
       { titleKey: "notifications", href: "/student/notifications", icon: "Bell" },
       { titleKey: "profile", href: "/student/profile", icon: "UserCog" },
