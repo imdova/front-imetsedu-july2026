@@ -29,10 +29,11 @@ interface PaymentCardProps {
   plan: PaymentPlanSummary;
   pct: number;
   className?: string;
+  courseImage?: string;
 }
 
 /** Sidebar payment summary with fee breakdown, progress, and installment cards. */
-export function PaymentCard({ plan, pct, className }: PaymentCardProps) {
+export function PaymentCard({ plan, pct, className, courseImage }: PaymentCardProps) {
   const t = useTranslations("Crm");
   const tr = t as unknown as (k: string) => string;
   const [expanded, setExpanded] = React.useState(true);
@@ -65,7 +66,14 @@ export function PaymentCard({ plan, pct, className }: PaymentCardProps) {
         onClick={() => setExpanded((v) => !v)}
         className="mt-4 flex w-full items-center justify-between gap-2 text-start"
       >
-        <span className="font-semibold text-foreground">{plan.courseName}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          {courseImage && (
+            <span className="relative size-8 shrink-0 overflow-hidden rounded-md border bg-muted">
+              <Image src={courseImage} alt="" fill className="object-cover" />
+            </span>
+          )}
+          <span className="truncate font-semibold text-foreground">{plan.courseName}</span>
+        </span>
         {expanded ? (
           <ChevronUp className="size-4 shrink-0 text-muted-foreground" />
         ) : (

@@ -34,6 +34,26 @@ export interface LeadActivity {
   ago: string;
   /** Raw ISO timestamp of the activity, for showing the exact date + time. */
   at?: string;
+  /** Optional note attached to the activity. */
+  notes?: string;
+}
+
+export interface PipelineHistoryEntry {
+  stage: string;
+  at: string;
+  pipelineId?: string;
+  pipelineName?: string;
+  logData?: {
+    contactChannel?: string;
+    contactOutcome?: string;
+    notes?: string;
+    note?: string;
+    groupId?: string;
+    paymentReceiptUrl?: string;
+    budgetConfirmed?: boolean;
+    timelineConfirmed?: boolean;
+    lossReason?: string;
+  };
 }
 
 export type FollowUpStatus = "overdue" | "today" | "upcoming" | "done";
@@ -116,6 +136,10 @@ export interface Lead {
   assignedPipelineIds: string[];
   /** Per-pipeline membership with the lead's current backend stage key in each. */
   pipelines?: { id: string; title: string; stage: string }[];
+  /** Ordered history of pipeline stage moves, newest last. Stored in lead.data.pipelineHistory. */
+  pipelineHistory?: PipelineHistoryEntry[];
+  /** Raw backend data sub-object — used for direct access to pipelineHistory with full logData. */
+  rawData?: Record<string, any>;
 }
 
 export const DEFAULT_PIPELINE: Pipeline = {

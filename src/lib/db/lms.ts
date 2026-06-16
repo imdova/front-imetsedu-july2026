@@ -32,6 +32,7 @@ export interface CurriculumItem {
   title: string;
   videoSource?: VideoSource;
   videoUrl?: string;
+  quiz?: any;
 }
 export interface CurriculumModule {
   id: string;

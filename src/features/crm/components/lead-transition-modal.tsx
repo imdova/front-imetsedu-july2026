@@ -5,29 +5,32 @@ import { useTranslations } from "next-intl";
 import { Phone, MessageCircle, Mail, MessageSquare, Paperclip, Flame, Clock, Trophy, Ghost, Ban, XCircle, HelpCircle } from "lucide-react";
 
 import type { Lead } from "@/lib/db/crm";
-import { cn, getInitials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PriorityBadge } from "./lead-badges";
 
 const TITLE_EMOJI: Record<string, string> = { contacted: "📞", enrolled: "✨", lost: "✖️" };
+
+export interface TransitionLogData {
+  groupId?: string;
+  contactChannel?: string;
+  contactOutcome?: string;
+  notes?: string;
+  lossReason?: string;
+}
 
 export function LeadTransitionModal({
   lead, targetStage, onConfirm, onCancel, groupOptions = [],
 }: {
   lead: Lead;
   targetStage: "contacted" | "enrolled" | "lost";
-  /** On enrolled, the chosen group id is passed back so the lead can be added to it. */
-  onConfirm: (data?: { groupId?: string }) => void;
+  onConfirm: (data?: TransitionLogData) => void;
   onCancel: () => void;
-  /** Real groups for the "enrolled" group selector. */
   groupOptions?: { value: string; label: string }[];
 }) {
   const t = useTranslations("Crm");
@@ -37,8 +40,11 @@ export function LeadTransitionModal({
 
   // contacted state
   const [channel, setChannel] = React.useState<"call" | "whatsapp" | "email" | "sms">("whatsapp");
+  const [outcome, setOutcome] = React.useState("interested");
+  const [contactNotes, setContactNotes] = React.useState("");
   // lost state
   const [reason, setReason] = React.useState<string>("ghosted");
+  const [lostNotes, setLostNotes] = React.useState("");
   // enrolled state
   const [verified, setVerified] = React.useState(false);
   const [group, setGroup] = React.useState("");
@@ -62,7 +68,7 @@ export function LeadTransitionModal({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent className="flex max-h-[88vh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[88vh] flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle className="flex items-center gap-2">
             <span>{TITLE_EMOJI[targetStage]}</span>{t(titleKey)}
@@ -70,7 +76,7 @@ export function LeadTransitionModal({
           <DialogDescription>{t(descKey)}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid flex-1 gap-6 overflow-y-auto p-6 md:grid-cols-[1fr_300px]">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-4">
             {targetStage === "contacted" && (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -88,7 +94,7 @@ export function LeadTransitionModal({
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("outcomeLabel")} <span className="text-destructive">*</span></Label>
-                  <Select defaultValue="interested">
+                  <Select value={outcome} onValueChange={setOutcome}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="interested">{t("outcomeInterested")}</SelectItem>
@@ -109,7 +115,7 @@ export function LeadTransitionModal({
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>{t("notesLabel")}</Label>
-                  <Textarea placeholder={t("contactedNotesPlaceholder")} className="min-h-20" />
+                  <Textarea value={contactNotes} onChange={(e) => setContactNotes(e.target.value)} placeholder={t("contactedNotesPlaceholder")} className="min-h-20" />
                 </div>
               </div>
             )}
@@ -176,39 +182,29 @@ export function LeadTransitionModal({
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("whatHappened")}</Label>
-                  <Textarea placeholder={t("lostObjectionPlaceholder")} className="min-h-20" />
+                  <Textarea value={lostNotes} onChange={(e) => setLostNotes(e.target.value)} placeholder={t("lostObjectionPlaceholder")} className="min-h-20" />
                 </div>
                 <p className="rounded-lg border border-destructive/30 bg-destructive/8 p-3 text-xs text-destructive">{t("lostWarning")}</p>
               </>
             )}
           </div>
 
-          {/* Lead summary */}
-          <div className="h-fit rounded-xl border bg-muted/30 p-4">
-            <div className="flex items-center gap-2.5">
-              <Avatar className="size-9 border"><AvatarFallback className="bg-primary/10 text-xs text-primary">{getInitials(lead.fullName)}</AvatarFallback></Avatar>
-              <p className="font-medium">{lead.fullName}</p>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <Badge variant="secondary" className="font-normal">Circle {lead.stageKey}</Badge>
-              <PriorityBadge priority={lead.priority} />
-            </div>
-            <Badge variant="outline" className="mt-1.5">{t("scoreLabel", { score: lead.score })}</Badge>
-            <dl className="mt-3 space-y-1.5 text-xs">
-              <Row label={t("sumCourse")} value={lead.coursesOfInterest[0] ?? "—"} />
-              <Row label={t("sumCategory")} value="Healthcare" />
-              <Row label={t("sumSubcategory")} value="Healthcare Quality" />
-              <Row label={t("sumCountry")} value={lead.country || "—"} />
-              <Row label={t("sumOwner")} value={lead.counselorName} />
-              <Row label={t("sumSource")} value={lead.source} />
-            </dl>
-          </div>
         </div>
 
         <DialogFooter className="border-t bg-muted/20 px-6 py-4">
           <Button variant="outline" onClick={onCancel}>{t("cancelBtn")}</Button>
           <Button
-            onClick={() => onConfirm(targetStage === "enrolled" && groupOptions.length > 0 ? { groupId: group || undefined } : undefined)}
+            onClick={() => {
+              if (targetStage === "contacted") {
+                onConfirm({ contactChannel: channel, contactOutcome: outcome, notes: contactNotes.trim() || undefined });
+              } else if (targetStage === "enrolled") {
+                onConfirm(groupOptions.length > 0 ? { groupId: group || undefined } : undefined);
+              } else if (targetStage === "lost") {
+                onConfirm({ lossReason: reason, notes: lostNotes.trim() || undefined });
+              } else {
+                onConfirm(undefined);
+              }
+            }}
             disabled={targetStage === "enrolled" && (!verified || (groupOptions.length > 0 && !group))}
           >
             {t("confirmMove")}
@@ -216,14 +212,5 @@ export function LeadTransitionModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <dt className="uppercase tracking-wide text-muted-foreground">{label}</dt>
-      <dd className="truncate text-end font-medium">{value}</dd>
-    </div>
   );
 }

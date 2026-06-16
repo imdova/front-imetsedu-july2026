@@ -38,10 +38,9 @@ import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { scoreLead } from "@/lib/crm/scoring";
+import { useCrmVariables } from "@/hooks/use-crm-variables";
+import { useAuth } from "@/store";
 import {
-  SOURCES,
-  SPECIALTIES,
-  EDUCATION_LEVELS,
   type Counselor,
   type Lead,
   type CreateLeadInput,
@@ -68,26 +67,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/shared/multi-select";
+import { PhoneCodeSelect } from "@/components/shared/phone-code-select";
+import { SearchableSelect } from "@/components/shared/searchable-select";
 
-// Lead-creation form: rich two-column layout wired to live CRM data.
 type Option = { value: string; label: string };
-
-/** Dial codes + ISO country names for the phone / country pickers (MENA-first). */
-const COUNTRIES = [
-  { code: "EG", dial: "+20", name: "Egypt", flag: "🇪🇬" },
-  { code: "SA", dial: "+966", name: "Saudi Arabia", flag: "🇸🇦" },
-  { code: "AE", dial: "+971", name: "United Arab Emirates", flag: "🇦🇪" },
-  { code: "QA", dial: "+974", name: "Qatar", flag: "🇶🇦" },
-  { code: "KW", dial: "+965", name: "Kuwait", flag: "🇰🇼" },
-  { code: "OM", dial: "+968", name: "Oman", flag: "🇴🇲" },
-  { code: "BH", dial: "+973", name: "Bahrain", flag: "🇧🇭" },
-  { code: "JO", dial: "+962", name: "Jordan", flag: "🇯🇴" },
-  { code: "LB", dial: "+961", name: "Lebanon", flag: "🇱🇧" },
-  { code: "IQ", dial: "+964", name: "Iraq", flag: "🇮🇶" },
-  { code: "SD", dial: "+249", name: "Sudan", flag: "🇸🇩" },
-  { code: "US", dial: "+1", name: "United States", flag: "🇺🇸" },
-  { code: "GB", dial: "+44", name: "United Kingdom", flag: "🇬🇧" },
-] as const;
 
 /** Pick a relevant icon for a lead-source / specialty option by keyword. */
 function iconForSource(value: string): React.ElementType {
@@ -136,7 +119,6 @@ const schema = z.object({
   gender: z.string(),
   dateOfBirth: z.string().trim(),
   leadType: z.string(),
-  targetPipeline: z.string(),
   linkedinUrl: z.string().trim(),
 });
 type Values = z.infer<typeof schema>;
@@ -167,29 +149,66 @@ function nameFromLinkedIn(url: string): string | null {
 
 export function CreateLeadForm({
   counselors,
-  pipelines,
   courseOptions,
   basePath,
   editLead,
   sourceOptions,
   specialtyOptions,
+  educationLevelOptions,
 }: {
   counselors: Counselor[];
-  pipelines: Option[];
   courseOptions: Option[];
   basePath: string;
   /** When provided, the form edits this lead instead of creating a new one. */
   editLead?: Lead;
-  /** Real lead-source / specialty options from CRM settings (fall back to seeds). */
+  /** Real lead-source / specialty/education options from CRM settings (fall back to seeds). */
   sourceOptions?: string[];
   specialtyOptions?: string[];
+  educationLevelOptions?: string[];
 }) {
+  const { user } = useAuth();
+  // Super-admin: staffRole === null (no staffRole object) → sees counselor picker
+  // Staff member: staffRole is an object → hidden, auto-assigned to themselves
+  const isAdmin = !user?.staffRole;
+  // For staff users: auto-assign to themselves on create
+  const staffId = user?.staffId ?? user?.id;
   const t = useTranslations("Crm");
   const locale = useLocale();
   const router = useRouter();
   const isEdit = !!editLead;
-  const specialtyList = specialtyOptions?.length ? specialtyOptions : SPECIALTIES;
-  const sourceList = sourceOptions?.length ? sourceOptions : SOURCES;
+  const { getOptionsById, isMounted: varsMounted } = useCrmVariables();
+
+  const specialtyList = React.useMemo(() => {
+    const base = specialtyOptions?.length ? specialtyOptions : [];
+    if (!varsMounted) return base;
+    const opts = getOptionsById("6a05e1f537c10d66e58aff55");
+    return opts.length > 0 ? opts : base;
+  }, [getOptionsById, varsMounted, specialtyOptions]);
+
+  const sourceList = React.useMemo(() => {
+    if (!varsMounted) return sourceOptions ?? [];
+    return getOptionsById("6a05eda937c10d66e58b0154");
+  }, [getOptionsById, varsMounted, sourceOptions]);
+
+  const educationLevels = React.useMemo(() => {
+    const base = educationLevelOptions?.length ? educationLevelOptions : [];
+    if (!varsMounted) return base;
+    const opts = getOptionsById("6a0608f837c10d66e58b01da");
+    return opts.length > 0 ? opts : base;
+  }, [getOptionsById, varsMounted, educationLevelOptions]);
+
+  const leadTypeOptions = React.useMemo(() => {
+    const fallback = [
+      { value: "cold", label: t("priorityCold") },
+      { value: "warm", label: t("priorityWarm") },
+      { value: "hot", label: t("priorityHot") },
+    ];
+    if (!varsMounted) return fallback;
+    const opts = getOptionsById("6a08697bc6c81845408ae446");
+    if (!opts.length) return fallback;
+    return opts.map((s) => ({ value: s.toLowerCase(), label: s }));
+  }, [getOptionsById, varsMounted, t]);
+
   const [duplicate, setDuplicate] = React.useState<{ id: string; fullName: string } | null>(null);
 
   const nationalityOptions = React.useMemo(
@@ -217,7 +236,6 @@ export function CreateLeadForm({
           gender: editLead.gender ?? "",
           dateOfBirth: "",
           leadType: ["cold", "warm", "hot"].includes(editLead.priority) ? editLead.priority : "warm",
-          targetPipeline: "none",
           linkedinUrl: "",
         }
       : {
@@ -237,7 +255,6 @@ export function CreateLeadForm({
           gender: "",
           dateOfBirth: "",
           leadType: "warm",
-          targetPipeline: "none",
           linkedinUrl: "",
         },
   });
@@ -255,7 +272,9 @@ export function CreateLeadForm({
 
   // Section fill counters for the progress badges.
   const contactFilled = [v.fullName, v.email, v.phone, v.whatsApp, v.country, v.specialty, v.dateOfBirth, v.gender].filter(Boolean).length;
-  const assignFilled = [v.source, v.counselorId !== "none" ? v.counselorId : ""].filter(Boolean).length;
+  const assignFilled = isAdmin
+    ? [v.source, v.counselorId !== "none" ? v.counselorId : ""].filter(Boolean).length
+    : [v.source].filter(Boolean).length;
   const canSubmit = v.phone.trim().replace(/\D/g, "").length >= 6;
   const age = ageFromDob(v.dateOfBirth);
 
@@ -299,11 +318,12 @@ export function CreateLeadForm({
         source: values.source || undefined,
         jobTitle: values.jobTitle || undefined,
         coursesOfInterest: values.coursesOfInterest,
-        counselorId: values.counselorId === "none" ? undefined : values.counselorId,
+        counselorId: isAdmin
+          ? (values.counselorId === "none" ? undefined : values.counselorId)
+          : (staffId ?? undefined),
         gender: values.gender === "male" || values.gender === "female" ? values.gender : undefined,
         dateOfBirth: values.dateOfBirth || undefined,
         leadType: (["cold", "warm", "hot"].includes(values.leadType) ? values.leadType : "warm") as "cold" | "warm" | "hot",
-        targetPipeline: values.targetPipeline === "none" ? undefined : values.targetPipeline,
       };
       const res = editLead
         ? await dal.crm.updateLead(editLead.id, payload)
@@ -383,18 +403,7 @@ export function CreateLeadForm({
           control={form.control}
           name={codeName}
           render={({ field }) => (
-            <Select value={field.value as string} onValueChange={field.onChange}>
-              <SelectTrigger className="w-[108px] shrink-0">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRIES.map((c) => (
-                  <SelectItem key={c.code + c.dial} value={c.dial}>
-                    <span className="tabular-nums">{c.flag} {c.dial}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PhoneCodeSelect value={field.value as string} onChange={field.onChange} />
           )}
         />
         <Input
@@ -474,7 +483,20 @@ export function CreateLeadForm({
                 </label>
               </div>
 
-              {selectField("country", t("fNationality"), nationalityOptions, t("selectNationality"))}
+              <FormField control={form.control} name="country" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fNationality")}</FormLabel>
+                  <FormControl>
+                    <SearchableSelect
+                      value={field.value as string}
+                      onChange={field.onChange}
+                      options={nationalityOptions}
+                      placeholder={t("selectNationality")}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
               {selectField("specialty", t("fSpecialty"), specialtyList.map((s) => ({ value: s, label: s })), t("selectSpecialty"), iconForSpecialty)}
 
               <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
@@ -506,7 +528,7 @@ export function CreateLeadForm({
             </div>
 
             <div className="mt-6 grid gap-5 border-t pt-6 sm:grid-cols-2">
-              {selectField("educationLevel", t("fEducation"), EDUCATION_LEVELS.map((e) => ({ value: e, label: e })), t("selectEducation"))}
+              {selectField("educationLevel", t("fEducation"), educationLevels.map((e) => ({ value: e, label: e })), t("selectEducation"))}
               <FormField control={form.control} name="jobTitle" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("fJobTitle")}</FormLabel>
@@ -579,12 +601,13 @@ export function CreateLeadForm({
                 <Megaphone className="size-4 text-primary" />
                 {t("secAssignment")}
               </h2>
-              {sectionBadge(t("filledBadge", { n: assignFilled, total: 2 }), assignFilled >= 1 ? "ok" : "muted")}
+              {sectionBadge(t("filledBadge", { n: assignFilled, total: isAdmin ? 3 : 2 }), assignFilled >= (isAdmin ? 2 : 1) ? "ok" : "muted")}
             </header>
 
             <div className="space-y-5">
               {selectField("source", t("leadSource"), sourceList.map((s) => ({ value: s, label: s })), t("selectSource"), iconForSource)}
-              {selectField("counselorId", t("fCounselor"), [
+              {/* Counselor assignment — admin only; staff are auto-assigned their own id */}
+              {isAdmin && selectField("counselorId", t("fCounselor"), [
                 { value: "none", label: t("notAssigned") },
                 ...counselors.map((c) => ({ value: c.id, label: c.name })),
               ], t("notAssigned"))}
@@ -593,8 +616,10 @@ export function CreateLeadForm({
                 <FormItem>
                   <FormLabel>{t("leadType")}</FormLabel>
                   <div className="flex gap-2">
-                    {([["cold", "priorityCold"], ["warm", "priorityWarm"], ["hot", "priorityHot"]] as const).map(([val, k]) => {
-                      const active = field.value === val;
+                    {leadTypeOptions.map((opt) => {
+                      const active = field.value === opt.value;
+                      const val = opt.value;
+                      const label = opt.label;
                       return (
                         <button key={val} type="button" onClick={() => field.onChange(val)}
                           className={cn("flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
@@ -604,7 +629,7 @@ export function CreateLeadForm({
                                 : "border-chart-3 bg-chart-3/10 text-chart-3"
                               : "text-muted-foreground hover:bg-muted/40")}>
                           {active && <Check className="size-3.5" />}
-                          {t(k)}
+                          {val === "cold" || val === "warm" || val === "hot" ? t(`priority${val.charAt(0).toUpperCase()}${val.slice(1)}` as any) : label}
                         </button>
                       );
                     })}

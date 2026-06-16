@@ -44,7 +44,7 @@ interface LeadPaymentTabProps {
   leadId: string;
   plans: PaymentPlanSummary[];
   onUpdated?: (lead: Lead) => void;
-  courseOptions?: { value: string; label: string }[];
+  courseOptions?: { value: string; label: string; image?: string }[];
 }
 
 export function LeadPaymentTab({ leadName, leadId, plans, onUpdated, courseOptions = [] }: LeadPaymentTabProps) {
@@ -79,10 +79,16 @@ export function LeadPaymentTab({ leadName, leadId, plans, onUpdated, courseOptio
         <div className="space-y-8">
           {plans.map((p, i) => {
             const pct = p.totalAmount ? Math.round((p.paid / p.totalAmount) * 100) : 0;
+            const courseImage = courseOptions.find((c) => c.label === p.courseName)?.image;
             return (
               <div key={i} className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
-                  <p className="font-heading text-base font-semibold">
+                  <p className="flex min-w-0 items-center gap-2 font-heading text-base font-semibold">
+                    {courseImage && (
+                      <span className="relative size-8 shrink-0 overflow-hidden rounded-md border bg-muted">
+                        <Image src={courseImage} alt="" fill className="object-cover" />
+                      </span>
+                    )}
                     {plans.length > 1 && <span className="text-muted-foreground">{t("ppPlanN", { n: i + 1 })} · </span>}
                     {p.courseName}
                   </p>
@@ -441,7 +447,7 @@ function PaymentPlanModal({
   /** Index of the plan being edited; omit to append a new plan. */
   index?: number;
   onSaved: (lead: Lead) => void;
-  courseOptions?: { value: string; label: string }[];
+  courseOptions?: { value: string; label: string; image?: string }[];
 }) {
   const t = useTranslations("Crm");
   const [courseName, setCourseName] = React.useState("");

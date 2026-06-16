@@ -29,12 +29,14 @@ export const fetchFinanceStats = async (): Promise<Result<db.FinanceStats>> => {
   }
 };
 
-/** LIVE: invoices from GET /crm/invoices, mapped to the UI shape. */
+/** LIVE: invoices from GET /crm/invoices (one row per installment), mapped to
+ * the UI Invoice shape. Each row's invoice._id is used as the link ID so the
+ * detail page can fetch by invoiceId. */
 export const fetchInvoices = async (): Promise<Result<db.Invoice[]>> => {
-  const res = await invoicesSvc.getInvoices({ limit: 200 } as never);
+  const res = await invoicesSvc.getInvoices({ limit: 200 });
   if (!res.ok) return res;
   try {
-    const rows: unknown[] = Array.isArray((res.data as { data?: unknown[] })?.data) ? (res.data as { data: unknown[] }).data : [];
+    const rows: any[] = res.data?.data ?? [];
     return ok(rows.map(mapInvoice));
   } catch (err) {
     return fail(toMessage(err, "Failed to map invoices"));

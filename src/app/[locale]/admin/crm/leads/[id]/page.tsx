@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { Button } from "@/components/ui/button";
 import { LeadDetail } from "@/features/crm/components/lead-detail";
+import { requirePermission, getSessionUser } from "@/lib/permission-guard";
 
 export default async function AdminLeadDetailPage({
   params,
@@ -14,6 +15,11 @@ export default async function AdminLeadDetailPage({
 }) {
   const { locale, id } = await params;
   setRequestLocale(locale);
+  
+  await requirePermission("crm.leads.view");
+  const user = await getSessionUser();
+  const isStaff = user?.staffRole !== null && user?.staffRole !== undefined;
+
   const t = await getTranslations("Crm");
 
   const [leadRes, pipelineRes, pipelinesRes, coursesRes, groupsRes] = await Promise.all([
@@ -26,6 +32,14 @@ export default async function AdminLeadDetailPage({
 
   if (!leadRes.ok || !leadRes.data) notFound();
 
+  // Enforce staff isolation: staff can only view leads assigned to them.
+  if (isStaff) {
+    const userStaffId = user?.staffId ?? user?.id;
+    if (leadRes.data.counselorId !== userStaffId) {
+      notFound();
+    }
+  }
+
   const assignablePipelines = (pipelinesRes.ok ? pipelinesRes.data : []).map((p) => ({
     id: p.value,
     title: p.label,
@@ -33,6 +47,7 @@ export default async function AdminLeadDetailPage({
   const courseOptions = (coursesRes.ok ? coursesRes.data : []).map((c) => ({
     value: c.id,
     label: c.titleEn || c.titleAr || c.slug,
+    image: c.thumbnailUrl,
   }));
   // Real groups for the "enrolled" transition (lead is added to the chosen group).
   const groupOptions = (groupsRes.ok ? groupsRes.data : []).map((g) => ({ value: g.id, label: g.title }));

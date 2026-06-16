@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { PipelineSummary, PipelineInventoryStats } from "@/lib/db/crm";
 import { dal } from "@/lib/dal";
 import { useRouter } from "@/i18n/navigation";
+import { usePermission } from "@/hooks/use-permission";
 import { cn, formatCompact, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,11 @@ export function PipelinesInventory({
   const t = useTranslations("Crm");
   const router = useRouter();
   const openPipeline = () => router.push("/admin/crm/pipeline");
+
+  const canArchive = usePermission("crm.pipelines.archive");
+  const canCreate = usePermission("crm.pipelines.create");
+  const canEdit = usePermission("crm.pipelines.edit");
+  const canDelete = usePermission("crm.pipelines.delete");
   const [rows, setRows] = React.useState(initial);
   const [tab, setTab] = React.useState<"active" | "archived">("active");
   const [search, setSearch] = React.useState("");
@@ -102,7 +108,7 @@ export function PipelinesInventory({
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchPipelines")} className="w-56 ps-9" />
           </div>
-          <Button className="gap-1.5" onClick={() => setCreateOpen(true)}><Plus className="size-4" />{t("newPipeline")}</Button>
+          <Button className="gap-1.5" onClick={() => setCreateOpen(true)} disabled={!canCreate}><Plus className="size-4" />{t("newPipeline")}</Button>
         </div>
       </div>
 
@@ -163,12 +169,12 @@ export function PipelinesInventory({
                     <td className="px-4 py-4 text-center"><span className="rounded-full bg-success/12 px-2 py-0.5 text-xs font-medium text-success tabular-nums">{p.enrollments}</span></td>
                     <td className="px-4 py-4 text-end font-medium tabular-nums">{p.revenue > 0 ? formatCurrency(p.revenue, "EGP") : "EGP 0"}</td>
                     <td className="px-4 py-4 text-center tabular-nums">{p.conversion}%</td>
-                    <td className="px-4 py-4 text-center"><Switch checked={p.archived} onCheckedChange={() => toggleArchive(p)} /></td>
+                    <td className="px-4 py-4 text-center"><Switch checked={p.archived} onCheckedChange={() => toggleArchive(p)} disabled={!canArchive} /></td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1.5">
                         <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={openPipeline}><LayoutGrid className="size-3.5" />{t("open")}</Button>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1.5"><Pencil className="size-3.5" />{t("edit")}</Button>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-destructive" onClick={() => setDelTarget(p)}><Trash2 className="size-3.5" />{t("delete")}</Button>
+                        <Button variant="ghost" size="sm" className="h-8 gap-1.5" disabled={!canEdit}><Pencil className="size-3.5" />{t("edit")}</Button>
+                        <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-destructive" onClick={() => setDelTarget(p)} disabled={!canDelete}><Trash2 className="size-3.5" />{t("delete")}</Button>
                       </div>
                     </td>
                   </tr>

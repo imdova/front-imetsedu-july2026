@@ -17,10 +17,9 @@ export default async function StaffEditLeadPage({
   setRequestLocale(locale);
   const t = await getTranslations("Crm");
 
-  const [leadRes, counselorsRes, pipelinesRes, coursesRes, optionsRes] = await Promise.all([
+  const [leadRes, counselorsRes, coursesRes, optionsRes] = await Promise.all([
     dal.crm.fetchLead(id),
     dal.crm.fetchCounselors(),
-    dal.crm.fetchLeadPipelines(),
     dal.courses.fetchCourses(),
     dal.crm.fetchCrmFieldOptions(),
   ]);
@@ -30,7 +29,7 @@ export default async function StaffEditLeadPage({
     value: c.id,
     label: c.titleEn || c.titleAr || c.slug,
   }));
-  const fieldOpts = optionsRes.ok ? optionsRes.data : { sources: [], specialties: [] };
+  const fieldOpts = optionsRes.ok ? optionsRes.data : { sources: [], specialties: [], educationLevels: [] };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-8">
@@ -46,10 +45,10 @@ export default async function StaffEditLeadPage({
       <CreateLeadForm
         editLead={leadRes.data}
         counselors={counselorsRes.ok ? counselorsRes.data : []}
-        pipelines={pipelinesRes.ok ? pipelinesRes.data : []}
         courseOptions={courseOptions}
         sourceOptions={fieldOpts.sources}
         specialtyOptions={fieldOpts.specialties}
+        educationLevelOptions={fieldOpts.educationLevels}
         basePath="/staff"
       />
     </div>

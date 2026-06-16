@@ -7,8 +7,10 @@ import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
 import type { Lead, PipelineStage, Counselor } from "@/lib/db/crm";
-import { SOURCES } from "@/lib/db/crm";
+import { useCrmVariables } from "@/hooks/use-crm-variables";
+import { usePipelineStages } from "@/hooks/use-pipeline-stages";
 import { dal } from "@/lib/dal";
+import { usePermission } from "@/hooks/use-permission";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -48,6 +50,7 @@ interface Props {
   courseOptions: Option[];
   /** Real lead-source options from CRM settings (falls back to seeds). */
   sourceOptions?: string[];
+  specialtyOptions?: string[];
   basePath: string;
 }
 
@@ -93,7 +96,7 @@ function inRange(iso: string | undefined, range: Range, custom?: { from: string;
   }
 }
 
-export function LeadsTable({ initialData, stages, counselors, pipelines, courseOptions, sourceOptions, basePath }: Props) {
+export function LeadsTable({ initialData, stages, counselors, pipelines, courseOptions, sourceOptions, specialtyOptions, basePath }: Props) {
   const t = useTranslations("Crm");
   const tc = useTranslations("Common");
   const router = useRouter();
@@ -115,23 +118,48 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   const [customTo, setCustomTo] = React.useState("");
   const [quickTab, setQuickTab] = React.useState<"all" | "unassigned" | "overdue" | "today">("all");
 
-  // Distinct specialty / country values present in the data (so filter values
-  // always match what the backend actually returns).
-  const specialtyOptions = React.useMemo(
-    () => Array.from(new Set(initialData.map((r) => r.specialty).filter(Boolean))).map((s) => ({ value: s as string, label: s as string })),
-    [initialData],
-  );
+  const { getOptionsById, isMounted: varsMounted } = useCrmVariables();
+  const { stages: crmStages } = usePipelineStages(stages);
+
+  // Specialty and Source options strictly from CRM variables settings.
+  const specialtyFilterOptions = React.useMemo(() => {
+    const base = specialtyOptions?.length ? specialtyOptions : [];
+    if (!varsMounted) {
+      return base.map((s) => ({ value: s, label: s }));
+    }
+    const opts = getOptionsById("6a05e1f537c10d66e58aff55");
+    const merged = opts.length > 0 ? opts : base;
+    return merged.map((s) => ({ value: s, label: s }));
+  }, [getOptionsById, varsMounted, specialtyOptions]);
+
   const countryOptions = React.useMemo(
     () => Array.from(new Set(initialData.map((r) => r.country).filter(Boolean))).map((c) => ({ value: c, label: c })),
     [initialData],
   );
-  // Real source options from CRM settings, unioned with any sources present on
-  // the leads (so every value in the table is filterable). Falls back to seeds.
+
   const sourceFilterOptions = React.useMemo(() => {
-    const base = sourceOptions?.length ? sourceOptions : SOURCES;
-    const present = initialData.map((r) => r.source).filter(Boolean) as string[];
-    return Array.from(new Set([...base, ...present])).map((s) => ({ value: s, label: s }));
-  }, [sourceOptions, initialData]);
+    if (!varsMounted) {
+      return (sourceOptions ?? []).map((s) => ({ value: s, label: s }));
+    }
+    const opts = getOptionsById("6a05eda937c10d66e58b0154");
+    return opts.map((s) => ({ value: s, label: s }));
+  }, [sourceOptions, getOptionsById, varsMounted]);
+
+  const priorityFilterOptions = React.useMemo(() => {
+    const fallback = [
+      { value: "hot", label: t("priorityHot") },
+      { value: "warm", label: t("priorityWarm") },
+      { value: "cold", label: t("priorityCold") },
+    ];
+    if (!varsMounted) return fallback;
+    const opts = getOptionsById("6a08697bc6c81845408ae446");
+    if (!opts.length) return fallback;
+    return opts.map((s) => ({ value: s.toLowerCase(), label: s }));
+  }, [getOptionsById, varsMounted, t]);
+
+  const pipelineStageOptions = React.useMemo(() => {
+    return crmStages.map((s) => ({ value: s.key, label: s.name }));
+  }, [crmStages]);
 
   const counts = React.useMemo(() => ({
     all: rows.length,
@@ -281,7 +309,7 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
       {/* Filter grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <Filter label={t("filterPriority")} value={priority} onChange={setPriority} all={t("allPriorities")}
-          options={[{ value: "hot", label: t("priorityHot") }, { value: "warm", label: t("priorityWarm") }, { value: "cold", label: t("priorityCold") }]} />
+          options={priorityFilterOptions} />
         <Filter label={t("filterSource")} value={source} onChange={setSource} all={t("allSources")}
           options={sourceFilterOptions} />
         <Filter label={t("filterCounselor")} value={counselorId} onChange={setCounselorId} all={t("everyone")}
@@ -289,13 +317,13 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
         <Filter label={t("filterCourse")} value={courseId} onChange={setCourseId} all={t("allCourses")}
           options={courseOptions} />
         <Filter label={t("filterSpecialty")} value={specialty} onChange={setSpecialty} all={t("allSpecialties")}
-          options={specialtyOptions} />
+          options={specialtyFilterOptions} />
         <Filter label={t("filterCountry")} value={country} onChange={setCountry} all={t("allCountries")}
           options={countryOptions} />
         <Filter label={t("filterPipeline")} value={pipeline} onChange={setPipeline} all={t("allPipelines")}
           options={pipelines} />
         <Filter label={t("filterPipelineStatus")} value={stage} onChange={setStage} all={t("allStatuses")}
-          options={stages.map((s) => ({ value: s.key, label: s.name }))} />
+          options={pipelineStageOptions} />
       </div>
 
       <DataTable
@@ -311,7 +339,7 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
               count={ids.length}
               busy={busy}
               counselors={counselors}
-              stages={stages}
+              stages={crmStages.map((s) => ({ key: s.key, name: s.name, order: 0 }))}
               pipelines={pipelines}
               onAssign={(cid) => runBulk(ids, () => dal.crm.bulkAssignCounselor(ids, cid), t("bulkAssigned"), reset)}
               onStage={(s) => runBulk(ids, () => dal.crm.bulkSetStage(ids, s), t("bulkStageMoved"), reset)}
@@ -396,21 +424,32 @@ function BulkBar({
   onClear: () => void;
   t: (key: string, values?: Record<string, number | string>) => string;
 }) {
+  const canAssign = usePermission("crm.leads.assign");
+  const canEdit = usePermission("crm.leads.edit");
+  if (!canAssign && !canEdit) return null;
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
       <span className="text-sm font-medium text-primary">{t("nSelected", { n: count })}</span>
       <span className="mx-1 h-5 w-px bg-border" />
 
-      <BulkMenu icon={<UserPlus className="size-4" />} label={t("bulkAssign")} busy={busy}
-        items={counselors.map((c) => ({ value: c.id, label: c.name }))} onPick={onAssign} empty={t("bulkNoAgents")} />
-      <BulkMenu icon={<ArrowRightLeft className="size-4" />} label={t("bulkMoveStage")} busy={busy}
-        items={stages.map((s) => ({ value: s.key, label: s.name }))} onPick={onStage} empty="—" />
-      <BulkMenu icon={<GitBranch className="size-4" />} label={t("bulkMovePipeline")} busy={busy}
-        items={pipelines} onPick={onPipeline} empty={t("bulkNoPipelines")} />
+      {canAssign && (
+        <BulkMenu icon={<UserPlus className="size-4" />} label={t("bulkAssign")} busy={busy}
+          items={counselors.map((c) => ({ value: c.id, label: c.name }))} onPick={onAssign} empty={t("bulkNoAgents")} />
+      )}
+      {canEdit && (
+        <BulkMenu icon={<ArrowRightLeft className="size-4" />} label={t("bulkMoveStage")} busy={busy}
+          items={stages.map((s) => ({ value: s.key, label: s.name }))} onPick={onStage} empty="—" />
+      )}
+      {canEdit && (
+        <BulkMenu icon={<GitBranch className="size-4" />} label={t("bulkMovePipeline")} busy={busy}
+          items={pipelines} onPick={onPipeline} empty={t("bulkNoPipelines")} />
+      )}
 
-      <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" disabled={busy} onClick={onDelete}>
-        <Trash2 className="size-4" />{t("bulkDelete")}
-      </Button>
+      {canEdit && (
+        <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" disabled={busy} onClick={onDelete}>
+          <Trash2 className="size-4" />{t("bulkDelete")}
+        </Button>
+      )}
       <Button variant="ghost" size="sm" className="ms-auto gap-1.5" onClick={onClear}>
         <X className="size-4" />{t("bulkClear")}
       </Button>

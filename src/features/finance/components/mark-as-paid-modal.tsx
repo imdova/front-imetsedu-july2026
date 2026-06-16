@@ -25,9 +25,9 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/** Renders the attached receipt: the image itself, or a file tile for PDFs. */
 export function ReceiptPreview({ receipt, className }: { receipt: Receipt; className?: string }) {
-  if (receipt.url) {
+  const isPdf = receipt.name.toLowerCase().endsWith(".pdf") || (receipt.url && receipt.url.toLowerCase().includes(".pdf"));
+  if (receipt.url && !isPdf) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img src={receipt.url} alt={receipt.name} className={cn("w-full rounded-lg border bg-muted/40 object-contain", className)} />

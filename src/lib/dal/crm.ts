@@ -140,6 +140,9 @@ export const createLead = async (
     specialty: input.specialty || undefined,
     educationLevel: input.educationLevel || undefined,
     source: input.source || undefined,
+    "6a05e1f537c10d66e58aff55": input.specialty || undefined,
+    "6a0608f837c10d66e58b01da": input.educationLevel || undefined,
+    "6a05eda937c10d66e58b0154": input.source || undefined,
     dateOfBirth: input.dateOfBirth || undefined,
     gender: input.gender,
     coursesOfInterest: input.coursesOfInterest?.length ? input.coursesOfInterest : undefined,
@@ -174,6 +177,9 @@ export const updateLead = async (
     specialty: input.specialty || undefined,
     educationLevel: input.educationLevel || undefined,
     source: input.source || undefined,
+    "6a05e1f537c10d66e58aff55": input.specialty || undefined,
+    "6a0608f837c10d66e58b01da": input.educationLevel || undefined,
+    "6a05eda937c10d66e58b0154": input.source || undefined,
     dateOfBirth: input.dateOfBirth || undefined,
     gender: input.gender,
     coursesOfInterest: input.coursesOfInterest?.length ? input.coursesOfInterest : undefined,
@@ -314,10 +320,16 @@ export const setLeadPipelines = async (
 
 /** LIVE: move a lead to a stage via PATCH /crm/leads/:id/stage. Resolves the
  * lead's pipeline and maps the canonical UI stage to that pipeline's own key. */
-export const updateLeadStage = async (id: string, stageKey: string): Promise<Result<db.Lead | null>> => {
+export const updateLeadStage = async (
+  id: string,
+  stageKey: string,
+  logData?: db.PipelineHistoryEntry["logData"],
+  existingHistory?: db.PipelineHistoryEntry[],
+): Promise<Result<db.Lead | null>> => {
   const leadRes = await leadsSvc.getLeadById(id);
   if (!leadRes.ok) return leadRes;
   const pipelineId: string | undefined = leadRes.data?.pipelines?.[0]?._id;
+  const pipelineName: string | undefined = leadRes.data?.pipelines?.[0]?.title;
   if (!pipelineId) return fail("Lead is not assigned to a pipeline");
 
   // Prefer a stage key that actually exists in this pipeline.
@@ -329,7 +341,14 @@ export const updateLeadStage = async (id: string, stageKey: string): Promise<Res
     if (match) backendStage = match.key;
   }
 
-  const res = await leadsSvc.updateLeadStage(id, { stage: backendStage, pipelineId });
+  const history = existingHistory ?? (leadRes.data?.data?.pipelineHistory as db.PipelineHistoryEntry[] | undefined) ?? [];
+  const updatedHistory: db.PipelineHistoryEntry[] = [
+    ...history.filter((h) => h.pipelineId !== pipelineId || h.stage !== backendStage),
+    { stage: backendStage, at: new Date().toISOString(), pipelineId, pipelineName, logData: logData ?? {} },
+  ];
+  const data = { contactChannel: null, contactOutcome: null, notes: null, note: null, pipelineHistory: updatedHistory };
+
+  const res = await leadsSvc.updateLeadStage(id, { stage: backendStage, pipelineId, data });
   if (!res.ok) return res;
   try {
     return ok(res.data ? mapLead(res.data) : null);
@@ -387,8 +406,17 @@ export const setLeadStageInPipeline = async (
   leadId: string,
   pipelineId: string,
   stageKey: string,
+  pipelineName?: string,
+  logData?: db.PipelineHistoryEntry["logData"],
+  existingHistory?: db.PipelineHistoryEntry[],
 ): Promise<Result<db.Lead | null>> => {
-  const res = await leadsSvc.updateLeadStage(leadId, { stage: stageKey, pipelineId });
+  const history = existingHistory ?? [];
+  const updatedHistory: db.PipelineHistoryEntry[] = [
+    ...history.filter((h) => h.pipelineId !== pipelineId || h.stage !== stageKey),
+    { stage: stageKey, at: new Date().toISOString(), pipelineId, pipelineName, logData: logData ?? {} },
+  ];
+  const data = { contactChannel: null, contactOutcome: null, notes: null, note: null, pipelineHistory: updatedHistory };
+  const res = await leadsSvc.updateLeadStage(leadId, { stage: stageKey, pipelineId, data });
   if (!res.ok) return res;
   try {
     return ok(res.data ? mapLead(res.data) : null);
@@ -423,17 +451,30 @@ export const fetchCrmStats = async (): Promise<Result<db.CrmStats>> => {
     return fail(toMessage(err, "Failed to map CRM stats"));
   }
 };
-/** LIVE: lead-form dropdown options (lead source + specialty) from the CRM
- * settings collection (GET /crm/settings). Each setting is a named group with
- * an `options` array; we match the group by its English name. */
-export const fetchCrmFieldOptions = async (): Promise<Result<{ sources: string[]; specialties: string[] }>> => {
+/** LIVE: lead-form dropdown options (lead source + specialty + education level)
+ * from the CRM settings collection (GET /crm/settings).
+ * The API returns objects with `_id` as the primary key and `nameEn` as the
+ * group identifier. We match first by known `_id`, then fall back to a
+ * case-insensitive `nameEn` keyword search so the code stays resilient to
+ * minor API changes. */
+export const fetchCrmFieldOptions = async (): Promise<Result<{ sources: string[]; specialties: string[]; educationLevels: string[] }>> => {
   const res = await crmSettingsSvc.listCrmSettings();
   if (!res.ok) return res;
   try {
     const list: any[] = Array.isArray(res.data) ? res.data : ((res.data as { data?: any[] })?.data ?? []);
-    const optionsFor = (kw: string): string[] =>
-      (list.find((s) => `${s?.nameEn ?? ""}`.toLowerCase().includes(kw))?.options ?? []) as string[];
-    return ok({ sources: optionsFor("source"), specialties: optionsFor("special") });
+
+    /** Find options by known _id first, then fall back to nameEn keyword. */
+    const optionsFor = (id: string, kw: string): string[] => {
+      const byId = list.find((s) => (s?._id ?? s?.id ?? "") === id);
+      if (byId) return byId.options ?? [];
+      return (list.find((s) => `${s?.nameEn ?? ""}`.toLowerCase().includes(kw))?.options ?? []) as string[];
+    };
+
+    return ok({
+      sources:       optionsFor("6a05eda937c10d66e58b0154", "source"),
+      specialties:   optionsFor("6a05e1f537c10d66e58aff55", "special"),
+      educationLevels: optionsFor("6a0608f837c10d66e58b01da", "education"),
+    });
   } catch (err) {
     return fail(toMessage(err, "Failed to load CRM options"));
   }

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type { LmsCourseDetail, AssignedGroupStatus, LmsAssignedGroup } from "@/lib/db/lms";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
@@ -43,6 +43,7 @@ export function LmsCourseDetail({
   availableStudents?: StudentOption[];
 }) {
   const t = useTranslations("Admin");
+  const router = useRouter();
   const [tab, setTab] = React.useState<Tab>("overview");
 
   const moduleCount = course.modules.length;
@@ -96,7 +97,7 @@ export function LmsCourseDetail({
 
       {tab === "overview" && <Overview course={course} moduleCount={moduleCount} lessonCount={lessonCount} t={t} />}
       {tab === "groups" && <AssignedGroups course={course} availableGroups={availableGroups} t={t} />}
-      {tab === "curriculum" && <CurriculumBuilder initial={course.modules} courseId={course.id} />}
+      {tab === "curriculum" && <CurriculumBuilder initial={course.modules} courseId={course.id} onUpdate={() => router.refresh()} />}
       {tab === "materials" && <StudyMaterialsTab lmsId={course.id} initial={course.materials} />}
       {tab === "assignments" && <AssignmentsTab lmsId={course.id} />}
       {tab === "students" && <StudentsTab lmsId={course.id} students={enrolledStudents} availableStudents={availableStudents} />}

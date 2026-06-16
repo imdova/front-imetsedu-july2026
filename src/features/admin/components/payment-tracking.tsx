@@ -9,6 +9,8 @@ import {
 import { toast } from "sonner";
 
 import type { Invoice, Installment } from "@/lib/db/finance";
+import { mapLeadPaymentPlanToInvoice } from "@/lib/finance/map-finance";
+import { getPayments } from "@integration/services/payments";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,7 +40,7 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
   completed: "border-success/30 bg-success/10 text-success",
 };
 
-export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
+export function PaymentTracking({ invoices: serverInvoices = [] }: { invoices?: Invoice[] }) {
   const t = useTranslations("Admin");
   const [tab, setTab] = React.useState<"all" | "overdue" | "upcoming" | "paid">("all");
   const [search, setSearch] = React.useState("");
@@ -46,6 +48,34 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
   const [course, setCourse] = React.useState("all");
   const [ptype, setPtype] = React.useState("all");
   const [pstatus, setPstatus] = React.useState("all");
+  const [invoices, setInvoices] = React.useState<Invoice[]>(serverInvoices);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let active = true;
+    async function load() {
+      setIsLoading(true);
+      try {
+        const res = await getPayments({ limit: 5000 } as any);
+        if (!active) return;
+        if (res.ok && res.data) {
+          const rows: any[] = (res.data as any)?.leadPayments?.data ?? [];
+          const plans = rows.filter(
+            (lead: any) => Array.isArray(lead?.paymentPlan?.installments) && lead.paymentPlan.installments.length > 0,
+          );
+          setInvoices(plans.map((lead: any, idx: number) => ({
+              ...mapLeadPaymentPlanToInvoice(lead),
+              id: `${lead._id ?? idx}-${idx}`,
+            })));
+        }
+      } catch {
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+    load();
+    return () => { active = false; };
+  }, []);
 
   // Each installment invoice is one payment plan / schedule.
   const plans = invoices.filter((i) => i.installments && i.installments.length > 0);
@@ -222,7 +252,12 @@ export function PaymentTracking({ invoices }: { invoices: Invoice[] }) {
           </div>
         </div>
 
-        {rows.length === 0 ? (
+        {isLoading ? (
+          <div className="grid place-items-center gap-1.5 py-16 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+            <p className="text-sm text-muted-foreground">Loading payment plans…</p>
+          </div>
+        ) : rows.length === 0 ? (
           <div className="grid place-items-center gap-1.5 rounded-lg border border-dashed py-16 text-center">
             <p className="font-semibold">{t("ptNoMatch")}</p>
             <p className="text-sm text-muted-foreground">{t("ptTryAnother")}</p>

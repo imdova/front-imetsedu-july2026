@@ -7,7 +7,8 @@ import { ChevronDown } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV, type NavSection } from "@/constants/navigation";
-import { useUi } from "@/store";
+import { useStore, useUi } from "@/store";
+import type { StaffRolePermissions } from "@/store/slices/auth-slice";
 import { getIcon } from "./icon-map";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -15,6 +16,22 @@ interface SidebarNavProps {
   collapsed: boolean;
   onNavigate?: () => void;
   nav?: NavSection[];
+}
+
+/**
+ * Mirror of the old AdminSidebarPanel hasAccess logic:
+ * - adminOnly && perms !== null  → false (hide from any staff)
+ * - !perms || !required?.length  → true  (super-admin OR no requirement)
+ * - else: at least ONE required key must be true in perms
+ */
+function hasAccess(
+  perms: StaffRolePermissions | null | undefined,
+  required?: string[],
+  adminOnly?: boolean,
+): boolean {
+  if (adminOnly && perms !== null && perms !== undefined) return false;
+  if (!perms || !required?.length) return true;
+  return required.some((key) => perms[key] === true);
 }
 
 function sectionHasActive(pathname: string, section: NavSection) {
@@ -31,6 +48,13 @@ export function SidebarNav({ collapsed, onNavigate, nav = ADMIN_NAV }: SidebarNa
   const { collapsedNavSections, toggleNavSection, setNavSectionCollapsed } =
     useUi();
 
+  // Read permissions from the store — same pattern as old AdminSidebarPanel
+  const storePermissions = useStore((s) => s.user?.staffRole?.permissions);
+  // staffRole === null → super-admin → perms = null → all items visible
+  // staffRole?.permissions → StaffRolePermissions object → filter applies
+  // staffRole === undefined → not yet hydrated → show everything optimistically
+  const permissions: StaffRolePermissions | null | undefined = storePermissions;
+
   React.useEffect(() => {
     nav.forEach((section) => {
       if (sectionHasActive(pathname, section)) {
@@ -44,6 +68,12 @@ export function SidebarNav({ collapsed, onNavigate, nav = ADMIN_NAV }: SidebarNa
       {nav.map((section) => {
         const sectionCollapsed = collapsedNavSections[section.labelKey] ?? false;
         const hasActive = sectionHasActive(pathname, section);
+
+        // Filter items using hasAccess — identical to old AdminSidebarPanel
+        const visibleItems = section.items.filter((item) =>
+          hasAccess(permissions, item.requiredPermissions, item.adminOnly),
+        );
+        if (visibleItems.length === 0) return null;
 
         return (
           <div key={section.labelKey} className="flex flex-col gap-1">
@@ -69,7 +99,7 @@ export function SidebarNav({ collapsed, onNavigate, nav = ADMIN_NAV }: SidebarNa
               </button>
             )}
             {(!sectionCollapsed || collapsed) &&
-              section.items.map((item) => {
+              visibleItems.map((item) => {
                 const Icon = getIcon(item.icon);
                 const active =
                   pathname === item.href ||

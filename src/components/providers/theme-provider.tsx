@@ -18,6 +18,7 @@ export function ThemeProvider({
       defaultTheme="light"
       enableSystem
       disableTransitionOnChange
+      scriptProps={{ suppressHydrationWarning: true } as any}
       {...props}
     >
       {children}

@@ -4,7 +4,7 @@
  */
 import type {
   LmsCourse, LmsStats, LmsCourseDetail, LmsCategory, LmsSubcategory,
-  CurriculumModule, CurriculumItem, LmsMaterial,
+  CurriculumModule, CurriculumItem, LmsMaterial, VideoSource,
 } from "@/lib/db/lms";
 
 function fmtDate(iso?: string): string {
@@ -82,13 +82,22 @@ function mapModule(m: any): CurriculumModule {
   return {
     id: m?._id ?? m?.id,
     title: m?.title ?? m?.titleEn ?? "—",
-    items: (m?.items ?? m?.lessons ?? []).map((it: any): CurriculumItem => ({
-      id: it?._id ?? it?.id,
-      type: (it?.type === "quiz" ? "quiz" : "lesson") as CurriculumItem["type"],
-      title: it?.title ?? it?.titleEn ?? "—",
-      videoSource: it?.videoSource,
-      videoUrl: it?.videoUrl,
-    })),
+    items: (m?.items ?? m?.lessons ?? []).map((it: any): CurriculumItem => {
+      const type = (it?.type === "quiz" ? "quiz" : "lesson") as CurriculumItem["type"];
+      let videoSource: VideoSource | undefined = undefined;
+      if (it?.contentType === "youtube_url") videoSource = "youtube";
+      else if (it?.contentType === "vdocipher_embed") videoSource = "vdocipher";
+      if (!videoSource && it?.videoSource) videoSource = it.videoSource;
+
+      return {
+        id: it?._id ?? it?.id,
+        type,
+        title: it?.title ?? it?.titleEn ?? "—",
+        videoSource,
+        videoUrl: it?.contentUrl ?? it?.videoUrl,
+        quiz: it?.quiz,
+      };
+    }),
   };
 }
 

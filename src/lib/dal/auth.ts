@@ -7,7 +7,7 @@ import * as authSvc from "@integration/services/auth";
 
 export const login = (email: string, password: string) => authSvc.login(email, password);
 export const register = (input: Parameters<typeof authSvc.register>[0]) => authSvc.register(input);
-export const getProfile = () => authSvc.getProfile();
+export const getProfile = (accessToken?: string) => authSvc.getProfile(accessToken);
 export const refresh = (refreshToken: string) => authSvc.refresh(refreshToken);
 export const changePassword = (currentPassword: string, newPassword: string) =>
   authSvc.changePassword(currentPassword, newPassword);
