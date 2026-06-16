@@ -7,6 +7,7 @@ import { dal } from "@/lib/dal";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { PipelineBoard } from "@/features/crm/components/pipeline-board";
+import { PipelineSwitcher } from "@/features/crm/components/pipeline-switcher";
 import { requirePermission } from "@/lib/permission-guard";
 
 export default async function AdminPipelineDetailPage({
@@ -21,14 +22,16 @@ export default async function AdminPipelineDetailPage({
 
   const t = await getTranslations("Crm");
 
-  const [viewRes, groupsRes, coursesRes] = await Promise.all([
+  const [viewRes, groupsRes, coursesRes, pipelinesRes] = await Promise.all([
     dal.crm.fetchPipelineView(id),
     dal.groups.fetchGroups(),
     dal.courses.fetchCourses(),
+    dal.crm.fetchLeadPipelines(),
   ]);
 
   if (!viewRes.ok) notFound();
 
+  const pipelines = pipelinesRes.ok ? pipelinesRes.data : [];
   const groupOptions = (groupsRes.ok ? groupsRes.data : []).map((g) => ({ value: g.id, label: g.title }));
   const courseNameById: Record<string, string> = {};
   if (coursesRes.ok) {
@@ -46,7 +49,12 @@ export default async function AdminPipelineDetailPage({
             {t("allPipelines")}
           </Link>
         </Button>
-        <PageHeader title={viewRes.data.pipeline.title} description={t("boardSubtitle")} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <PageHeader title={viewRes.data.pipeline.title} description={t("boardSubtitle")} />
+          {pipelines.length > 0 && (
+            <PipelineSwitcher pipelines={pipelines} currentId={id} />
+          )}
+        </div>
       </div>
       <PipelineBoard
         leads={viewRes.data.leads}

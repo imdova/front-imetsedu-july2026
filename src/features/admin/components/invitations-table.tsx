@@ -24,7 +24,7 @@ export function InvitationsTable({ initial }: { initial: UmInvitation[] }) {
   const t = useTranslations("Admin");
   const [list, setList] = React.useState<UmInvitation[]>(initial);
   const [search, setSearch] = React.useState("");
-  const [status, setStatus] = React.useState<"all" | UmInvitationStatus>("all");
+  const [status, setStatus] = React.useState<"all" | UmInvitationStatus>("pending");
 
   const statusLabel = (s: "all" | UmInvitationStatus) =>
     s === "all" ? t("umStAll")
