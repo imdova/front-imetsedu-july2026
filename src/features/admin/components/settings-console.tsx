@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 
 import type { Integration, BrandingTheme, IntegrationGroup } from "@/lib/db/site-settings";
+import { dal } from "@/lib/dal";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,10 +106,27 @@ function SideLink({ label, icon, active, onClick }: { label: string; icon: React
 /* ───────────────────────────── Branding panel ────────────────────────────── */
 function BrandingPanel({ theme }: { theme: BrandingTheme }) {
   const t = useTranslations("Admin");
+  // `saved` is the last persisted baseline; `state` is the working draft.
+  const [saved, setSaved] = React.useState(theme);
   const [state, setState] = React.useState(theme);
+  const [pending, setPending] = React.useState(false);
   const set = <K extends keyof BrandingTheme>(k: K, v: BrandingTheme[K]) => setState((s) => ({ ...s, [k]: v }));
   const radii: BrandingTheme["radius"][] = ["square", "modern", "soft", "round"];
   const radiusPx: Record<BrandingTheme["radius"], string> = { square: "2px", modern: "6px", soft: "10px", round: "16px" };
+  const dirty = JSON.stringify(saved) !== JSON.stringify(state);
+
+  const save = async () => {
+    setPending(true);
+    const res = await dal.siteSettings.saveTheme(state);
+    setPending(false);
+    if (res.ok) {
+      setSaved(state);
+      toast.success(t("brandSaved"));
+    } else {
+      toast.error(res.error);
+    }
+  };
+  const discard = () => setState(saved);
 
   return (
     <div className="space-y-6">
@@ -119,8 +137,8 @@ function BrandingPanel({ theme }: { theme: BrandingTheme }) {
           <p className="mt-1 text-sm text-muted-foreground">{t("brandSubtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setState(theme)}>{t("setDiscard")}</Button>
-          <Button onClick={() => toast.success(t("brandSaved"))}>{t("setSaveChanges")}</Button>
+          <Button variant="outline" onClick={discard} disabled={!dirty || pending}>{t("setDiscard")}</Button>
+          <Button onClick={save} disabled={!dirty || pending}>{pending ? t("setSaving") : t("setSaveChanges")}</Button>
         </div>
       </div>
 
@@ -193,11 +211,11 @@ function BrandingPanel({ theme }: { theme: BrandingTheme }) {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4">
         <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-success">
-          <span className="size-2 rounded-full bg-success" />{t("brandChangesLive")}
+          <span className="size-2 rounded-full bg-success" />{dirty ? t("setUnsaved") : t("brandChangesLive")}
         </span>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setState(theme)}>{t("setDiscard")}</Button>
-          <Button onClick={() => toast.success(t("brandSaved"))}>{t("setSaveChanges")}</Button>
+          <Button variant="outline" onClick={discard} disabled={!dirty || pending}>{t("setDiscard")}</Button>
+          <Button onClick={save} disabled={!dirty || pending}>{pending ? t("setSaving") : t("setSaveChanges")}</Button>
         </div>
       </div>
     </div>

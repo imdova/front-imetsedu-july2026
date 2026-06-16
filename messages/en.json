@@ -1207,7 +1207,7 @@
     "setConsole": "CRM/LMS Admin Console",
     "setAdminUser": "Admin User",
     "setAdminRole": "Super Administrator",
-    "setSaveChanges": "Save Changes",
+    "setSaveChanges": "Save Changes", "setSaving": "Saving…", "setUnsaved": "Unsaved changes",
     "setDiscard": "Discard",
     "setGroupSite": "SITE MANAGEMENT",
     "setGroupAdvanced": "ADVANCED",

@@ -1207,7 +1207,7 @@
     "setConsole": "وحدة تحكم CRM/LMS",
     "setAdminUser": "المستخدم المسؤول",
     "setAdminRole": "مدير عام",
-    "setSaveChanges": "حفظ التغييرات",
+    "setSaveChanges": "حفظ التغييرات", "setSaving": "جارٍ الحفظ…", "setUnsaved": "تغييرات غير محفوظة",
     "setDiscard": "تجاهل",
     "setGroupSite": "إدارة الموقع",
     "setGroupAdvanced": "متقدم",
