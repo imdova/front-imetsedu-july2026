@@ -9,6 +9,7 @@ export interface TaxonomyRow {
   id: string;
   nameEn: string;
   nameAr: string;
+  icon?: string;
   rank: number;
   createdAt: string;
   createdTime: string;

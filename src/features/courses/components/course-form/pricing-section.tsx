@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import type { CourseFormValues } from "@/validations/course-schema";
 import { CURRENCIES } from "@/constants/course-options";
-import { deriveDiscount, cn } from "@/lib/utils";
+import { deriveDiscount, deriveSalePrice, cn } from "@/lib/utils";
 import {
   FormControl,
   FormField,
@@ -40,13 +40,30 @@ export function PricingSection() {
   const { control, setValue, getValues } = useFormContext<CourseFormValues>();
   const t = useTranslations("CourseForm");
 
-  const recalc = (key: CurrencyKey) => {
+  const recalcDiscount = (key: CurrencyKey) => {
     const { price, salePrice } = getValues(`pricing.${key}`);
     setValue(
       `pricing.${key}.discount`,
       deriveDiscount(Number(price) || 0, Number(salePrice) || 0),
       { shouldValidate: true },
     );
+  };
+
+  const recalcSalePrice = (key: CurrencyKey) => {
+    const { price, discount } = getValues(`pricing.${key}`);
+    setValue(
+      `pricing.${key}.salePrice`,
+      deriveSalePrice(Number(price) || 0, Number(discount) || 0),
+      { shouldValidate: true },
+    );
+  };
+
+  // Price changed: if a discount is already set, keep it and recompute the
+  // sale price; otherwise fall back to deriving the discount from sale price.
+  const onPriceChange = (key: CurrencyKey) => {
+    const { discount } = getValues(`pricing.${key}`);
+    if (Number(discount) > 0) recalcSalePrice(key);
+    else recalcDiscount(key);
   };
 
   const priceLabel = (key: CurrencyKey) => {
@@ -101,7 +118,7 @@ export function PricingSection() {
                         {...field}
                         onChange={(e) => {
                           field.onChange(e);
-                          recalc(key);
+                          onPriceChange(key);
                         }}
                       />
                     </FormControl>
@@ -125,7 +142,7 @@ export function PricingSection() {
                         {...field}
                         onChange={(e) => {
                           field.onChange(e);
-                          recalc(key);
+                          recalcDiscount(key);
                         }}
                       />
                     </FormControl>
@@ -148,6 +165,10 @@ export function PricingSection() {
                         max={100}
                         placeholder="0"
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          recalcSalePrice(key);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

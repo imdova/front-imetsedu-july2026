@@ -102,7 +102,7 @@ export function mapInvoice(raw: any): Invoice {
     studentEmail: raw.email ?? (raw.leadId as any)?.email ?? "",
     type: isInstallment ? "installment" : "one-off",
     amount,
-    paid: status === "paid" ? amount : status === "partial" ? (raw.installment?.amount ?? 0) : 0,
+    paid: status === "paid" ? amount : 0,
     currency: (inv.currency ?? raw.currency ?? raw.paymentPlan?.currency ?? "EGP") as Currency,
     status,
     issuedDate: fmtDate(inv.issueDate ?? raw.issueDate ?? raw.paymentPlan?.createdAt),

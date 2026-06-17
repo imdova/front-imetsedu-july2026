@@ -19,6 +19,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { IconUploadField } from "./icon-upload-field";
 
 type Row = TaxonomyRow & Partial<Pick<CourseSubcategory, "parentName" | "parentId" | "slug">>;
 type Kind = "category" | "subcategory" | "tag";
@@ -49,10 +50,10 @@ export function TaxonomyTable({
   const [editRow, setEditRow] = React.useState<Row | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
-  const [form, setForm] = React.useState({ nameEn: "", nameAr: "", slug: "", parentId: "", slugEdited: false });
+  const [form, setForm] = React.useState({ nameEn: "", nameAr: "", slug: "", parentId: "", icon: "", slugEdited: false });
 
   const resetForm = () => {
-    setForm({ nameEn: "", nameAr: "", slug: "", parentId: "", slugEdited: false });
+    setForm({ nameEn: "", nameAr: "", slug: "", parentId: "", icon: "", slugEdited: false });
     setEditRow(null);
   };
 
@@ -78,6 +79,7 @@ export function TaxonomyTable({
       nameAr: r.nameAr,
       slug: r.slug ?? slugify(r.nameEn),
       parentId: r.parentId ?? "",
+      icon: "",
       slugEdited: Boolean(r.slug),
     });
     setAddOpen(true);
@@ -146,6 +148,7 @@ export function TaxonomyTable({
         nameAr: form.nameAr.trim(),
         slug: (form.slug.trim() || slugify(form.nameEn)),
         parentCategory: form.parentId,
+        ...(form.icon.trim() ? { icon: form.icon.trim() } : {}),
         isActive: true,
       });
       if (res.ok) {
@@ -346,7 +349,12 @@ export function TaxonomyTable({
                 className="border-b last:border-0 hover:bg-muted/20">
                 <td className="px-2 py-3"><GripVertical className="size-4 cursor-grab text-muted-foreground active:cursor-grabbing" /></td>
                 <td className="px-3 py-3">
-                  <span className="grid size-9 place-items-center rounded-md bg-primary/10 text-xs font-semibold text-primary">{getInitials(r.nameEn)}</span>
+                  {r.icon ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.icon} alt={r.nameEn} className="size-9 rounded-md border object-contain" />
+                  ) : (
+                    <span className="grid size-9 place-items-center rounded-md bg-primary/10 text-xs font-semibold text-primary">{getInitials(r.nameEn)}</span>
+                  )}
                 </td>
                 <td className="px-3 py-3"><p className="font-medium">{r.nameEn}</p><p className="text-xs text-muted-foreground" dir="rtl">{r.nameAr}</p></td>
                 {showParent && <td className="px-3 py-3 text-muted-foreground">{r.parentName}</td>}
@@ -418,6 +426,12 @@ export function TaxonomyTable({
                     </SelectContent>
                   </Select>
                 </div>
+                <IconUploadField
+                  label={t("catIcon")}
+                  hint={t("catIconHint")}
+                  value={form.icon}
+                  onChange={(url) => setForm((f) => ({ ...f, icon: url }))}
+                />
               </>
             )}
           </div>

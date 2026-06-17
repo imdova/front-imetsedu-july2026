@@ -58,6 +58,13 @@ export function deriveDiscount(price: number, salePrice: number): number {
   return Math.round(((price - salePrice) / price) * 100);
 }
 
+/** Derive the sale price from a base price and a percentage discount. */
+export function deriveSalePrice(price: number, discount: number): number {
+  if (!price || discount <= 0) return 0;
+  const clamped = Math.min(100, Math.max(0, discount));
+  return Math.round(price - (price * clamped) / 100);
+}
+
 /** Initials for avatar fallbacks (e.g. "Ahmed Habib" -> "AH"). */
 export function getInitials(name: string): string {
   return name

@@ -25,6 +25,7 @@ export default async function EditCategoryPage({
     nameEn: raw.nameEn ?? "",
     nameAr: raw.nameAr ?? "",
     slug: raw.slug ?? "",
+    icon: raw.icon ?? "",
     headlineEn: raw.headlineEn ?? "",
     headlineAr: raw.headlineAr ?? "",
     descriptionEn: raw.descriptionEn ?? "",

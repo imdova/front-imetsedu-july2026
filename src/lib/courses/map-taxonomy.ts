@@ -20,6 +20,7 @@ export function toTaxonomyRow(raw: any): TaxonomyRow {
     id: raw?._id ?? raw?.id,
     nameEn: raw?.nameEn ?? raw?.nameAr ?? "—",
     nameAr: raw?.nameAr ?? raw?.nameEn ?? "—",
+    icon: raw?.icon ?? undefined,
     rank: raw?.rank ?? raw?.priority ?? 0,
     createdAt,
     createdTime,

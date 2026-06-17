@@ -38,6 +38,7 @@ export default async function EditSubcategoryPage({
     nameEn: raw.nameEn ?? "",
     nameAr: raw.nameAr ?? "",
     slug: raw.slug ?? "",
+    icon: raw.icon ?? "",
     parentCategory: parentId,
     headlineEn: raw.headlineEn ?? "",
     headlineAr: raw.headlineAr ?? "",

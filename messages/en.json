@@ -1881,6 +1881,7 @@
     "catIcon": "Icon",
     "catUploadIcon": "Upload Icon",
     "catIconHint": "Optional: Upload an icon file (JPEG, PNG, WebP, or SVG)",
+    "catRemoveIcon": "Remove icon",
     "catHeadlines": "Category Headlines",
     "catHeadlineAr": "Headline in Arabic",
     "catHeadlineEn": "Headline in English",

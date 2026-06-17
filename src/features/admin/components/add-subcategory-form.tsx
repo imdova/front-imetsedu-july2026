@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { IconUploadField } from "./icon-upload-field";
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -24,6 +25,7 @@ export interface SubcategoryInitial {
   nameEn?: string;
   nameAr?: string;
   slug?: string;
+  icon?: string;
   parentCategory?: string;
   headlineEn?: string;
   headlineAr?: string;
@@ -53,6 +55,7 @@ export function AddSubcategoryForm({ subcategoryId, initial, parentCategories }:
   const [nameAr, setNameAr] = React.useState(initial?.nameAr ?? "");
   const [slug, setSlug] = React.useState(initial?.slug ?? "");
   const [slugEdited, setSlugEdited] = React.useState(Boolean(initial?.slug));
+  const [icon, setIcon] = React.useState(initial?.icon ?? "");
   const [parentId, setParentId] = React.useState(initial?.parentCategory ?? "");
   const [headlineEn, setHeadlineEn] = React.useState(initial?.headlineEn ?? "");
   const [headlineAr, setHeadlineAr] = React.useState(initial?.headlineAr ?? "");
@@ -99,6 +102,7 @@ export function AddSubcategoryForm({ subcategoryId, initial, parentCategories }:
       nameAr: nameAr.trim(),
       slug: slug.trim() || slugify(nameEn),
       parentCategory: parentId,
+      ...(icon.trim() ? { icon: icon.trim() } : {}),
       ...(headlineEn.trim() ? { headlineEn: headlineEn.trim() } : {}),
       ...(headlineAr.trim() ? { headlineAr: headlineAr.trim() } : {}),
       ...(descEn.trim() ? { descriptionEn: descEn.trim() } : {}),
@@ -170,6 +174,7 @@ export function AddSubcategoryForm({ subcategoryId, initial, parentCategories }:
                 />
                 <p className="text-xs text-muted-foreground">{t("catSlugHint")}</p>
               </div>
+              <IconUploadField label={t("catIcon")} hint={t("catIconHint")} value={icon} onChange={setIcon} />
             </CardContent>
           </Card>
 

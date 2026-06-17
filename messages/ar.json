@@ -1881,6 +1881,7 @@
     "catIcon": "الأيقونة",
     "catUploadIcon": "رفع أيقونة",
     "catIconHint": "اختياري: ارفع ملف أيقونة (JPEG أو PNG أو WebP أو SVG)",
+    "catRemoveIcon": "إزالة الأيقونة",
     "catHeadlines": "عناوين الفئة",
     "catHeadlineAr": "العنوان بالعربية",
     "catHeadlineEn": "العنوان بالإنجليزية",

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { ListChecks, Upload, Plus, X, Loader2 } from "lucide-react";
+import { ListChecks, Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { IconUploadField } from "./icon-upload-field";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
@@ -20,6 +21,7 @@ export interface CategoryInitial {
   nameEn?: string;
   nameAr?: string;
   slug?: string;
+  icon?: string;
   headlineEn?: string;
   headlineAr?: string;
   descriptionEn?: string;
@@ -48,6 +50,7 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
   const [nameAr, setNameAr] = React.useState(initial?.nameAr ?? "");
   const [slug, setSlug] = React.useState(initial?.slug ?? "");
   const [slugEdited, setSlugEdited] = React.useState(Boolean(initial?.slug));
+  const [icon, setIcon] = React.useState(initial?.icon ?? "");
   const [headlineEn, setHeadlineEn] = React.useState(initial?.headlineEn ?? "");
   const [headlineAr, setHeadlineAr] = React.useState(initial?.headlineAr ?? "");
   const [descEn, setDescEn] = React.useState(initial?.descriptionEn ?? "");
@@ -89,6 +92,7 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
       nameEn: nameEn.trim(),
       nameAr: nameAr.trim(),
       slug: slug.trim(),
+      ...(icon.trim() ? { icon: icon.trim() } : {}),
       ...(headlineEn.trim() ? { headlineEn: headlineEn.trim() } : {}),
       ...(headlineAr.trim() ? { headlineAr: headlineAr.trim() } : {}),
       ...(descEn.trim() ? { descriptionEn: descEn.trim() } : {}),
@@ -141,11 +145,7 @@ export function AddCategoryForm({ categoryId, initial }: AddCategoryFormProps = 
                 <Input value={slug} onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }} placeholder={t("catSlugPh")} required />
                 <p className="text-xs text-muted-foreground">{t("catSlugHint")}</p>
               </div>
-              <div className="space-y-1.5">
-                <Label>{t("catIcon")}</Label>
-                <Button type="button" variant="outline" className="gap-1.5" onClick={() => toast.info(t("catUploadIcon"))}><Upload className="size-4" />{t("catUploadIcon")}</Button>
-                <p className="text-xs text-muted-foreground">{t("catIconHint")}</p>
-              </div>
+              <IconUploadField label={t("catIcon")} hint={t("catIconHint")} value={icon} onChange={setIcon} />
             </CardContent>
           </Card>
 
