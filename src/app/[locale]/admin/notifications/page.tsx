@@ -7,16 +7,14 @@ export default async function AdminNotificationsPage({ params }: { params: Promi
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [notifRes, statsRes] = await Promise.all([
-    dal.notificationsAdmin.fetchAdminNotifications(),
-    dal.notificationsAdmin.fetchNotifStats(),
-  ]);
-
-  const stats = statsRes.ok ? statsRes.data : { total: 0, unread: 0, urgent: 0, archived: 0 };
+  const res = await dal.notificationsAdmin.fetchAdminNotifications(1, 20);
+  const initialPage = res.ok
+    ? res.data
+    : { items: [], unreadCount: 0, meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
 
   return (
     <div className="mx-auto max-w-[1400px]">
-      <NotificationsInbox notifications={notifRes.ok ? notifRes.data : []} stats={stats} />
+      <NotificationsInbox initialPage={initialPage} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Bell, Menu, Plus, Search, LogOut } from "lucide-react";
+import { Menu, Plus, Search, LogOut } from "lucide-react";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { ADMIN_NAV, BRAND, type NavSection } from "@/constants/navigation";
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { GraduationCap } from "lucide-react";
@@ -31,6 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SidebarNav } from "./sidebar-nav";
+import { NotificationBell } from "@/features/admin/components/notification-bell";
 
 interface AppHeaderProps {
   nav?: NavSection[];
@@ -93,17 +93,7 @@ export function AppHeader({ nav = ADMIN_NAV, showCreate = true }: AppHeaderProps
         <LanguageSwitcher />
         <ThemeToggle />
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          aria-label={t("Header.notifications")}
-        >
-          <Bell className="size-5" />
-          <Badge className="absolute -end-0.5 -top-0.5 size-4 justify-center rounded-full p-0 text-[10px]">
-            3
-          </Badge>
-        </Button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
