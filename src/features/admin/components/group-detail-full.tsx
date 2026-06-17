@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 type Tab = "overview" | "students" | "lms" | "assignments";
 
-export function GroupDetailFull({ group }: { group: GroupDetail }) {
+export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail; isStaff?: boolean }) {
   const t = useTranslations("Admin");
   const [tab, setTab] = React.useState<Tab>("overview");
   const enrolled = group.roster.length;
@@ -99,7 +99,7 @@ export function GroupDetailFull({ group }: { group: GroupDetail }) {
       </div>
 
       {tab === "overview" && <Overview group={group} t={t} />}
-      {tab === "students" && <StudentsList roster={group.roster} t={t} />}
+      {tab === "students" && <StudentsList roster={group.roster} t={t} isStaff={isStaff} />}
       {(tab === "lms" || tab === "assignments") && (
         <div className="grid place-items-center rounded-xl border border-dashed py-20 text-center text-muted-foreground">{t("lmsEmptyTab")}</div>
       )}
@@ -152,7 +152,7 @@ function Overview({ group, t }: { group: GroupDetail; t: (k: string, v?: Record<
   );
 }
 
-function StudentsList({ roster, t }: { roster: RosterStudent[]; t: (k: string, v?: Record<string, string | number>) => string }) {
+function StudentsList({ roster, t, isStaff = false }: { roster: RosterStudent[]; t: (k: string, v?: Record<string, string | number>) => string; isStaff?: boolean }) {
   const [rows, setRows] = React.useState(roster);
   const [search, setSearch] = React.useState("");
   const filtered = rows.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase()));
@@ -197,7 +197,7 @@ function StudentsList({ roster, t }: { roster: RosterStudent[]; t: (k: string, v
                 <td className="px-3 py-4 text-muted-foreground">{s.country}</td>
                 <td className="px-3 py-4"><Badge variant="secondary" className="text-chart-3">{s.leadSource}</Badge></td>
                 <td className="px-3 py-4"><div className="flex items-center gap-2"><div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary" style={{ width: `${s.progress}%` }} /></div><span className="rounded-full bg-warning/15 px-1.5 text-xs text-warning tabular-nums">{s.progress}%</span></div></td>
-                <td className="px-3 py-4"><div className="flex items-center gap-2"><Switch checked={s.status === "approved"} onCheckedChange={() => setRows((p) => p.map((x) => x.id === s.id ? { ...x, status: x.status === "approved" ? "pending" : "approved" } : x))} /><span className={cn("inline-flex items-center gap-1 text-xs", s.status === "approved" ? "text-success" : "text-muted-foreground")}><span className={cn("size-1.5 rounded-full", s.status === "approved" ? "bg-success" : "bg-muted-foreground")} />{t("gdApproved")}</span></div></td>
+                <td className="px-3 py-4"><div className="flex items-center gap-2"><Switch checked={s.status === "approved"} disabled={isStaff} onCheckedChange={() => !isStaff && setRows((p) => p.map((x) => x.id === s.id ? { ...x, status: x.status === "approved" ? "pending" : "approved" } : x))} /><span className={cn("inline-flex items-center gap-1 text-xs", s.status === "approved" ? "text-success" : "text-muted-foreground")}><span className={cn("size-1.5 rounded-full", s.status === "approved" ? "bg-success" : "bg-muted-foreground")} />{t("gdApproved")}</span></div></td>
                 <td className="px-3 py-4"><Badge className="border-transparent bg-warning/15 text-warning">{t("gdPaymentPending")}</Badge></td>
                 <td className="px-3 py-4 text-muted-foreground">—</td>
                 <td className="px-5 py-4"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8"><Award className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setRows((p) => p.filter((x) => x.id !== s.id))}><Trash2 className="size-4" /></Button></div></td>

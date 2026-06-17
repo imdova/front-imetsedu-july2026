@@ -52,6 +52,7 @@ interface Props {
   sourceOptions?: string[];
   specialtyOptions?: string[];
   basePath: string;
+  isStaff?: boolean;
 }
 
 const RANGES = [
@@ -96,7 +97,7 @@ function inRange(iso: string | undefined, range: Range, custom?: { from: string;
   }
 }
 
-export function LeadsTable({ initialData, stages, counselors, pipelines, courseOptions, sourceOptions, specialtyOptions, basePath }: Props) {
+export function LeadsTable({ initialData, stages, counselors, pipelines, courseOptions, sourceOptions, specialtyOptions, basePath, isStaff = false }: Props) {
   const t = useTranslations("Crm");
   const tc = useTranslations("Common");
   const router = useRouter();
@@ -316,8 +317,10 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
           options={priorityFilterOptions} />
         <Filter label={t("filterSource")} value={source} onChange={setSource} all={t("allSources")}
           options={sourceFilterOptions} />
-        <Filter label={t("filterCounselor")} value={counselorId} onChange={setCounselorId} all={t("everyone")}
-          options={counselors.map((c) => ({ value: c.id, label: c.name }))} />
+        {!isStaff && (
+          <Filter label={t("filterCounselor")} value={counselorId} onChange={setCounselorId} all={t("everyone")}
+            options={counselors.map((c) => ({ value: c.id, label: c.name }))} />
+        )}
         <Filter label={t("filterCourse")} value={courseId} onChange={setCourseId} all={t("allCourses")}
           options={courseOptions} />
         <Filter label={t("filterSpecialty")} value={specialty} onChange={setSpecialty} all={t("allSpecialties")}

@@ -62,6 +62,7 @@ export default async function AdminLeadsPage({
         sourceOptions={sourceOptions}
         specialtyOptions={specialtyOptions}
         basePath="/admin/crm"
+        isStaff={isStaff}
       />
     </div>
   );
