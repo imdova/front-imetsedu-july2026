@@ -81,6 +81,9 @@ export interface PlanInstallment {
   label: string;
   amount: number;
   dueDate: string;
+  /** Raw ISO due date (unformatted), used to prefill edit forms — `dueDate`
+   * above is already locale-formatted for display and can't be parsed back. */
+  dueDateISO?: string;
   status: PlanInstallmentStatus;
   receiptUrl?: string;
 }

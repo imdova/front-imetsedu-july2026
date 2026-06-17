@@ -540,7 +540,7 @@ function PaymentPlanModal({
       setMethod(existing.method ?? PAYMENT_METHODS[0]);
       setTotal(String(existing.totalAmount ?? ""));
       setRows(existing.installments.length
-        ? existing.installments.map((it) => ({ amount: String(it.amount), dueDate: toISODate(it.dueDate) }))
+        ? existing.installments.map((it) => ({ amount: String(it.amount), dueDate: toISODate(it.dueDateISO ?? it.dueDate) }))
         : [{ amount: "", dueDate: defaultDueDates(1)[0] }]);
     } else {
       setCourseName(""); setCurrency("EGP"); setMethod(PAYMENT_METHODS[0]);

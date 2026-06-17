@@ -6,6 +6,7 @@
 import { ok, fail, toMessage, api, type Result } from "@integration/lib/api-client";
 import * as leadsSvc from "@integration/services/leads";
 import * as crmSettingsSvc from "@integration/services/crm-settings";
+import * as invoicesSvc from "@integration/services/invoices";
 import * as db from "@/lib/db/crm";
 import { mapLead, STAGE_MAP } from "@/lib/crm/map-lead";
 import { mapCrmStats } from "@/lib/crm/map-stats";
@@ -246,10 +247,35 @@ export const savePaymentPlan = async (
   const plans: unknown[] = Array.isArray((data as { paymentPlans?: unknown[] }).paymentPlans)
     ? [...(data as { paymentPlans: unknown[] }).paymentPlans]
     : [];
-  if (typeof index === "number" && index >= 0 && index < plans.length) plans[index] = plan;
+  const isEdit = typeof index === "number" && index >= 0 && index < plans.length;
+  const planIndex = isEdit ? (index as number) : plans.length;
+  if (isEdit) plans[planIndex] = plan;
   else plans.push(plan);
   const res = await leadsSvc.updateLead(leadId, { data: { ...data, paymentPlans: plans } } as never);
   if (!res.ok) return res;
+  // Editing an existing plan only writes the lead's own `data.paymentPlans`;
+  // each installment also has its own invoice doc (auto-created by the
+  // backend when the plan was first made) that this won't touch, so push
+  // the edited due date into each installment's invoice too — same compound
+  // id format the invoices list/detail endpoints already use
+  // (leadId-planIndex-installmentIndex, installmentIndex 0-based).
+  // `amount` isn't accepted by this endpoint for installment invoices (the
+  // backend DTO rejects it outright: "property amount should not exist"),
+  // so only the due date can be kept in sync this way.
+  if (isEdit) {
+    const installments = (plan as { installments?: { index: number; dueDate: string }[] }).installments ?? [];
+    const invoiceResults = await Promise.all(
+      installments.map((inst) => {
+        const invoiceId = `${leadId}-${planIndex}-${inst.index - 1}`;
+        return invoicesSvc.updateInvoice(invoiceId, {
+          dueDate: inst.dueDate,
+        }).then((r) => ({ invoiceId, r }));
+      }),
+    );
+    for (const { invoiceId, r } of invoiceResults) {
+      if (!r.ok) console.error(`Failed to sync invoice ${invoiceId}:`, r.error);
+    }
+  }
   try {
     return ok(mapLead(res.data));
   } catch (err) {

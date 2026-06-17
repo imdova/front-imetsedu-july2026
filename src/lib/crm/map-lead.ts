@@ -83,6 +83,7 @@ function mapOnePlan(plan: any, raw: any): PaymentPlanSummary {
     label: it.label ?? (i === 0 ? "First installment" : "Installment"),
     amount: it.amount ?? 0,
     dueDate: it.paidDate ?? formatDate(it.dueDate),
+    dueDateISO: it.dueDate,
     status: PLAN_STATUS[it.status] ?? "UPCOMING",
     receiptUrl: (plan.receipts ?? []).find((r: any) => r.scope === it.index)?.previewUrl,
   }));
