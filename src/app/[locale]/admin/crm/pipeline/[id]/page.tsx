@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { PipelineBoard } from "@/features/crm/components/pipeline-board";
 import { PipelineSwitcher } from "@/features/crm/components/pipeline-switcher";
-import { requirePermission } from "@/lib/permission-guard";
+import { requirePermission, getSessionUser } from "@/lib/permission-guard";
 
 export default async function AdminPipelineDetailPage({
   params,
@@ -19,6 +19,9 @@ export default async function AdminPipelineDetailPage({
   setRequestLocale(locale);
 
   await requirePermission("crm.pipelines.view");
+  const user = await getSessionUser();
+  const isStaff = user?.staffRole !== null && user?.staffRole !== undefined;
+  const counselorId = isStaff ? (user?.staffId ?? user?.id) : undefined;
 
   const t = await getTranslations("Crm");
 
@@ -39,6 +42,9 @@ export default async function AdminPipelineDetailPage({
       if (c.id) courseNameById[c.id] = c.titleEn || c.titleAr || c.id;
     }
   }
+  const leads = counselorId
+    ? viewRes.data.leads.filter((l) => l.counselorId === counselorId)
+    : viewRes.data.leads;
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6">
@@ -57,7 +63,7 @@ export default async function AdminPipelineDetailPage({
         </div>
       </div>
       <PipelineBoard
-        leads={viewRes.data.leads}
+        leads={leads}
         stages={viewRes.data.pipeline.stages}
         basePath="/admin/crm"
         groupOptions={groupOptions}

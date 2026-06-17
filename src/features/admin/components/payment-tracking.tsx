@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import type { Invoice, Installment } from "@/lib/db/finance";
 import { mapLeadPaymentPlanToInvoice } from "@/lib/finance/map-finance";
 import { getPayments } from "@integration/services/payments";
+import { dal } from "@/lib/dal";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,10 +57,21 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
     async function load() {
       setIsLoading(true);
       try {
-        const res = await getPayments({ limit: 5000, ...(counselorId ? { counselorId } : {}) } as any);
+        // The payment-tracking endpoint's own `counselorId` filter can't be
+        // trusted (its lead rows don't reliably carry counselor info), so
+        // narrow by cross-referencing against the leads endpoint instead —
+        // that's the same source of truth the "all leads" page filters by.
+        const [res, ownLeadsRes] = await Promise.all([
+          getPayments({ limit: 5000 } as any),
+          counselorId ? dal.crm.fetchLeads({ counselorId }) : Promise.resolve(null),
+        ]);
         if (!active) return;
         if (res.ok && res.data) {
-          const rows: any[] = (res.data as any)?.leadPayments?.data ?? [];
+          let rows: any[] = (res.data as any)?.leadPayments?.data ?? [];
+          if (counselorId && ownLeadsRes?.ok) {
+            const ownIds = new Set(ownLeadsRes.data.map((l) => l.id));
+            rows = rows.filter((lead: any) => ownIds.has(lead?._id ?? lead?.id));
+          }
           const plans = rows.filter(
             (lead: any) => Array.isArray(lead?.paymentPlan?.installments) && lead.paymentPlan.installments.length > 0,
           );
