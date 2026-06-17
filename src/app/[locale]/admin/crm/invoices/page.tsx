@@ -46,6 +46,7 @@ export default async function AdminInvoicesPage({
         invoices={invoices}
         stats={stats}
         basePath="/admin/crm"
+        counselorId={counselorId}
       />
     </div>
   );

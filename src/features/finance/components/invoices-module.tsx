@@ -7,6 +7,7 @@ import { FileText, Wallet, AlertTriangle, TrendingUp, Search, Layers, ListChecks
 import type { Invoice, FinanceStats } from "@/lib/db/finance";
 import { mapInvoice, mapFinanceStats } from "@/lib/finance/map-finance";
 import { getInvoices } from "@integration/services/invoices";
+import { dal } from "@/lib/dal";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,10 +42,13 @@ export function InvoicesModule({
   invoices: serverInvoices = [],
   stats: serverStats = EMPTY_STATS,
   basePath,
+  counselorId,
 }: {
   invoices?: Invoice[];
   stats?: FinanceStats;
   basePath: string;
+  /** Staff users only see invoices for their own leads. */
+  counselorId?: string;
 }) {
   const t = useTranslations("Finance");
   const [invoices, setInvoices] = React.useState<Invoice[]>(serverInvoices);
@@ -60,10 +64,21 @@ export function InvoicesModule({
     async function load() {
       setIsLoading(true);
       try {
-        const res = await getInvoices({ limit: 200 });
+        const [res, ownLeadsRes] = await Promise.all([
+          getInvoices({ limit: 200 }),
+          counselorId ? dal.crm.fetchLeads({ counselorId }) : Promise.resolve(null),
+        ]);
         if (!active) return;
         if (res.ok && res.data) {
-          setInvoices((res.data.data ?? []).map(mapInvoice));
+          let mapped = (res.data.data ?? []).map(mapInvoice);
+          // The list endpoint doesn't support a counselor filter, so narrow
+          // by leadId against the staff's own leads (same source of truth
+          // the "all leads" page filters by).
+          if (counselorId && ownLeadsRes?.ok) {
+            const ownIds = new Set(ownLeadsRes.data.map((l) => l.id));
+            mapped = mapped.filter((inv) => ownIds.has(inv.studentId ?? ""));
+          }
+          setInvoices(mapped);
           setStats(mapFinanceStats(res.data.stats));
         }
       } catch {
@@ -73,7 +88,7 @@ export function InvoicesModule({
     }
     load();
     return () => { active = false; };
-  }, []);
+  }, [counselorId]);
 
   const byTab = invoices.filter((i) =>
     tab === "all" ? true : tab === "installments" ? i.type === "installment" : i.type === "one-off");
