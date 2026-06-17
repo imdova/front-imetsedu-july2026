@@ -2497,6 +2497,8 @@
     "statusPartial": "Partial",
     "statusPending": "Pending",
     "installmentScheduled": "Scheduled",
+    "uploadReceipt": "Upload receipt",
+    "installmentMarkedPaid": "Installment marked as paid",
     "noPaymentPlan": "No payment plan assigned yet.",
     "paymentTabTitle": "Payments · {name}",
     "paymentTabSubtitle": "Manage the payment plan, installments, receipts, and review activity for this student.",

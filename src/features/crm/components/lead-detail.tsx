@@ -452,9 +452,10 @@ export function LeadDetail({
                       ? rawPipelineHistory.map((item: any, idx: number) => {
                           const ld = item.logData || {};
                           const note = ld.note || ld.notes || ld.lossNote;
-                          const SKIP = new Set(["notes","note","lossNote","at","stage","pipelineId","pipeline","isQualified","paymentReceiptUrl","paymentVerified","paymentReceiptName","paymentReceiptFileName","paymentReceiptMimeType","paymentReceiptDataBase64"]);
+                          const SKIP = new Set(["notes","note","lossNote","at","stage","pipelineId","pipeline","isQualified","paymentReceiptUrl","paymentVerified","paymentReceiptName","paymentReceiptFileName","paymentReceiptMimeType","paymentReceiptDataBase64","groupId"]);
+                          const enrolledGroupName = ld.groupId ? (groupOptions.find((g) => g.value === ld.groupId)?.label ?? ld.groupId) : null;
                           const dynamicEntries = Object.entries(ld).filter(([k, v]) => !SKIP.has(k) && v !== null && v !== undefined && v !== "" && v !== false);
-                          const hasData = note || ld.isQualified !== undefined || ld.paymentVerified || ld.paymentReceiptUrl || dynamicEntries.length > 0;
+                          const hasData = note || ld.isQualified !== undefined || ld.paymentVerified || ld.paymentReceiptUrl || enrolledGroupName || dynamicEntries.length > 0;
                           const labelFor = (k: string) => k.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
                           return (
                           <div key={`${item.stage}-${idx}`} className="flex items-start gap-2 text-sm">
@@ -480,6 +481,11 @@ export function LeadDetail({
                                     )}
                                     {ld.paymentReceiptUrl && (
                                       <a href={ld.paymentReceiptUrl} target="_blank" rel="noreferrer" className="rounded border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-orange-700 underline">View Receipt 📄</a>
+                                    )}
+                                    {enrolledGroupName && (
+                                      <span className="rounded border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+                                        🎓 {enrolledGroupName}
+                                      </span>
                                     )}
                                     {dynamicEntries.map(([k, v]) => (
                                       <span key={k} className="rounded border border-indigo-200/50 bg-indigo-100/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-indigo-700">
@@ -778,16 +784,17 @@ function PipelineStatusMenu({
 }) {
   const [open, setOpen] = React.useState(false);
   const [view, setView] = React.useState<string | null>(null);
-  const { getDisplayName } = usePipelineStages();
 
-  const stagesFor = (id: string) => pipelineStages.find((p) => p.id === id)?.stages ?? [];
+  // Compute active pipeline before hook call so we can pass its stages to the hook.
+  const active = view ? pipelineStages.find((p) => p.id === view) : null;
+  // Pass the active pipeline's stages so every stage gets its CRM-settings name.
+  const { getDisplayName } = usePipelineStages(active?.stages, { skipFilter: true });
+
   const currentStageKey = (id: string) => pipelines.find((p) => p.id === id)?.stage;
 
-  // Trigger label = current stage in the primary pipeline.
-  const primary = pipelines[0];
-  const current = primary ? getDisplayName(primary.stage) : fallbackLabel;
-
-  const active = view ? pipelineStages.find((p) => p.id === view) : null;
+  // Trigger button shows the current stage from the primary pipeline.
+  // fallbackLabel is already the CRM-mapped name from the parent.
+  const current = fallbackLabel;
 
   return (
     <DropdownMenu open={open} onOpenChange={(o) => { setOpen(o); if (!o) setView(null); }}>

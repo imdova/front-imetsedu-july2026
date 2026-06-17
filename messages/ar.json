@@ -2497,6 +2497,8 @@
     "statusPartial": "جزئي",
     "statusPending": "معلّق",
     "installmentScheduled": "مجدول",
+    "uploadReceipt": "رفع إيصال",
+    "installmentMarkedPaid": "تم تحديد القسط كمدفوع",
     "noPaymentPlan": "لم يتم تعيين خطة دفع بعد.",
     "paymentTabTitle": "المدفوعات · {name}",
     "paymentTabSubtitle": "إدارة خطة الدفع والأقساط والإيصالات ومراجعة النشاط لهذا الطالب.",

@@ -257,6 +257,58 @@ export const savePaymentPlan = async (
   }
 };
 
+/** LIVE: mark a single installment as PAID and attach a receipt URL.
+ * Adds/updates an entry in plan.receipts (scope = installment.index),
+ * sets the installment status to PAID, and recalculates the plan status. */
+export const markInstallmentPaid = async (
+  leadId: string,
+  planIndex: number,
+  installmentIndex: number,
+  receipt: { url: string; name: string; size: number; type: string },
+): Promise<Result<db.Lead>> => {
+  const cur = await leadsSvc.getLeadById(leadId);
+  if (!cur.ok) return cur;
+  const data: any = (cur.data as any)?.data ?? {};
+  const plans: any[] = Array.isArray(data.paymentPlans) ? [...data.paymentPlans] : [];
+  if (planIndex < 0 || planIndex >= plans.length) return fail("Plan not found");
+
+  const plan = { ...plans[planIndex] };
+
+  plan.installments = (plan.installments ?? []).map((inst: any) =>
+    inst.index === installmentIndex
+      ? { ...inst, status: "PAID", paidDate: new Date().toISOString() }
+      : inst,
+  );
+
+  const receipts: any[] = Array.isArray(plan.receipts) ? [...plan.receipts] : [];
+  const existingIdx = receipts.findIndex((r: any) => r.scope === installmentIndex);
+  const entry = {
+    id: `receipt-${Date.now()}`,
+    scope: installmentIndex,
+    previewUrl: receipt.url,
+    name: receipt.name,
+    size: receipt.size,
+    type: receipt.type,
+    attachedAt: new Date().toISOString(),
+  };
+  if (existingIdx >= 0) receipts[existingIdx] = entry;
+  else receipts.push(entry);
+  plan.receipts = receipts;
+
+  const allPaid = plan.installments.every((inst: any) => inst.status === "PAID");
+  const anyPaid = plan.installments.some((inst: any) => inst.status === "PAID");
+  plan.status = allPaid ? "PAID" : anyPaid ? "PARTIAL" : "PENDING";
+
+  plans[planIndex] = plan;
+  const res = await leadsSvc.updateLead(leadId, { data: { ...data, paymentPlans: plans } } as never);
+  if (!res.ok) return res;
+  try {
+    return ok(mapLead(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to mark installment paid"));
+  }
+};
+
 /** LIVE: remove ONE payment plan (by index) from `lead.data.paymentPlans`. */
 export const deletePaymentPlan = async (
   leadId: string,

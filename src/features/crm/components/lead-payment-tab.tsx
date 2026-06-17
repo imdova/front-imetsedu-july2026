@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { CreditCard, ChevronDown, ChevronUp, Plus, Receipt, Loader2, Pencil, Trash2 } from "lucide-react";
+import { CreditCard, ChevronDown, ChevronUp, Plus, Receipt, Loader2, Pencil, Trash2, Upload, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Lead, PaymentPlanSummary, PlanInstallmentStatus } from "@/lib/db/crm";
@@ -102,7 +102,7 @@ export function LeadPaymentTab({ leadName, leadId, plans, onUpdated, courseOptio
                   </div>
                 </div>
                 <div className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
-                  <PaymentPlanPanel plan={p} pct={pct} />
+                  <PaymentPlanPanel plan={p} pct={pct} leadId={leadId} planIndex={i} onUpdated={onUpdated} />
                   <div className="space-y-6">
                     <InstallmentRoadmap plan={p} />
                     <PlanSummaryCard plan={p} />
@@ -137,14 +137,55 @@ export function LeadPaymentTab({ leadName, leadId, plans, onUpdated, courseOptio
 function PaymentPlanPanel({
   plan,
   pct,
+  leadId,
+  planIndex,
+  onUpdated,
 }: {
   plan: PaymentPlanSummary;
   pct: number;
+  leadId: string;
+  planIndex: number;
+  onUpdated?: (lead: Lead) => void;
 }) {
   const t = useTranslations("Crm");
   const tr = t as unknown as (k: string) => string;
   const [expanded, setExpanded] = React.useState(true);
+  const [uploading, setUploading] = React.useState<number | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const pendingInstallRef = React.useRef<number | null>(null);
   const outstanding = plan.totalAmount - plan.paid;
+
+  const handleUploadReceipt = (installmentIndex: number) => {
+    pendingInstallRef.current = installmentIndex;
+    fileInputRef.current?.click();
+  };
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const instIdx = pendingInstallRef.current;
+    if (!file || instIdx === null) return;
+    setUploading(instIdx);
+    try {
+      const up = await dal.upload.uploadFile(file);
+      if (!up.ok) { toast.error(up.error); return; }
+      const res = await dal.crm.markInstallmentPaid(leadId, planIndex, instIdx, {
+        url: up.data.url,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
+      if (res.ok && res.data) {
+        toast.success(tr("installmentMarkedPaid"));
+        onUpdated?.(res.data);
+      } else if (!res.ok) {
+        toast.error(res.error);
+      }
+    } finally {
+      setUploading(null);
+      pendingInstallRef.current = null;
+    }
+  };
 
   return (
     <div className="rounded-xl border border-success/30 bg-success/[0.04] p-6 shadow-sm">
@@ -209,6 +250,15 @@ function PaymentPlanPanel({
             </div>
           </div>
 
+          {/* hidden file input shared across all installments */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onFileChange}
+          />
+
           <ul className="mt-5 space-y-3">
             {plan.installments.map((ins) => (
               <li
@@ -224,29 +274,53 @@ function PaymentPlanPanel({
                   {ins.index}/{plan.installments.length}
                 </span>
                 <div className="min-w-0 flex-1">
-                  {ins.status !== "PAID" && (
-                    <p className="font-semibold tabular-nums">
-                      {formatCurrency(ins.amount, plan.currency)}
-                    </p>
-                  )}
-                  <p
-                    className={cn(
-                      "text-xs text-muted-foreground",
-                      ins.status === "PAID" && "text-sm text-foreground",
-                    )}
-                  >
+                  <p className="font-semibold tabular-nums">
+                    {formatCurrency(ins.amount, plan.currency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
                     {installmentMeta(ins.status, ins.dueDate, tr)}
                   </p>
                 </div>
+
+                {/* Receipt preview or upload button */}
                 {ins.receiptUrl ? (
-                  <div className="relative size-11 shrink-0 overflow-hidden rounded-md border bg-muted">
-                    <Image src={ins.receiptUrl} alt="" fill className="object-cover" />
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      onClick={() => window.open(ins.receiptUrl!, "_blank")}
+                      className="group relative size-11 overflow-hidden rounded-md border bg-muted"
+                      title="View receipt"
+                    >
+                      <Image src={ins.receiptUrl} alt="receipt" fill className="object-cover" />
+                      <span className="absolute inset-0 hidden items-center justify-center rounded-md bg-black/40 group-hover:flex">
+                        <ExternalLink className="size-4 text-white" />
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => handleUploadReceipt(ins.index)}
+                      disabled={uploading === ins.index}
+                      className="grid size-7 shrink-0 place-items-center rounded-md border bg-muted/60 text-muted-foreground hover:bg-muted transition-colors"
+                      title="Replace receipt"
+                    >
+                      {uploading === ins.index ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                    </button>
                   </div>
-                ) : ins.status === "PAID" ? (
-                  <span className="grid size-11 shrink-0 place-items-center rounded-md border bg-muted/60 text-muted-foreground">
-                    <Receipt className="size-4" />
-                  </span>
-                ) : null}
+                ) : (
+                  <button
+                    onClick={() => handleUploadReceipt(ins.index)}
+                    disabled={uploading === ins.index}
+                    className={cn(
+                      "flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      "border-dashed border-muted-foreground/40 text-muted-foreground hover:border-primary hover:text-primary",
+                    )}
+                    title="Upload receipt"
+                  >
+                    {uploading === ins.index
+                      ? <Loader2 className="size-3.5 animate-spin" />
+                      : <Upload className="size-3.5" />}
+                    <span>{tr("uploadReceipt")}</span>
+                  </button>
+                )}
+
                 <Badge
                   className={cn(
                     "shrink-0 border-transparent text-[0.65rem] font-semibold uppercase tracking-wide",

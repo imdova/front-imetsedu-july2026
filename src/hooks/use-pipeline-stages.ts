@@ -30,6 +30,7 @@ export interface CrmStageDisplay {
 
 export function usePipelineStages(
   rawStages?: Array<{ key: string; name?: string; order?: number }>,
+  options?: { skipFilter?: boolean },
 ) {
   const [crmOptions, setCrmOptions] = useState<string[]>([]);
 
@@ -45,11 +46,10 @@ export function usePipelineStages(
 
   const stages = useMemo<CrmStageDisplay[]>(() => {
     if (rawStages && rawStages.length > 0) {
-      const visible = [...rawStages]
-        .filter((s) => !EXCLUDED_STAGE_KEYS.has(s.key))
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-        .slice(0, crmOptions.length > 0 ? crmOptions.length : undefined);
-      return visible.map((s, i) => ({
+      const sorted = [...rawStages].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const visible = options?.skipFilter ? sorted : sorted.filter((s) => !EXCLUDED_STAGE_KEYS.has(s.key));
+      const sliced = crmOptions.length > 0 ? visible.slice(0, crmOptions.length) : visible;
+      return sliced.map((s, i) => ({
         key: s.key,
         name: crmOptions[i] ?? s.name ?? s.key,
         color: STAGE_COLORS[s.key] ?? "#6366f1",
@@ -62,7 +62,7 @@ export function usePipelineStages(
       color: STAGE_COLORS[key] ?? "#6366f1",
       isTerminal: key === "enrolled" || key === "lost",
     }));
-  }, [rawStages, crmOptions]);
+  }, [rawStages, crmOptions, options?.skipFilter]);
 
   const getDisplayName = (key: string): string =>
     stages.find((s) => s.key === key)?.name ?? key.replace(/_/g, " ");
