@@ -4,6 +4,13 @@
  * `student-portal` / `student-courses` / `quizzes` services to go live.
  */
 import { ok, fail, toMessage, api, type Result } from "@integration/lib/api-client";
+import {
+  fetchStudentQuizForCourse, startAttempt, saveAnswers, submitAttempt,
+  getMyLatestAttempt, type QuizAttemptData,
+} from "@integration/services/quizzes";
+import type { QuizAttemptResult, MyAttemptsResponse } from "@integration/types/quiz";
+import { updateStudentPassword } from "@integration/services/students";
+import { uploadFile } from "@integration/services/upload";
 import * as db from "@/lib/db/student";
 import type {
   EnrolledCourse, ScheduleEvent, Grade, Certificate, Notification,
@@ -133,6 +140,22 @@ export const submitAssignment = async (
   return res.ok ? ok({ ok: true }) : res;
 };
 
+/** LIVE: upload a file (e.g. an assignment submission) → returns its URL. */
+export const uploadStudentFile = async (file: File): Promise<Result<string>> => {
+  const res = await uploadFile(file);
+  return res.ok ? ok(res.data.url) : res;
+};
+
+/** LIVE: change password — PATCH /student-portal/settings/password. */
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<Result<{ ok: true }>> => {
+  const res = await updateStudentPassword({ currentPassword, newPassword, confirmPassword });
+  return res.ok ? ok({ ok: true }) : res;
+};
+
 /** LIVE: PATCH progress (0-100) to /student-portal/courses/:id/progress. */
 export const updateCourseProgress = async (courseId: string, progress: number): Promise<Result<void>> => {
   const clamped = Math.min(100, Math.max(0, Math.round(progress)));
@@ -140,7 +163,38 @@ export const updateCourseProgress = async (courseId: string, progress: number): 
   return res.ok ? ok(undefined) : res;
 };
 
+/* ── Quiz (LIVE via /quizzes/* attempt lifecycle) ── */
+export type { QuizAttemptData };
+export type StudentQuizResult = QuizAttemptResult;
+
+/** LIVE: load a quiz (questions + course context) for the student runner. */
+export const fetchQuiz = (
+  courseId: string,
+  quizId: string,
+  locale: "en" | "ar" = "en",
+): Promise<Result<QuizAttemptData>> => fetchStudentQuizForCourse(courseId, quizId, locale);
+
+/** LIVE: open a fresh attempt — POST /quizzes/:id/attempts. Returns the attempt id. */
+export const startQuizAttempt = (quizId: string): Promise<Result<QuizAttemptResult>> =>
+  startAttempt(quizId);
+
+/** LIVE: persist selected answers — PATCH /quizzes/:id/attempts/:attemptId/answers. */
+export const saveQuizAnswers = (
+  quizId: string,
+  attemptId: string,
+  answers: Array<{ questionId: string; selectedChoiceIds: string[] }>,
+): Promise<Result<unknown>> => saveAnswers(quizId, attemptId, answers);
+
+/** LIVE: submit + grade — POST /quizzes/:id/attempts/:attemptId/submit. */
+export const submitQuizAttempt = (
+  quizId: string,
+  attemptId: string,
+): Promise<Result<QuizAttemptResult>> => submitAttempt(quizId, attemptId);
+
+/** LIVE: how many attempts the student has already used — GET /quizzes/:id/attempts/me. */
+export const fetchQuizAttempts = (quizId: string): Promise<Result<MyAttemptsResponse>> =>
+  getMyLatestAttempt(quizId);
+
 // No backend equivalent yet — remain on dummy data.
-export const fetchQuiz = () => wrap(db.getQuiz, "Failed to load quiz");
 export const fetchPaymentMethods = () => wrap(db.getPaymentMethods, "Failed to load payment methods");
 export const fetchFavorites = () => wrap(db.getFavorites, "Failed to load favorites");

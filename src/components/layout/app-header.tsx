@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
@@ -109,6 +109,7 @@ export function AppHeader({ nav = ADMIN_NAV, showCreate = true }: AppHeaderProps
           <DropdownMenuTrigger asChild>
             <button type="button" className="flex items-center gap-2 rounded-lg ps-1 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/40">
               <Avatar className="size-9 border">
+                {user?.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={user.name} /> : null}
                 <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
                   {user ? getInitials(user.name) : "IM"}
                 </AvatarFallback>

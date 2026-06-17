@@ -6,11 +6,13 @@ import { useTranslations } from "next-intl";
 import {
   Play, PlayCircle, HelpCircle, ChevronDown, Video, CalendarDays, Search, Download,
   Send, Award, FileText, UploadCloud, MessageSquare, Building2, CheckCircle2,
+  LayoutGrid, List as ListIcon, Lock, Paperclip,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
+import { ROUTES } from "@integration/constants";
 import type { EnrolledCourse, ScheduleEvent, StudentAssignment, Certificate } from "@/lib/db/student";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,16 +36,16 @@ export function CourseDetailView({
   const router = useRouter();
   const [tab, setTab] = React.useState<Tab>("overview");
 
-  // Navigate to the full-page classroom (lessons) or the quiz runner (quizzes).
+  // Navigate to the full-page lesson player (lessons) or the quiz runner (quizzes).
   const allLessons = course.modules.flatMap((m) => m.lessons);
   const firstIncompleteSlug = (allLessons.find((l) => !l.completed) ?? allLessons[0])?.lessonSlug ?? "m0-i0";
   const play = (lessonSlug?: string) => {
     const slug = lessonSlug ?? firstIncompleteSlug;
     const lesson = allLessons.find((l) => l.lessonSlug === slug);
     if (lesson?.type === "quiz" && lesson.quizId) {
-      router.push(`/student/quiz/${lesson.quizId}` as never);
+      router.push(ROUTES.STUDENT.COURSE_QUIZ(course.id, lesson.quizId) as never);
     } else {
-      router.push(`/classroom/${course.id}/${slug}` as never);
+      router.push(ROUTES.STUDENT.COURSE_LESSON(course.id, slug) as never);
     }
   };
 
@@ -202,37 +204,81 @@ function MaterialsTab({ course, t }: { course: EnrolledCourse; t: T }) {
           <Download className="size-4" />{t("cdDownloadAll")}
         </Button>
       </div>
-      <div className="mt-5 space-y-2">
+      <div className="mt-5">
         {materials.length === 0 ? (
           <div className="grid place-items-center rounded-xl border border-dashed border-border/70 py-16 text-center">
             <FileText className="size-10 text-muted-foreground/40" />
             <p className="mt-3 text-sm text-muted-foreground">{t("cdNoMaterials")}</p>
           </div>
-        ) : materials.map((m) => (
-          <div key={m.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-4">
-            <span className="inline-flex items-center gap-3 font-medium">
-              <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary"><FileText className="size-4" /></span>
-              {m.title}
-            </span>
-            <Button variant="outline" size="sm" className="gap-1.5" disabled={!m.url} onClick={() => window.open(m.url, "_blank")}><Download className="size-4" />{t("cdDownload")}</Button>
-          </div>
-        ))}
+        ) : (
+          <MaterialsGroup count={materials.length} t={t}>
+            {materials.map((m) => (
+              <div key={m.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
+                <span className="inline-flex min-w-0 items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-destructive/10 text-destructive"><FileText className="size-4" /></span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{m.title}</span>
+                    <span className="text-xs text-muted-foreground">{t("cdDownload")} · —</span>
+                  </span>
+                </span>
+                <Button variant="ghost" size="icon-sm" disabled={!m.url} onClick={() => window.open(m.url, "_blank")} aria-label={t("cdDownload")}><Download className="size-4" /></Button>
+              </div>
+            ))}
+          </MaterialsGroup>
+        )}
       </div>
     </div>
   );
 }
 
+function MaterialsGroup({ count, t, children }: { count: number; t: T; children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/70">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="flex w-full items-center gap-3 bg-muted/30 px-4 py-3.5 text-start hover:bg-muted/50">
+        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-sm font-semibold">1</span>
+        <span className="flex-1">
+          <span className="block font-semibold">{t("cdMaterialsGroup")}</span>
+          <span className="text-xs text-muted-foreground">{t("cdMaterialsFileCount", { n: count })} · —</span>
+        </span>
+        <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="divide-y divide-border/60">{children}</div>}
+    </div>
+  );
+}
+
 /* ───────────── Assignments ───────────── */
+function isClosed(a: StudentAssignment): boolean {
+  return a.status === "pending" && !!a.rawDueDate && new Date(a.rawDueDate).getTime() < Date.now();
+}
+
 function AssignmentsTab({ assignments, t }: { assignments: StudentAssignment[]; t: T }) {
   const [active, setActive] = React.useState<StudentAssignment | null>(null);
-  const inProgress = assignments.filter((a) => a.status === "pending").length;
+  const [view, setView] = React.useState<"list" | "grid">("list");
+  const inProgress = assignments.filter((a) => a.status === "pending" && !isClosed(a)).length;
   const submitted = assignments.filter((a) => a.status === "submitted").length;
   const graded = assignments.filter((a) => a.status === "graded").length;
 
-  const statusBadge = (s: StudentAssignment["status"]) => {
-    const map = { pending: ["bg-muted text-muted-foreground", t("cdNotStarted")], submitted: ["bg-primary/10 text-primary", t("cdSubmittedKpi")], graded: ["bg-success/10 text-success", t("cdGraded")] } as const;
-    const [cls, label] = map[s];
-    return <span className={cn("rounded-md px-2 py-0.5 text-xs font-semibold uppercase", cls)}>{label}</span>;
+  const subline = (a: StudentAssignment) =>
+    `${a.priority === "urgent" ? t("cdUrgent") : t("cdRegular")} · ${t("cdAttachments", { n: a.files?.length ?? 0 })}`;
+
+  const statusBadge = (a: StudentAssignment) => {
+    const closed = isClosed(a);
+    const map = {
+      pending: ["bg-muted text-muted-foreground", t("cdNotStarted")],
+      submitted: ["bg-primary/10 text-primary", t("cdSubmittedKpi")],
+      graded: ["bg-success/10 text-success", t("cdGraded")],
+      closed: ["bg-destructive/10 text-destructive", t("cdClosed")],
+    } as const;
+    const [cls, label] = closed ? map.closed : map[a.status];
+    return <span className={cn("inline-block rounded-md px-2 py-0.5 text-xs font-semibold uppercase", cls)}>{label}</span>;
+  };
+
+  const action = (a: StudentAssignment, full?: boolean) => {
+    if (isClosed(a)) return <Button size="sm" variant="secondary" disabled className={cn("gap-1.5", full && "w-full")}><Lock className="size-3.5" />{t("cdClosed")}</Button>;
+    if (a.status === "pending") return <Button size="sm" onClick={() => setActive(a)} className={cn(full && "w-full")}>{t("cdSubmit")}</Button>;
+    return <Button size="sm" variant="outline" disabled={!a.submission?.assignmentFileUrl} className={cn("gap-1.5", full && "w-full")} onClick={() => a.submission?.assignmentFileUrl && window.open(a.submission.assignmentFileUrl, "_blank")}><Download className="size-3.5" />{t("cdDownload")}</Button>;
   };
 
   return (
@@ -247,36 +293,56 @@ function AssignmentsTab({ assignments, t }: { assignments: StudentAssignment[]; 
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-        <div className="p-5"><h3 className="font-heading text-lg font-bold">{t("cdCourseAssignments")}</h3></div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-y bg-muted/20 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <th className="px-5 py-3 text-start">{t("cdColTitle")}</th>
-              <th className="px-3 py-3 text-start">{t("cdColDeadline")}</th>
-              <th className="px-3 py-3 text-start">{t("cdColStatus")}</th>
-              <th className="px-3 py-3 text-start">{t("cdColGrade")}</th>
-              <th className="px-5 py-3 text-end">{t("cdColAction")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {assignments.length === 0 ? (
-              <tr><td colSpan={5} className="py-12 text-center text-muted-foreground">{t("cdNoAssignments")}</td></tr>
-            ) : assignments.map((a, i) => (
-              <tr key={a.id} className="border-b last:border-0">
-                <td className="px-5 py-3"><p className="font-medium">{i + 1}. {a.title}</p><p className="text-xs text-muted-foreground">{a.description || "—"}</p></td>
-                <td className="px-3 py-3 text-muted-foreground">{a.dueDate}</td>
-                <td className="px-3 py-3">{statusBadge(a.status)}</td>
-                <td className="px-3 py-3 text-muted-foreground tabular-nums">{a.grade != null ? `${a.grade}/${a.maxGrade}` : "--"}</td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button size="sm" disabled={a.status !== "pending"} onClick={() => setActive(a)}>{t("cdSubmit")}</Button>
-                    <Button size="sm" variant="outline">{t("cdDownload")}</Button>
-                  </div>
-                </td>
+        <div className="flex items-center justify-between p-5">
+          <h3 className="font-heading text-lg font-bold">{t("cdCourseAssignments")}</h3>
+          <div className="flex items-center rounded-lg border p-0.5">
+            <button type="button" onClick={() => setView("grid")} aria-label="Grid view" className={cn("grid size-8 place-items-center rounded-md", view === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}><LayoutGrid className="size-4" /></button>
+            <button type="button" onClick={() => setView("list")} aria-label="List view" className={cn("grid size-8 place-items-center rounded-md", view === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}><ListIcon className="size-4" /></button>
+          </div>
+        </div>
+
+        {assignments.length === 0 ? (
+          <p className="py-12 text-center text-muted-foreground">{t("cdNoAssignments")}</p>
+        ) : view === "list" ? (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-y bg-muted/20 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <th className="px-5 py-3 text-start">{t("cdColTitle")}</th>
+                <th className="px-3 py-3 text-start">{t("cdColDeadline")}</th>
+                <th className="px-3 py-3 text-start">{t("cdColStatus")}</th>
+                <th className="px-3 py-3 text-start">{t("cdColGrade")}</th>
+                <th className="px-5 py-3 text-end">{t("cdColAction")}</th>
               </tr>
+            </thead>
+            <tbody>
+              {assignments.map((a, i) => (
+                <tr key={a.id} className="border-b last:border-0">
+                  <td className="px-5 py-3"><p className="font-medium">{i + 1}. {a.title}</p><p className="text-xs text-muted-foreground">{subline(a)}</p></td>
+                  <td className="px-3 py-3 text-muted-foreground">{a.dueDate}</td>
+                  <td className="px-3 py-3">{statusBadge(a)}</td>
+                  <td className="px-3 py-3 text-muted-foreground tabular-nums">{a.grade != null ? `${a.grade}/${a.maxGrade}` : "--"}</td>
+                  <td className="px-5 py-3"><div className="flex justify-end">{action(a)}</div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="grid gap-4 border-t border-border/60 p-5 sm:grid-cols-2">
+            {assignments.map((a, i) => (
+              <div key={a.id} className="flex flex-col rounded-xl border border-border/70 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">{a.priority === "urgent" ? t("cdUrgent") : t("cdRegular")}</span>
+                  {statusBadge(a)}
+                </div>
+                <p className="mt-2 font-semibold">{i + 1}. {a.title}</p>
+                <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Paperclip className="size-3.5" />{t("cdAttachments", { n: a.files?.length ?? 0 })}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{t("cdColDeadline")}: {a.dueDate}</p>
+                <p className="text-xs text-muted-foreground">{t("cdColGrade")}: {a.grade != null ? `${a.grade}/${a.maxGrade}` : "--"}</p>
+                <div className="mt-3">{action(a, true)}</div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
 
       <SubmitModal assignment={active} onClose={() => setActive(null)} t={t} />

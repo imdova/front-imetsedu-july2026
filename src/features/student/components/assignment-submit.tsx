@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Upload, CheckCircle2, FileText } from "lucide-react";
 import { toast } from "sonner";
 
+import { dal } from "@/lib/dal";
 import type { StudentAssignment } from "@/lib/db/student";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function AssignmentSubmit({ assignment }: { assignment: StudentAssignment }) {
   const t = useTranslations("Student");
   const [status, setStatus] = React.useState(assignment.status);
-  const [fileName, setFileName] = React.useState<string | null>(null);
+  const [file, setFile] = React.useState<File | null>(null);
+  const [notes, setNotes] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const fileName = file?.name ?? null;
 
-  const submit = () => {
-    setStatus("submitted");
-    toast.success(t("workSubmitted"));
+  const submit = async () => {
+    if (!file) { toast.error(t("attachFile")); return; }
+    setBusy(true);
+    // Upload the file first, then attach its URL to the submission.
+    const up = await dal.student.uploadStudentFile(file);
+    if (!up.ok) { toast.error(up.error); setBusy(false); return; }
+    const res = await dal.student.submitAssignment(assignment.id, {
+      assignmentFileUrl: up.data,
+      notes: notes.trim() || undefined,
+    });
+    setBusy(false);
+    if (res.ok) {
+      setStatus("submitted");
+      toast.success(t("workSubmitted"));
+    } else {
+      toast.error(res.error);
+    }
   };
 
   const badge = status === "graded"
@@ -58,11 +76,11 @@ export function AssignmentSubmit({ assignment }: { assignment: StudentAssignment
               >
                 <Upload className="size-6" />
                 <span className="text-sm font-medium text-foreground">{fileName ?? t("attachFile")}</span>
-                <input ref={inputRef} type="file" className="hidden" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)} />
+                <input ref={inputRef} type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               </button>
-              <Textarea rows={4} placeholder={t("description")} />
+              <Textarea rows={4} placeholder={t("description")} value={notes} onChange={(e) => setNotes(e.target.value)} />
               <div className="flex justify-end">
-                <Button onClick={submit} className="gap-1.5"><CheckCircle2 className="size-4" />{t("submitWork")}</Button>
+                <Button onClick={submit} disabled={busy} className="gap-1.5"><CheckCircle2 className="size-4" />{busy ? t("loading") : t("submitWork")}</Button>
               </div>
             </CardContent>
           </Card>

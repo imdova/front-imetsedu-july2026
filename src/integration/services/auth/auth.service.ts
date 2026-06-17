@@ -79,6 +79,19 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
   return api.post<{ message?: string }>("/auth/change-password", { currentPassword, newPassword });
 }
 
+export interface UpdateProfileInput {
+  name?: string;
+  image?: string;
+}
+
+/** PATCH /users/me — update the signed-in user's profile. */
+export async function updateProfile(input: UpdateProfileInput): Promise<Result<AuthUserDto>> {
+  const res = await api.patch<AuthUserDto>("/users/me", input);
+  if (!res.ok) return res;
+  const d = res.data;
+  return { ...res, data: { ...d, id: d.id ?? d._id ?? "" } };
+}
+
 export function forgotPassword(email: string): Promise<Result<ForgotPasswordResult>> {
   return api.post<ForgotPasswordResult>("/auth/forgot-password", { email }, { requireAuth: false });
 }

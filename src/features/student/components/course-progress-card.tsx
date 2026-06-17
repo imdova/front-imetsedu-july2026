@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { PlayCircle, CheckCircle2 } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
+import { ROUTES } from "@integration/constants";
 import type { EnrolledCourse } from "@/lib/db/student";
 import { Button } from "@/components/ui/button";
 
@@ -37,7 +38,7 @@ export function CourseProgressCard({ course }: { course: EnrolledCourse }) {
           </div>
         </div>
         <Button asChild size="sm" className="gap-1.5">
-          <Link href={`/student/courses/${course.slug}`}>
+          <Link href={ROUTES.STUDENT.COURSE_OVERVIEW(course.id)}>
             <PlayCircle className="size-4" />
             {done ? t("viewAll") : t("continueBtn")}
           </Link>

@@ -124,6 +124,7 @@ export const STUDENT_NAV: NavSection[] = [
       { titleKey: "schedule", href: "/student/schedule", icon: "CalendarDays" },
       { titleKey: "grades", href: "/student/grades", icon: "ListChecks" },
       { titleKey: "transcript", href: "/student/transcript", icon: "FileText" },
+      { titleKey: "transcripts", href: "/student/transcripts", icon: "FileText" },
     ],
   },
   {
@@ -164,6 +165,11 @@ export const STAFF_NAV: NavSection[] = [
     items: [
       { titleKey: "myGroups", href: "/staff/my-groups", icon: "Users" },
       { titleKey: "notifications", href: "/staff/notifications", icon: "Bell" },
+    ],
+  },
+  {
+    labelKey: "sectionAccount",
+    items: [
       { titleKey: "profile", href: "/staff/profile", icon: "UserCog" },
       { titleKey: "settings", href: "/staff/settings", icon: "Settings" },
     ],

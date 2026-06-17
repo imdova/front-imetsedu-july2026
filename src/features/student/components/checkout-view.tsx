@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import type { CourseRow } from "@/types";
 import { useRouter } from "@/i18n/navigation";
+import { ROUTES } from "@integration/constants";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ export function CheckoutView({ course }: { course: CourseRow }) {
     setTimeout(() => {
       setSubmitting(false);
       toast.success(t("enrolledToast"));
-      router.push(`/student/courses/${course.slug}`);
+      router.push(ROUTES.STUDENT.COURSE_OVERVIEW(course.id));
     }, 700);
   };
 

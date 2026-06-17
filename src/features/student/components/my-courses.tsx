@@ -7,6 +7,7 @@ import { Search, Play, Heart, Sparkles, ArrowRight, GraduationCap } from "lucide
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
+import { ROUTES } from "@integration/constants";
 import type { EnrolledCourse } from "@/lib/db/student";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export function MyCourses({ courses }: { courses: EnrolledCourse[] }) {
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((c) => <CourseCard key={c.id} course={c} onFav={() => toggleFav(c.id)} onOpen={() => router.push(`/student/courses/${c.slug}`)} t={t} />)}
+              {filtered.map((c) => <CourseCard key={c.id} course={c} onFav={() => toggleFav(c.id)} onOpen={() => router.push(ROUTES.STUDENT.COURSE_OVERVIEW(c.id))} t={t} />)}
             </div>
           )}
         </div>

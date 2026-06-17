@@ -27,6 +27,15 @@ export async function saveAnswers(
   );
 }
 
+export async function submitAttempt(
+  quizId: string,
+  attemptId: string,
+): Promise<Result<QuizAttemptResult>> {
+  const res = await api.post<unknown>(QUIZZES_API.ATTEMPTS.SUBMIT(quizId, attemptId), {});
+  if (!res.ok) return res;
+  return ok(unwrapData(res.data) as QuizAttemptResult);
+}
+
 export async function getMyLatestAttempt(quizId: string): Promise<Result<MyAttemptsResponse>> {
   const res = await api.get<unknown>(QUIZZES_API.ATTEMPTS.MY_LATEST(quizId));
   // 404 = no attempts yet

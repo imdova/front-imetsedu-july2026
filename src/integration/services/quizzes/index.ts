@@ -4,5 +4,6 @@ export type { QuizAttemptData, QuizQuestion } from "./student-quiz.types";
 export {
   startAttempt,
   saveAnswers,
+  submitAttempt,
   getMyLatestAttempt,
 } from "./quiz-attempts.service";

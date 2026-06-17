@@ -7,13 +7,13 @@ import { CourseDetailView } from "@/features/student/components/course-detail-vi
 export default async function StudentCoursePage({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }>;
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { locale, slug } = await params;
+  const { locale, id } = await params;
   setRequestLocale(locale);
 
   const [courseRes, assignmentsRes, scheduleRes, certsRes] = await Promise.all([
-    dal.student.fetchCourse(slug),
+    dal.student.fetchCourse(id),
     dal.student.fetchAssignments(),
     dal.student.fetchSchedule(),
     dal.student.fetchCertificates(),

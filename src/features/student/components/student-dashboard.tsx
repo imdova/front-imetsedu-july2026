@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { BookOpen, TrendingUp, Award, CalendarDays, PlayCircle, ArrowRight } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
+import { ROUTES } from "@integration/constants";
 import type { EnrolledCourse, Grade, ScheduleEvent } from "@/lib/db/student";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,7 @@ export function StudentDashboard({ data }: { data: DashboardData }) {
               </div>
             </div>
             <Button asChild className="mt-1 w-fit gap-1.5">
-              <Link href={`/student/courses/${c.slug}`}><PlayCircle className="size-4" />{t("resume")}</Link>
+              <Link href={ROUTES.STUDENT.COURSE_OVERVIEW(c.id)}><PlayCircle className="size-4" />{t("resume")}</Link>
             </Button>
           </CardContent>
         </div>

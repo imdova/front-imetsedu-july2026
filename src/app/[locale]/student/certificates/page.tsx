@@ -12,12 +12,16 @@ export default async function StudentCertificatesPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Student");
-  const res = await dal.student.fetchCertificates();
+  const [res, profileRes] = await Promise.all([
+    dal.student.fetchCertificates(),
+    dal.student.fetchProfile(),
+  ]);
+  const holderName = profileRes.ok ? profileRes.data.name : undefined;
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-6">
       <PageHeader title={t("certificatesTitle")} description={t("certificatesSubtitle")} />
-      <CertificatesGrid certificates={res.ok ? res.data : []} />
+      <CertificatesGrid certificates={res.ok ? res.data : []} holderName={holderName} />
     </div>
   );
 }

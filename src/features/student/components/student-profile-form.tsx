@@ -5,11 +5,12 @@ import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import {
   User, Mail, GraduationCap, Link2, Camera, Briefcase,
-  Stethoscope, BarChart3, Cpu, Megaphone,
+  Stethoscope, BarChart3, Cpu, Megaphone, Loader2,
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
 import { getInitials } from "@/lib/utils";
+import { useAuth } from "@/store";
 import { useCrmVariables } from "@/hooks/use-crm-variables";
 import { NATIONALITIES, nationalityLabel, normalizeNationality } from "@/constants/nationalities";
 import type { StudentProfile, StudentProfileForm } from "@/lib/student/map-profile";
@@ -54,10 +55,14 @@ export function StudentProfileForm({ profile }: { profile: StudentProfile }) {
   const t = useTranslations("Student");
   const tc = useTranslations("Common");
   const locale = useLocale();
+  const { user, setUser } = useAuth();
 
   const [form, setForm] = React.useState<StudentProfileForm>(() => toForm(profile));
+  const [baseline, setBaseline] = React.useState<StudentProfileForm>(() => toForm(profile));
   const [sameWa, setSameWa] = React.useState(profile.whatsApp === profile.phone);
   const [busy, setBusy] = React.useState(false);
+  const [photoUploading, setPhotoUploading] = React.useState(false);
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
 
   /* ── CRM variable options (same source as create-lead-form) ── */
   const { getOptionsById, isMounted: varsMounted } = useCrmVariables();
@@ -82,22 +87,64 @@ export function StudentProfileForm({ profile }: { profile: StudentProfile }) {
   /* ── Helpers ── */
   const set = <K extends keyof StudentProfileForm>(k: K, v: StudentProfileForm[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
-  const dirty = JSON.stringify(form) !== JSON.stringify(toForm(profile));
+  const dirty = JSON.stringify(form) !== JSON.stringify(baseline);
 
   const completion = (() => {
     const fields = [form.name, form.email, form.phone, form.country, form.specialty, form.educationLevel, form.jobTitle, form.dateOfBirth, form.gender, form.whatsApp];
     return Math.round((fields.filter((x) => String(x ?? "").trim()).length / fields.length) * 100);
   })();
 
+  const buildPayload = (): StudentProfileForm =>
+    sameWa ? { ...form, whatsApp: form.phone, whatsAppCountryCode: form.phoneCountryCode } : form;
+
+  const syncAvatar = (url: string) => {
+    if (user) setUser({ ...user, avatarUrl: url || undefined });
+  };
+
   const save = async () => {
-    const payload = sameWa ? { ...form, whatsApp: form.phone, whatsAppCountryCode: form.phoneCountryCode } : form;
+    const payload = buildPayload();
     setBusy(true);
     const res = await dal.student.updateProfile(payload);
     setBusy(false);
-    if (res.ok) toast.success(t("profileUpdated"));
-    else toast.error(res.error || t("saved"));
+    if (res.ok) {
+      toast.success(t("profileUpdated"));
+      setBaseline(payload);
+      syncAvatar(payload.image);
+    } else toast.error(res.error || t("saved"));
   };
-  const discard = () => { setForm(toForm(profile)); setSameWa(profile.whatsApp === profile.phone); };
+  const discard = () => { setForm(baseline); setSameWa(baseline.whatsApp === baseline.phone); };
+
+  const uploadPhoto = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("photoInvalidType"));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t("photoTooLarge"));
+      return;
+    }
+    setPhotoUploading(true);
+    const up = await dal.student.uploadStudentFile(file);
+    if (!up.ok) {
+      setPhotoUploading(false);
+      toast.error(up.error);
+      return;
+    }
+    const next = { ...form, image: up.data };
+    setForm(next);
+    const payload = sameWa
+      ? { ...next, whatsApp: next.phone, whatsAppCountryCode: next.phoneCountryCode }
+      : next;
+    const res = await dal.student.updateProfile(payload);
+    setPhotoUploading(false);
+    if (res.ok) {
+      toast.success(t("photoUpdated"));
+      setBaseline(payload);
+      syncAvatar(up.data);
+    } else {
+      toast.error(res.error || t("saved"));
+    }
+  };
 
   /* ── Select with per-option icon (matches create-lead-form selectField) ── */
   const selectWithIcons = (
@@ -145,10 +192,26 @@ export function StudentProfileForm({ profile }: { profile: StudentProfile }) {
                 {form.image ? <AvatarImage src={form.image} alt={form.name} /> : null}
                 <AvatarFallback className="bg-primary/10 text-xl font-semibold text-primary">{getInitials(form.name || "Student")}</AvatarFallback>
               </Avatar>
-              <button type="button" aria-label={t("changePhoto")} onClick={() => toast.info(t("changePhoto"))}
-                className="absolute -bottom-1 -end-1 grid size-6 place-items-center rounded-full border bg-background text-muted-foreground shadow-sm hover:text-foreground">
-                <Camera className="size-3.5" />
+              <button
+                type="button"
+                aria-label={t("changePhoto")}
+                disabled={photoUploading}
+                onClick={() => photoInputRef.current?.click()}
+                className="absolute -bottom-1 -end-1 grid size-6 place-items-center rounded-full border bg-background text-muted-foreground shadow-sm hover:text-foreground disabled:opacity-60"
+              >
+                {photoUploading ? <Loader2 className="size-3.5 animate-spin" /> : <Camera className="size-3.5" />}
               </button>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadPhoto(file);
+                  e.target.value = "";
+                }}
+              />
             </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight">{form.name || "—"}</h2>

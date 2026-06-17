@@ -78,5 +78,6 @@ export function toUpdateProfileDto(f: StudentProfileForm): Record<string, unknow
     dateOfBirth: f.dateOfBirth || undefined,
     gender: f.gender || undefined,
     linkedInUrl: f.linkedInUrl || undefined,
+    image: f.image || undefined,
   };
 }

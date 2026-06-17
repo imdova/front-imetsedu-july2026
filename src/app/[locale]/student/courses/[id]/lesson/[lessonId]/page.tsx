@@ -10,10 +10,10 @@ import {
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { dal } from "@/lib/dal";
+import { ROUTES } from "@integration/constants";
 import {
   getStudentCourseRaw,
   buildLessonPageData,
-  buildCourseSidebar,
 } from "@integration/services/student-courses";
 import type {
   LessonPageData,
@@ -30,18 +30,18 @@ import {
 
 /* ─── helpers ────────────────────────────────────────────────────────────── */
 
-function classroomHref(courseId: string, nav: CurriculumNavLink): string {
+function navHref(courseId: string, nav: CurriculumNavLink): string {
   if (nav.kind === "quiz" && nav.quizId) {
-    return `/student/quiz/${nav.quizId}`;
+    return ROUTES.STUDENT.COURSE_QUIZ(courseId, nav.quizId);
   }
-  return `/classroom/${courseId}/${nav.slug}`;
+  return ROUTES.STUDENT.COURSE_LESSON(courseId, nav.slug);
 }
 
 function lessonHref(courseId: string, item: SidebarLesson): string {
   if (item.kind === "quiz" && item.quizId) {
-    return `/student/quiz/${item.quizId}`;
+    return ROUTES.STUDENT.COURSE_QUIZ(courseId, item.quizId);
   }
-  return `/classroom/${courseId}/${item.slug}`;
+  return ROUTES.STUDENT.COURSE_LESSON(courseId, item.slug);
 }
 
 /* ─── Lesson video player ─────────────────────────────────────────────────── */
@@ -199,12 +199,12 @@ function CurriculumItem({
   );
 }
 
-/* ─── Main classroom page ─────────────────────────────────────────────────── */
+/* ─── Main lesson page ────────────────────────────────────────────────────── */
 
-export default function ClassroomPage() {
+export default function StudentLessonPage() {
   const params = useParams();
-  const courseId = typeof params.courseId === "string" ? params.courseId : "";
-  const lessonSlug = typeof params.lessonSlug === "string" ? params.lessonSlug : "";
+  const courseId = typeof params.id === "string" ? params.id : "";
+  const lessonSlug = typeof params.lessonId === "string" ? params.lessonId : "";
 
   const [data, setData] = React.useState<LessonPageData | null>(null);
   const [modules, setModules] = React.useState<SidebarModule[]>([]);
@@ -265,7 +265,7 @@ export default function ClassroomPage() {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-background">
         <p className="text-muted-foreground">Invalid lesson link.</p>
-        <Link href="/student/courses" className="text-primary hover:underline">Back to My Courses</Link>
+        <Link href={ROUTES.STUDENT.COURSES} className="text-primary hover:underline">Back to My Courses</Link>
       </div>
     );
   }
@@ -282,7 +282,7 @@ export default function ClassroomPage() {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-background">
         <p className="text-muted-foreground">{error ?? "Lesson not found."}</p>
-        <Link href="/student/courses" className="text-primary hover:underline">Back to My Courses</Link>
+        <Link href={ROUTES.STUDENT.COURSES} className="text-primary hover:underline">Back to My Courses</Link>
       </div>
     );
   }
@@ -297,7 +297,7 @@ export default function ClassroomPage() {
       {/* Top bar */}
       <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur-xl sm:px-6">
         <Link
-          href={`/student/courses/${courseId}`}
+          href={ROUTES.STUDENT.COURSE_OVERVIEW(courseId)}
           className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary no-underline hover:underline"
         >
           <ArrowLeft className="size-4 shrink-0 rtl:rotate-180" />
@@ -384,7 +384,7 @@ export default function ClassroomPage() {
 
           <div className="border-t border-border/70 p-4">
             <Link
-              href={`/student/courses/${courseId}`}
+              href={ROUTES.STUDENT.COURSE_OVERVIEW(courseId)}
               className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground no-underline hover:bg-muted hover:text-foreground"
             >
               <ArrowLeft className="size-4 rtl:rotate-180" />
@@ -409,7 +409,7 @@ export default function ClassroomPage() {
             <div className="flex items-center justify-between gap-4 flex-wrap">
               {data.prevNav ? (
                 <Link
-                  href={classroomHref(courseId, data.prevNav)}
+                  href={navHref(courseId, data.prevNav)}
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold text-primary no-underline hover:bg-muted"
                 >
                   <ArrowLeft className="size-4 rtl:rotate-180" />
@@ -419,7 +419,7 @@ export default function ClassroomPage() {
 
               {data.nextNav ? (
                 <Link
-                  href={classroomHref(courseId, data.nextNav)}
+                  href={navHref(courseId, data.nextNav)}
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90"
                 >
                   {data.nextNav.kind === "quiz" ? "Next Quiz" : "Next Lesson"}
