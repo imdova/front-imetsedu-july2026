@@ -8,6 +8,7 @@ export interface GetPaymentsParams {
   groupId?: string;
   paymentMethod?: string;
   status?: string;
+  counselorId?: string;
 }
 
 /**

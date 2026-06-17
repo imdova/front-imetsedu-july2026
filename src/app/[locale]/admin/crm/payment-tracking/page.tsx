@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { PaymentTracking } from "@/features/admin/components/payment-tracking";
+import { getSessionUser } from "@/lib/permission-guard";
 
 export default async function AdminPaymentTrackingPage({
   params,
@@ -14,6 +15,10 @@ export default async function AdminPaymentTrackingPage({
   setRequestLocale(locale);
   const t = await getTranslations("Admin");
 
+  const user = await getSessionUser();
+  const isStaff = user?.staffRole !== null && user?.staffRole !== undefined;
+  const counselorId = isStaff ? (user?.staffId ?? user?.id) : undefined;
+
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
       <div>
@@ -23,7 +28,7 @@ export default async function AdminPaymentTrackingPage({
           <Button variant="outline" className="gap-1.5"><Download className="size-4" />{t("exportBtn")}</Button>
         </PageHeader>
       </div>
-      <PaymentTracking />
+      <PaymentTracking counselorId={counselorId} />
     </div>
   );
 }

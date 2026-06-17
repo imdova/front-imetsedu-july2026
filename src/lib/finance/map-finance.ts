@@ -112,15 +112,37 @@ export function mapInvoice(raw: any): Invoice {
 export function mapLeadPaymentPlanToInvoice(lead: any): Invoice {
   const plan = lead?.paymentPlan ?? {};
   const rawInsts: any[] = plan.installments ?? [];
+  const planReceipts: any[] = plan.receipts ?? [];
+
+  // Today at midnight for overdue comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const installments: Installment[] = rawInsts.map((inst: any) => {
-    const instStatus: InstallmentStatus =
-      inst.status === "PAID" ? "PAID" : inst.status === "DUE" ? "DUE" : "SCHEDULED";
+    // Backend sometimes sends SCHEDULED even when the due date has passed —
+    // derive overdue status on the frontend.
+    const isPaid = inst.status === "PAID";
+    const isOverdue = !isPaid && inst.dueDate && new Date(inst.dueDate) < today;
+    const instStatus: InstallmentStatus = isPaid ? "PAID" : isOverdue ? "DUE" : "SCHEDULED";
+
+    // Try installment-level receipt first, then match from plan.receipts by scope
+    let receipt: Installment["receipt"] | undefined;
+    const rawR = inst.paymentReceipt ?? inst.receipt;
+    const planReceipt = planReceipts.find((r: any) => r.scope === inst.index);
+    if (planReceipt?.previewUrl) {
+      receipt = { url: planReceipt.previewUrl, filename: planReceipt.name, mimeType: planReceipt.type };
+    } else if (rawR) {
+      const url = typeof rawR === "string" ? rawR : (rawR.url ?? rawR.dataUrl ?? rawR.link ?? "");
+      if (url) receipt = { url, filename: rawR.filename ?? rawR.name, mimeType: rawR.mimeType ?? rawR.type };
+    }
+
     return {
       index: inst.index ?? 0,
       amount: inst.amount ?? 0,
       dueDate: fmtDate(inst.dueDate),
       paidDate: inst.paidDate ? fmtDate(inst.paidDate) : undefined,
       status: instStatus,
+      receipt,
     };
   });
 

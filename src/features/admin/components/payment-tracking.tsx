@@ -4,7 +4,7 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
   Users, Wallet, AlertTriangle, CalendarClock, CircleCheck, Search, Filter,
-  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download,
+  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download, Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 /** Per-installment visual treatment. */
 const INST_STYLE: Record<Installment["status"], { box: string; icon: React.ElementType; dot: string }> = {
   PAID: { box: "border-success/40 bg-success/8 text-success", icon: Check, dot: "bg-success" },
-  DUE: { box: "border-destructive/40 bg-destructive/8 text-destructive", icon: AlertCircle, dot: "bg-destructive" },
+  DUE: { box: "border-destructive bg-destructive/15 text-destructive", icon: AlertCircle, dot: "bg-destructive" },
   SCHEDULED: { box: "border-border bg-muted/40 text-muted-foreground", icon: Clock, dot: "bg-muted-foreground/50" },
 };
 
@@ -40,7 +40,7 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
   completed: "border-success/30 bg-success/10 text-success",
 };
 
-export function PaymentTracking({ invoices: serverInvoices = [] }: { invoices?: Invoice[] }) {
+export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: { invoices?: Invoice[]; counselorId?: string }) {
   const t = useTranslations("Admin");
   const [tab, setTab] = React.useState<"all" | "overdue" | "upcoming" | "paid">("all");
   const [search, setSearch] = React.useState("");
@@ -56,7 +56,7 @@ export function PaymentTracking({ invoices: serverInvoices = [] }: { invoices?: 
     async function load() {
       setIsLoading(true);
       try {
-        const res = await getPayments({ limit: 5000 } as any);
+        const res = await getPayments({ limit: 5000, ...(counselorId ? { counselorId } : {}) } as any);
         if (!active) return;
         if (res.ok && res.data) {
           const rows: any[] = (res.data as any)?.leadPayments?.data ?? [];
@@ -75,7 +75,7 @@ export function PaymentTracking({ invoices: serverInvoices = [] }: { invoices?: 
     }
     load();
     return () => { active = false; };
-  }, []);
+  }, [counselorId]);
 
   // Each installment invoice is one payment plan / schedule.
   const plans = invoices.filter((i) => i.installments && i.installments.length > 0);
@@ -266,13 +266,13 @@ export function PaymentTracking({ invoices: serverInvoices = [] }: { invoices?: 
           view === "grid" ? (
             <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
               {rows.map((p) => (
-                <PlanCard key={p.id} plan={p} t={t} selected={selected.has(p.id)} onToggle={() => toggleOne(p.id)} />
+                <PlanCard key={p.id} plan={p} t={t} selected={selected.has(p.id)} onToggle={() => toggleOne(p.id)} activeTab={tab} />
               ))}
             </div>
           ) : (
             <PlanTable
               rows={rows} t={t} selected={selected} onToggle={toggleOne}
-              allSelected={allSelected} someSelected={someSelected} toggleAll={toggleAll}
+              allSelected={allSelected} someSelected={someSelected} toggleAll={toggleAll} activeTab={tab}
             />
           )
         )}
@@ -295,7 +295,7 @@ export function PaymentTracking({ invoices: serverInvoices = [] }: { invoices?: 
 /** Tabular payment-plans view (à la the old project): one row per plan with the
  * student, course/group, fees, progress, status and per-installment cells. */
 function PlanTable({
-  rows, t, selected, onToggle, allSelected, someSelected, toggleAll,
+  rows, t, selected, onToggle, allSelected, someSelected, toggleAll, activeTab,
 }: {
   rows: Invoice[];
   t: (k: string, vals?: Record<string, string | number>) => string;
@@ -304,6 +304,7 @@ function PlanTable({
   allSelected: boolean;
   someSelected: boolean;
   toggleAll: () => void;
+  activeTab: "all" | "overdue" | "upcoming" | "paid";
 }) {
   const maxInstall = Math.max(1, ...rows.map((p) => p.installments?.length ?? 0));
   return (
@@ -325,12 +326,13 @@ function PlanTable({
         <tbody>
           {rows.map((p) => {
             const inst = p.installments ?? [];
+            const visibleInst = activeTab === "overdue" ? inst.filter((i) => i.status === "DUE") : inst;
             const paid = inst.filter((i) => i.status === "PAID").reduce((s, i) => s + i.amount, 0);
             const pct = p.amount > 0 ? Math.min(100, Math.round((paid / p.amount) * 100)) : 0;
             const status = planStatusOf(inst);
             const isSel = selected.has(p.id);
             return (
-              <tr key={p.id} className={cn("border-b last:border-0 hover:bg-muted/20", isSel && "bg-primary/[0.04]")}>
+              <tr key={p.id} className={cn("border-b last:border-0 hover:bg-muted/20", isSel && "bg-primary/[0.04]", status === "overdue" && "bg-destructive/[0.03]")}>
                 <td className="px-3 py-3"><Checkbox checked={isSel} onCheckedChange={() => onToggle(p.id)} /></td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2.5">
@@ -357,7 +359,7 @@ function PlanTable({
                   </span>
                 </td>
                 {Array.from({ length: maxInstall }).map((_, i) => {
-                  const it = inst[i];
+                  const it = visibleInst[i];
                   return (
                     <td key={i} className="px-3 py-3">
                       {it ? <InstallChip inst={it} t={t} /> : <span className="grid place-items-center text-muted-foreground">—</span>}
@@ -374,14 +376,16 @@ function PlanTable({
 }
 
 function PlanCard({
-  plan, t, selected, onToggle,
+  plan, t, selected, onToggle, activeTab,
 }: {
   plan: Invoice;
   t: (k: string, vals?: Record<string, string | number>) => string;
   selected: boolean;
   onToggle: () => void;
+  activeTab: "all" | "overdue" | "upcoming" | "paid";
 }) {
   const inst = plan.installments ?? [];
+  const visibleInst = activeTab === "overdue" ? inst.filter((i) => i.status === "DUE") : inst;
   const paid = inst.filter((i) => i.status === "PAID").reduce((s, i) => s + i.amount, 0);
   const pct = plan.amount > 0 ? Math.min(100, Math.round((paid / plan.amount) * 100)) : 0;
   const remaining = Math.max(0, plan.amount - paid);
@@ -389,7 +393,11 @@ function PlanCard({
   const statusLabel = t(status === "active" ? "ptStatusActive" : status === "overdue" ? "ptStatusOverdue" : "ptStatusCompleted");
 
   return (
-    <div className={cn("space-y-3 rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/30", selected && "border-primary/50 ring-1 ring-primary/30")}>
+    <div className={cn(
+      "space-y-3 rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-primary/30",
+      selected && "border-primary/50 ring-1 ring-primary/30",
+      status === "overdue" && "border-destructive/40",
+    )}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
@@ -423,7 +431,7 @@ function PlanCard({
 
       {/* Installment timeline */}
       <div className="flex flex-wrap gap-2">
-        {inst.map((i) => <InstallChip key={i.index} inst={i} t={t} />)}
+        {visibleInst.map((i) => <InstallChip key={i.index} inst={i} t={t} />)}
       </div>
     </div>
   );
@@ -440,12 +448,31 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
 
 function InstallChip({ inst, t }: { inst: Installment; t: (k: string, vals?: Record<string, string | number>) => string }) {
   const s = INST_STYLE[inst.status];
+  const hasReceipt = inst.status === "PAID" && !!inst.receipt?.url;
   return (
-    <div className={cn("flex items-center gap-2 rounded-lg border px-2.5 py-1.5", s.box)}>
-      <s.icon className="size-3.5 shrink-0" />
-      <div className="min-w-0 leading-tight">
-        <p className="text-xs font-semibold tabular-nums">{formatCurrency(inst.amount, "EGP")}</p>
-        <p className="truncate text-[0.62rem] opacity-80">{t("ptInstallShort", { n: inst.index })} · {inst.paidDate || inst.dueDate}</p>
+    <div className="relative">
+      {inst.status === "PAID" && (
+        <button
+          onClick={() => hasReceipt ? window.open(inst.receipt!.url, "_blank") : undefined}
+          disabled={!hasReceipt}
+          title={hasReceipt ? "View payment receipt" : "No receipt uploaded"}
+          className={cn(
+            "absolute -top-2.5 end-1 z-10 flex items-center gap-0.5 rounded-full border  px-1.5 py-0.5 text-[0.58rem] font-semibold shadow-sm transition-all",
+            hasReceipt
+              ? "border-success/60 bg-success/10 text-success hover:bg-success/20 cursor-pointer border border-2 text-black"
+              : "border-muted-foreground/20 bg-muted/60 text-muted-foreground/50 cursor-not-allowed",
+          )}
+        >
+          <Receipt className="size-2.5" />
+          <span>Receipt</span>
+        </button>
+      )}
+      <div className={cn("flex items-center gap-2 rounded-lg border px-2.5 py-1.5", inst.status === "PAID" && "pt-3.5", s.box)}>
+        <s.icon className="size-3.5 shrink-0" />
+        <div className="min-w-0 leading-tight">
+          <p className="text-xs font-semibold tabular-nums">{formatCurrency(inst.amount, "EGP")}</p>
+          <p className="truncate text-[0.62rem] opacity-80">{t("ptInstallShort", { n: inst.index })} · {inst.paidDate || inst.dueDate}</p>
+        </div>
       </div>
     </div>
   );

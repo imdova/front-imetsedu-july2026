@@ -19,6 +19,7 @@ export interface Installment {
   dueDate: string;
   paidDate?: string;
   status: InstallmentStatus;
+  receipt?: { url: string; filename?: string; mimeType?: string };
 }
 
 export interface Invoice {
