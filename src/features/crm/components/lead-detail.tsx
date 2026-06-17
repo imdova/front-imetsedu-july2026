@@ -31,6 +31,7 @@ import { toast } from "sonner";
 
 import type { Lead, PipelineStage, ActivityKind, FollowUpStatus } from "@/lib/db/crm";
 import { dal } from "@/lib/dal";
+import { STAGE_MAP } from "@/lib/crm/map-lead";
 import { usePermission } from "@/hooks/use-permission";
 import { cn, getInitials, createId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -284,7 +285,15 @@ export function LeadDetail({
       const updatedPipelines = (updated.pipelines ?? lead.pipelines ?? []).map((p) =>
         p.id === pipelineId ? { ...p, stage: stageKey } : p,
       );
-      setLead({ ...updated, pipelines: updatedPipelines });
+      // The "Pipeline Status" trigger button always reflects the stage just
+      // moved to (same as the pipeline board, where the card's column is the
+      // source of truth) — the backend response can lag behind the
+      // just-saved stage, so don't trust `updated.stageKey` here.
+      setLead({
+        ...updated,
+        pipelines: updatedPipelines,
+        stageKey: STAGE_MAP[stageKey] ?? stageKey,
+      });
       toast.success(t("stageMoved", { stage: stageName }));
       if (stageKey === "enrolled" && logData?.groupId) await enrollInGroup(logData.groupId);
     } else if (!res.ok) {
@@ -785,16 +794,26 @@ function PipelineStatusMenu({
   const [open, setOpen] = React.useState(false);
   const [view, setView] = React.useState<string | null>(null);
 
-  // Compute active pipeline before hook call so we can pass its stages to the hook.
   const active = view ? pipelineStages.find((p) => p.id === view) : null;
-  // Pass the active pipeline's stages so every stage gets its CRM-settings name.
-  const { getDisplayName } = usePipelineStages(active?.stages, { skipFilter: true });
+  // Resolve names exactly like the pipeline board does: filter the excluded
+  // internal keys ("qualified"/"payment") and apply the CRM-settings name
+  // overlay, then render straight off this list — key and name come from
+  // the same object here, so they can never drift apart like they did
+  // before (when a separate raw-list iteration was re-paired via a lookup
+  // keyed only by `key`, which broke once a stray duplicate stage shifted
+  // the overlay's position-based names — "Enrolled" ended up saving as
+  // "Waiting Payment").
+  const { stages: activeStages } = usePipelineStages(active?.stages);
 
   const currentStageKey = (id: string) => pipelines.find((p) => p.id === id)?.stage;
 
-  // Trigger button shows the current stage from the primary pipeline.
-  // fallbackLabel is already the CRM-mapped name from the parent.
-  const current = fallbackLabel;
+  // Trigger button shows the current stage of the lead's primary pipeline,
+  // named using THAT pipeline's own stage list (not an unrelated default
+  // pipeline's), same as the pipeline board resolves names per-pipeline.
+  const primary = pipelines[0];
+  const primaryStages = primary ? pipelineStages.find((p) => p.id === primary.id)?.stages : undefined;
+  const { getDisplayName: getPrimaryDisplayName } = usePipelineStages(primaryStages);
+  const current = primary ? getPrimaryDisplayName(primary.stage) : fallbackLabel;
 
   return (
     <DropdownMenu open={open} onOpenChange={(o) => { setOpen(o); if (!o) setView(null); }}>
@@ -831,10 +850,10 @@ function PipelineStatusMenu({
               {active?.title}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            {(active?.stages ?? []).map((s) => {
+            {activeStages.map((s) => {
               const isCurrent = currentStageKey(view) === s.key;
               const isLost = `${s.key} ${s.name}`.toLowerCase().includes("lost");
-              const displayName = getDisplayName(s.key);
+              const displayName = s.name;
               return (
                 <DropdownMenuItem
                   key={s.key}
