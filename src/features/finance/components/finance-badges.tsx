@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 const INVOICE: Record<string, { key: string; style: string }> = {
   paid: { key: "statusPaid", style: "bg-success/15 text-success" },
+  pending: { key: "statusPending", style: "bg-warning/18 text-warning" },
   partial: { key: "statusPartial", style: "bg-warning/18 text-warning" },
   sent: { key: "statusSent", style: "bg-chart-3/15 text-chart-3" },
   overdue: { key: "statusOverdue", style: "bg-destructive/12 text-destructive" },

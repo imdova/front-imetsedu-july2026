@@ -39,99 +39,84 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
     }
   }, [invoice]);
 
+  // Always resolve status + receipt from the lead endpoint (source of truth).
+  // Deps are stable invoice identifiers only — not courseTitle — to avoid loops.
+  const invoiceId = invoice?.id;
+  const studentId = invoice?.studentId;
+  const planIndex = invoice?.paymentPlanIndex ?? 0;
+  const installmentIndex = invoice?.installmentIndex ?? 0;
   React.useEffect(() => {
-    if (!invoice) return;
-    console.log("DEBUG INVOICE LOADED IN EFFECT:", {
-      number: invoice.number,
-      studentId: invoice.studentId,
-      courseId: invoice.courseId,
-      courseTitle: invoice.courseTitle,
-      paymentReceipt: invoice.paymentReceipt
-    });
-    if (invoice.courseTitle) return;
+    if (!studentId) return;
     let active = true;
 
-    async function resolveFromLead() {
+    async function loadFromLead() {
       try {
-        const leadId = invoice!.studentId;
-        console.log("DEBUG: resolveFromLead starting for leadId:", leadId);
-        if (!leadId) return;
-        const leadRes = await getLeadById(leadId);
-        console.log("DEBUG: getLeadById result:", leadRes);
-        if (active && leadRes.ok && leadRes.data) {
-          const lead = leadRes.data as any;
-          const plan = lead?.data?.paymentPlans?.[0] ?? lead?.paymentPlan ?? {};
-          const courseName = lead.group?.course?.title ?? plan.courseName ?? lead.group?.title ?? (typeof lead.coursesOfInterest?.[0] === "object" ? (lead.coursesOfInterest[0]?.titleEn ?? lead.coursesOfInterest[0]?.titleAr ?? lead.coursesOfInterest[0]?.title) : undefined) ?? lead.coursesOfInterest?.[0];
-          const courseId = plan.courses?.[0] ?? (typeof lead.coursesOfInterest?.[0] === "object" ? lead.coursesOfInterest[0]?._id : lead.coursesOfInterest?.[0]) ?? lead.group?.course?._id;
-          console.log("DEBUG: resolved course details:", { courseName, courseId });
+        const leadRes = await getLeadById(studentId!);
+        if (!active || !leadRes.ok || !leadRes.data) return;
+        const lead = leadRes.data as any;
+        const plan =
+          lead?.data?.paymentPlans?.[planIndex] ??
+          lead?.paymentPlan ??
+          {};
 
-          let thumbnail: string | undefined = undefined;
-          if (courseId) {
-            const courseRes = await getCourseById(courseId);
-            if (active && courseRes.ok && courseRes.data) {
-              const c = courseRes.data;
-              thumbnail = c.image || c.thumbnail || c.cover || undefined;
-            }
-          }
+        // Status: source of truth from lead's installment
+        const instIdx = installmentIndex + 1; // 1-based scope
+        const rawInst = (plan.installments ?? []).find((i: any) => i.index === instIdx);
+        const isInstPaid = rawInst?.status === "PAID";
 
-          // Find receipt matching installment index
-          let receiptObj = undefined;
-          const installmentIndex = invoice!.installmentIndex ?? (invoice as any).installmentIndex ?? 0;
-          const instIdx = installmentIndex + 1; // 1-based index
-          const rawReceipt = (plan.receipts ?? []).find((r: any) => r.scope === instIdx);
-          console.log("DEBUG: rawReceipt found in plan:", rawReceipt);
-          if (rawReceipt) {
-            const isImage = /\.(png|jpe?g|webp|gif|bmp)(\?|$)/i.test(rawReceipt.previewUrl || "");
-            receiptObj = {
-              dataUrl: rawReceipt.previewUrl,
-              filename: rawReceipt.name || "receipt",
-              mimeType: rawReceipt.type || (isImage ? "image/jpeg" : "application/pdf"),
-              size: rawReceipt.size || 0,
-              paidOn: rawReceipt.attachedAt ?? plan.createdAt,
-            };
-          }
-
-          setInvoice((prev) => {
-            if (!prev) return null;
-            return {
-              ...prev,
-              courseTitle: courseName || undefined,
-              courseThumbnail: thumbnail || undefined,
-              paymentReceipt: receiptObj || prev.paymentReceipt,
-            };
-          });
+        // Receipt: matched by scope
+        let receiptObj: any = undefined;
+        const rawReceipt = (plan.receipts ?? []).find((r: any) => r.scope === instIdx);
+        if (rawReceipt) {
+          const isImage = /\.(png|jpe?g|webp|gif|bmp)(\?|$)/i.test(rawReceipt.previewUrl || "");
+          receiptObj = {
+            dataUrl: rawReceipt.previewUrl,
+            filename: rawReceipt.name || "receipt",
+            mimeType: rawReceipt.type || (isImage ? "image/jpeg" : "application/pdf"),
+            size: rawReceipt.size || 0,
+            paidOn: rawReceipt.attachedAt ?? plan.createdAt,
+          };
         }
+
+        // Course name (only if not already resolved)
+        let courseName: string | undefined;
+        let courseThumb: string | undefined;
+        const courseId = plan.courses?.[0] ??
+          (typeof lead.coursesOfInterest?.[0] === "object" ? lead.coursesOfInterest[0]?._id : lead.coursesOfInterest?.[0]) ??
+          lead.group?.course?._id;
+        courseName = lead.group?.course?.title ?? plan.courseName ?? lead.group?.title ??
+          (typeof lead.coursesOfInterest?.[0] === "object"
+            ? (lead.coursesOfInterest[0]?.titleEn ?? lead.coursesOfInterest[0]?.titleAr ?? lead.coursesOfInterest[0]?.title)
+            : undefined) ?? lead.coursesOfInterest?.[0];
+        if (courseId) {
+          const courseRes = await getCourseById(courseId);
+          if (active && courseRes.ok && courseRes.data) {
+            const c = courseRes.data;
+            courseThumb = c.image || c.thumbnail || c.cover || undefined;
+            if (!courseName) courseName = c.titleEn || c.title;
+          }
+        }
+
+        if (!active) return;
+        setInvoice((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            status: isInstPaid ? "paid" : "pending",
+            paymentReceipt: receiptObj ?? prev.paymentReceipt,
+            courseTitle: prev.courseTitle || courseName || undefined,
+            courseThumbnail: prev.courseThumbnail || courseThumb || undefined,
+          };
+        });
       } catch (err) {
-        console.error("Failed to resolve course from lead:", err);
+        console.error("Failed to load from lead:", err);
       }
     }
 
-    async function resolveCourse() {
-      try {
-        const res = await getCourseById(invoice!.courseId!);
-        if (active && res.ok && res.data) {
-          const c = res.data;
-          setInvoice((prev) => {
-            if (!prev) return null;
-            return {
-              ...prev,
-              courseTitle: c.titleEn || c.title || "Untitled Course",
-              courseThumbnail: c.image || c.thumbnail || c.cover || undefined,
-            };
-          });
-        }
-      } catch {
-      }
-    }
-
-    if (invoice.courseId) {
-      resolveCourse();
-    } else {
-      resolveFromLead();
-    }
-
+    loadFromLead();
     return () => { active = false; };
-  }, [invoice?.courseId, invoice?.courseTitle, invoice?.studentId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceId, studentId, planIndex, installmentIndex]);
 
   React.useEffect(() => {
     if (initial || !id) return;

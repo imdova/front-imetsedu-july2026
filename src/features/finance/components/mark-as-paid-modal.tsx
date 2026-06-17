@@ -29,8 +29,14 @@ export function ReceiptPreview({ receipt, className }: { receipt: Receipt; class
   const isPdf = receipt.name.toLowerCase().endsWith(".pdf") || (receipt.url && receipt.url.toLowerCase().includes(".pdf"));
   if (receipt.url && !isPdf) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={receipt.url} alt={receipt.name} className={cn("w-full rounded-lg border bg-muted/40 object-contain", className)} />
+      <div className={cn("flex items-center justify-center overflow-hidden rounded-lg border bg-muted/40", className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={receipt.url}
+          alt={receipt.name}
+          className="max-h-full max-w-full object-contain"
+        />
+      </div>
     );
   }
   return (
@@ -43,9 +49,8 @@ export function ReceiptPreview({ receipt, className }: { receipt: Receipt; class
 
 /**
  * "Mark as paid" flow — a receipt MUST be uploaded before the invoice can be
- * marked paid. Shared by the invoice detail page and the invoices list so the
- * requirement is enforced everywhere. The receipt is staged client-side (no
- * upload endpoint yet); on confirm we PATCH the invoice status to paid.
+ * marked paid. Parses compound invoice IDs (leadId-planIndex-installmentIndex)
+ * and calls markInstallmentPaid on the lead endpoint.
  */
 export function MarkAsPaidModal({
   invoice, open, onOpenChange, onConfirmed,
@@ -57,30 +62,76 @@ export function MarkAsPaidModal({
 }) {
   const t = useTranslations("Finance");
   const [staged, setStaged] = React.useState<Receipt | null>(null);
+  const [stagedFile, setStagedFile] = React.useState<File | null>(null);
   const [dragOver, setDragOver] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => () => { if (staged?.url) URL.revokeObjectURL(staged.url); }, [staged]);
+  React.useEffect(() => () => { if (staged?.url && staged.url.startsWith("blob:")) URL.revokeObjectURL(staged.url); }, [staged]);
 
   const acceptFile = (f: File | undefined | null) => {
     if (!f) return;
     if (f.size > 10 * 1024 * 1024) { toast.error(t("receiptTooLarge")); return; }
     const isImage = f.type.startsWith("image/");
+    setStagedFile(f);
     setStaged({ name: f.name, paidOn: invoice.dueDate, url: isImage ? URL.createObjectURL(f) : null, size: formatBytes(f.size) });
   };
 
-  const close = () => { setStaged(null); onOpenChange(false); };
+  const close = () => { setStaged(null); setStagedFile(null); onOpenChange(false); };
 
   const confirm = async () => {
-    if (!staged) return;
+    if (!staged || !stagedFile) return;
     setSaving(true);
-    const res = await dal.finance.markInvoicePaid(invoice.id);
-    setSaving(false);
-    const updated = res.ok && res.data ? res.data : { ...invoice, status: "paid" as const, paid: invoice.amount };
-    onConfirmed(updated, staged);
-    setStaged(null);
-    onOpenChange(false);
-    toast.success(t("markPaidDone"));
+    try {
+      // Upload the receipt file
+      const up = await dal.upload.uploadFile(stagedFile);
+      if (!up.ok) { toast.error((up as any).error ?? "Upload failed"); return; }
+      const uploadedUrl = up.data.url;
+
+      // Parse compound ID: leadId-planIndex-installmentIndex (0-based indices)
+      const parts = invoice.id.split("-");
+      const isCompound =
+        parts.length >= 3 &&
+        /^\d+$/.test(parts[parts.length - 1]) &&
+        /^\d+$/.test(parts[parts.length - 2]);
+
+      if (isCompound) {
+        const installmentIdx0 = parseInt(parts[parts.length - 1]);
+        const planIndex = parseInt(parts[parts.length - 2]);
+        const leadId = parts.slice(0, -2).join("-");
+
+        // installment.index in lead API is 1-based; compound ID stores 0-based
+        const res = await dal.crm.markInstallmentPaid(leadId, planIndex, installmentIdx0 + 1, {
+          url: uploadedUrl,
+          name: stagedFile.name,
+          size: stagedFile.size,
+          type: stagedFile.type,
+        });
+        if (!res.ok) { toast.error((res as any).error ?? "Failed to mark as paid"); return; }
+      } else {
+        // Fallback for non-compound IDs
+        await dal.finance.markInvoicePaid(invoice.id);
+      }
+
+      const finalReceipt: Receipt = { ...staged, url: uploadedUrl };
+      onConfirmed({
+        ...invoice,
+        status: "paid" as const,
+        paid: invoice.amount,
+        paymentReceipt: {
+          dataUrl: uploadedUrl,
+          filename: stagedFile.name,
+          mimeType: stagedFile.type,
+          size: stagedFile.size,
+          paidOn: invoice.dueDate,
+        },
+      }, finalReceipt);
+      setStaged(null);
+      setStagedFile(null);
+      onOpenChange(false);
+      toast.success(t("markPaidDone"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -95,7 +146,7 @@ export function MarkAsPaidModal({
         </DialogHeader>
 
         {staged ? (
-          <div className="space-y-3 rounded-xl border p-3">
+          <div className="space-y-3 overflow-hidden rounded-xl border p-3">
             <ReceiptPreview receipt={staged} className="h-48" />
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -103,7 +154,7 @@ export function MarkAsPaidModal({
                 <span className="truncate font-medium">{staged.name}</span>
                 <span className="shrink-0 text-muted-foreground">({staged.size})</span>
               </span>
-              <Button variant="ghost" size="sm" className="gap-1.5 text-destructive" onClick={() => setStaged(null)}>
+              <Button variant="ghost" size="sm" className="gap-1.5 text-destructive" onClick={() => { setStaged(null); setStagedFile(null); }}>
                 <X className="size-4" />{t("removeReceipt")}
               </Button>
             </div>

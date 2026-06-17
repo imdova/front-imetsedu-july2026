@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { InvoicesTable } from "./invoices-table";
 
 const EMPTY_STATS: FinanceStats = { collected: 0, outstanding: 0, overdue: 0, refunded: 0 };
-const STATUSES = ["draft", "sent", "partial", "paid", "overdue"] as const;
+const STATUSES = ["pending", "paid"] as const;
 const RANGES = ["all", "today", "7_days", "month", "year"] as const;
 type Range = (typeof RANGES)[number];
 
@@ -90,7 +90,7 @@ export function InvoicesModule({
 
   const count = (s: string) => invoices.filter((i) => i.status === s).length;
   const draft = count("draft"), sent = count("sent"), paid = count("paid");
-  const unpaid = invoices.filter((i) => i.status !== "paid" && i.status !== "draft").length;
+  const unpaid = count("pending");
   const overdueCount = count("overdue");
 
   const tabs = [

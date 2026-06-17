@@ -27,7 +27,12 @@ export function mapInvoice(raw: any): Invoice {
   // BackendInvoice row directly (no sub-doc) — handle both.
   const inv = raw?.invoice ?? {};
   const rawStatus = (inv.status ?? raw.status ?? raw.installment?.status ?? "").toLowerCase();
-  const status: InvoiceStatus = STATUS_MAP[rawStatus] ?? "sent";
+
+  // Installment status from the lead's payment plan data embedded in the row.
+  // "PAID" → paid; "DUE" / "SCHEDULED" / anything else → pending.
+  const instStatus = (raw.installment?.status ?? "").toUpperCase();
+  const isPaid = instStatus === "PAID" || STATUS_MAP[rawStatus] === "paid";
+  const status: InvoiceStatus = isPaid ? "paid" : "pending";
   const amount = inv.totalDue ?? raw.totalDue ?? raw.installment?.amount ?? 0;
 
   const rawCourse = Array.isArray(raw.courses) ? raw.courses[0] : undefined;
@@ -43,19 +48,25 @@ export function mapInvoice(raw: any): Invoice {
       ? `${raw._id}-${raw.paymentPlanIndex}-${raw.installmentIndex}`
       : null;
 
+  // Match receipt to THIS installment specifically by scope (1-based installment.index).
+  // raw.receipts is the plan's receipts array shared across all installments —
+  // using [0] would incorrectly show the same receipt on every installment row.
   let paymentReceipt: any = undefined;
-  // Try to read from raw.receipts first
-  const firstReceipt = raw.receipts?.[0] ?? inv.receipts?.[0] ?? raw.invoice?.receipts?.[0];
-  if (firstReceipt) {
+  const planReceipts: any[] = raw.receipts ?? inv.receipts ?? raw.invoice?.receipts ?? [];
+  const installmentScope = raw.installment?.index; // 1-based
+  const matchedReceipt = installmentScope != null
+    ? planReceipts.find((r: any) => r.scope === installmentScope)
+    : planReceipts[0]; // non-installment invoices: use first receipt
+
+  if (matchedReceipt) {
     paymentReceipt = {
-      dataUrl: firstReceipt.previewUrl,
-      filename: firstReceipt.name,
-      mimeType: firstReceipt.type,
-      size: firstReceipt.size,
-      uploadedAt: firstReceipt.attachedAt ?? new Date().toISOString(),
+      dataUrl: matchedReceipt.previewUrl,
+      filename: matchedReceipt.name,
+      mimeType: matchedReceipt.type,
+      size: matchedReceipt.size,
+      paidOn: matchedReceipt.attachedAt ?? new Date().toISOString(),
     };
   } else {
-    // Fallback to paymentReceipt (for both manual and installment if receipts list is empty)
     const rawReceipt = raw.paymentReceipt ?? inv.paymentReceipt ?? raw.invoice?.paymentReceipt;
     if (rawReceipt) {
       if (typeof rawReceipt === "string") {
@@ -82,6 +93,7 @@ export function mapInvoice(raw: any): Invoice {
 
   const studentId = raw.leadId ?? (raw.leadId as any)?._id ?? inv.leadId ?? (inv.leadId as any)?._id;
   const installmentIndex = raw.installmentIndex ?? (raw.installment?.index != null ? raw.installment.index - 1 : undefined);
+  const paymentPlanIndex = raw.paymentPlanIndex ?? 0;
 
   return {
     id: compoundId ?? inv._id ?? raw._id,
@@ -104,6 +116,7 @@ export function mapInvoice(raw: any): Invoice {
     paymentReceipt,
     studentId,
     installmentIndex,
+    paymentPlanIndex,
   };
 }
 

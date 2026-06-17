@@ -30,8 +30,8 @@ export const fetchFinanceStats = async (): Promise<Result<db.FinanceStats>> => {
 };
 
 /** LIVE: invoices from GET /crm/invoices (one row per installment), mapped to
- * the UI Invoice shape. Each row's invoice._id is used as the link ID so the
- * detail page can fetch by invoiceId. */
+ * the UI Invoice shape. Status comes from the embedded installment data
+ * (lead's payment plan) and is normalised to "paid" | "pending" only. */
 export const fetchInvoices = async (): Promise<Result<db.Invoice[]>> => {
   const res = await invoicesSvc.getInvoices({ limit: 200 });
   if (!res.ok) return res;

@@ -7,7 +7,7 @@ import { clone, delay, respond } from "./delay";
 
 export type Currency = "EGP" | "SAR" | "USD";
 export type InvoiceType = "one-off" | "installment";
-export type InvoiceStatus = "draft" | "sent" | "partial" | "paid" | "overdue";
+export type InvoiceStatus = "draft" | "sent" | "partial" | "paid" | "overdue" | "pending";
 export type InstallmentStatus = "PAID" | "DUE" | "SCHEDULED";
 export type PaymentMethod = "Bank transfer" | "Card" | "Cash" | "Fawry" | "Paymob";
 export type PaymentStatus = "completed" | "pending";
@@ -46,6 +46,7 @@ export interface Invoice {
   paymentReceipt?: any;
   studentId?: string;
   installmentIndex?: number;
+  paymentPlanIndex?: number;
 }
 
 export interface Payment {
