@@ -469,17 +469,16 @@ function InstallChip({ inst, t }: { inst: Installment; t: (k: string, vals?: Rec
           disabled={!hasReceipt}
           title={hasReceipt ? "View payment receipt" : "No receipt uploaded"}
           className={cn(
-            "absolute -top-2.5 end-1 z-10 flex items-center gap-0.5 rounded-full border  px-1.5 py-0.5 text-[0.58rem] font-semibold shadow-sm transition-all",
+            "absolute -top-2.5 -inset-e-2.5 z-10 flex size-6 items-center justify-center rounded-full border-2 bg-white shadow-md transition-all",
             hasReceipt
-              ? "border-success/60 bg-success/10 text-success hover:bg-success/20 cursor-pointer border border-2 text-black"
-              : "border-muted-foreground/20 bg-muted/60 text-muted-foreground/50 cursor-not-allowed",
+              ? "border-success text-success hover:bg-success hover:text-white cursor-pointer"
+              : "border-muted-foreground/30 text-muted-foreground/50 cursor-not-allowed",
           )}
         >
-          <Receipt className="size-2.5" />
-          <span>Receipt</span>
+          <Receipt className="size-3.5" strokeWidth={2.5} />
         </button>
       )}
-      <div className={cn("flex items-center gap-2 rounded-lg border px-2.5 py-1.5", inst.status === "PAID" && "pt-3.5", s.box)}>
+      <div className={cn("flex items-center gap-2 rounded-lg border px-2.5 py-1.5", s.box)}>
         <s.icon className="size-3.5 shrink-0" />
         <div className="min-w-0 leading-tight">
           <p className="text-xs font-semibold tabular-nums">{formatCurrency(inst.amount, "EGP")}</p>

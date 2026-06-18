@@ -21,16 +21,21 @@ export default async function StudentCoursePage({
   if (!courseRes.ok || !courseRes.data) notFound();
 
   const liveEvents = (scheduleRes.ok ? scheduleRes.data : []).filter((e) => e.kind === "live-class");
-  // Issued certificate(s) for THIS course (matched by title).
-  const courseTitle = courseRes.data.title.trim().toLowerCase();
-  const certificates = (certsRes.ok ? certsRes.data : []).filter(
-    (c) => (c.course ?? "").trim().toLowerCase() === courseTitle,
+  // Issued certificate(s) for THIS course: either issued directly against the
+  // LMS course, or issued through a group that's assigned to this course.
+  const course = courseRes.data;
+  const assignedGroupIds = new Set(course.assignedGroupIds ?? []);
+  const courseTitle = course.title.trim().toLowerCase();
+  const certificates = (certsRes.ok ? certsRes.data : []).filter((c) =>
+    c.lmsId || c.groupId
+      ? c.lmsId === course.id || (!!c.groupId && assignedGroupIds.has(c.groupId))
+      : (c.course ?? "").trim().toLowerCase() === courseTitle,
   );
 
   return (
     <div className="mx-auto max-w-[1400px]">
       <CourseDetailView
-        course={courseRes.data}
+        course={course}
         assignments={assignmentsRes.ok ? assignmentsRes.data : []}
         liveEvents={liveEvents}
         certificates={certificates}

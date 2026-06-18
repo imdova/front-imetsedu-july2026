@@ -71,6 +71,7 @@ export function mapEnrolledCourse(c: any): EnrolledCourse {
       title: m?.title ?? "Material",
       url: m?.document ?? m?.url ?? "",
     })),
+    assignedGroupIds: (c?.assignedGroups ?? []).map((g: any) => (typeof g === "string" ? g : (g?._id ?? g?.id))).filter(Boolean),
   };
 }
 
@@ -105,6 +106,8 @@ export function mapCertificate(raw: any): Certificate {
       raw?.lmsId?.title ?? raw?.groupId?.title ?? "—",
     issuedAt: String(raw?.issuedAt ?? raw?.createdAt ?? "").slice(0, 10) || "—",
     link: raw?.certificateLink ?? raw?.link ?? undefined,
+    lmsId: typeof raw?.lmsId === "string" ? raw.lmsId : (raw?.lmsId?._id ?? raw?.lmsId?.id ?? undefined),
+    groupId: typeof raw?.groupId === "string" ? raw.groupId : (raw?.groupId?._id ?? raw?.groupId?.id ?? undefined),
   };
 }
 

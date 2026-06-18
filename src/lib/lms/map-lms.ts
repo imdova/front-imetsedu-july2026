@@ -57,16 +57,19 @@ export interface LmsAssignmentRow {
   dueDate: string;
   createdDate: string;
   attachments: number;
+  files: string[];
 }
 export function mapLmsAssignment(raw: any): LmsAssignmentRow {
   const p = String(raw?.priority ?? "regular");
+  const files = Array.isArray(raw?.files) ? raw.files : [];
   return {
     id: raw?._id ?? raw?.id ?? "",
     title: raw?.title ?? raw?.titleEn ?? "—",
     priority: p.charAt(0).toUpperCase() + p.slice(1),
     dueDate: fmtDate(raw?.dueDate),
     createdDate: fmtDate(raw?.createdAt),
-    attachments: Array.isArray(raw?.files) ? raw.files.length : 0,
+    attachments: files.length,
+    files,
   };
 }
 

@@ -59,9 +59,12 @@ export const fetchLmsSubcategories = async (): Promise<Result<LmsSubcategory[]>>
   }
 };
 
-/* ── Course assignments (Assignments Hub) — LIVE via /assignments?lmsId= ── */
-export const fetchLmsAssignments = async (lmsId: string): Promise<Result<LmsAssignmentRow[]>> => {
-  const res = await assignmentsSvc.listAssignments({ lmsId, limit: 200 });
+/* ── Assignments (LMS course OR group — LIVE via /assignments?lmsId=|group=) ──
+ * A given assignment belongs to exactly one scope: pass `lmsId` for an
+ * LMS-course assignment, or `group` for a group assignment — never both,
+ * the backend create DTO is scoped to a single owner. */
+export const fetchAssignments = async (scope: { lmsId?: string; group?: string }): Promise<Result<LmsAssignmentRow[]>> => {
+  const res = await assignmentsSvc.listAssignments({ ...scope, limit: 200 });
   if (!res.ok) return res;
   try {
     return ok(arr<any>(res.data).map(mapLmsAssignment));
@@ -70,18 +73,10 @@ export const fetchLmsAssignments = async (lmsId: string): Promise<Result<LmsAssi
   }
 };
 
-export const createLmsAssignment = async (input: {
-  title: string; lmsId: string; dueDate: string; priority?: string; files?: string[];
+export const createAssignment = async (input: {
+  title: string; dueDate: string; priority?: string; files?: string[]; lmsId?: string; group?: string;
 }): Promise<Result<LmsAssignmentRow>> => {
-  // Resolve the LMS course's assigned group so the assignment is submittable by
-  // students (the backend submit flow requires assignment.group).
-  let group: string | undefined;
-  const courseRes = await lmsCoursesSvc.getLmsCourseById(input.lmsId);
-  if (courseRes.ok) {
-    const g = (courseRes.data as { assignedGroups?: unknown[] })?.assignedGroups?.[0];
-    group = typeof g === "string" ? g : (g as { _id?: string })?._id;
-  }
-  const res = await assignmentsSvc.createAssignment({ ...input, ...(group ? { group } : {}) } as never);
+  const res = await assignmentsSvc.createAssignment(input as never);
   if (!res.ok) return res;
   try {
     return ok(mapLmsAssignment(res.data));

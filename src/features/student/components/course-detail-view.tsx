@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import {
   Play, PlayCircle, HelpCircle, ChevronDown, Video, CalendarDays, Search, Download,
   Send, Award, FileText, UploadCloud, MessageSquare, Building2, CheckCircle2,
-  LayoutGrid, List as ListIcon, Lock, Paperclip,
+  LayoutGrid, List as ListIcon, Lock, Paperclip, Loader2, X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -275,6 +275,13 @@ function AssignmentsTab({ assignments, t }: { assignments: StudentAssignment[]; 
     return <span className={cn("inline-block rounded-md px-2 py-0.5 text-xs font-semibold uppercase", cls)}>{label}</span>;
   };
 
+  const briefButton = (a: StudentAssignment, full?: boolean) =>
+    !!a.files?.length && (
+      <Button size="sm" variant="ghost" className={cn("gap-1.5", full && "w-full")} title={t("cdSubAssignmentFiles")} onClick={() => window.open(a.files![0], "_blank")}>
+        <Paperclip className="size-3.5" />{t("cdDownloadBrief")}
+      </Button>
+    );
+
   const action = (a: StudentAssignment, full?: boolean) => {
     if (isClosed(a)) return <Button size="sm" variant="secondary" disabled className={cn("gap-1.5", full && "w-full")}><Lock className="size-3.5" />{t("cdClosed")}</Button>;
     if (a.status === "pending") return <Button size="sm" onClick={() => setActive(a)} className={cn(full && "w-full")}>{t("cdSubmit")}</Button>;
@@ -321,7 +328,7 @@ function AssignmentsTab({ assignments, t }: { assignments: StudentAssignment[]; 
                   <td className="px-3 py-3 text-muted-foreground">{a.dueDate}</td>
                   <td className="px-3 py-3">{statusBadge(a)}</td>
                   <td className="px-3 py-3 text-muted-foreground tabular-nums">{a.grade != null ? `${a.grade}/${a.maxGrade}` : "--"}</td>
-                  <td className="px-5 py-3"><div className="flex justify-end">{action(a)}</div></td>
+                  <td className="px-5 py-3"><div className="flex justify-end gap-1">{briefButton(a)}{action(a)}</div></td>
                 </tr>
               ))}
             </tbody>
@@ -338,7 +345,7 @@ function AssignmentsTab({ assignments, t }: { assignments: StudentAssignment[]; 
                 <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Paperclip className="size-3.5" />{t("cdAttachments", { n: a.files?.length ?? 0 })}</p>
                 <p className="mt-2 text-xs text-muted-foreground">{t("cdColDeadline")}: {a.dueDate}</p>
                 <p className="text-xs text-muted-foreground">{t("cdColGrade")}: {a.grade != null ? `${a.grade}/${a.maxGrade}` : "--"}</p>
-                <div className="mt-3">{action(a, true)}</div>
+                <div className="mt-3 flex flex-col gap-2">{briefButton(a, true)}{action(a, true)}</div>
               </div>
             ))}
           </div>
@@ -350,13 +357,35 @@ function AssignmentsTab({ assignments, t }: { assignments: StudentAssignment[]; 
   );
 }
 
+function fileNameFromUrl(url: string): string {
+  try {
+    return decodeURIComponent(url.split("/").pop() || url);
+  } catch {
+    return url;
+  }
+}
+
 function SubmitModal({ assignment, onClose, t }: { assignment: StudentAssignment | null; onClose: () => void; t: T }) {
   const [url, setUrl] = React.useState("");
+  const [fileName, setFileName] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [confirm, setConfirm] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
-  React.useEffect(() => { if (assignment) { setUrl(""); setNotes(""); setConfirm(false); } }, [assignment]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => { if (assignment) { setUrl(""); setFileName(""); setNotes(""); setConfirm(false); } }, [assignment]);
   if (!assignment) return null;
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    const res = await dal.student.uploadStudentFile(file);
+    setUploading(false);
+    if (res.ok) { setUrl(res.data); setFileName(file.name); }
+    else toast.error(res.error || t("cdSubUploadFailed"));
+  };
 
   const submit = async () => {
     if (!url.trim()) { toast.error(t("cdSubNeedFile")); return; }
@@ -373,15 +402,50 @@ function SubmitModal({ assignment, onClose, t }: { assignment: StudentAssignment
       <DialogContent className="sm:max-w-lg">
         <h3 className="font-heading text-xl font-bold">{t("cdSubTitle")}</h3>
         <div className="space-y-4">
-          <div className="grid place-items-center gap-1.5 rounded-2xl border-2 border-dashed border-border/70 bg-muted/20 py-8 text-center">
-            <UploadCloud className="size-8 text-primary" />
-            <p className="text-sm">{t("cdSubDrop")}</p>
-            <p className="text-xs text-muted-foreground">{t("cdSubBrowse")} {t("cdSubFrom")}</p>
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium">{t("cdSubFileLabel")}</Label>
-            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/my-submission.pdf" />
-          </div>
+          {!!assignment.files?.length && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{t("cdSubAssignmentFiles")}</Label>
+              <ul className="space-y-1.5">
+                {assignment.files.map((f, i) => (
+                  <li key={f}>
+                    <a
+                      href={f}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm hover:bg-muted/40"
+                    >
+                      <FileText className="size-4 shrink-0 text-primary" />
+                      <span className="min-w-0 flex-1 truncate">{fileNameFromUrl(f) || `${t("cdDownload")} ${i + 1}`}</span>
+                      <Download className="size-3.5 shrink-0 text-muted-foreground" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <input ref={fileInputRef} type="file" className="hidden" onChange={onFileChange} />
+          {fileName ? (
+            <div className="flex items-center gap-2 rounded-2xl border border-success/40 bg-success/[0.05] px-4 py-3">
+              <CheckCircle2 className="size-5 shrink-0 text-success" />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">{fileName}</span>
+              <Button type="button" variant="ghost" size="icon" className="size-7 shrink-0" onClick={() => { setUrl(""); setFileName(""); }}>
+                <X className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="grid w-full place-items-center gap-1.5 rounded-2xl border-2 border-dashed border-border/70 bg-muted/20 py-8 text-center transition-colors hover:bg-muted/30 disabled:opacity-60"
+            >
+              {uploading ? <Loader2 className="size-8 animate-spin text-primary" /> : <UploadCloud className="size-8 text-primary" />}
+              <p className="text-sm">{uploading ? t("cdSubUploading") : t("cdSubDrop")}</p>
+              <p className="text-xs text-muted-foreground">{t("cdSubBrowse")} {t("cdSubFrom")}</p>
+            </button>
+          )}
+
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-sm font-medium"><MessageSquare className="size-4" />{t("cdSubNote")}</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t("cdSubNotePh")} className="min-h-24" />
@@ -393,7 +457,7 @@ function SubmitModal({ assignment, onClose, t }: { assignment: StudentAssignment
         </div>
         <div className="flex items-center justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={onClose}>{t("cdSubCancel")}</Button>
-          <Button className="gap-2" disabled={busy} onClick={submit}><Send className="size-4" />{t("cdSubSubmit")}</Button>
+          <Button className="gap-2" disabled={busy || uploading || !url} onClick={submit}><Send className="size-4" />{t("cdSubSubmit")}</Button>
         </div>
       </DialogContent>
     </Dialog>

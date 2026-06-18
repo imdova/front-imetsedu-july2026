@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
-  Plus, SlidersHorizontal, UploadCloud, Link2, FileText, Trash2, Pencil, Paperclip, UserPlus, Download, Search, Columns3,
+  Plus, SlidersHorizontal, UploadCloud, Link2, FileText, Trash2, Pencil, Paperclip, UserPlus, Download, Search, Columns3, Loader2, X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,7 +23,7 @@ type EnrolledStudent = { id: string; name: string; email: string; country: strin
 type StudentOption = { id: string; name: string; email: string };
 
 interface Material { id: string; name: string; category: string; size: string; uploadDate: string; targetGroup: string }
-interface Assignment { id: string; title: string; priority: string; dueDate: string; createdDate: string; attachments: number }
+interface Assignment { id: string; title: string; priority: string; dueDate: string; createdDate: string; attachments: number; files: string[] }
 
 /* ───────────────────────── Study Materials ───────────────────────── */
 export function StudyMaterialsTab({ lmsId, initial = [] }: { lmsId: string; initial?: Material[] }) {
@@ -159,30 +159,50 @@ export function StudyMaterialsTab({ lmsId, initial = [] }: { lmsId: string; init
   );
 }
 
-/* ───────────────────────── Assignments ───────────────────────── */
-export function AssignmentsTab({ lmsId }: { lmsId: string }) {
+/* ───────────────────────── Assignments ─────────────────────────
+ * Scoped to exactly one owner: pass `lmsId` for an LMS-course assignment, or
+ * `groupId` for a group assignment — never both (the backend create DTO
+ * expects a single owner field). */
+export function AssignmentsTab({ lmsId, groupId }: { lmsId?: string; groupId?: string }) {
   const t = useTranslations("Admin");
   const [rows, setRows] = React.useState<Assignment[]>([]);
   const [open, setOpen] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [dueDate, setDueDate] = React.useState("");
   const [priority, setPriority] = React.useState("regular");
+  const [files, setFiles] = React.useState<{ name: string; url: string }[]>([]);
+  const [uploading, setUploading] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
-    if (!lmsId) return;
-    dal.lms.fetchLmsAssignments(lmsId).then((res) => { if (res.ok) setRows(res.data); });
-  }, [lmsId]);
+    if (!lmsId && !groupId) return;
+    dal.lms.fetchAssignments({ lmsId, group: groupId }).then((res) => { if (res.ok) setRows(res.data); });
+  }, [lmsId, groupId]);
+
+  const onFiles = async (list: FileList | null) => {
+    if (!list?.length) return;
+    setUploading(true);
+    for (const file of Array.from(list)) {
+      const res = await dal.upload.uploadFile(file);
+      if (res.ok) setFiles((p) => [...p, { name: file.name, url: res.data.url }]);
+      else toast.error(res.error || t("asgUploadFailed"));
+    }
+    setUploading(false);
+  };
+  const removeFile = (url: string) => setFiles((p) => p.filter((f) => f.url !== url));
 
   const add = async () => {
     if (!title.trim() || !dueDate) return;
     setBusy(true);
-    const res = await dal.lms.createLmsAssignment({ title, lmsId, dueDate, priority });
+    const res = await dal.lms.createAssignment({
+      title, dueDate, priority, files: files.map((f) => f.url),
+      ...(lmsId ? { lmsId } : { group: groupId }),
+    });
     setBusy(false);
     if (res.ok) {
       setRows((p) => [res.data, ...p]);
       toast.success(t("asgCreated"));
-      setOpen(false); setTitle(""); setDueDate(""); setPriority("regular");
+      setOpen(false); setTitle(""); setDueDate(""); setPriority("regular"); setFiles([]);
     } else {
       toast.error(res.error || t("asgCreated"));
     }
@@ -223,7 +243,15 @@ export function AssignmentsTab({ lmsId }: { lmsId: string }) {
                 <td className="px-3 py-3"><Badge variant="secondary">{a.priority}</Badge></td>
                 <td className="px-3 py-3 text-muted-foreground">{a.dueDate}</td>
                 <td className="px-3 py-3 text-muted-foreground tabular-nums">{a.createdDate}</td>
-                <td className="px-3 py-3 text-center"><span className="inline-flex items-center gap-1 text-muted-foreground tabular-nums"><Paperclip className="size-3.5" />{a.attachments}</span></td>
+                <td className="px-3 py-3 text-center">
+                  {a.attachments > 0 ? (
+                    <button type="button" onClick={() => window.open(a.files[0], "_blank")} className="inline-flex items-center gap-1 text-primary tabular-nums hover:underline">
+                      <Paperclip className="size-3.5" />{a.attachments}
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-muted-foreground tabular-nums"><Paperclip className="size-3.5" />{a.attachments}</span>
+                  )}
+                </td>
                 <td className="px-5 py-3"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8 text-primary"><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => remove(a.id)}><Trash2 className="size-4" /></Button></div></td>
               </tr>
             ))}
@@ -245,15 +273,27 @@ export function AssignmentsTab({ lmsId }: { lmsId: string }) {
             </div>
             <div className="space-y-1.5">
               <Label>{t("asgAttachments")}</Label>
-              <label className="grid cursor-pointer place-items-center gap-1.5 rounded-xl border-2 border-dashed py-8 text-center hover:bg-muted/30">
-                <UploadCloud className="size-7 text-muted-foreground" /><p className="font-medium">{t("asgUploadFiles")}</p><p className="text-xs text-muted-foreground">{t("asgUploadHint")}</p>
-                <input type="file" multiple className="hidden" />
+              {files.length > 0 && (
+                <ul className="space-y-1.5">
+                  {files.map((f) => (
+                    <li key={f.url} className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
+                      <FileText className="size-4 shrink-0 text-primary" />
+                      <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                      <Button type="button" variant="ghost" size="icon" className="size-6 shrink-0" onClick={() => removeFile(f.url)}><X className="size-3.5" /></Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <label className={cn("grid cursor-pointer place-items-center gap-1.5 rounded-xl border-2 border-dashed py-8 text-center hover:bg-muted/30", uploading && "pointer-events-none opacity-70")}>
+                {uploading ? <Loader2 className="size-7 animate-spin text-muted-foreground" /> : <UploadCloud className="size-7 text-muted-foreground" />}
+                <p className="font-medium">{uploading ? t("smUploading") : t("asgUploadFiles")}</p><p className="text-xs text-muted-foreground">{t("asgUploadHint")}</p>
+                <input type="file" multiple accept=".pdf,.doc,.docx,.xlsx,.pptx,.zip" disabled={uploading} className="hidden" onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
               </label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>{t("smCancel")}</Button>
-            <Button onClick={add} disabled={!title.trim() || !dueDate || busy}>{t("asgModalTitle")}</Button>
+            <Button onClick={add} disabled={!title.trim() || !dueDate || busy || uploading}>{t("asgModalTitle")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -40,6 +40,9 @@ export interface EnrolledCourse {
   subcategory?: string;
   isFavorite?: boolean;
   materials?: CourseMaterial[];
+  /** Group ids assigned to this LMS course — used to match a student's
+   * group-issued certificates back to this course. */
+  assignedGroupIds?: string[];
 }
 
 export interface CourseMaterial {
@@ -78,6 +81,11 @@ export interface Certificate {
   issuedAt: string;
   /** Downloadable certificate file URL, when issued. */
   link?: string;
+  /** LMS course id this certificate was issued for directly, when present. */
+  lmsId?: string;
+  /** Group id this certificate was issued through, when present — the group
+   * may be assigned to an LMS course (see `EnrolledCourse.assignedGroupIds`). */
+  groupId?: string;
 }
 
 export type NotificationType = "grade" | "deadline" | "content" | "announce" | "cert" | "payment";

@@ -5,8 +5,6 @@ import { useTranslations } from "next-intl";
 import {
   ArrowLeft, LayoutGrid, MoreHorizontal, Plus, Users, Trophy, TrendingUp, DollarSign, CalendarDays, Clock, Video, UserCog, ChevronRight, Search, Mail, Phone, Award, Trash2, Filter,
 } from "lucide-react";
-import { toast } from "sonner";
-
 import { Link } from "@/i18n/navigation";
 import type { GroupDetail, RosterStudent } from "@/lib/db/groups";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
@@ -15,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AddStudentDialog } from "./add-student-dialog";
+import { AssignmentsTab } from "./lms-extra-tabs";
 
 type Tab = "overview" | "students" | "lms" | "assignments";
 
@@ -61,7 +61,7 @@ export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="size-9"><MoreHorizontal className="size-4" /></Button>
-          <Button className="gap-1.5"><Plus className="size-4" />{t("gdAddStudent")}</Button>
+          <AddStudentDialog groupId={group.id} className="gap-1.5"><Plus className="size-4" />{t("gdAddStudent")}</AddStudentDialog>
         </div>
       </div>
 
@@ -99,8 +99,9 @@ export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail
       </div>
 
       {tab === "overview" && <Overview group={group} t={t} />}
-      {tab === "students" && <StudentsList roster={group.roster} t={t} isStaff={isStaff} />}
-      {(tab === "lms" || tab === "assignments") && (
+      {tab === "students" && <StudentsList groupId={group.id} roster={group.roster} t={t} isStaff={isStaff} />}
+      {tab === "assignments" && <AssignmentsTab groupId={group.id} />}
+      {tab === "lms" && (
         <div className="grid place-items-center rounded-xl border border-dashed py-20 text-center text-muted-foreground">{t("lmsEmptyTab")}</div>
       )}
     </div>
@@ -135,7 +136,7 @@ function Overview({ group, t }: { group: GroupDetail; t: (k: string, v?: Record<
           <div className="mt-4 grid place-items-center gap-3 rounded-xl border border-dashed py-12 text-center">
             <span className="grid size-12 place-items-center rounded-xl bg-muted"><Users className="size-6 text-muted-foreground" /></span>
             <p className="font-semibold">{t("gdNoStudents")}</p><p className="text-sm text-muted-foreground">{t("gdNoStudentsHint")}</p>
-            <Button className="gap-1.5" onClick={() => toast.info(t("gdAddStudent"))}><Plus className="size-4" />{t("gdAddStudent")}</Button>
+            <AddStudentDialog groupId={group.id} className="gap-1.5"><Plus className="size-4" />{t("gdAddStudent")}</AddStudentDialog>
           </div>
         ) : (
           <div className="mt-4 space-y-2">
@@ -152,7 +153,7 @@ function Overview({ group, t }: { group: GroupDetail; t: (k: string, v?: Record<
   );
 }
 
-function StudentsList({ roster, t, isStaff = false }: { roster: RosterStudent[]; t: (k: string, v?: Record<string, string | number>) => string; isStaff?: boolean }) {
+function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string; roster: RosterStudent[]; t: (k: string, v?: Record<string, string | number>) => string; isStaff?: boolean }) {
   const [rows, setRows] = React.useState(roster);
   const [search, setSearch] = React.useState("");
   const filtered = rows.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase()));
@@ -162,7 +163,7 @@ function StudentsList({ roster, t, isStaff = false }: { roster: RosterStudent[];
     <div className="rounded-xl border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div><h3 className="font-heading text-base font-bold">{t("gdEnrolledStudents")}</h3><p className="text-sm text-muted-foreground">{t("gdRosterSub", { total: rows.length, active, completed: 0, dropped: 0 })}</p></div>
-        <Button className="gap-1.5" onClick={() => toast.info(t("gdAddStudent"))}><Plus className="size-4" />{t("gdAddStudent")}</Button>
+        <AddStudentDialog groupId={groupId} className="gap-1.5"><Plus className="size-4" />{t("gdAddStudent")}</AddStudentDialog>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t px-5 py-3">
         <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground"><Filter className="size-4" />{t("gdFilters")}</span>
