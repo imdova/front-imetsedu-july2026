@@ -8,8 +8,11 @@ import { respond, delay, clone } from "./delay";
 export interface LmsCourse {
   id: string;
   name: string;
+  image: string;
   category: string;
+  categoryId: string;
   subcategory: string;
+  subcategoryId: string;
   createdAt: string;
   groups: number;
   enrollment: number;
@@ -75,9 +78,9 @@ export interface LmsCourseDetail extends LmsCourse {
 }
 
 const courses: LmsCourse[] = [
-  { id: "lms_fm", name: "Financial Modeling Masterclass", category: "Finance & Accounting", subcategory: "Financial Modeling", createdAt: "Jun 13, 2026", groups: 3, enrollment: 412, revenue: 246000, active: true, lessons: 64 },
-  { id: "lms_cphq", name: "CPHQ Preparation", category: "Healthcare", subcategory: "Healthcare Quality", createdAt: "Jun 13, 2026", groups: 2, enrollment: 318, revenue: 158400, active: true, lessons: 48 },
-  { id: "lms_cic", name: "CIC Preparation", category: "Healthcare", subcategory: "Infection Control", createdAt: "Jun 10, 2026", groups: 1, enrollment: 0, revenue: 0, active: false, lessons: 0 },
+  { id: "lms_fm", name: "Financial Modeling Masterclass", image: "", category: "Finance & Accounting", categoryId: "", subcategory: "Financial Modeling", subcategoryId: "", createdAt: "Jun 13, 2026", groups: 3, enrollment: 412, revenue: 246000, active: true, lessons: 64 },
+  { id: "lms_cphq", name: "CPHQ Preparation", image: "", category: "Healthcare", categoryId: "", subcategory: "Healthcare Quality", subcategoryId: "", createdAt: "Jun 13, 2026", groups: 2, enrollment: 318, revenue: 158400, active: true, lessons: 48 },
+  { id: "lms_cic", name: "CIC Preparation", image: "", category: "Healthcare", categoryId: "", subcategory: "Infection Control", subcategoryId: "", createdAt: "Jun 10, 2026", groups: 1, enrollment: 0, revenue: 0, active: false, lessons: 0 },
 ];
 
 const groupsByCourse: Record<string, LmsAssignedGroup[]> = {

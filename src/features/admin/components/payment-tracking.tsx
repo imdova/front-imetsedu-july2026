@@ -12,6 +12,7 @@ import type { Invoice, Installment } from "@/lib/db/finance";
 import { mapLeadPaymentPlanToInvoice } from "@/lib/finance/map-finance";
 import { getPayments } from "@integration/services/payments";
 import { dal } from "@/lib/dal";
+import { useRouter } from "@/i18n/navigation";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -459,18 +460,19 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
 }
 
 function InstallChip({ inst, t }: { inst: Installment; t: (k: string, vals?: Record<string, string | number>) => string }) {
+  const router = useRouter();
   const s = INST_STYLE[inst.status];
-  const hasReceipt = inst.status === "PAID" && !!inst.receipt?.url;
+  const hasInvoice = inst.status === "PAID" && !!inst.invoiceId;
   return (
     <div className="relative">
       {inst.status === "PAID" && (
         <button
-          onClick={() => hasReceipt ? window.open(inst.receipt!.url, "_blank") : undefined}
-          disabled={!hasReceipt}
-          title={hasReceipt ? "View payment receipt" : "No receipt uploaded"}
+          onClick={() => hasInvoice ? router.push(`/admin/crm/invoices/${inst.invoiceId}`) : undefined}
+          disabled={!hasInvoice}
+          title={hasInvoice ? "View invoice details" : "No invoice available"}
           className={cn(
             "absolute -top-2.5 -inset-e-2.5 z-10 flex size-6 items-center justify-center rounded-full border-2 bg-white shadow-md transition-all",
-            hasReceipt
+            hasInvoice
               ? "border-success text-success hover:bg-success hover:text-white cursor-pointer"
               : "border-muted-foreground/30 text-muted-foreground/50 cursor-not-allowed",
           )}

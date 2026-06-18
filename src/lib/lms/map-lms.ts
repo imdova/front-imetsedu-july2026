@@ -31,8 +31,11 @@ export function mapLmsCourse(raw: any): LmsCourse {
   return {
     id: raw?._id ?? raw?.id,
     name: raw?.title ?? raw?.name ?? "—",
+    image: Array.isArray(raw?.thumbnail) ? (raw.thumbnail[0] ?? "") : (raw?.thumbnail ?? ""),
     category: raw?.category?.name ?? raw?.category?.nameEn ?? "—",
+    categoryId: raw?.category?._id ?? (typeof raw?.category === "string" ? raw.category : ""),
     subcategory: raw?.subcategory?.name ?? raw?.subcategory?.nameEn ?? "—",
+    subcategoryId: raw?.subcategory?._id ?? (typeof raw?.subcategory === "string" ? raw.subcategory : ""),
     createdAt: fmtDate(raw?.createdAt),
     groups: raw?.numberOfGroups ?? raw?.assignedGroups?.length ?? 0,
     enrollment: raw?.enrollment ?? raw?.students?.length ?? 0,

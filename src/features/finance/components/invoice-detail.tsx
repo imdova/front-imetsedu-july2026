@@ -3,28 +3,36 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
-  Send, CheckCircle2, Printer, Download, Ban, Trash2, Paperclip,
-  GraduationCap, Mail, CalendarDays, Clock,
+  Send, Printer, Download, Ban, Trash2, Paperclip,
+  GraduationCap, Mail, CalendarDays, Clock, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Invoice } from "@/lib/db/finance";
 import { mapInvoice } from "@/lib/finance/map-finance";
-import { getInvoiceById } from "@integration/services/invoices";
+import { getInvoiceById, downloadInvoicePdf } from "@integration/services/invoices";
 import { getCourseById } from "@integration/services/courses";
 import { getLeadById } from "@integration/services/leads/leads.service";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceStatusBadge } from "./finance-badges";
-import { MarkAsPaidModal, ReceiptPreview, type Receipt, formatBytes } from "./mark-as-paid-modal";
+import { ReceiptPreview, type Receipt, formatBytes } from "./mark-as-paid-modal";
 
 export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { invoice?: Invoice; id?: string; logoLight?: string; logoDark?: string }) {
   const t = useTranslations("Finance");
   const [invoice, setInvoice] = React.useState<Invoice | null>(initial ?? null);
   const [isLoading, setIsLoading] = React.useState(!initial);
-  const [markOpen, setMarkOpen] = React.useState(false);
   const [receipt, setReceipt] = React.useState<Receipt | null>(null);
+  const [downloading, setDownloading] = React.useState(false);
+
+  const downloadPdf = async () => {
+    if (!invoice) return;
+    setDownloading(true);
+    const res = await downloadInvoicePdf(invoice.id, `${invoice.number}.pdf`);
+    setDownloading(false);
+    if (!res.ok) toast.error(res.error);
+  };
 
   React.useEffect(() => {
     if (invoice && invoice.paymentReceipt) {
@@ -39,46 +47,22 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
     }
   }, [invoice]);
 
-  // Always resolve status + receipt from the lead endpoint (source of truth).
-  // Deps are stable invoice identifiers only — not courseTitle — to avoid loops.
-  const invoiceId = invoice?.id;
+  // Course name/thumbnail enrichment only — status and paymentReceipt come
+  // straight from getInvoiceById/mapInvoice, same as InvoicesTable. Marking
+  // an invoice paid is done from the invoices table, not from this page.
   const studentId = invoice?.studentId;
   const planIndex = invoice?.paymentPlanIndex ?? 0;
-  const installmentIndex = invoice?.installmentIndex ?? 0;
   React.useEffect(() => {
     if (!studentId) return;
     let active = true;
 
-    async function loadFromLead() {
+    async function loadCourseInfo() {
       try {
         const leadRes = await getLeadById(studentId!);
         if (!active || !leadRes.ok || !leadRes.data) return;
         const lead = leadRes.data as any;
-        const plan =
-          lead?.data?.paymentPlans?.[planIndex] ??
-          lead?.paymentPlan ??
-          {};
+        const plan = lead?.data?.paymentPlans?.[planIndex] ?? lead?.paymentPlan ?? {};
 
-        // Status: source of truth from lead's installment
-        const instIdx = installmentIndex + 1; // 1-based scope
-        const rawInst = (plan.installments ?? []).find((i: any) => i.index === instIdx);
-        const isInstPaid = rawInst?.status === "PAID";
-
-        // Receipt: matched by scope
-        let receiptObj: any = undefined;
-        const rawReceipt = (plan.receipts ?? []).find((r: any) => r.scope === instIdx);
-        if (rawReceipt) {
-          const isImage = /\.(png|jpe?g|webp|gif|bmp)(\?|$)/i.test(rawReceipt.previewUrl || "");
-          receiptObj = {
-            dataUrl: rawReceipt.previewUrl,
-            filename: rawReceipt.name || "receipt",
-            mimeType: rawReceipt.type || (isImage ? "image/jpeg" : "application/pdf"),
-            size: rawReceipt.size || 0,
-            paidOn: rawReceipt.attachedAt ?? plan.createdAt,
-          };
-        }
-
-        // Course name (only if not already resolved)
         let courseName: string | undefined;
         let courseThumb: string | undefined;
         const courseId = plan.courses?.[0] ??
@@ -102,21 +86,18 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
           if (!prev) return null;
           return {
             ...prev,
-            status: isInstPaid ? "paid" : "pending",
-            paymentReceipt: receiptObj ?? prev.paymentReceipt,
             courseTitle: prev.courseTitle || courseName || undefined,
             courseThumbnail: prev.courseThumbnail || courseThumb || undefined,
           };
         });
       } catch (err) {
-        console.error("Failed to load from lead:", err);
+        console.error("Failed to load course info:", err);
       }
     }
 
-    loadFromLead();
+    loadCourseInfo();
     return () => { active = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoiceId, studentId, planIndex, installmentIndex]);
+  }, [studentId, planIndex]);
 
   React.useEffect(() => {
     if (initial || !id) return;
@@ -184,13 +165,12 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           {!isPaid && (
-            <>
-              <Button className="gap-1.5" onClick={() => toast.success(t("reminderSent"))}><Send className="size-4" />{t("sendReminder")}</Button>
-              <Button variant="outline" className="gap-1.5" onClick={() => setMarkOpen(true)}><CheckCircle2 className="size-4" />{t("markPaid")}</Button>
-            </>
+            <Button className="gap-1.5" onClick={() => toast.success(t("reminderSent"))}><Send className="size-4" />{t("sendReminder")}</Button>
           )}
           <Button variant="outline" className="gap-1.5" onClick={() => { if (typeof window !== "undefined") window.print(); }}><Printer className="size-4" />{t("printBtn")}</Button>
-          <Button variant="outline" className="gap-1.5" onClick={() => { if (typeof window !== "undefined") window.print(); }}><Download className="size-4" />{t("downloadBtn")}</Button>
+          <Button variant="outline" className="gap-1.5" disabled={downloading} onClick={downloadPdf}>
+            {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}{t("downloadBtn")}
+          </Button>
           {isPaid && receipt && (
             <Button asChild variant="outline" className="gap-1.5">
               {receipt.url ? (
@@ -348,14 +328,6 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
           </Card>
         </div>
       </div>
-
-      {/* Mark as Paid modal — requires a receipt upload before confirming */}
-      <MarkAsPaidModal
-        invoice={invoice}
-        open={markOpen}
-        onOpenChange={setMarkOpen}
-        onConfirmed={(updated, r) => { setInvoice(updated); setReceipt(r); }}
-      />
     </div>
   );
 }

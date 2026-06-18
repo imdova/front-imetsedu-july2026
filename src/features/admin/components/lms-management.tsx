@@ -132,7 +132,12 @@ export function LmsManagement({
                 <tr key={c.id} className="border-b last:border-0 hover:bg-muted/20">
                   <td className="px-3 py-3">
                     <button onClick={() => router.push(`/admin/lms/${c.id}`)} className="flex items-center gap-3 text-start">
-                      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">{getInitials(c.name)}</span>
+                      {c.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.image} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
+                      ) : (
+                        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">{getInitials(c.name)}</span>
+                      )}
                       <span className="font-medium hover:text-primary">{c.name}</span>
                     </button>
                   </td>

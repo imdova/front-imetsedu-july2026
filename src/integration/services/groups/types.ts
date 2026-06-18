@@ -75,6 +75,7 @@ export interface CreateGroupInput {
   status?: "pending" | "inprogress" | "finished" | "active" | "completed";
   schedule?: GroupSchedule[];
   students?: GroupStudentInput[];
+  whatsappGroupLink?: string;
 }
 
 export interface UpdateGroupInput {
@@ -88,4 +89,5 @@ export interface UpdateGroupInput {
   status?: "pending" | "inprogress" | "finished" | "active" | "completed";
   schedule?: GroupSchedule[];
   students?: GroupStudentInput[];
+  whatsappGroupLink?: string;
 }

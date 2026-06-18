@@ -19,13 +19,17 @@ export default async function AdminLmsCoursePage({
   const { locale, id } = await params;
   setRequestLocale(locale);
 
-  const [courseRes, groupsRes, studentsRes] = await Promise.all([
+  const [courseRes, groupsRes, studentsRes, categoriesRes, subcategoriesRes] = await Promise.all([
     dal.lms.fetchLmsCourse(id),
     dal.groups.fetchGroups(),
     dal.studentsMgmt.fetchSmStudents(),
+    dal.lms.fetchLmsCategories(),
+    dal.lms.fetchLmsSubcategories(),
   ]);
   if (!courseRes.ok || !courseRes.data) notFound();
   const course = courseRes.data;
+  const categoryOptions = (categoriesRes.ok ? categoriesRes.data : []).map((c) => ({ id: c.id, name: c.name }));
+  const subcategoryOptions = (subcategoriesRes.ok ? subcategoriesRes.data : []).map((c) => ({ id: c.id, name: c.name, parentId: c.parentId }));
 
   const groups = groupsRes.ok ? groupsRes.data : [];
   const students = studentsRes.ok ? studentsRes.data : [];
@@ -67,6 +71,8 @@ export default async function AdminLmsCoursePage({
         availableGroups={availableGroups}
         enrolledStudents={enrolledStudents}
         availableStudents={availableStudents}
+        categoryOptions={categoryOptions}
+        subcategoryOptions={subcategoryOptions}
       />
     </div>
   );

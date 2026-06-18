@@ -22,6 +22,7 @@ export function mapGroupRow(raw: any): GroupRow {
   return {
     id: raw?._id ?? raw?.id,
     title: raw?.title ?? "—",
+    image: Array.isArray(raw?.groupImages) ? (raw.groupImages[0] ?? "") : "",
     category: raw?.category?.name ?? raw?.category?.nameEn ?? "—",
     subcategory: raw?.subcategory?.name ?? raw?.subcategory?.nameEn ?? "—",
     createdAt: fmtDate(raw?.createdAt),
@@ -65,6 +66,12 @@ export function mapGroupDetail(raw: any): GroupDetail {
     lectureDay: raw?.schedule?.[0]?.lectureDay ?? "",
     assignedLms: Array.isArray(raw?.lmsCourses) ? raw.lmsCourses.length : 0,
     roster: (raw?.students ?? []).map(mapRoster),
+    categoryId: raw?.category?._id ?? (typeof raw?.category === "string" ? raw.category : ""),
+    subcategoryId: raw?.subcategory?._id ?? (typeof raw?.subcategory === "string" ? raw.subcategory : ""),
+    groupImages: Array.isArray(raw?.groupImages) ? raw.groupImages : [],
+    whatsappGroupLink: raw?.whatsappGroupLink ?? "",
+    startDateISO: String(raw?.startDate ?? "").slice(0, 10),
+    endDateISO: String(raw?.endDate ?? "").slice(0, 10),
   };
 }
 

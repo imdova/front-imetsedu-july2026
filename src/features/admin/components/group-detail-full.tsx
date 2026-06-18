@@ -177,6 +177,16 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
     }
   };
 
+  const removeStudent = async (student: RosterStudent) => {
+    setRows((p) => p.filter((x) => x.id !== student.id));
+    const res = await dal.groups.removeStudentFromGroup(groupId, student.id);
+    if (res.ok) toast.success(t("studentRemoved"));
+    else {
+      setRows((p) => [...p, student]);
+      toast.error(res.error);
+    }
+  };
+
   return (
     <div className="rounded-xl border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
@@ -219,7 +229,7 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
                 <td className="px-3 py-4"><div className="flex items-center gap-2"><Switch checked={s.status === "approved"} disabled={isStaff} onCheckedChange={() => !isStaff && toggleStatus(s)} /><span className={cn("inline-flex items-center gap-1 text-xs", s.status === "approved" ? "text-success" : "text-muted-foreground")}><span className={cn("size-1.5 rounded-full", s.status === "approved" ? "bg-success" : "bg-muted-foreground")} />{t("gdApproved")}</span></div></td>
                 <td className="px-3 py-4"><Badge className="border-transparent bg-warning/15 text-warning">{t("gdPaymentPending")}</Badge></td>
                 <td className="px-3 py-4 text-muted-foreground">—</td>
-                <td className="px-5 py-4"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8"><Award className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setRows((p) => p.filter((x) => x.id !== s.id))}><Trash2 className="size-4" /></Button></div></td>
+                <td className="px-5 py-4"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8"><Award className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => removeStudent(s)}><Trash2 className="size-4" /></Button></div></td>
               </tr>
             ))}
           </tbody>

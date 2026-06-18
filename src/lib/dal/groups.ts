@@ -4,6 +4,7 @@ import * as groupsSvc from "@integration/services/groups";
 import * as groupCatsSvc from "@integration/services/group-categories";
 import * as groupSubCatsSvc from "@integration/services/group-sub-categories";
 import type { GroupRow, GroupStats, GroupDetail } from "@/lib/db/groups";
+import type { CreateGroupInput, UpdateGroupInput } from "@integration/services/groups";
 import { mapGroupRow, mapGroupDetail, computeGroupStats } from "@/lib/groups/map-group";
 
 const arr = <T>(x: unknown): T[] => (Array.isArray(x) ? (x as T[]) : ((x as { data?: T[] })?.data ?? []));
@@ -154,6 +155,53 @@ export const addLeadToGroup = async (groupId: string, leadId: string): Promise<R
 /** LIVE: toggle a roster student's approval — PATCH /groups/:id/students/:studentId. */
 export const updateStudentStatus = async (groupId: string, studentId: string, isApproved: boolean): Promise<Result<boolean>> => {
   const res = await groupsSvc.updateStudentApproval(groupId, studentId, isApproved);
+  if (!res.ok) return res;
+  return ok(true);
+};
+
+/** LIVE: create a group — POST /groups (Admin only). */
+export const createGroup = async (input: CreateGroupInput): Promise<Result<GroupRow>> => {
+  const res = await groupsSvc.createGroup(input);
+  if (!res.ok) return res;
+  try {
+    return ok(mapGroupRow(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to create group"));
+  }
+};
+
+/** LIVE: update a group — PATCH /groups/:id (Admin only). */
+export const updateGroup = async (id: string, input: UpdateGroupInput): Promise<Result<GroupRow>> => {
+  const res = await groupsSvc.updateGroup(id, input);
+  if (!res.ok) return res;
+  try {
+    return ok(mapGroupRow(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to update group"));
+  }
+};
+
+/** LIVE: duplicate a group without its students — POST /groups/:id/duplicate (Admin only). */
+export const duplicateGroup = async (id: string): Promise<Result<GroupRow>> => {
+  const res = await groupsSvc.duplicateGroup(id);
+  if (!res.ok) return res;
+  try {
+    return ok(mapGroupRow(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to duplicate group"));
+  }
+};
+
+/** LIVE: delete a group — DELETE /groups/:id (Admin only). */
+export const deleteGroup = async (id: string): Promise<Result<boolean>> => {
+  const res = await groupsSvc.deleteGroup(id);
+  if (!res.ok) return res;
+  return ok(true);
+};
+
+/** LIVE: remove a student from a group's roster — DELETE /groups/:id/students/:studentId. */
+export const removeStudentFromGroup = async (groupId: string, studentId: string): Promise<Result<boolean>> => {
+  const res = await groupsSvc.removeStudentFromGroup(groupId, studentId);
   if (!res.ok) return res;
   return ok(true);
 };

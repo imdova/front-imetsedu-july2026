@@ -156,6 +156,7 @@ export function mapLeadPaymentPlanToInvoice(lead: any): Invoice {
       paidDate: inst.paidDate ? fmtDate(inst.paidDate) : undefined,
       status: instStatus,
       receipt,
+      invoiceId: inst.invoiceId ?? undefined,
     };
   });
 

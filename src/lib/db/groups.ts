@@ -8,6 +8,7 @@ export type GroupStatus = "pending" | "inprogress" | "finished";
 export interface GroupRow {
   id: string;
   title: string;
+  image: string;
   category: string;
   subcategory: string;
   createdAt: string;
@@ -53,10 +54,18 @@ export interface GroupDetail extends GroupRow {
   lectureDay: string;
   assignedLms: number;
   roster: RosterStudent[];
+  /** Raw ids/fields needed to pre-fill the edit-group form. */
+  categoryId: string;
+  subcategoryId: string;
+  groupImages: string[];
+  whatsappGroupLink: string;
+  /** Raw ISO dates (startDate/endDate above are display-formatted). */
+  startDateISO: string;
+  endDateISO: string;
 }
 
 const groups: GroupRow[] = [
-  { id: "grp_g42", title: "cphq - g42", category: "Healthcare", subcategory: "Healthcare Quality", createdAt: "Jun 14, 2026", startDate: "Jun 15, 2026", endDate: "Jun 30, 2026", startTime: "19:00", endTime: "21:00", status: "pending", students: 1, revenue: 0 },
+  { id: "grp_g42", title: "cphq - g42", image: "", category: "Healthcare", subcategory: "Healthcare Quality", createdAt: "Jun 14, 2026", startDate: "Jun 15, 2026", endDate: "Jun 30, 2026", startTime: "19:00", endTime: "21:00", status: "pending", students: 1, revenue: 0 },
 ];
 
 const rosterByGroup: Record<string, RosterStudent[]> = {
@@ -92,5 +101,11 @@ export async function getGroup(id: string): Promise<GroupDetail | null> {
     lectureDay: "TBD",
     assignedLms: 1,
     roster,
+    categoryId: "",
+    subcategoryId: "",
+    groupImages: g.image ? [g.image] : [],
+    whatsappGroupLink: "",
+    startDateISO: "",
+    endDateISO: "",
   });
 }

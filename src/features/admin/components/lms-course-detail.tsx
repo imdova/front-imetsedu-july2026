@@ -14,7 +14,11 @@ import type { LmsCourseDetail, AssignedGroupStatus, LmsAssignedGroup } from "@/l
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageUpload } from "@/components/shared/image-upload";
 import { CurriculumBuilder } from "./curriculum-builder";
 import { StudyMaterialsTab, AssignmentsTab, StudentsTab } from "./lms-extra-tabs";
 import { PickerDialog } from "./lms-picker-dialog";
@@ -22,6 +26,8 @@ import { PickerDialog } from "./lms-picker-dialog";
 type Tab = "overview" | "groups" | "curriculum" | "materials" | "assignments" | "students";
 const VALID_TABS: Tab[] = ["overview", "groups", "curriculum", "materials", "assignments", "students"];
 type GroupOption = { id: string; name: string };
+type CategoryOption = { id: string; name: string };
+type SubcategoryOption = CategoryOption & { parentId: string };
 export type EnrolledStudent = { id: string; name: string; email: string; country: string; leadSource: string };
 export type StudentOption = { id: string; name: string; email: string };
 
@@ -38,11 +44,15 @@ export function LmsCourseDetail({
   availableGroups = [],
   enrolledStudents = [],
   availableStudents = [],
+  categoryOptions = [],
+  subcategoryOptions = [],
 }: {
   course: LmsCourseDetail;
   availableGroups?: GroupOption[];
   enrolledStudents?: EnrolledStudent[];
   availableStudents?: StudentOption[];
+  categoryOptions?: CategoryOption[];
+  subcategoryOptions?: SubcategoryOption[];
 }) {
   const t = useTranslations("Admin");
   const router = useRouter();
@@ -50,6 +60,7 @@ export function LmsCourseDetail({
   const requestedTab = searchParams.get("tab");
   const initialTab = (VALID_TABS as string[]).includes(requestedTab ?? "") ? (requestedTab as Tab) : "overview";
   const [tab, setTab] = React.useState<Tab>(initialTab);
+  const [editOpen, setEditOpen] = React.useState(false);
 
   const moduleCount = course.modules.length;
   const lessonCount = course.modules.reduce((s, m) => s + m.items.filter((i) => i.type === "lesson").length, 0);
@@ -73,7 +84,12 @@ export function LmsCourseDetail({
         </p>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-primary/10 font-heading font-bold text-primary">{getInitials(course.name)}</span>
+            {course.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={course.image} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
+            ) : (
+              <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-primary/10 font-heading font-bold text-primary">{getInitials(course.name)}</span>
+            )}
             <div>
               <h1 className="font-heading text-2xl font-bold tracking-tight">{course.name}</h1>
               <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
@@ -83,7 +99,7 @@ export function LmsCourseDetail({
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-3 py-1 text-sm font-medium text-success"><span className="size-1.5 rounded-full bg-success" />{course.active ? t("lmsActive") : t("lmsInactive")}</span>
-            <Button className="gap-1.5"><Pencil className="size-4" />{t("lmsEditDetails")}</Button>
+            <Button className="gap-1.5" onClick={() => setEditOpen(true)}><Pencil className="size-4" />{t("lmsEditDetails")}</Button>
           </div>
         </div>
       </div>
@@ -106,7 +122,97 @@ export function LmsCourseDetail({
       {tab === "materials" && <StudyMaterialsTab lmsId={course.id} initial={course.materials} />}
       {tab === "assignments" && <AssignmentsTab lmsId={course.id} />}
       {tab === "students" && <StudentsTab lmsId={course.id} students={enrolledStudents} availableStudents={availableStudents} />}
+
+      <EditLmsModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        course={course}
+        categoryOptions={categoryOptions}
+        subcategoryOptions={subcategoryOptions}
+        onSaved={() => { setEditOpen(false); router.refresh(); }}
+      />
     </div>
+  );
+}
+
+function EditLmsModal({
+  open, onClose, course, categoryOptions, subcategoryOptions, onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  course: LmsCourseDetail;
+  categoryOptions: CategoryOption[];
+  subcategoryOptions: SubcategoryOption[];
+  onSaved: () => void;
+}) {
+  const t = useTranslations("Admin");
+  const [title, setTitle] = React.useState("");
+  const [category, setCategory] = React.useState("");
+  const [subcategory, setSubcategory] = React.useState("");
+  const [thumbnail, setThumbnail] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!open) return;
+    setTitle(course.name);
+    setCategory(course.categoryId);
+    setSubcategory(course.subcategoryId);
+    setThumbnail(course.image);
+  }, [open, course]);
+
+  const subOptions = subcategoryOptions.filter((s) => !category || s.parentId === category);
+
+  const save = async () => {
+    if (!title.trim() || !category) return;
+    setSaving(true);
+    const res = await dal.lms.updateLmsCourse(course.id, {
+      title: title.trim(),
+      category,
+      subcategory: subcategory || undefined,
+      thumbnail: thumbnail ? [thumbnail] : [],
+    });
+    setSaving(false);
+    if (res.ok) {
+      toast.success(t("lmsUpdated"));
+      onSaved();
+    } else {
+      toast.error(res.error);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Pencil className="size-5 text-primary" />{t("lmsEditDetails")}</DialogTitle>
+          <DialogDescription>{t("editLmsHint")}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5"><Label>{t("lmsCourseTitle")} <span className="text-destructive">*</span></Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("lmsCourseTitlePh")} /></div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5"><Label>{t("lmsCategory")} <span className="text-destructive">*</span></Label>
+              <Select value={category} onValueChange={(v) => { setCategory(v); setSubcategory(""); }}>
+                <SelectTrigger className="w-full"><SelectValue placeholder={t("lmsSelectCat")} /></SelectTrigger>
+                <SelectContent position="popper">{categoryOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5"><Label>{t("lmsSubcategory")}</Label>
+              <Select value={subcategory} onValueChange={setSubcategory} disabled={!category}>
+                <SelectTrigger className="w-full"><SelectValue placeholder={t("lmsSelectSub")} /></SelectTrigger>
+                <SelectContent position="popper">{subOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1.5"><Label>{t("lmsThumbnail")}</Label><ImageUpload value={thumbnail} onChange={setThumbnail} hint={t("lmsThumbnailOptional")} /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>{t("lmsCancel")}</Button>
+          <Button onClick={save} disabled={saving || !title.trim() || !category} className="gap-1.5">
+            {saving && <Loader2 className="size-4 animate-spin" />}{t("grpSave")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
