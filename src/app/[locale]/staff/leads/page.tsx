@@ -57,6 +57,8 @@ export default async function StaffLeadsPage({
         sourceOptions={sourceOptions}
         specialtyOptions={specialtyOptions}
         basePath="/staff"
+        isStaff
+        lockedCounselorId={counselorId}
       />
     </div>
   );

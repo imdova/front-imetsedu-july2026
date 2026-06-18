@@ -60,9 +60,13 @@ export const fetchLeads = async (filters: db.LeadFilters = {}): Promise<Result<d
     let rows = (Array.isArray(res.data?.data) ? res.data.data : []).map(mapLead);
     // Client-side narrowing for fields the backend can't query (or that it
     // enum-validates, like `source`, which would reject custom CRM sources).
-    if (f(filters.source)) rows = rows.filter((r) => r.source === filters.source);
-    if (f(filters.specialty)) rows = rows.filter((r) => r.specialty === filters.specialty);
-    if (f(filters.country)) rows = rows.filter((r) => r.country === filters.country);
+    // Case-insensitive: older leads may have been stored with different
+    // casing (e.g. "website") than the current CRM-settings option label
+    // (e.g. "Website").
+    const eq = (a?: string, b?: string) => (a ?? "").trim().toLowerCase() === (b ?? "").trim().toLowerCase();
+    if (f(filters.source)) rows = rows.filter((r) => eq(r.source, filters.source));
+    if (f(filters.specialty)) rows = rows.filter((r) => eq(r.specialty, filters.specialty));
+    if (f(filters.country)) rows = rows.filter((r) => eq(r.country, filters.country));
     if (f(filters.courseId)) rows = rows.filter((r) => r.coursesOfInterest.includes(filters.courseId!));
     return ok(rows);
   } catch (err) {

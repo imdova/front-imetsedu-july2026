@@ -63,6 +63,7 @@ export default async function AdminLeadsPage({
         specialtyOptions={specialtyOptions}
         basePath="/admin/crm"
         isStaff={isStaff}
+        lockedCounselorId={counselorId}
       />
     </div>
   );

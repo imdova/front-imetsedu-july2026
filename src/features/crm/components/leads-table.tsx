@@ -53,6 +53,8 @@ interface Props {
   specialtyOptions?: string[];
   basePath: string;
   isStaff?: boolean;
+  /** Counselor id this view is locked to (staff users only ever see their own leads). */
+  lockedCounselorId?: string;
 }
 
 const RANGES = [
@@ -97,7 +99,7 @@ function inRange(iso: string | undefined, range: Range, custom?: { from: string;
   }
 }
 
-export function LeadsTable({ initialData, stages, counselors, pipelines, courseOptions, sourceOptions, specialtyOptions, basePath, isStaff = false }: Props) {
+export function LeadsTable({ initialData, stages, counselors, pipelines, courseOptions, sourceOptions, specialtyOptions, basePath, isStaff = false, lockedCounselorId }: Props) {
   const t = useTranslations("Crm");
   const tc = useTranslations("Common");
   const router = useRouter();
@@ -179,11 +181,12 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
 
   const load = React.useCallback(async () => {
     setLoading(true);
-    const res = await dal.crm.fetchLeads({ search, stage, source, counselorId, priority, specialty, country, courseId, pipeline });
+    const effectiveCounselorId = lockedCounselorId ?? counselorId;
+    const res = await dal.crm.fetchLeads({ search, stage, source, counselorId: effectiveCounselorId, priority, specialty, country, courseId, pipeline });
     if (res.ok) setRows(res.data);
     else toast.error(res.error);
     setLoading(false);
-  }, [search, stage, source, counselorId, priority, specialty, country, courseId, pipeline]);
+  }, [search, stage, source, counselorId, lockedCounselorId, priority, specialty, country, courseId, pipeline]);
 
   const active = search || [stage, source, counselorId, priority, specialty, country, courseId, pipeline].some((v) => v !== "all");
 
