@@ -68,6 +68,7 @@ export default async function LeadDetailPage({
         assignablePipelines={assignablePipelines}
         pipelineStages={pipelineStages}
         courseOptions={courseOptions}
+        basePath="/staff"
       />
     </div>
   );

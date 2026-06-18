@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { dal } from "@/lib/dal";
 import type { CurriculumModule, CurriculumItem, VideoSource } from "@/lib/db/lms";
 import type { QuizRow, QuizCategoryOption } from "@/lib/dal/quizzes";
-import { cn } from "@/lib/utils";
+import { cn, createId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -71,7 +71,7 @@ export function CurriculumBuilder({
   // Module actions
   const addModule = () => {
     const title = t("cbModuleN", { n: modules.length + 1 });
-    const tempId = `temp_mod_${Date.now()}`;
+    const tempId = createId("temp_mod");
     setModules((p) => [...p, { id: tempId, title, items: [] }]);
     mark();
   };
@@ -99,7 +99,7 @@ export function CurriculumBuilder({
     const mod = modules[modIdx];
     const n = mod.items.filter((i) => i.type === "lesson").length + 1;
     const title = t("cbLessonN", { n });
-    const tempId = `temp_les_${Date.now()}`;
+    const tempId = createId("temp_les");
     setModules((p) =>
       p.map((m, i) =>
         i === modIdx
@@ -127,7 +127,7 @@ export function CurriculumBuilder({
     if (quizModIdx < 0 || !selectedQuizId) return;
     const quiz = availableQuizzes.find((q) => q.id === selectedQuizId);
     if (!quiz) return;
-    const tempId = `temp_quiz_${Date.now()}`;
+    const tempId = createId("temp_quiz");
     setModules((p) =>
       p.map((m, i) =>
         i === quizModIdx

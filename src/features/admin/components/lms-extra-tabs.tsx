@@ -3,10 +3,11 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
-  Plus, SlidersHorizontal, UploadCloud, Link2, FileText, Trash2, Pencil, Paperclip, UserPlus, Download, Search, Columns3, Loader2, X,
+  Plus, SlidersHorizontal, UploadCloud, Link2, FileText, Trash2, Paperclip, UserPlus, Download, Search, Columns3, Loader2, X, Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { dal } from "@/lib/dal";
 import { Button } from "@/components/ui/button";
@@ -239,7 +240,9 @@ export function AssignmentsTab({ lmsId, groupId }: { lmsId?: string; groupId?: s
               <tr><td colSpan={6} className="py-14 text-center text-muted-foreground">{t("asgNone")}</td></tr>
             ) : rows.map((a) => (
               <tr key={a.id} className="border-b last:border-0">
-                <td className="px-5 py-3 font-medium">{a.title}</td>
+                <td className="px-5 py-3 font-medium">
+                  <Link href={`/admin/assignments/${a.id}`} className="hover:text-primary hover:underline">{a.title}</Link>
+                </td>
                 <td className="px-3 py-3"><Badge variant="secondary">{a.priority}</Badge></td>
                 <td className="px-3 py-3 text-muted-foreground">{a.dueDate}</td>
                 <td className="px-3 py-3 text-muted-foreground tabular-nums">{a.createdDate}</td>
@@ -252,7 +255,14 @@ export function AssignmentsTab({ lmsId, groupId }: { lmsId?: string; groupId?: s
                     <span className="inline-flex items-center gap-1 text-muted-foreground tabular-nums"><Paperclip className="size-3.5" />{a.attachments}</span>
                   )}
                 </td>
-                <td className="px-5 py-3"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8 text-primary"><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => remove(a.id)}><Trash2 className="size-4" /></Button></div></td>
+                <td className="px-5 py-3">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" className="size-8 text-primary" asChild>
+                      <Link href={`/admin/assignments/${a.id}`} aria-label="View"><Eye className="size-4" /></Link>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => remove(a.id)}><Trash2 className="size-4" /></Button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

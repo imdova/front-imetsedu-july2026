@@ -5,7 +5,10 @@ import * as lmsCategoriesSvc from "@integration/services/lms-categories";
 import * as lmsSubCategoriesSvc from "@integration/services/lms-sub-categories";
 import type { LmsCourse, LmsStats, LmsCourseDetail, LmsCategory, LmsSubcategory } from "@/lib/db/lms";
 import * as assignmentsSvc from "@integration/services/assignments";
-import { mapLmsCourse, computeLmsStats, mapLmsCourseDetail, mapLmsCategory, mapLmsSubcategory, mapLmsAssignment, type LmsAssignmentRow } from "@/lib/lms/map-lms";
+import {
+  mapLmsCourse, computeLmsStats, mapLmsCourseDetail, mapLmsCategory, mapLmsSubcategory,
+  mapLmsAssignment, mapAssignmentDetail, type LmsAssignmentRow, type AssignmentDetailVM,
+} from "@/lib/lms/map-lms";
 
 const arr = <T>(x: unknown): T[] => (Array.isArray(x) ? (x as T[]) : ((x as { data?: T[] })?.data ?? []));
 
@@ -86,6 +89,24 @@ export const createAssignment = async (input: {
 };
 
 export const deleteLmsAssignment = (id: string) => assignmentsSvc.deleteAssignment(id);
+
+/** LIVE: assignment detail + full student roster (with nested submissions),
+ * for the grading workspace at /admin/assignments/:id. */
+export const fetchAssignmentDetail = async (id: string): Promise<Result<AssignmentDetailVM>> => {
+  const res = await assignmentsSvc.getAssignment(id);
+  if (!res.ok) return res;
+  try {
+    return ok(mapAssignmentDetail(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to load assignment"));
+  }
+};
+
+/** LIVE: grade (or re-grade) a submission — PATCH /assignments/submissions/:id/status. */
+export const gradeSubmission = (
+  submissionId: string,
+  input: { status: string; score: number | null; plagiarismScore: number | null },
+) => assignmentsSvc.updateSubmissionStatus(submissionId, input);
 
 /* ── Course CRUD (LMS hub) ─────────────────────────────────────────────── */
 type CreateCourseInput = Parameters<typeof lmsCoursesSvc.createLmsCourse>[0];

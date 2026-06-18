@@ -144,7 +144,7 @@ export function LeadTransitionModal({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label>{t("priceLabel")}</Label>
                   <div className="flex gap-2">
                     <Input type="number" defaultValue={0} className="flex-1" dir="ltr" />

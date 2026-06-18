@@ -150,3 +150,10 @@ export const addLeadToGroup = async (groupId: string, leadId: string): Promise<R
   if (!res.ok) return res;
   return ok(true);
 };
+
+/** LIVE: toggle a roster student's approval — PATCH /groups/:id/students/:studentId. */
+export const updateStudentStatus = async (groupId: string, studentId: string, isApproved: boolean): Promise<Result<boolean>> => {
+  const res = await groupsSvc.updateStudentApproval(groupId, studentId, isApproved);
+  if (!res.ok) return res;
+  return ok(true);
+};

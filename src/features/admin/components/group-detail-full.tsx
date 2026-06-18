@@ -2,10 +2,14 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft, LayoutGrid, MoreHorizontal, Plus, Users, Trophy, TrendingUp, DollarSign, CalendarDays, Clock, Video, UserCog, ChevronRight, Search, Mail, Phone, Award, Trash2, Filter,
 } from "lucide-react";
+import { toast } from "sonner";
+
 import { Link } from "@/i18n/navigation";
+import { dal } from "@/lib/dal";
 import type { GroupDetail, RosterStudent } from "@/lib/db/groups";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,10 +21,14 @@ import { AddStudentDialog } from "./add-student-dialog";
 import { AssignmentsTab } from "./lms-extra-tabs";
 
 type Tab = "overview" | "students" | "lms" | "assignments";
+const VALID_TABS: Tab[] = ["overview", "students", "lms", "assignments"];
 
 export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail; isStaff?: boolean }) {
   const t = useTranslations("Admin");
-  const [tab, setTab] = React.useState<Tab>("overview");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab = (VALID_TABS as string[]).includes(requestedTab ?? "") ? (requestedTab as Tab) : "overview";
+  const [tab, setTab] = React.useState<Tab>(initialTab);
   const enrolled = group.roster.length;
   const collectedPct = group.revenueTarget > 0 ? Math.round((group.collected / group.revenueTarget) * 100) : 0;
 
@@ -159,6 +167,16 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
   const filtered = rows.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase()));
   const active = rows.filter((s) => s.status === "approved").length;
 
+  const toggleStatus = async (student: RosterStudent) => {
+    const nextApproved = student.status !== "approved";
+    setRows((p) => p.map((x) => (x.id === student.id ? { ...x, status: nextApproved ? "approved" : "pending" } : x)));
+    const res = await dal.groups.updateStudentStatus(groupId, student.id, nextApproved);
+    if (!res.ok) {
+      setRows((p) => p.map((x) => (x.id === student.id ? { ...x, status: student.status } : x)));
+      toast.error(res.error);
+    }
+  };
+
   return (
     <div className="rounded-xl border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
@@ -198,7 +216,7 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
                 <td className="px-3 py-4 text-muted-foreground">{s.country}</td>
                 <td className="px-3 py-4"><Badge variant="secondary" className="text-chart-3">{s.leadSource}</Badge></td>
                 <td className="px-3 py-4"><div className="flex items-center gap-2"><div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary" style={{ width: `${s.progress}%` }} /></div><span className="rounded-full bg-warning/15 px-1.5 text-xs text-warning tabular-nums">{s.progress}%</span></div></td>
-                <td className="px-3 py-4"><div className="flex items-center gap-2"><Switch checked={s.status === "approved"} disabled={isStaff} onCheckedChange={() => !isStaff && setRows((p) => p.map((x) => x.id === s.id ? { ...x, status: x.status === "approved" ? "pending" : "approved" } : x))} /><span className={cn("inline-flex items-center gap-1 text-xs", s.status === "approved" ? "text-success" : "text-muted-foreground")}><span className={cn("size-1.5 rounded-full", s.status === "approved" ? "bg-success" : "bg-muted-foreground")} />{t("gdApproved")}</span></div></td>
+                <td className="px-3 py-4"><div className="flex items-center gap-2"><Switch checked={s.status === "approved"} disabled={isStaff} onCheckedChange={() => !isStaff && toggleStatus(s)} /><span className={cn("inline-flex items-center gap-1 text-xs", s.status === "approved" ? "text-success" : "text-muted-foreground")}><span className={cn("size-1.5 rounded-full", s.status === "approved" ? "bg-success" : "bg-muted-foreground")} />{t("gdApproved")}</span></div></td>
                 <td className="px-3 py-4"><Badge className="border-transparent bg-warning/15 text-warning">{t("gdPaymentPending")}</Badge></td>
                 <td className="px-3 py-4 text-muted-foreground">—</td>
                 <td className="px-5 py-4"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8"><Award className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setRows((p) => p.filter((x) => x.id !== s.id))}><Trash2 className="size-4" /></Button></div></td>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import {
   Users, DollarSign, BookOpen, Gauge, Award, Star, Pencil, ArrowUpRight, Plus, Search, Trash2, ChevronLeft, ChevronRight, Loader2,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { StudyMaterialsTab, AssignmentsTab, StudentsTab } from "./lms-extra-tabs
 import { PickerDialog } from "./lms-picker-dialog";
 
 type Tab = "overview" | "groups" | "curriculum" | "materials" | "assignments" | "students";
+const VALID_TABS: Tab[] = ["overview", "groups", "curriculum", "materials", "assignments", "students"];
 type GroupOption = { id: string; name: string };
 export type EnrolledStudent = { id: string; name: string; email: string; country: string; leadSource: string };
 export type StudentOption = { id: string; name: string; email: string };
@@ -44,7 +46,10 @@ export function LmsCourseDetail({
 }) {
   const t = useTranslations("Admin");
   const router = useRouter();
-  const [tab, setTab] = React.useState<Tab>("overview");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab = (VALID_TABS as string[]).includes(requestedTab ?? "") ? (requestedTab as Tab) : "overview";
+  const [tab, setTab] = React.useState<Tab>(initialTab);
 
   const moduleCount = course.modules.length;
   const lessonCount = course.modules.reduce((s, m) => s + m.items.filter((i) => i.type === "lesson").length, 0);

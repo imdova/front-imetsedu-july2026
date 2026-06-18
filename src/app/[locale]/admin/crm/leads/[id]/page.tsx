@@ -73,6 +73,7 @@ export default async function AdminLeadDetailPage({
         pipelineStages={pipelineStages}
         courseOptions={courseOptions}
         groupOptions={groupOptions}
+        basePath="/admin/crm"
       />
     </div>
   );

@@ -13,6 +13,16 @@ function fmtDate(iso?: string): string {
   return Number.isNaN(d.getTime()) ? (iso || "—") : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+function fmtDateTime(iso?: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? (iso || "—") : d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function initialsOf(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "ST";
+}
+
 function lessonsOf(modules?: any[]): number {
   return (modules ?? []).reduce((n, m) => n + (m?.items?.length ?? m?.lessons?.length ?? 0), 0);
 }
@@ -129,5 +139,108 @@ export function mapLmsCourseDetail(raw: any): LmsCourseDetail {
     ratingCount: raw?.ratings?.count ?? 0,
     avgProgress: raw?.overallProgress ?? 0,
     quizPassRate: raw?.quizPassRate ?? 0,
+  };
+}
+
+/* ── Assignment detail (grading workspace) ── */
+export type AssignmentSubRowStatus = "graded" | "submitted" | "late" | "overdue" | "not_submitted";
+
+export interface AssignmentSubmissionRow {
+  /** Row key — the submission id when one exists, else a synthetic key. */
+  id: string;
+  /** The actual submission _id, needed to call the grade-update endpoint. Null until the student submits. */
+  submissionId: string | null;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  initials: string;
+  submittedAt: string | null;
+  rawSubmittedAt?: string;
+  status: AssignmentSubRowStatus;
+  score: number | null;
+  plagiarismScore: number | null;
+  fileUrl: string | null;
+  notes: string;
+}
+
+export interface AssignmentDetailVM {
+  id: string;
+  title: string;
+  courseName: string;
+  /** Owning LMS course id, when this assignment was scoped to an LMS course. */
+  lmsId?: string;
+  /** Owning group id, when this assignment was scoped to a group. */
+  groupId?: string;
+  dueDate: string;
+  rawDueDate?: string;
+  files: string[];
+  priority: string;
+  kpis: {
+    totalSubmissions: number;
+    totalStudents: number;
+    avgGrade: number | null;
+    avgTurnaroundHours: number | null;
+    avgPlagiarismScore: number | null;
+  };
+  submissions: AssignmentSubmissionRow[];
+}
+
+export function mapAssignmentDetail(raw: any): AssignmentDetailVM {
+  const courseName = raw?.lmsId?.title ?? raw?.group?.title ?? "—";
+  const dueDate: string | undefined = raw?.dueDate;
+  const students: any[] = Array.isArray(raw?.students) ? raw.students : [];
+
+  const submissions: AssignmentSubmissionRow[] = students.map((item, i) => {
+    const stud = item?.student ?? {};
+    const sub = item?.submission;
+    const name = stud?.name ?? "Unknown student";
+
+    let status: AssignmentSubRowStatus;
+    if (!sub) {
+      status = dueDate && Date.now() > new Date(dueDate).getTime() ? "overdue" : "not_submitted";
+    } else if (sub.status === "approved" || sub.status === "graded") {
+      status = "graded";
+    } else if (dueDate && sub.submissionDate && new Date(sub.submissionDate).getTime() > new Date(dueDate).getTime()) {
+      status = "late";
+    } else {
+      status = "submitted";
+    }
+
+    return {
+      id: sub?._id ?? `row_${stud?._id ?? i}`,
+      submissionId: sub?._id ?? null,
+      studentId: stud?._id ?? `stu_${i}`,
+      studentName: name,
+      studentEmail: stud?.email ?? "",
+      initials: initialsOf(name),
+      submittedAt: sub?.submissionDate ? fmtDateTime(sub.submissionDate) : null,
+      rawSubmittedAt: sub?.submissionDate,
+      status,
+      score: sub?.score ?? null,
+      plagiarismScore: sub?.plagiarismScore ?? null,
+      fileUrl: sub?.assignmentFileUrl ?? null,
+      notes: sub?.notes ?? "",
+    };
+  });
+
+  const k = raw?.kpis ?? {};
+  return {
+    id: raw?._id ?? raw?.id ?? "",
+    title: raw?.title ?? "—",
+    courseName,
+    lmsId: raw?.lmsId?._id ?? (typeof raw?.lmsId === "string" ? raw.lmsId : undefined),
+    groupId: raw?.group?._id ?? (typeof raw?.group === "string" ? raw.group : undefined),
+    dueDate: fmtDate(dueDate),
+    rawDueDate: dueDate,
+    files: Array.isArray(raw?.files) ? raw.files : [],
+    priority: String(raw?.priority ?? "regular"),
+    kpis: {
+      totalSubmissions: k.totalSubmissions ?? submissions.filter((s) => s.status !== "not_submitted" && s.status !== "overdue").length,
+      totalStudents: k.totalStudents ?? submissions.length,
+      avgGrade: k.avgGrade ?? null,
+      avgTurnaroundHours: k.avgTurnaroundHours ?? null,
+      avgPlagiarismScore: k.avgPlagiarismScore ?? null,
+    },
+    submissions,
   };
 }

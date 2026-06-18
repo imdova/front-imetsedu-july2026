@@ -26,9 +26,11 @@ import {
   Check,
   Loader2,
   Download,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { Link } from "@/i18n/navigation";
 import type { Lead, PipelineStage, ActivityKind, FollowUpStatus } from "@/lib/db/crm";
 import { dal } from "@/lib/dal";
 import { STAGE_MAP } from "@/lib/crm/map-lead";
@@ -113,6 +115,7 @@ export function LeadDetail({
   pipelineStages = [],
   courseOptions = [],
   groupOptions = [],
+  basePath = "/admin/crm",
 }: {
   lead: Lead;
   stages: PipelineStage[];
@@ -120,6 +123,7 @@ export function LeadDetail({
   pipelineStages?: PipelineStageList[];
   courseOptions?: { value: string; label: string; image?: string }[];
   groupOptions?: { value: string; label: string }[];
+  basePath?: string;
 }) {
   const t = useTranslations("Crm");
   const locale = useLocale();
@@ -377,7 +381,14 @@ export function LeadDetail({
               </div>
             </div>
           </div>
-          <PriorityBadge priority={lead.priority} />
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <Button asChild variant="outline" size="icon" className="size-9" aria-label={t("editLead")} title={t("editLead")}>
+                <Link href={`${basePath}/leads/${lead.id}/edit`}><Pencil className="size-4" /></Link>
+              </Button>
+            )}
+            <PriorityBadge priority={lead.priority} />
+          </div>
         </div>
 
         {/* Action bar */}
