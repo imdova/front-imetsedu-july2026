@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
-  FileText, Gauge, BarChart3, Plus, Search, Filter, Columns3, Users, Pencil, Copy, Trash2, CalendarDays, ChevronLeft, ChevronRight, Info,
+  FileText, Gauge, BarChart3, Plus, Search, Filter, Columns3, Users, Pencil, Copy, Trash2, CalendarDays, ChevronLeft, ChevronRight, Info, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,6 +13,7 @@ import type { LmsCourse, LmsStats } from "@/lib/db/lms";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 
 type CategoryOption = { id: string; name: string };
+type SubcategoryOption = CategoryOption & { parentId: string };
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,10 +27,12 @@ export function LmsManagement({
   initial,
   stats,
   categoryOptions = [],
+  subcategoryOptions = [],
 }: {
   initial: LmsCourse[];
   stats: LmsStats;
   categoryOptions?: CategoryOption[];
+  subcategoryOptions?: SubcategoryOption[];
 }) {
   const t = useTranslations("Admin");
   const router = useRouter();
@@ -38,6 +41,7 @@ export function LmsManagement({
   const [cat, setCat] = React.useState("all");
   const [status, setStatus] = React.useState("all");
   const [addOpen, setAddOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<LmsCourse | null>(null);
 
   const categories = React.useMemo(() => Array.from(new Set(initial.map((c) => c.category))), [initial]);
   const filtered = rows.filter((c) =>
@@ -150,7 +154,7 @@ export function LmsManagement({
                   <td className="px-3 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="size-8" onClick={() => router.push(`/admin/lms/${c.id}`)}><Users className="size-4" /></Button>
-                      <Button variant="ghost" size="icon" className="size-8 text-primary" onClick={() => router.push(`/admin/lms/${c.id}`)}><Pencil className="size-4" /></Button>
+                      <Button variant="ghost" size="icon" className="size-8 text-primary" onClick={() => setEditing(c)}><Pencil className="size-4" /></Button>
                       <Button variant="ghost" size="icon" className="size-8" onClick={() => duplicate(c)}><Copy className="size-4" /></Button>
                       <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => remove(c)}><Trash2 className="size-4" /></Button>
                     </div>
@@ -176,6 +180,15 @@ export function LmsManagement({
         onClose={() => setAddOpen(false)}
         categoryOptions={categoryOptions}
         onCreated={(c) => setRows((p) => [c, ...p])}
+      />
+
+      <EditLmsModal
+        open={!!editing}
+        course={editing}
+        onClose={() => setEditing(null)}
+        categoryOptions={categoryOptions}
+        subcategoryOptions={subcategoryOptions}
+        onSaved={(c) => { setRows((p) => p.map((x) => (x.id === c.id ? c : x))); setEditing(null); }}
       />
     </div>
   );
@@ -236,6 +249,92 @@ function AddLmsModal({
         <DialogFooter>
           <Button variant="ghost" onClick={() => { reset(); onClose(); }} disabled={saving}>{t("lmsCancel")}</Button>
           <Button onClick={create} disabled={saving}>{t("lmsCreateCourse")}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditLmsModal({
+  open,
+  course,
+  onClose,
+  categoryOptions,
+  subcategoryOptions,
+  onSaved,
+}: {
+  open: boolean;
+  course: LmsCourse | null;
+  onClose: () => void;
+  categoryOptions: CategoryOption[];
+  subcategoryOptions: SubcategoryOption[];
+  onSaved: (course: LmsCourse) => void;
+}) {
+  const t = useTranslations("Admin");
+  const [title, setTitle] = React.useState("");
+  const [category, setCategory] = React.useState("");
+  const [subcategory, setSubcategory] = React.useState("");
+  const [thumbnail, setThumbnail] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!open || !course) return;
+    setTitle(course.name);
+    setCategory(course.categoryId);
+    setSubcategory(course.subcategoryId);
+    setThumbnail(course.image);
+  }, [open, course]);
+
+  const subOptions = subcategoryOptions.filter((s) => !category || s.parentId === category);
+
+  const save = async () => {
+    if (!course || !title.trim() || !category) return;
+    setSaving(true);
+    const res = await dal.lms.updateLmsCourse(course.id, {
+      title: title.trim(),
+      category,
+      subcategory: subcategory || undefined,
+      thumbnail: thumbnail ? [thumbnail] : [],
+    });
+    setSaving(false);
+    if (res.ok && res.data) {
+      toast.success(t("lmsUpdated"));
+      onSaved(res.data);
+    } else if (!res.ok) {
+      toast.error(res.error);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Pencil className="size-5 text-primary" />{t("lmsEditDetails")}</DialogTitle>
+          <DialogDescription>{t("editLmsHint")}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5"><Label>{t("lmsCourseTitle")} <span className="text-destructive">*</span></Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("lmsCourseTitlePh")} /></div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5"><Label>{t("lmsCategory")} <span className="text-destructive">*</span></Label>
+              <Select value={category} onValueChange={(v) => { setCategory(v); setSubcategory(""); }}>
+                <SelectTrigger className="w-full"><SelectValue placeholder={t("lmsSelectCat")} /></SelectTrigger>
+                <SelectContent position="popper">{categoryOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5"><Label>{t("lmsSubcategory")}</Label>
+              <Select value={subcategory} onValueChange={setSubcategory} disabled={!category}>
+                <SelectTrigger className="w-full"><SelectValue placeholder={t("lmsSelectSub")} /></SelectTrigger>
+                <SelectContent position="popper">{subOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1.5"><Label>{t("lmsThumbnail")}</Label><ImageUpload value={thumbnail} onChange={setThumbnail} hint={t("lmsThumbnailOptional")} /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>{t("lmsCancel")}</Button>
+          <Button onClick={save} disabled={saving || !title.trim() || !category} className="gap-1.5">
+            {saving && <Loader2 className="size-4 animate-spin" />}{t("grpSave")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
