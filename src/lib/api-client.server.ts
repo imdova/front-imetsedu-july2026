@@ -20,7 +20,8 @@ export function configureServerApiClient(): void {
   configured = true;
 
   configureApiClient({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL,
+    baseUrl:
+      process.env.NEXT_PUBLIC_API_URL || "https://main-api.imetsedu.com",
     getToken: async () => {
       try {
         const store = await cookies();

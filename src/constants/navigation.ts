@@ -41,7 +41,6 @@ export const ADMIN_NAV: NavSection[] = [
     items: [
       { titleKey: "crmDashboard", href: "/admin/crm", icon: "LayoutDashboard", requiredPermissions: ["crm.dashboard.view"] },
       { titleKey: "leads", href: "/admin/crm/leads", icon: "Target", requiredPermissions: ["crm.leads.view"] },
-      { titleKey: "pipeline", href: "/admin/crm/pipeline", icon: "KanbanSquare", requiredPermissions: ["crm.pipelines.view"] },
       { titleKey: "allPipelines", href: "/admin/crm/pipelines", icon: "GitBranch", requiredPermissions: ["crm.pipelines.view"] },
       { titleKey: "paymentTracking", href: "/admin/crm/payment-tracking", icon: "Wallet", requiredPermissions: ["finance.payment_tracking.view"] },
       { titleKey: "invoices", href: "/admin/crm/invoices", icon: "ReceiptText", requiredPermissions: ["finance.invoices.view"] },
@@ -100,6 +99,16 @@ export const ADMIN_NAV: NavSection[] = [
       { titleKey: "transactions", href: "/admin/transactions", icon: "Wallet", requiredPermissions: ["finance.refunds.view", "finance.invoices.view"] },
       { titleKey: "payments", href: "/admin/payments", icon: "CreditCard", requiredPermissions: ["finance.invoices.view"] },
       { titleKey: "refunds", href: "/admin/refunds", icon: "Undo2", requiredPermissions: ["finance.refunds.view"] },
+    ],
+  },
+  {
+    labelKey: "sectionMarketing",
+    items: [
+      { titleKey: "landingPages", href: "/admin/marketing/landing", icon: "LayoutTemplate", adminOnly: true },
+      { titleKey: "examLeads", href: "/admin/marketing/leads", icon: "UserPlus", adminOnly: true },
+      { titleKey: "emailMarketing", href: "/admin/marketing/email", icon: "Mail", adminOnly: true },
+      { titleKey: "seoManager", href: "/admin/marketing/seo", icon: "FileSearch", adminOnly: true },
+      { titleKey: "platformMarketing", href: "/admin/marketing/platform", icon: "Megaphone", adminOnly: true },
     ],
   },
   {

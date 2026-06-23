@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { dal } from "@/lib/dal";
 import { CourseCatalog } from "@/features/marketing/components/course-catalog";
 import { seoAlternates, socialMeta } from "@/lib/seo";
+import { mergeSeo } from "@/lib/public-seo";
 
 export async function generateMetadata({
   params,
@@ -14,12 +15,12 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "Marketing" });
   const title = t("catalogTitle");
   const description = t("catalogSubtitle");
-  return {
+  return mergeSeo("/courses", {
     title,
     description,
     alternates: seoAlternates("/courses", locale),
     ...socialMeta({ title, description, path: "/courses", locale }),
-  };
+  });
 }
 
 export default async function CatalogPage({

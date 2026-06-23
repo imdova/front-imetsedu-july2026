@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { dal } from "@/lib/dal";
 import { CourseCatalog } from "@/features/marketing/components/course-catalog";
 import { SITE_NAME, seoAlternates, socialMeta } from "@/lib/seo";
+import { mergeSeo } from "@/lib/public-seo";
 
 export async function generateStaticParams() {
   const res = await dal.lookups.fetchCategories();
@@ -24,12 +25,12 @@ export async function generateMetadata({
   const title = cat ? cat.label : t("categoryTitle", { name: "" });
   const description = t("categorySubtitle", { name: cat?.label ?? "" });
   const path = `/category/${slug}`;
-  return {
+  return mergeSeo(path, {
     title,
     description,
     alternates: seoAlternates(path, locale),
     ...socialMeta({ title: `${title} · ${SITE_NAME}`, description, path, locale }),
-  };
+  });
 }
 
 export default async function CategoryPage({

@@ -63,6 +63,15 @@ export function SidebarNav({ collapsed, onNavigate, nav = ADMIN_NAV }: SidebarNa
     });
   }, [pathname, nav, setNavSectionCollapsed]);
 
+  React.useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const container = document.querySelector("[data-sidebar-scroll]");
+      const active = container?.querySelector("[data-sidebar-active]");
+      active?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pathname]);
+
   return (
     <nav className="flex flex-col gap-5 px-3 py-4">
       {nav.map((section) => {
@@ -113,11 +122,12 @@ export function SidebarNav({ collapsed, onNavigate, nav = ADMIN_NAV }: SidebarNa
                     prefetch={false}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
+                    data-sidebar-active={active ? "" : undefined}
                     className={cn(
                       "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
                       "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                       active &&
-                        "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm shadow-primary/25 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground",
+                        "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-black/20 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground",
                       collapsed && "justify-center px-0",
                     )}
                   >

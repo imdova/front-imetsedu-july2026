@@ -8,9 +8,9 @@ import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV, BRAND, type NavSection } from "@/constants/navigation";
 import { useUi } from "@/store";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { SidebarNav } from "./sidebar-nav";
+import { SidebarScroll } from "./sidebar-scroll";
 
 interface AppSidebarProps {
   nav?: NavSection[];
@@ -36,7 +36,7 @@ export function AppSidebar({
     <motion.aside
       animate={{ width: sidebarCollapsed ? 76 : 264 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="sticky top-0 hidden h-svh shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex"
+      className="sticky top-0 hidden h-svh shrink-0 flex-col overflow-hidden border-e border-sidebar-border text-sidebar-foreground sidebar-gradient lg:flex"
     >
       <div
         className={cn(
@@ -49,10 +49,13 @@ export function AppSidebar({
             <img
               src={logoLight}
               alt={BRAND.fullName}
-              className={cn("shrink-0 object-contain", sidebarCollapsed ? "h-8 w-8" : "h-9 max-w-[140px]")}
+              className={cn(
+                "shrink-0 object-contain brightness-0 invert",
+                sidebarCollapsed ? "h-8 w-8" : "h-9 max-w-[140px]",
+              )}
             />
           ) : (
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] text-white shadow-md shadow-primary/25 ring-1 ring-white/10">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/15 text-white shadow-md ring-1 ring-white/15">
               <GraduationCap className="size-5" />
             </span>
           )}
@@ -67,9 +70,9 @@ export function AppSidebar({
         </Link>
       </div>
 
-      <ScrollArea className="flex-1 scrollbar-thin">
+      <SidebarScroll>
         <SidebarNav collapsed={sidebarCollapsed} nav={nav} />
-      </ScrollArea>
+      </SidebarScroll>
 
       <div className="border-t border-sidebar-border p-3">
         <Button

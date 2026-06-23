@@ -5,7 +5,6 @@ import {
   Languages,
   Users,
   Star,
-  Sparkles,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -14,10 +13,11 @@ import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CourseCard } from "@/features/marketing/components/course-card";
+import { MarketingHero } from "@/features/marketing/components/marketing-hero";
 import { SITE_NAME, seoAlternates, socialMeta, metaDescription } from "@/lib/seo";
+import { resolveSeoMetadata } from "@/lib/public-seo";
 
 export async function generateMetadata({
   params,
@@ -28,7 +28,12 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "Marketing" });
   const title = `${SITE_NAME} — ${t("heroTitle")}`;
   const description = metaDescription(t("heroSubtitle"));
+  // Admin-managed SEO (settings + "/" page override) spread underneath so it
+  // contributes fields the i18n defaults don't set (e.g. a site-wide noindex);
+  // best-effort and never overrides the localized title/description below.
+  const adminMeta = await resolveSeoMetadata("/").catch(() => ({} as Metadata));
   return {
+    ...adminMeta,
     title,
     description,
     alternates: seoAlternates("/", locale),
@@ -76,46 +81,7 @@ export default async function HomePage({
 
   return (
     <>
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/70 bg-grid">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-          <div className="mx-auto max-w-3xl text-center">
-            <Badge variant="secondary" className="mb-5 gap-1.5">
-              <Sparkles className="size-3.5 text-primary" />
-              {t("heroTagline")}
-            </Badge>
-            <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              {t("heroTitle")}
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-              {t("heroSubtitle")}
-            </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button asChild size="lg" className="gap-1.5">
-                <Link href="/register">
-                  {t("getStarted")}
-                  <ArrowRight className="size-4 rtl:rotate-180" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/courses">{t("browseCourses")}</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="mx-auto mt-16 grid max-w-3xl grid-cols-2 gap-6 sm:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label} className="text-center">
-                <p className="font-heading text-3xl font-bold text-primary tabular-nums">
-                  {s.value}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <MarketingHero stats={stats} />
 
       {/* Featured courses */}
       <Section title={t("featuredTitle")} subtitle={t("featuredSubtitle")}

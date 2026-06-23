@@ -28,8 +28,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { SidebarNav } from "./sidebar-nav";
+import { SidebarScroll } from "./sidebar-scroll";
 import { NotificationBell } from "@/features/admin/components/notification-bell";
 
 interface AppHeaderProps {
@@ -60,18 +60,18 @@ export function AppHeader({ nav = ADMIN_NAV, showCreate = true }: AppHeaderProps
         </SheetTrigger>
         <SheetContent
           side="left"
-          className="w-72 bg-sidebar p-0 text-sidebar-foreground"
+          className="sidebar-gradient flex w-72 flex-col overflow-hidden p-0 text-sidebar-foreground"
         >
           <SheetTitle className="sr-only">{t("Nav.navigation")}</SheetTitle>
-          <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
-            <span className="grid size-9 place-items-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
+          <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-4">
+            <span className="grid size-9 place-items-center rounded-xl bg-white/15 text-white ring-1 ring-white/15">
               <GraduationCap className="size-5" />
             </span>
             <span className="text-sm font-semibold">{BRAND.fullName}</span>
           </div>
-          <ScrollArea className="h-[calc(100svh-4rem)]">
+          <SidebarScroll>
             <SidebarNav collapsed={false} nav={nav} />
-          </ScrollArea>
+          </SidebarScroll>
         </SheetContent>
       </Sheet>
 

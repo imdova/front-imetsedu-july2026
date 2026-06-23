@@ -22,7 +22,11 @@ import * as siteSettings from "./site-settings";
 import * as auth from "./auth";
 import * as upload from "./upload";
 import * as quizzes from "./quizzes";
+import * as marketing from "./marketing";
+import * as landing from "./landing";
+import * as emailMarketing from "./email-marketing";
+import * as seo from "./seo";
 
-export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes };
+export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo };
 
 export type { Result } from "@integration/lib/api-client";

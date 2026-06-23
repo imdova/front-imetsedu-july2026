@@ -6,6 +6,7 @@
  */
 import type { Metadata } from "next";
 import { routing } from "@/i18n/routing";
+import { mergeSeo } from "@/lib/public-seo";
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://imetsedu.com").replace(/\/$/, "");
 export const SITE_NAME = "IMETS School of Business";
@@ -61,20 +62,23 @@ export function socialMeta(opts: {
   };
 }
 
-/** Full metadata block for a static public page (title + description + canonical + hreflang + social). */
-export function staticPageMeta(opts: {
+/** Full metadata block for a static public page (title + description + canonical
+ * + hreflang + social), with admin-managed SEO (settings + per-path override)
+ * merged underneath so it contributes fields the page doesn't set. */
+export async function staticPageMeta(opts: {
   title: string;
   description: string;
   path: string;
   locale: string;
   image?: string;
-}): Metadata {
-  return {
+}): Promise<Metadata> {
+  const base: Metadata = {
     title: opts.title,
     description: opts.description,
     alternates: seoAlternates(opts.path, opts.locale),
     ...socialMeta(opts),
   };
+  return mergeSeo(opts.path, base);
 }
 
 /* ───────────────────────────── JSON-LD ───────────────────────────── */

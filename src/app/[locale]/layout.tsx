@@ -11,6 +11,7 @@ import { ApiBootstrap } from "@/components/providers/api-bootstrap";
 import { configureServerApiClient } from "@/lib/api-client.server";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MetaPixel } from "@/components/analytics/meta-pixel";
 import { getTheme, getSiteSettings } from "@/lib/db/site-settings";
 
 // Configure the server-side integration client (cookie bearer token) once.
@@ -112,6 +113,7 @@ export default async function LocaleLayout({
         suppressHydrationWarning
         className="min-h-full bg-background text-foreground"
       >
+        <MetaPixel />
         <NextIntlClientProvider>
           <ApiBootstrap />
           <ThemeProvider>

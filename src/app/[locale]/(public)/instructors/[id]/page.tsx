@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { SITE_NAME, seoAlternates, socialMeta } from "@/lib/seo";
+import { mergeSeo } from "@/lib/public-seo";
 
 export async function generateMetadata({
   params,
@@ -22,12 +23,12 @@ export async function generateMetadata({
   const title = instructor.label;
   const description = `${instructor.label}${instructor.title ? ` — ${instructor.title}` : ""}. ${SITE_NAME} instructor.`;
   const path = `/instructors/${id}`;
-  return {
+  return mergeSeo(path, {
     title,
     description,
     alternates: seoAlternates(path, locale),
     ...socialMeta({ title: `${title} · ${SITE_NAME}`, description, path, locale, image: instructor.avatarUrl }),
-  };
+  });
 }
 
 export default async function InstructorDetailPage({

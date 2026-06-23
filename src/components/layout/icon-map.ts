@@ -37,6 +37,9 @@ import {
   SlidersHorizontal,
   GitBranch,
   Coins,
+  LayoutTemplate,
+  FileSearch,
+  Megaphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -83,6 +86,9 @@ export const ICONS: Record<string, LucideIcon> = {
   SlidersHorizontal,
   GitBranch,
   Coins,
+  LayoutTemplate,
+  FileSearch,
+  Megaphone,
 };
 
 export function getIcon(name: string): LucideIcon {

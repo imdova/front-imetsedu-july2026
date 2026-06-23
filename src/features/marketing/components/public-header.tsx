@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { useTranslations } from "next-intl";
 import { GraduationCap, Menu } from "lucide-react";
 
@@ -19,6 +18,7 @@ import {
 
 export function PublicHeader({ logoLight }: { logoLight?: string }) {
   const pathname = usePathname();
+  const isHome = pathname === "/";
   const tn = useTranslations("Nav");
   const tm = useTranslations("Marketing");
   const tc = useTranslations("Common");
@@ -33,17 +33,43 @@ export function PublicHeader({ logoLight }: { logoLight?: string }) {
   }));
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+    <header
+      className={cn(
+        "top-0 z-40",
+        isHome
+          ? "absolute inset-x-0 bg-transparent"
+          : "sticky border-b border-border/70 bg-background/80 backdrop-blur-xl",
+      )}
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
           {logoLight ? (
-            <img src={logoLight} alt={BRAND.fullName} className="h-9 max-w-[160px] object-contain" />
+            <img
+              src={logoLight}
+              alt={BRAND.fullName}
+              className={cn(
+                "h-9 max-w-[160px] object-contain",
+                isHome && "brightness-0 invert",
+              )}
+            />
           ) : (
             <>
-              <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] text-white shadow-md shadow-primary/25">
+              <span
+                className={cn(
+                  "grid size-9 place-items-center rounded-xl text-white shadow-md",
+                  isHome
+                    ? "bg-white/15 ring-1 ring-white/20"
+                    : "bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] shadow-primary/25",
+                )}
+              >
                 <GraduationCap className="size-5" />
               </span>
-              <span className="text-base font-semibold tracking-tight">
+              <span
+                className={cn(
+                  "text-base font-semibold tracking-tight",
+                  isHome ? "text-white" : "text-foreground",
+                )}
+              >
                 {BRAND.fullName}
               </span>
             </>
@@ -57,9 +83,13 @@ export function PublicHeader({ logoLight }: { logoLight?: string }) {
               href={l.href}
               className={cn(
                 "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                l.active
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground",
+                isHome
+                  ? l.active
+                    ? "text-white"
+                    : "text-white/75 hover:text-white"
+                  : l.active
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground",
               )}
             >
               {l.label}
@@ -68,19 +98,47 @@ export function PublicHeader({ logoLight }: { logoLight?: string }) {
         </nav>
 
         <div className="ms-auto flex items-center gap-1.5">
-          <LanguageSwitcher />
-          <ThemeToggle />
-          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+          <LanguageSwitcher variant={isHome ? "overlay" : "default"} />
+          <ThemeToggle
+            className={cn(
+              isHome &&
+                "text-white hover:bg-white/10 hover:text-white",
+            )}
+          />
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "hidden sm:inline-flex",
+              isHome && "text-white hover:bg-white/10 hover:text-white",
+            )}
+          >
             <Link href="/login">{tc("signIn")}</Link>
           </Button>
-          <Button asChild size="sm" className="hidden sm:inline-flex">
+          <Button
+            asChild
+            size="sm"
+            className={cn(
+              "hidden sm:inline-flex",
+              isHome
+                ? "bg-white text-[#0a1424] hover:bg-white/90"
+                : undefined,
+            )}
+          >
             <Link href="/register">{tm("getStarted")}</Link>
           </Button>
 
-          {/* Mobile menu */}
           <Sheet>
             <SheetTrigger asChild className="lg:hidden">
-              <Button variant="ghost" size="icon" aria-label={tn("navigation")}>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={tn("navigation")}
+                className={cn(
+                  isHome && "text-white hover:bg-white/10 hover:text-white",
+                )}
+              >
                 <Menu className="size-5" />
               </Button>
             </SheetTrigger>

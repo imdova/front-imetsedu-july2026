@@ -57,7 +57,11 @@ const config: ApiClientConfig = {
 };
 
 export function configureApiClient(partial: Partial<ApiClientConfig>): void {
-  Object.assign(config, partial);
+  for (const [key, value] of Object.entries(partial)) {
+    if (value !== undefined) {
+      (config as unknown as Record<string, unknown>)[key] = value;
+    }
+  }
 }
 
 /* -------------------------------------------------------------------------- */

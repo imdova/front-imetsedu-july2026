@@ -21,7 +21,8 @@ export function bootstrapApiClient(): void {
   configured = true;
 
   configureApiClient({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL,
+    baseUrl:
+      process.env.NEXT_PUBLIC_API_URL || "https://main-api.imetsedu.com",
     getToken: () => useStore.getState().user?.access_token ?? null,
     onUnauthorized: () => useStore.getState().logout(),
   });
