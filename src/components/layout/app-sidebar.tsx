@@ -2,15 +2,15 @@
 
 import { motion } from "motion/react";
 import { useTranslations } from "next-intl";
-import { GraduationCap, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV, BRAND, type NavSection } from "@/constants/navigation";
 import { useUi } from "@/store";
-import { Button } from "@/components/ui/button";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarScroll } from "./sidebar-scroll";
+import { SidebarCollapseButton } from "./sidebar-collapse-button";
 
 interface AppSidebarProps {
   nav?: NavSection[];
@@ -29,7 +29,7 @@ export function AppSidebar({
   logoLight,
   logoDark,
 }: AppSidebarProps) {
-  const { sidebarCollapsed, toggleSidebar } = useUi();
+  const { sidebarCollapsed } = useUi();
   const t = useTranslations();
 
   return (
@@ -40,11 +40,17 @@ export function AppSidebar({
     >
       <div
         className={cn(
-          "flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4",
-          sidebarCollapsed && "justify-center px-0",
+          "flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border px-3",
+          sidebarCollapsed ? "justify-center px-2" : "justify-between",
         )}
       >
-        <Link href={homeHref} className="flex items-center gap-2.5 min-w-0">
+        <Link
+          href={homeHref}
+          className={cn(
+            "flex min-w-0 items-center gap-2.5",
+            sidebarCollapsed && "justify-center",
+          )}
+        >
           {logoLight ? (
             <img
               src={logoLight}
@@ -68,30 +74,19 @@ export function AppSidebar({
             </span>
           )}
         </Link>
+        {!sidebarCollapsed && <SidebarCollapseButton />}
       </div>
 
       <SidebarScroll>
         <SidebarNav collapsed={sidebarCollapsed} nav={nav} />
       </SidebarScroll>
 
-      <div className="border-t border-sidebar-border p-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleSidebar}
-          className={cn(
-            "w-full justify-start gap-3 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            sidebarCollapsed && "justify-center",
-          )}
-          aria-label={t("Nav.collapse")}
-        >
-          {sidebarCollapsed ? (
-            <PanelLeftOpen className="size-[18px] rtl:rotate-180" />
-          ) : (
-            <PanelLeftClose className="size-[18px] rtl:rotate-180" />
-          )}
-          {!sidebarCollapsed && <span>{t("Nav.collapse")}</span>}
-        </Button>
+      <div className="shrink-0 border-t border-sidebar-border p-3">
+        {sidebarCollapsed ? (
+          <SidebarCollapseButton className="mx-auto" />
+        ) : (
+          <SidebarCollapseButton showLabel />
+        )}
       </div>
     </motion.aside>
   );

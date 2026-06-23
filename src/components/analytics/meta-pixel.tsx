@@ -12,9 +12,11 @@ import Script from "next/script";
  * client-side navigations are not auto-tracked — add an `fbq('track','PageView')`
  * on route change if SPA pageviews are needed.
  */
-const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "2378714735952830";
+const ENV_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "2378714735952830";
 
-export function MetaPixel() {
+/** `pixelId` (from site settings) wins; falls back to the env/default id. */
+export function MetaPixel({ pixelId }: { pixelId?: string } = {}) {
+  const PIXEL_ID = pixelId || ENV_PIXEL_ID;
   if (!PIXEL_ID) return null;
 
   return (

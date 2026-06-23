@@ -1,27 +1,20 @@
 import { setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
-import { SettingsConsole } from "@/features/admin/components/settings-console";
+import { DEFAULT_FULL_SETTINGS } from "@/lib/dal/site-settings";
+import { SiteSettingsClient } from "@/features/admin/components/site-settings-client";
+
+export const metadata = { robots: { index: false } };
 
 export default async function AdminSettingsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [intgRes, themeRes, siteRes] = await Promise.all([
-    dal.siteSettings.fetchIntegrations(),
-    dal.siteSettings.fetchTheme(),
-    dal.siteSettings.fetchSiteSettings(),
-  ]);
-
-  const theme = themeRes.ok ? themeRes.data : {
-    primaryColor: "#1111D4", accentColor: "#FBBF24", systemHighlight: "#62a0ea",
-    headingFont: "Poppins", bodyFont: "Inter", radius: "square" as const,
-  };
-  const siteSettings = siteRes.ok ? siteRes.data.settings : undefined;
+  const res = await dal.siteSettings.fetchFullSettings();
 
   return (
     <div className="mx-auto max-w-[1500px]">
-      <SettingsConsole integrations={intgRes.ok ? intgRes.data : []} theme={theme} siteSettings={siteSettings} />
+      <SiteSettingsClient initial={res.ok ? res.data : DEFAULT_FULL_SETTINGS} />
     </div>
   );
 }

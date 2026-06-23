@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarScroll } from "./sidebar-scroll";
+import { SidebarCollapseButton } from "./sidebar-collapse-button";
 import { NotificationBell } from "@/features/admin/components/notification-bell";
 
 interface AppHeaderProps {
@@ -74,6 +75,8 @@ export function AppHeader({ nav = ADMIN_NAV, showCreate = true }: AppHeaderProps
           </SidebarScroll>
         </SheetContent>
       </Sheet>
+
+      <SidebarCollapseButton variant="header" className="hidden lg:inline-flex" />
 
       <div className="relative hidden max-w-sm flex-1 sm:block">
         <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

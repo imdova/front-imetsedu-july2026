@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { ADMIN_NAV, type NavSection } from "@/constants/navigation";
 import { useStore, useUi } from "@/store";
 import type { StaffRolePermissions } from "@/store/slices/auth-slice";
+import { useSiteSettings } from "@/components/providers/site-settings-provider";
 import { getIcon } from "./icon-map";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -55,6 +56,12 @@ export function SidebarNav({ collapsed, onNavigate, nav = ADMIN_NAV }: SidebarNa
   // staffRole === undefined → not yet hydrated → show everything optimistically
   const permissions: StaffRolePermissions | null | undefined = storePermissions;
 
+  // Site-settings feature flags — hide an item only when its flag is explicitly
+  // disabled (missing/unknown flags stay visible).
+  const { features } = useSiteSettings();
+  const featureEnabled = (key?: string) =>
+    !key || (features as Record<string, boolean> | undefined)?.[key] !== false;
+
   React.useEffect(() => {
     nav.forEach((section) => {
       if (sectionHasActive(pathname, section)) {
@@ -79,8 +86,10 @@ export function SidebarNav({ collapsed, onNavigate, nav = ADMIN_NAV }: SidebarNa
         const hasActive = sectionHasActive(pathname, section);
 
         // Filter items using hasAccess — identical to old AdminSidebarPanel
-        const visibleItems = section.items.filter((item) =>
-          hasAccess(permissions, item.requiredPermissions, item.adminOnly),
+        const visibleItems = section.items.filter(
+          (item) =>
+            hasAccess(permissions, item.requiredPermissions, item.adminOnly) &&
+            featureEnabled(item.feature),
         );
         if (visibleItems.length === 0) return null;
 

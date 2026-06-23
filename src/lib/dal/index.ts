@@ -26,7 +26,8 @@ import * as marketing from "./marketing";
 import * as landing from "./landing";
 import * as emailMarketing from "./email-marketing";
 import * as seo from "./seo";
+import * as blog from "./blog";
 
-export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo };
+export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog };
 
 export type { Result } from "@integration/lib/api-client";

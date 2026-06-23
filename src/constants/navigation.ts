@@ -22,6 +22,11 @@ export interface NavItem {
    * (i.e. it is reserved for super-admins only).
    */
   adminOnly?: boolean;
+  /**
+   * If set, the item is hidden when that site-settings feature flag is
+   * explicitly disabled (key of SiteSettings.features, e.g. "blog"|"events").
+   */
+  feature?: string;
 }
 
 export interface NavSection {
@@ -73,10 +78,10 @@ export const ADMIN_NAV: NavSection[] = [
   {
     labelKey: "sectionAssessment",
     items: [
-      { titleKey: "quizzes", href: "/admin/quizzes", icon: "ListChecks", adminOnly: true },
+      { titleKey: "quizzes", href: "/admin/quizzes", icon: "ListChecks", adminOnly: true, feature: "questionBanks" },
       { titleKey: "assignments", href: "/admin/assignments", icon: "ClipboardList", adminOnly: true },
       { titleKey: "certificates", href: "/admin/certificates", icon: "Award", requiredPermissions: ["lms.certificates.view"] },
-      { titleKey: "events", href: "/admin/events", icon: "CalendarDays", adminOnly: true },
+      { titleKey: "events", href: "/admin/events", icon: "CalendarDays", adminOnly: true, feature: "events" },
     ],
   },
   {
@@ -99,6 +104,15 @@ export const ADMIN_NAV: NavSection[] = [
       { titleKey: "transactions", href: "/admin/transactions", icon: "Wallet", requiredPermissions: ["finance.refunds.view", "finance.invoices.view"] },
       { titleKey: "payments", href: "/admin/payments", icon: "CreditCard", requiredPermissions: ["finance.invoices.view"] },
       { titleKey: "refunds", href: "/admin/refunds", icon: "Undo2", requiredPermissions: ["finance.refunds.view"] },
+    ],
+  },
+  {
+    labelKey: "sectionBlog",
+    items: [
+      { titleKey: "blogArticles", href: "/admin/blog", icon: "Newspaper", adminOnly: true, feature: "blog" },
+      { titleKey: "blogTemplates", href: "/admin/blog/templates", icon: "LayoutTemplate", adminOnly: true, feature: "blog" },
+      { titleKey: "blogCategories", href: "/admin/blog/categories", icon: "FolderTree", adminOnly: true, feature: "blog" },
+      { titleKey: "blogAuthors", href: "/admin/blog/authors", icon: "PenTool", adminOnly: true, feature: "blog" },
     ],
   },
   {

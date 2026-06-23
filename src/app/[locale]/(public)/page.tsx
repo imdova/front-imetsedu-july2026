@@ -3,7 +3,6 @@ import {
   GraduationCap,
   ShieldCheck,
   Languages,
-  Users,
   Star,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -16,6 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { MarketingHero } from "@/features/marketing/components/marketing-hero";
+import {
+  CareerCtaSection,
+  HowItWorksSection,
+  OrganizationsSection,
+} from "@/features/marketing/components/home-marketing-sections";
 import { SITE_NAME, seoAlternates, socialMeta, metaDescription } from "@/lib/seo";
 import { resolveSeoMetadata } from "@/lib/public-seo";
 
@@ -132,6 +136,8 @@ export default async function HomePage({
         </div>
       </Section>
 
+      <HowItWorksSection />
+
       {/* Instructors */}
       <section className="border-y border-border/70 bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -190,17 +196,8 @@ export default async function HomePage({
         </div>
       </Section>
 
-      {/* CTA */}
-      <section className="px-4 pb-20 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[oklch(0.46_0.2_286)] px-8 py-16 text-center text-white shadow-xl">
-          <Users className="mx-auto size-10 opacity-80" />
-          <h2 className="mt-4 font-heading text-3xl font-bold">{t("ctaTitle")}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/85">{t("ctaSubtitle")}</p>
-          <Button asChild size="lg" variant="secondary" className="mt-7">
-            <Link href="/register">{t("ctaButton")}</Link>
-          </Button>
-        </div>
-      </section>
+      <OrganizationsSection />
+      <CareerCtaSection />
     </>
   );
 }

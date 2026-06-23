@@ -2,6 +2,8 @@
 import { ok, fail, toMessage, type Result } from "@integration/lib/api-client";
 import * as db from "@/lib/db/site-settings";
 import type { BrandingTheme, SiteSettings } from "@/lib/db/site-settings";
+import * as ssSvc from "@integration/services/site-settings";
+import type { SiteSettings as FullSiteSettings, SiteSettingsPatch } from "@/types/site-settings";
 
 async function wrap<T>(fn: () => Promise<T>, msg: string): Promise<Result<T>> {
   try {
@@ -23,3 +25,24 @@ export const saveSiteSettings = (site: SiteSettings): Promise<Result<db.SiteSett
     await db.saveSiteSettingsDb(site);
     return site;
   }, "Failed to save site settings");
+
+/* ── Typed 8-group SiteSettings (spec 03) — backed by the `site-setting` module ── */
+
+/** Sane defaults so the editor/site render before an admin ever saves. */
+export const DEFAULT_FULL_SETTINGS: FullSiteSettings = {
+  general: { siteName: "IMETS School of Business", tagline: "", defaultLocale: "en", timezone: "Africa/Cairo", currency: "EGP" },
+  branding: { logoUrl: "", darkLogoUrl: "", footerLogoUrl: "", faviconUrl: "", primaryColor: "#1111D4", ogImage: "" },
+  theme: { primaryColor: "#1111D4", accentColor: "#FBBF24", mode: "light", allowUserToggle: true, radius: "soft" },
+  contact: { supportEmail: "", phone: "", address: "", businessHours: "" },
+  social: { facebook: "", x: "", linkedin: "", instagram: "", youtube: "" },
+  integrations: { gaMeasurementId: "", gtmId: "", metaPixelId: "", hotjarId: "", intercomAppId: "", metaCapiEnabled: false, metaCapiToken: "", metaTestEventCode: "" },
+  features: { jobs: false, questionBanks: true, events: true, webinars: false, blog: true, store: false },
+  maintenance: { enabled: false, message: "We'll be back shortly." },
+};
+
+/** Admin GET — full settings incl. the CAPI token. */
+export const fetchFullSettings = () => ssSvc.getAdminSettings();
+/** Admin PATCH — deep-merge a partial patch (per group, server-side). */
+export const updateFullSettings = (patch: SiteSettingsPatch) => ssSvc.updateSettings(patch);
+/** Public GET — settings minus the CAPI token (cached). */
+export const fetchPublicSettings = () => ssSvc.getPublicSettings();

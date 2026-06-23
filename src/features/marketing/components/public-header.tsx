@@ -9,6 +9,7 @@ import { BRAND, PUBLIC_NAV } from "@/constants/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
+import { BrandImage } from "@/components/shared/brand-image";
 import {
   Sheet,
   SheetContent,
@@ -43,37 +44,41 @@ export function PublicHeader({ logoLight }: { logoLight?: string }) {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          {logoLight ? (
-            <img
-              src={logoLight}
-              alt={BRAND.fullName}
-              className={cn(
-                "h-9 max-w-[160px] object-contain",
-                isHome && "brightness-0 invert",
-              )}
-            />
-          ) : (
-            <>
-              <span
-                className={cn(
-                  "grid size-9 place-items-center rounded-xl text-white shadow-md",
-                  isHome
-                    ? "bg-white/15 ring-1 ring-white/20"
-                    : "bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] shadow-primary/25",
-                )}
-              >
-                <GraduationCap className="size-5" />
-              </span>
-              <span
-                className={cn(
-                  "text-base font-semibold tracking-tight",
-                  isHome ? "text-white" : "text-foreground",
-                )}
-              >
-                {BRAND.fullName}
-              </span>
-            </>
-          )}
+          <BrandImage
+            kind="navbar"
+            alt={BRAND.fullName}
+            className={cn("h-9 max-w-[160px] object-contain", isHome && "brightness-0 invert")}
+            fallback={
+              logoLight ? (
+                <img
+                  src={logoLight}
+                  alt={BRAND.fullName}
+                  className={cn("h-9 max-w-[160px] object-contain", isHome && "brightness-0 invert")}
+                />
+              ) : (
+                <>
+                  <span
+                    className={cn(
+                      "grid size-9 place-items-center rounded-xl text-white shadow-md",
+                      isHome
+                        ? "bg-white/15 ring-1 ring-white/20"
+                        : "bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] shadow-primary/25",
+                    )}
+                  >
+                    <GraduationCap className="size-5" />
+                  </span>
+                  <span
+                    className={cn(
+                      "text-base font-semibold tracking-tight",
+                      isHome ? "text-white" : "text-foreground",
+                    )}
+                  >
+                    {BRAND.fullName}
+                  </span>
+                </>
+              )
+            }
+          />
         </Link>
 
         <nav className="ms-6 hidden items-center gap-1 lg:flex">

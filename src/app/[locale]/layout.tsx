@@ -12,6 +12,8 @@ import { configureServerApiClient } from "@/lib/api-client.server";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MetaPixel } from "@/components/analytics/meta-pixel";
+import { SiteSettingsProvider } from "@/components/providers/site-settings-provider";
+import { dal } from "@/lib/dal";
 import { getTheme, getSiteSettings } from "@/lib/db/site-settings";
 
 // Configure the server-side integration client (cookie bearer token) once.
@@ -39,16 +41,19 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const [{ settings }, theme] = await Promise.all([
+  const [{ settings }, theme, ss] = await Promise.all([
     getSiteSettings().catch(() => ({ settings: null })),
     getTheme().catch(() => null),
+    dal.siteSettings.fetchPublicSettings().then((r) => (r.ok ? r.data : null)).catch(() => null),
   ]);
-  const siteName = settings?.sitename || "IMETS School of Business";
+  // Prefer the typed site-settings branding/general; fall back to the legacy store.
+  const siteName = ss?.general?.siteName || settings?.sitename || "IMETS School of Business";
   const seoTitle = settings?.seoTitle || siteName;
-  const description = settings?.metaDescription ||
+  const description = settings?.metaDescription || ss?.general?.tagline ||
     "IMETS School of Business — a modern online courses platform for professional and executive education.";
   const keywords = settings?.keywords || undefined;
-  const faviconUrl = theme?.favicon;
+  const faviconUrl = ss?.branding?.faviconUrl || theme?.favicon;
+  const ogImage = ss?.branding?.ogImage || undefined;
 
   return {
     title: { default: seoTitle, template: `%s · ${siteName}` },
@@ -63,8 +68,9 @@ export async function generateMetadata({
       locale: locale === "ar" ? "ar_EG" : "en_US",
       title: seoTitle,
       description,
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
-    twitter: { card: "summary_large_image", title: seoTitle, description },
+    twitter: { card: "summary_large_image", title: seoTitle, description, ...(ogImage ? { images: [ogImage] } : {}) },
   };
 }
 
@@ -89,15 +95,19 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
 
-  // Fetch branding server-side and inject as inline CSS variables on <html>.
-  // Inline styles on the root element cascade to everything beneath it, which
-  // is the correct way to inject dynamic CSS variables without a <style> tag.
-  const theme = await getTheme().catch(() => null);
-  const brandingVars = theme
+  // Public site settings (typed singleton) — best-effort; drives theme CSS vars,
+  // the Meta Pixel id and the client provider. Falls back to the legacy branding
+  // store so the site still renders if the settings backend is unavailable.
+  const [theme, publicSettings] = await Promise.all([
+    getTheme().catch(() => null),
+    dal.siteSettings.fetchPublicSettings().then((r) => (r.ok ? r.data : null)).catch(() => null),
+  ]);
+  const primary = publicSettings?.theme?.primaryColor || theme?.primaryColor;
+  const radiusKey = publicSettings?.theme?.radius || theme?.radius;
+  const brandingVars = (primary || radiusKey)
     ? ({
-        "--primary": theme.primaryColor,
-        "--sidebar-primary": theme.primaryColor,
-        "--radius": RADIUS_CSS[theme.radius] ?? "0.75rem",
+        ...(primary ? { "--primary": primary, "--sidebar-primary": primary } : {}),
+        ...(radiusKey ? { "--radius": RADIUS_CSS[radiusKey] ?? "0.75rem" } : {}),
       } as React.CSSProperties)
     : undefined;
 
@@ -113,15 +123,21 @@ export default async function LocaleLayout({
         suppressHydrationWarning
         className="min-h-full bg-background text-foreground"
       >
-        <MetaPixel />
+        <MetaPixel pixelId={publicSettings?.integrations?.metaPixelId} />
         <NextIntlClientProvider>
           <ApiBootstrap />
-          <ThemeProvider>
-            <TooltipProvider delayDuration={200}>
-              {children}
-              <Toaster richColors position="top-right" />
-            </TooltipProvider>
-          </ThemeProvider>
+          <SiteSettingsProvider value={{
+            branding: publicSettings?.branding ?? {},
+            theme: publicSettings?.theme ?? {},
+            features: publicSettings?.features ?? {},
+          }}>
+            <ThemeProvider>
+              <TooltipProvider delayDuration={200}>
+                {children}
+                <Toaster richColors position="top-right" />
+              </TooltipProvider>
+            </ThemeProvider>
+          </SiteSettingsProvider>
         </NextIntlClientProvider>
       </body>
     </html>

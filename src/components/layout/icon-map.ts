@@ -40,6 +40,7 @@ import {
   LayoutTemplate,
   FileSearch,
   Megaphone,
+  PenTool,
   type LucideIcon,
 } from "lucide-react";
 
@@ -89,6 +90,7 @@ export const ICONS: Record<string, LucideIcon> = {
   LayoutTemplate,
   FileSearch,
   Megaphone,
+  PenTool,
 };
 
 export function getIcon(name: string): LucideIcon {
