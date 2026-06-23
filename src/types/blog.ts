@@ -46,6 +46,7 @@ export interface BlogPost {
   coverImageUrl?: string;
   category?: string;
   tags: string[];
+  language?: string;
   status: BlogStatus;
   featured: boolean;
   authorId?: string;
@@ -64,7 +65,8 @@ export type BlogInput = Partial<Omit<BlogPost, "id" | "views" | "createdAt" | "u
 export type BlogCategoryColor = "primary" | "info" | "success" | "warning" | "destructive" | "neutral";
 export interface BlogCategory {
   id: string; name: string; slug: string; description: string; color: BlogCategoryColor;
-  image?: string; rank: number; status: "active" | "inactive"; seoTitle?: string; seoDescription?: string; articleCount?: number;
+  image?: string; rank: number; status: "active" | "inactive"; seoTitle?: string; seoDescription?: string;
+  articleCount?: number; createdAt?: string;
 }
 export type BlogCategoryInput = Partial<Omit<BlogCategory, "id" | "articleCount">>;
 

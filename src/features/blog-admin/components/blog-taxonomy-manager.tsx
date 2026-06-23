@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +28,7 @@ const SWATCH: Record<BlogCategoryColor, string> = {
   primary: "bg-primary", info: "bg-info", success: "bg-success",
   warning: "bg-warning", destructive: "bg-destructive", neutral: "bg-muted-foreground",
 };
+const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" }) : "—");
 
 type Confirm = ReturnType<typeof useConfirm>["confirm"];
 
@@ -80,12 +82,41 @@ function CategoriesTab({ rows, setRows, confirm }: { rows: BlogCategory[]; setRo
     const res = await dal.blog.deleteCategory(c.id);
     if (res.ok) { setRows((p) => p.filter((x) => x.id !== c.id)); toast.success("Deleted"); } else toast.error(res.error);
   };
+  const toggleStatus = async (c: BlogCategory) => {
+    const next = c.status === "active" ? "inactive" : "active";
+    const res = await dal.blog.updateCategory(c.id, { status: next });
+    if (res.ok) { setRows((p) => p.map((x) => (x.id === c.id ? res.data : x))); toast.success(next === "active" ? "Activated" : "Deactivated"); }
+    else toast.error(res.error);
+  };
 
   const columns: ColumnDef<BlogCategory>[] = [
-    { accessorKey: "name", header: "Name", cell: ({ row }) => <div className="flex items-center gap-2"><span className={cn("size-3 rounded-full", SWATCH[row.original.color])} /><span className="font-medium">{row.original.name}</span></div> },
-    { accessorKey: "slug", header: "Slug", cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">{row.original.slug}</span> },
+    {
+      accessorKey: "name", header: "Category",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted text-sm font-semibold text-muted-foreground">
+            {row.original.image
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={row.original.image} alt="" className="size-full object-cover" />
+              : row.original.name.charAt(0).toUpperCase()}
+          </div>
+          <div><p className="font-medium">{row.original.name}</p><p className="font-mono text-xs text-muted-foreground">/{row.original.slug}</p></div>
+        </div>
+      ),
+    },
+    { accessorKey: "color", header: "Color", cell: ({ row }) => <span className="inline-flex items-center gap-1.5 text-sm capitalize"><span className={cn("size-2.5 rounded-full", SWATCH[row.original.color])} />{row.original.color}</span> },
     { accessorKey: "rank", header: "Rank", cell: ({ row }) => <span className="tabular-nums">{row.original.rank}</span> },
-    { accessorKey: "status", header: "Status", cell: ({ row }) => <Badge variant={row.original.status === "active" ? "default" : "secondary"}>{row.original.status}</Badge> },
+    { accessorKey: "createdAt", header: "Created", cell: ({ row }) => <span className="text-sm text-muted-foreground">{fmtDate(row.original.createdAt)}</span> },
+    { accessorKey: "articleCount", header: "Articles", cell: ({ row }) => <span className="tabular-nums">{row.original.articleCount ?? 0}</span> },
+    {
+      accessorKey: "status", header: "Status",
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-2">
+          <Switch checked={row.original.status === "active"} onCheckedChange={() => toggleStatus(row.original)} />
+          <span className="text-sm text-muted-foreground capitalize">{row.original.status}</span>
+        </span>
+      ),
+    },
     { id: "actions", header: "", cell: ({ row }) => <RowActions onEdit={() => openEdit(row.original)} onDelete={() => remove(row.original)} /> },
   ];
 

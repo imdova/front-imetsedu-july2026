@@ -1,7 +1,7 @@
 import { api, type Result } from "@integration/services/http/client";
 import {
   API_BLOG, apiBlogBySlug, API_BLOG_CATEGORIES_PUBLIC, API_BLOG_TOPICS, apiBlogCategoryLanding,
-  API_ADMIN_BLOG, apiAdminBlog, apiAdminBlogAction, apiAdminBlogFeatured,
+  API_ADMIN_BLOG, apiAdminBlog, apiAdminBlogAction, apiAdminBlogFeatured, API_ADMIN_BLOG_AI,
   API_ADMIN_BLOG_CATEGORIES, apiAdminBlogCategory,
   API_ADMIN_BLOG_SUBCATEGORIES, apiAdminBlogSubcategory,
   API_ADMIN_BLOG_AUTHORS, apiAdminBlogAuthor,
@@ -46,6 +46,11 @@ export const update = (id: string, input: Record<string, unknown>): Promise<Resu
 export const remove = (id: string): Promise<Result<{ success: boolean }>> => api.delete(apiAdminBlog(id));
 export const lifecycle = (id: string, action: string): Promise<Result<BlogPostDto>> => api.post(apiAdminBlogAction(id, action), {});
 export const toggleFeatured = (id: string): Promise<Result<BlogPostDto>> => api.patch(apiAdminBlogFeatured(id), {});
+
+/* ── AI assist (server-side Claude) ── */
+export interface AiAssistResult { excerpt?: string; tags?: string[]; keyword?: string }
+export const aiAssist = (input: Record<string, unknown>): Promise<Result<AiAssistResult>> =>
+  api.post(API_ADMIN_BLOG_AI, input);
 
 /* ── Categories ── */
 export const listCategories = (): Promise<Result<BlogCategoryDto[]>> => api.get(API_ADMIN_BLOG_CATEGORIES);

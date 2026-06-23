@@ -10,6 +10,7 @@ export const API_ADMIN_BLOG = "/admin/blog";
 export const apiAdminBlog = (id: string) => `/admin/blog/${id}`;
 export const apiAdminBlogAction = (id: string, action: string) => `/admin/blog/${id}/${action}`;
 export const apiAdminBlogFeatured = (id: string) => `/admin/blog/${id}/featured`;
+export const API_ADMIN_BLOG_AI = "/admin/blog/ai-assist";
 
 // Admin — taxonomy / authors / templates
 export const API_ADMIN_BLOG_CATEGORIES = "/admin/blog/categories";

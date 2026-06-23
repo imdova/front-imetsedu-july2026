@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type {
-  MarketingLandingPage, LandingPageInput, LandingStats, LandingStatus, LandingSort,
+  MarketingLandingPage, LandingPageInput, LandingStats, LandingStatus, LandingSort, LandingLanguage,
 } from "@/lib/db/landing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,8 +30,12 @@ import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils/time-ago";
 
 const emptyForm: LandingPageInput = {
-  name: "", path: "", status: "draft", campaign: "", audience: "", description: "",
+  name: "", path: "", status: "draft", language: "en", campaign: "", audience: "", description: "",
 };
+const LANG_TABS: { key: LandingLanguage; label: string }[] = [
+  { key: "en", label: "English" },
+  { key: "ar", label: "Arabic" },
+];
 
 function ctrClass(ctr: number) {
   if (ctr >= 5) return "text-success";
@@ -52,7 +56,12 @@ export function LandingPagesPanel({
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<LandingStatus | "all">("all");
   const [sort, setSort] = React.useState<LandingSort>("newest");
+  const [lang, setLang] = React.useState<LandingLanguage>("en");
   const [loading, setLoading] = React.useState(false);
+
+  const langOf = (p: MarketingLandingPage) => p.language ?? "en";
+  const langCount = (l: LandingLanguage) => rows.filter((r) => langOf(r) === l).length;
+  const visibleRows = React.useMemo(() => rows.filter((r) => langOf(r) === lang), [rows, lang]);
 
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<MarketingLandingPage | null>(null);
@@ -79,7 +88,7 @@ export function LandingPagesPanel({
   const openEdit = (p: MarketingLandingPage) => {
     setEditing(p);
     setForm({
-      name: p.name, path: p.path, status: p.status, campaign: p.campaign,
+      name: p.name, path: p.path, status: p.status, language: p.language ?? "en", campaign: p.campaign,
       audience: p.audience, description: p.description, thumbnailUrl: p.thumbnailUrl,
     });
     setOpen(true);
@@ -233,7 +242,22 @@ export function LandingPagesPanel({
         </Button>
       </div>
 
-      <DataTable columns={columns} data={rows} isLoading={loading} pageSize={8} />
+      <div className="flex gap-1 border-b border-border/60">
+        {LANG_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setLang(tab.key)}
+            className={cn(
+              "-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+              lang === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tab.label} <span className="text-xs text-muted-foreground">({langCount(tab.key)})</span>
+          </button>
+        ))}
+      </div>
+
+      <DataTable columns={columns} data={visibleRows} isLoading={loading} pageSize={8} />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -262,13 +286,24 @@ export function LandingPagesPanel({
                   </SelectContent>
                 </Select>
               </Field>
+              <Field label="Language">
+                <Select value={form.language} onValueChange={(v) => setForm((f) => ({ ...f, language: v as LandingLanguage }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="ar">Arabic</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <Field label="Campaign">
                 <Input value={form.campaign} onChange={(e) => setForm((f) => ({ ...f, campaign: e.target.value }))} />
               </Field>
+              <Field label="Audience">
+                <Input value={form.audience} onChange={(e) => setForm((f) => ({ ...f, audience: e.target.value }))} />
+              </Field>
             </div>
-            <Field label="Audience">
-              <Input value={form.audience} onChange={(e) => setForm((f) => ({ ...f, audience: e.target.value }))} />
-            </Field>
             <Field label="Description">
               <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} />
             </Field>

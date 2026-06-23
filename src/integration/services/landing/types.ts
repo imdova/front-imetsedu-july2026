@@ -4,6 +4,7 @@ export interface LandingPageDto {
   name: string;
   path: string;
   status: string;
+  language?: string;
   campaign: string;
   audience: string;
   description: string;

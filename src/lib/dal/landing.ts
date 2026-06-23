@@ -16,6 +16,7 @@ import type * as cms from "@/lib/db/landing-cms";
 const ctrOf = (clicks: number, views: number) => (views > 0 ? Math.round((clicks / views) * 1000) / 10 : 0);
 const mapPage = (d: svc.LandingPageDto): MarketingLandingPage => ({
   id: d._id, name: d.name, path: d.path, status: d.status as MarketingLandingPage["status"],
+  language: (d.language as MarketingLandingPage["language"]) ?? "en",
   campaign: d.campaign, audience: d.audience, description: d.description, thumbnailUrl: d.thumbnailUrl,
   views: d.views, clicks: d.clicks, ctr: ctrOf(d.clicks, d.views),
   createdAt: d.createdAt, updatedAt: d.updatedAt,

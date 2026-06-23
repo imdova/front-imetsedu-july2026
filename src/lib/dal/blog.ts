@@ -68,6 +68,17 @@ export async function toggleFeatured(id: string): Promise<Result<BlogPost>> {
   return res.ok ? ok(mapId<BlogPost>(res.data)) : res;
 }
 
+/** AI assist (server-side Claude) — `type`: "excerpt" | "tags" | "keyword". */
+export function aiAssist(input: {
+  type: "excerpt" | "tags" | "keyword";
+  title: string;
+  content?: string;
+  excerpt?: string;
+  language?: string;
+}): Promise<Result<svc.AiAssistResult>> {
+  return svc.aiAssist(input as unknown as Record<string, unknown>);
+}
+
 /* ── Categories ── */
 export async function fetchCategories(): Promise<Result<BlogCategory[]>> {
   const res = await svc.listCategories();

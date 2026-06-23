@@ -70,12 +70,25 @@ export function AdminBlogList({ initial }: { initial: BlogPost[] }) {
     });
   }, [rows, search, status, category]);
 
-  const kpis = React.useMemo(() => ({
-    total: rows.length,
+  const counts = React.useMemo(() => ({
+    all: rows.length,
     published: rows.filter((r) => r.status === "PUBLISHED").length,
     drafts: rows.filter((r) => r.status === "DRAFT").length,
-    views: rows.reduce((s, r) => s + r.views, 0),
+    archived: rows.filter((r) => r.status === "ARCHIVED").length,
   }), [rows]);
+  const kpis = React.useMemo(() => ({
+    total: rows.length,
+    published: counts.published,
+    drafts: counts.drafts,
+    views: rows.reduce((s, r) => s + r.views, 0),
+  }), [rows, counts]);
+
+  const STATUS_TABS: { key: BlogStatus | "all"; label: string; count: number }[] = [
+    { key: "all", label: "All", count: counts.all },
+    { key: "PUBLISHED", label: "Published", count: counts.published },
+    { key: "DRAFT", label: "Drafts", count: counts.drafts },
+    { key: "ARCHIVED", label: "Archived", count: counts.archived },
+  ];
 
   const replace = (p: BlogPost) => setRows((r) => r.map((x) => (x.id === p.id ? p : x)));
 
@@ -173,6 +186,21 @@ export function AdminBlogList({ initial }: { initial: BlogPost[] }) {
         <KpiCard label="Total views" value={kpis.views.toLocaleString()} icon={Eye} intent="info" />
       </div>
 
+      <div className="flex flex-wrap gap-1 border-b border-border/60">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatus(tab.key)}
+            className={cn(
+              "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+              status === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tab.label} <span className="text-xs text-muted-foreground">({tab.count})</span>
+          </button>
+        ))}
+      </div>
+
       <DataTable
         columns={columns}
         data={filtered}
@@ -181,15 +209,6 @@ export function AdminBlogList({ initial }: { initial: BlogPost[] }) {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
               <Input placeholder="Search articles…" value={search} onChange={(e) => setSearch(e.target.value)} className="sm:max-w-xs" />
-              <Select value={status} onValueChange={(v) => setStatus(v as BlogStatus | "all")}>
-                <SelectTrigger className="sm:w-36"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="PUBLISHED">Published</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="ARCHIVED">Archived</SelectItem>
-                </SelectContent>
-              </Select>
               {categories.length > 0 && (
                 <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger className="sm:w-40"><SelectValue placeholder="Category" /></SelectTrigger>

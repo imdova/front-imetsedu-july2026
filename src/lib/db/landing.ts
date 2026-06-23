@@ -10,12 +10,14 @@
 import { respond, clone } from "./delay";
 
 export type LandingStatus = "draft" | "published";
+export type LandingLanguage = "en" | "ar";
 
 export interface MarketingLandingPage {
   id: string;
   name: string;
   path: string; // unique
   status: LandingStatus;
+  language: LandingLanguage;
   campaign: string;
   audience: string;
   description: string;
@@ -31,6 +33,7 @@ export type LandingPageInput = {
   name: string;
   path: string;
   status: LandingStatus;
+  language: LandingLanguage;
   campaign: string;
   audience: string;
   description: string;
@@ -80,6 +83,7 @@ const pages: Row[] = [
     name: "Summer Intake 2026",
     path: "/lp/summer-intake-2026",
     status: "published",
+    language: "en",
     campaign: "summer-2026",
     audience: "Prospective diploma students",
     description: "Hero + program grid + lead form for the July intake push.",
@@ -94,6 +98,7 @@ const pages: Row[] = [
     name: "AI for Business — Free Webinar",
     path: "/lp/ai-for-business",
     status: "published",
+    language: "ar",
     campaign: "ai-webinar",
     audience: "Working professionals",
     description: "Webinar registration funnel for the AI certificate launch.",
@@ -108,6 +113,7 @@ const pages: Row[] = [
     name: "PMP Bootcamp Waitlist",
     path: "/lp/pmp-bootcamp",
     status: "draft",
+    language: "en",
     campaign: "pmp-q3",
     audience: "Project managers",
     description: "Waitlist capture for the next PMP cohort.",

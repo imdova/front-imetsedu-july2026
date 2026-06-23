@@ -30,7 +30,7 @@ export default async function EditArticlePage({
         initial={{
           meta: {
             title: p.title, slug: p.slug, excerpt: p.excerpt, coverImageUrl: p.coverImageUrl ?? "",
-            category: p.category ?? "", tags: p.tags, authorId: p.authorId ?? "", authorName: p.authorName ?? "",
+            category: p.category ?? "", tags: p.tags, authorId: p.authorId ?? "", authorName: p.authorName ?? "", language: p.language ?? "en",
             status: p.status, featured: p.featured, seoTitle: p.seoTitle ?? "", seoDescription: p.seoDescription ?? "",
             publishedAt: p.publishedAt,
           },
