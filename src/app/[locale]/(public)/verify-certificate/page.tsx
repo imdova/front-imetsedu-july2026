@@ -14,7 +14,8 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Marketing" });
-  return { title: t("verifyTitle") };
+  // Per-code verification URLs are unbounded — keep them out of the index.
+  return { title: t("verifyTitle"), robots: { index: false, follow: true } };
 }
 
 export default async function VerifyCertificatePage({

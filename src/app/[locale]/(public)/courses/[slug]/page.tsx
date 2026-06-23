@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import {
@@ -20,6 +21,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { CourseCurriculum } from "@/features/marketing/components/course-curriculum";
 import { CourseApplyDialog } from "@/features/marketing/components/course-apply-dialog";
+import { VideoFacade } from "@/features/marketing/components/video-facade";
+import { JsonLd } from "@/components/seo/json-ld";
+import {
+  SITE_NAME, localeUrl, seoAlternates, socialMeta, metaDescription,
+  courseLd, breadcrumbLd,
+} from "@/lib/seo";
 
 /** Convert a YouTube watch/share URL to an autoplaying (muted) embed URL.
  * Muted autoplay is required by browser policies; the user can unmute. */
@@ -34,6 +41,29 @@ function youTubeEmbed(url?: string): string | null {
     autoplay: "1", mute: "1", rel: "0", playsinline: "1", modestbranding: "1",
   });
   return `https://www.youtube.com/embed/${id}?${p.toString()}`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const res = await dal.courses.fetchCourses();
+  const course = (res.ok ? res.data : []).find((c) => c.slug === slug);
+  if (!course) return {};
+  const title = locale === "ar" ? course.titleAr : course.titleEn;
+  const description = metaDescription(
+    locale === "ar" ? course.descriptionAr : course.descriptionEn,
+    `${title} — ${SITE_NAME}`,
+  );
+  const path = `/courses/${slug}`;
+  return {
+    title,
+    description,
+    alternates: seoAlternates(path, locale),
+    ...socialMeta({ title, description, path, locale, image: course.thumbnailUrl }),
+  };
 }
 
 export default async function CourseDetailPage({
@@ -106,8 +136,29 @@ export default async function CourseDetailPage({
       </div>
     ) : null;
 
+  const courseUrl = localeUrl(`/courses/${slug}`, locale);
+  const courseTitle = locale === "ar" ? course.titleAr : course.titleEn;
+
   return (
     <>
+      <JsonLd
+        data={[
+          courseLd({
+            name: courseTitle,
+            description: metaDescription(description, courseTitle),
+            url: courseUrl,
+            image: course.thumbnailUrl,
+            locale,
+            price,
+            currency: "EGP",
+          }),
+          breadcrumbLd([
+            { name: locale === "ar" ? "الرئيسية" : "Home", url: localeUrl("/", locale) },
+            { name: t("catalogTitle"), url: localeUrl("/courses", locale) },
+            { name: courseTitle, url: courseUrl },
+          ]),
+        ]}
+      />
       {/* Hero */}
       <section className="border-b border-border/70 bg-gradient-to-b from-primary/5 to-background">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_360px] lg:px-8">
@@ -148,13 +199,7 @@ export default async function CourseDetailPage({
             <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-lg lg:sticky lg:top-20">
               <div className="relative aspect-video bg-muted">
                 {previewEmbed ? (
-                  <iframe
-                    src={previewEmbed}
-                    title={course.titleEn}
-                    className="absolute inset-0 size-full"
-                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                    allowFullScreen
-                  />
+                  <VideoFacade embedUrl={previewEmbed} thumbnail={course.thumbnailUrl} title={course.titleEn} />
                 ) : (
                   <>
                     <Image

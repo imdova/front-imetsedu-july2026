@@ -1,13 +1,15 @@
+import type { Metadata } from "next";
 import { ChevronDown, LifeBuoy } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
+import { staticPageMeta } from "@/lib/seo";
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Pages" });
-  return { title: t("helpTitle") };
+  return staticPageMeta({ title: t("helpTitle"), description: t("helpMeta"), path: "/help", locale });
 }
 
 export default async function HelpPage({ params }: { params: Promise<{ locale: string }> }) {

@@ -6,6 +6,9 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { AdminBootstrap } from "@/components/layout/admin-bootstrap";
 
+/** Private workspace — never index. */
+export const metadata = { robots: { index: false, follow: false } };
+
 /** Instructor workspace shell — teaching, analytics and earnings nav. */
 export default async function InstructorLayout({
   children,

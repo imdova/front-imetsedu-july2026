@@ -7,6 +7,9 @@ import { AdminBootstrap } from "@/components/layout/admin-bootstrap";
 import { PermissionsRefresher } from "@/components/layout/permissions-refresher";
 import { getTheme } from "@/lib/db/site-settings";
 
+/** Private workspace — never index. */
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function AdminLayout({
   children,
   params,

@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
 import { CourseCatalog } from "@/features/marketing/components/course-catalog";
+import { SITE_NAME, seoAlternates, socialMeta } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const res = await dal.lookups.fetchCategories();
@@ -14,12 +16,20 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; slug: string }>;
-}) {
+}): Promise<Metadata> {
   const { locale, slug } = await params;
   const res = await dal.lookups.fetchCategories();
   const cat = res.ok ? res.data.find((c) => c.id === slug) : null;
   const t = await getTranslations({ locale, namespace: "Pages" });
-  return { title: cat ? cat.label : t("categoryTitle", { name: "" }) };
+  const title = cat ? cat.label : t("categoryTitle", { name: "" });
+  const description = t("categorySubtitle", { name: cat?.label ?? "" });
+  const path = `/category/${slug}`;
+  return {
+    title,
+    description,
+    alternates: seoAlternates(path, locale),
+    ...socialMeta({ title: `${title} · ${SITE_NAME}`, description, path, locale }),
+  };
 }
 
 export default async function CategoryPage({

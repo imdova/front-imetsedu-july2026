@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Geist, Geist_Mono, Cairo, Plus_Jakarta_Sans } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
@@ -32,7 +32,12 @@ const jakarta = Plus_Jakarta_Sans({
 const cairo = Cairo({ variable: "--font-arabic", subsets: ["arabic", "latin"] });
 
 /** Dynamic metadata pulled from general-settings. */
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
   const [{ settings }, theme] = await Promise.all([
     getSiteSettings().catch(() => ({ settings: null })),
     getTheme().catch(() => null),
@@ -49,8 +54,21 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     ...(keywords ? { keywords } : {}),
     ...(faviconUrl ? { icons: { icon: faviconUrl, shortcut: faviconUrl } } : {}),
-    metadataBase: new URL("https://imetsedu.com"),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://imetsedu.com"),
+    // Site-wide social defaults; per-page metadata overrides title/url/images.
+    openGraph: {
+      type: "website",
+      siteName,
+      locale: locale === "ar" ? "ar_EG" : "en_US",
+      title: seoTitle,
+      description,
+    },
+    twitter: { card: "summary_large_image", title: seoTitle, description },
   };
+}
+
+export function generateViewport(): Viewport {
+  return { themeColor: "#1111D4" };
 }
 
 /** Pre-render both locales at build time. */

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Star } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -5,15 +6,16 @@ import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { staticPageMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
-}) {
+}): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Marketing" });
-  return { title: t("instructorsHeroTitle") };
+  return staticPageMeta({ title: t("instructorsHeroTitle"), description: t("instructorsHeroSubtitle"), path: "/instructors", locale });
 }
 
 export default async function InstructorsPage({

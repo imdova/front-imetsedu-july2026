@@ -1,18 +1,20 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { ArrowRight, CalendarDays } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
+import { staticPageMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
-}) {
+}): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Marketing" });
-  return { title: t("blogTitle") };
+  return staticPageMeta({ title: t("blogTitle"), description: t("blogSubtitle"), path: "/blog", locale });
 }
 
 const POSTS = [

@@ -6,7 +6,8 @@ import { CourseCatalog } from "@/features/marketing/components/course-catalog";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Pages" });
-  return { title: t("searchTitle") };
+  // Search results are infinite (?q=…) — keep out of the index, follow links.
+  return { title: t("searchTitle"), robots: { index: false, follow: true } };
 }
 
 export default async function SearchPage({ params }: { params: Promise<{ locale: string }> }) {

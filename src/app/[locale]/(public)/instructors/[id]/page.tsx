@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Star, Briefcase, GraduationCap } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -7,6 +8,27 @@ import { getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CourseCard } from "@/features/marketing/components/course-card";
+import { SITE_NAME, seoAlternates, socialMeta } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale, id } = await params;
+  const res = await dal.lookups.fetchInstructors();
+  const instructor = res.ok ? res.data.find((i) => i.id === id) : null;
+  if (!instructor) return {};
+  const title = instructor.label;
+  const description = `${instructor.label}${instructor.title ? ` — ${instructor.title}` : ""}. ${SITE_NAME} instructor.`;
+  const path = `/instructors/${id}`;
+  return {
+    title,
+    description,
+    alternates: seoAlternates(path, locale),
+    ...socialMeta({ title: `${title} · ${SITE_NAME}`, description, path, locale, image: instructor.avatarUrl }),
+  };
+}
 
 export default async function InstructorDetailPage({
   params,

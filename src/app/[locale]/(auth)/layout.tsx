@@ -7,6 +7,9 @@ import { BRAND } from "@/constants/navigation";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
+/** Auth screens — never index. */
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function AuthLayout({
   children,
   params,

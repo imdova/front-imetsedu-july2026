@@ -7,6 +7,9 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AdminBootstrap } from "@/components/layout/admin-bootstrap";
 import { PermissionsRefresher } from "@/components/layout/permissions-refresher";
 
+/** Private workspace — never index. */
+export const metadata = { robots: { index: false, follow: false } };
+
 /** Staff workspace shell — CRM / finance / teaching nav. */
 export default async function StaffLayout({
   children,

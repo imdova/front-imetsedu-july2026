@@ -6,6 +6,9 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { AdminBootstrap } from "@/components/layout/admin-bootstrap";
 
+/** Private workspace — never index. */
+export const metadata = { robots: { index: false, follow: false } };
+
 /** Student portal shell — same rail/header chrome, scoped nav. */
 export default async function StudentLayout({
   children,

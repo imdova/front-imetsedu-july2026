@@ -7,6 +7,7 @@ import {
   Star,
   Sparkles,
 } from "lucide-react";
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
@@ -16,6 +17,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CourseCard } from "@/features/marketing/components/course-card";
+import { SITE_NAME, seoAlternates, socialMeta, metaDescription } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Marketing" });
+  const title = `${SITE_NAME} — ${t("heroTitle")}`;
+  const description = metaDescription(t("heroSubtitle"));
+  return {
+    title,
+    description,
+    alternates: seoAlternates("/", locale),
+    ...socialMeta({ title, description, path: "/", locale }),
+  };
+}
 
 export default async function HomePage({
   params,

@@ -1,13 +1,15 @@
+import type { Metadata } from "next";
 import { MapPin, ArrowRight } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { staticPageMeta } from "@/lib/seo";
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Pages" });
-  return { title: t("careersTitle") };
+  return staticPageMeta({ title: t("careersTitle"), description: t("careersMeta"), path: "/careers", locale });
 }
 
 const ROLES = [

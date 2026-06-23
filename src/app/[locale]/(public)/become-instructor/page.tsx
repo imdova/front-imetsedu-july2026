@@ -1,16 +1,18 @@
+import type { Metadata } from "next";
 import { CheckCircle2 } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { BecomeForm } from "@/features/marketing/components/become-form";
+import { staticPageMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
-}) {
+}): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Marketing" });
-  return { title: t("becomeTitle") };
+  return staticPageMeta({ title: t("becomeTitle"), description: t("becomeSubtitle"), path: "/become-instructor", locale });
 }
 
 export default async function BecomeInstructorPage({

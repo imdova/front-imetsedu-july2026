@@ -1,16 +1,25 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
 import { CourseCatalog } from "@/features/marketing/components/course-catalog";
+import { seoAlternates, socialMeta } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
-}) {
+}): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Marketing" });
-  return { title: t("catalogTitle") };
+  const title = t("catalogTitle");
+  const description = t("catalogSubtitle");
+  return {
+    title,
+    description,
+    alternates: seoAlternates("/courses", locale),
+    ...socialMeta({ title, description, path: "/courses", locale }),
+  };
 }
 
 export default async function CatalogPage({
