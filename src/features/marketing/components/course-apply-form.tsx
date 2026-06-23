@@ -5,6 +5,7 @@ import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
+import { fbLeadContext, fireBrowserLead } from "@/lib/meta-events";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,14 +65,17 @@ export function CourseApplyForm({ path, courseName, lang = "en" }: { path: strin
     if (!form.name.trim() || !form.email.trim()) return;
     setSubmitting(true);
     const interest = [courseName, form.license].filter(Boolean).join(" — ");
+    const fb = fbLeadContext();
     const res = await dal.landing.captureLead({
       name: form.name, email: form.email, whatsapp: form.whatsapp,
-      profession: form.profession, interest, region: form.region, path,
+      profession: form.profession, interest, region: form.region, path, ...fb,
     });
     setSubmitting(false);
     if (res.ok) {
       setDone(true);
       dal.landing.trackLanding(path, "click").catch(() => {});
+      // Browser-side Lead with the same eventId → Meta dedups vs. the server CAPI event.
+      fireBrowserLead(fb.eventId, { content_name: courseName });
     } else {
       toast.error(res.error);
     }

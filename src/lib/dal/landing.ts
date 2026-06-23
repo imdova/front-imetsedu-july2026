@@ -81,6 +81,11 @@ export interface CaptureLeadInput {
   interest?: string;
   region?: string;
   path?: string;
+  // Meta Conversions API dedup/match signals (from the browser pixel).
+  fbp?: string;
+  fbc?: string;
+  eventId?: string;
+  eventSourceUrl?: string;
 }
 export async function captureLead(input: CaptureLeadInput): Promise<Result<{ id: string }>> {
   const res = await svc.captureLead(input as unknown as Record<string, unknown>);

@@ -5,6 +5,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
+import { fbLeadContext, fireBrowserLead } from "@/lib/meta-events";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,11 +31,13 @@ export function FreeExamForm() {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim()) return;
     setSubmitting(true);
-    const res = await dal.landing.captureLead({ ...form, path: PATH });
+    const fb = fbLeadContext();
+    const res = await dal.landing.captureLead({ ...form, path: PATH, ...fb });
     setSubmitting(false);
     if (res.ok) {
       setDone(true);
       dal.landing.trackLanding(PATH, "click").catch(() => {});
+      fireBrowserLead(fb.eventId, { content_name: form.interest || "Free exam" });
     } else {
       toast.error(res.error);
     }
