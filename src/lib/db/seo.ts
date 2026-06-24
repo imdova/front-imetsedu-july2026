@@ -77,9 +77,9 @@ export interface SeoOverview {
 }
 
 let settings: SeoSettings = {
-  siteName: "IMETS School of Business",
+  siteName: "IMETS Medical School",
   titleTemplate: "%s | IMETS",
-  defaultTitle: "IMETS School of Business — Professional Diplomas & Courses",
+  defaultTitle: "IMETS Medical School — Professional Diplomas & Courses",
   defaultDescription: "Accredited professional diplomas, certificates and live courses in business, finance and management.",
   defaultOgImage: "https://main-api.imetsedu.com/og/default.png",
   twitterHandle: "@imetsedu",
@@ -118,7 +118,7 @@ const redirects: SeoRedirect[] = [
 const schemas: SeoSchema[] = [
   {
     id: "sc_1", name: "Organization", type: "Organization",
-    jsonld: JSON.stringify({ "@context": "https://schema.org", "@type": "Organization", name: "IMETS School of Business", url: "https://imetsedu.com" }, null, 2),
+    jsonld: JSON.stringify({ "@context": "https://schema.org", "@type": "Organization", name: "IMETS Medical School", url: "https://imetsedu.com" }, null, 2),
     status: true, pagesLinked: 12, health: "valid", issues: [],
   },
   {

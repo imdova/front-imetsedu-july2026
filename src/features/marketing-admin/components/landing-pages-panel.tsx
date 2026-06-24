@@ -35,6 +35,7 @@ const emptyForm: LandingPageInput = {
 const LANG_TABS: { key: LandingLanguage; label: string }[] = [
   { key: "en", label: "English" },
   { key: "ar", label: "Arabic" },
+  { key: "mix", label: "Mix" },
 ];
 
 function ctrClass(ctr: number) {
@@ -292,6 +293,7 @@ export function LandingPagesPanel({
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
                     <SelectItem value="ar">Arabic</SelectItem>
+                    <SelectItem value="mix">Mix</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>

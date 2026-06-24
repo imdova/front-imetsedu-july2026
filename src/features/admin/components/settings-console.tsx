@@ -520,7 +520,7 @@ function GeneralPanel({ initialSite }: { initialSite?: SiteSettings }) {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <SettingField icon={<Globe className="size-4" />} label={t("generalSiteName")} hint={t("generalSiteNameHint")}>
-          <Input value={form.sitename} onChange={(e) => set("sitename", e.target.value)} placeholder="IMETS School of Business" />
+          <Input value={form.sitename} onChange={(e) => set("sitename", e.target.value)} placeholder="IMETS Medical School" />
         </SettingField>
 
         <SettingField icon={<Mail className="size-4" />} label={t("generalSupportEmail")} hint={t("generalSupportEmailHint")}>
@@ -532,7 +532,7 @@ function GeneralPanel({ initialSite }: { initialSite?: SiteSettings }) {
         </SettingField>
 
         <SettingField icon={<Globe className="size-4" />} label={t("generalSeoTitle")} hint={t("generalSeoTitleHint")} className="sm:col-span-2">
-          <Input value={form.seoTitle} onChange={(e) => set("seoTitle", e.target.value)} placeholder="IMETS School of Business | Online Courses" />
+          <Input value={form.seoTitle} onChange={(e) => set("seoTitle", e.target.value)} placeholder="IMETS Medical School | Online Courses" />
         </SettingField>
 
         <SettingField icon={<Globe className="size-4" />} label={t("generalMetaDesc")} hint={t("generalMetaDescHint")} className="sm:col-span-2">

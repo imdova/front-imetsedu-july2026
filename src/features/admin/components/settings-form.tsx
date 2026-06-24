@@ -26,7 +26,7 @@ export function SettingsForm() {
 
         <TabsContent value="general">
           <Card><CardContent className="grid gap-5 sm:grid-cols-2">
-            <Field label={t("settingPlatformName")} defaultValue="IMETS School of Business" />
+            <Field label={t("settingPlatformName")} defaultValue="IMETS Medical School" />
             <Field label={t("settingDefaultLocale")} defaultValue="English (en)" />
             <Field label={t("settingBaseCurrency")} defaultValue="EGP" />
             <Field label={t("settingTimezone")} defaultValue="GCC · UTC+3" />

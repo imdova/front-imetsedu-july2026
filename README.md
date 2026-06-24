@@ -1,6 +1,6 @@
-# IMETS School of Business — Admin Console (Frontend)
+# IMETS Medical School — Admin Console (Frontend)
 
-A modern, scalable Next.js front end for the IMETS School of Business online
+A modern, scalable Next.js front end for the IMETS Medical School online
 courses platform. Built with a feature-based architecture, a reusable component
 system, and a clean data-access seam that lets the UI run on dummy data today
 and switch to the real NestJS backend with **no UI refactor**.

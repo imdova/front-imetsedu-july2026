@@ -9,7 +9,7 @@ import { routing } from "@/i18n/routing";
 import { mergeSeo } from "@/lib/public-seo";
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://imetsedu.com").replace(/\/$/, "");
-export const SITE_NAME = "IMETS School of Business";
+export const SITE_NAME = "IMETS Medical School";
 export const SITE_LOGO = `${SITE_URL}/icon`;
 
 /** Absolute URL for a locale-agnostic public path (leading slash, no locale). */

@@ -5,7 +5,7 @@ import { dal } from "@/lib/dal";
 import { formatDate } from "@/lib/utils";
 import { VerifyForm } from "@/features/marketing/components/verify-form";
 
-const ISSUER = "IMETS School of Business";
+const ISSUER = "IMETS Medical School";
 
 export async function generateMetadata({
   params,

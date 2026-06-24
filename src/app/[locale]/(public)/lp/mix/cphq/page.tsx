@@ -5,6 +5,7 @@ import {
   MessageCircle, BadgeCheck, CalendarDays, Stethoscope, ChevronLeft,
   Layers, ListChecks, ChevronRight, Building2,
   BarChart3, TrendingUp, ShieldCheck, FileCheck, ClipboardList, HeartPulse, Target,
+  CreditCard, Wallet, Banknote, Landmark,
 } from "lucide-react";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
@@ -17,8 +18,10 @@ import { BRAND } from "@/constants/navigation";
 import { DiscountCountdown } from "@/features/marketing/components/discount-countdown";
 import { StudentVideoReviews, type StudentReviewVideo } from "@/features/marketing/components/student-video-reviews";
 import { StudentReviewGallery, type ReviewShot } from "@/features/marketing/components/student-review-gallery";
+import { GraduationProjects, type GraduationProject } from "@/features/marketing/components/graduation-projects";
+import { WhatsAppFab } from "@/features/marketing/components/whatsapp-fab";
 
-const PATH = "/cph";
+const PATH = "/lp/mix/cphq";
 const COURSE = "CPHQ Course";
 
 /* Source palette: deep navy + orange accent */
@@ -65,6 +68,13 @@ const STEPS = [
   { title: "اجتَز الامتحان", body: "مع دعم متواصل واختبارات محاكية حتى النجاح." },
 ];
 
+const PAY_METHODS = [
+  { icon: CreditCard, title: "بطاقات الائتمان", body: "Visa و Mastercard و مدى — دفع فوري وآمن." },
+  { icon: Landmark, title: "تحويل بنكي", body: "حوّل الرسوم مباشرة إلى الحساب البنكي للمعهد." },
+  { icon: Wallet, title: "محافظ إلكترونية", body: "فودافون كاش و InstaPay وغيرها من المحافظ." },
+  { icon: Banknote, title: "الدفع النقدي", body: "ادفع نقدًا في مقر المعهد عند التسجيل." },
+];
+
 // Review screenshots. Default: one composite "reviews board" image saved at
 // public/reviews/reviews-board.png. To switch to individual screenshots later,
 // list them here as { src, alt } and the gallery renders a masonry grid.
@@ -72,18 +82,36 @@ const REVIEW_SHOTS: ReviewShot[] = [
   { src: "/reviews/reviews-board.png", alt: "IMETS Medical School student reviews — 96% recommend" },
 ];
 
-// Student video testimonials. One video → vertical "story" layout; add more
-// entries (first is featured) and it switches to the featured + grid layout.
+// Student video testimonials. Each keeps its natural orientation — set
+// `orientation: "portrait"` for Shorts/vertical clips, "landscape" for normal
+// videos. One video → centered; multiple → centered wrap.
 const STUDENT_VIDEOS: StudentReviewVideo[] = [
-  { id: "dP_Mdn8VJGQ", name: "مراجعة طالب IMETS", role: "تجربة حقيقية" },
+  { id: "dP_Mdn8VJGQ", name: "مراجعة طالب IMETS", role: "تجربة حقيقية", orientation: "portrait" },
+  { id: "ZxFvcJidtII", name: "مراجعة طالب IMETS", role: "تجربة حقيقية", orientation: "portrait" },
+  { id: "vHWOcdf88y4", name: "مراجعة طالب IMETS", role: "تجربة حقيقية", orientation: "landscape" },
+  { id: "aPdec-1kBnQ", name: "مراجعة طالب IMETS", role: "تجربة حقيقية", orientation: "landscape" },
+];
+
+// Student graduation projects. Replace ids/titles/names with the real ones.
+const GRADUATION_PROJECTS: GraduationProject[] = [
+  { id: "vHWOcdf88y4", title: "Reducing Hospital-Acquired Infections by 30%", student: "اسم الطالب", jobTitle: "Quality Specialist", orientation: "landscape" },
+  { id: "aPdec-1kBnQ", title: "Improving OR Turnaround Time with Lean", student: "اسم الطالب", jobTitle: "Quality Manager", orientation: "landscape" },
+  { id: "dP_Mdn8VJGQ", title: "Medication Safety Improvement Project", student: "اسم الطالب", jobTitle: "Senior Nurse", orientation: "portrait" },
 ];
 
 const FAQS = [
-  { q: "هل أحتاج خبرة سابقة؟", a: "لا يوجد شرط صارم، لكن الخبرة في جودة الرعاية الصحية تفيد. نراجع ملفّك مجانًا وننصحك قبل الحجز." },
-  { q: "هل المحاضرات مباشرة أم مسجّلة؟", a: "مباشرة على Zoom أسبوعيًا، مع تسجيلات متاحة لمدة ١٢ شهرًا لمراجعتها وقتما تشاء." },
+  { q: "ما هي شهادة CPHQ ومن يصدرها؟", a: "هي شهادة Certified Professional in Healthcare Quality الصادرة عن الرابطة الوطنية لجودة الرعاية الصحية (NAHQ) في الولايات المتحدة، وتُعدّ المعيار الذهبي عالميًا لمتخصصي جودة الرعاية الصحية." },
+  { q: "هل أحتاج خبرة سابقة؟", a: "لا يوجد شرط صارم، لكن الخبرة في جودة الرعاية الصحية تفيد. نراجع ملفّك مجانًا وننصحك بجاهزيتك قبل الحجز." },
+  { q: "ما شكل الامتحان وكم مدته؟", a: "امتحان إلكتروني من ١٤٠ سؤال اختيار من متعدد (تتضمن أسئلة تجريبية غير محتسبة) يُؤدّى خلال ٣ ساعات عبر Prometric." },
+  { q: "بأي لغة يُعقد امتحان CPHQ؟", a: "يُعقد الامتحان باللغة الإنجليزية، ولهذا نُقدّم الشرح وبنوك الأسئلة بالعربية والإنجليزية معًا لنجهّزك تمامًا للمصطلحات الإنجليزية." },
   { q: "بأي لغة يُقدَّم البرنامج؟", a: "بالعربية والإنجليزية — الدروس وبنوك الأسئلة والدعم ثنائية اللغة." },
+  { q: "هل المحاضرات مباشرة أم مسجّلة؟", a: "مباشرة على Zoom أسبوعيًا، مع تسجيلات متاحة لمدة ١٢ شهرًا لمراجعتها وقتما تشاء." },
   { q: "أين أؤدّي امتحان CPHQ؟", a: "يُقدَّم من NAHQ عبر Prometric، أونلاين أو في مركز اختبار، ونساعدك في التسجيل وتحديد الموعد." },
-  { q: "هل يوجد تقسيط؟", a: "نعم — تقسيط بدون فوائد على ٣ أقساط." },
+  { q: "ما مدة صلاحية الشهادة وكيف أُجدّدها؟", a: "شهادة CPHQ صالحة لمدة سنتين، وتُجدَّد عبر استيفاء ساعات التعليم المستمر المعتمدة (CE) التي تحددها NAHQ." },
+  { q: "ماذا لو لم أجتز الامتحان؟", a: "نوفّر دعمًا متواصلًا واختبارات محاكية حتى تجتاز؛ ويتابع معك المدرّب نقاط ضعفك ويعيد تأهيلك للمحاولة التالية بثقة." },
+  { q: "هل البرنامج مناسب لكل التخصصات الصحية؟", a: "نعم — للأطباء وأطباء الأسنان والصيادلة والممرضين ومتخصصي الجودة وكل العاملين في الرعاية الصحية الراغبين في احتراف الجودة." },
+  { q: "متى تبدأ الدفعة القادمة؟", a: "تنطلق الدفعة القادمة قريبًا والمقاعد محدودة — سجّل بياناتك ليتواصل معك المستشار بموعد البدء وتفاصيل الجدول." },
+  { q: "هل يوجد تقسيط؟", a: "نعم — تقسيط بدون فوائد على ٣ أقساط شهرية متساوية، وتبدأ الدراسة فور دفع القسط الأول." },
 ];
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -92,14 +120,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     ...admin,
     title: "كورس تحضير امتحان CPHQ — اجتزه من أول مرة | IMETS",
-    description: "كورس CPHQ تحضيري مباشر على Zoom لمدة ١٠ أسابيع مع د. محمد أحمد: الدومينز السبعة، +٥٠٠ سؤال محاكاة، وامتحان تجريبي شامل. احجز مقعدك.",
+    description: "كورس CPHQ تحضيري مباشر على Zoom لمدة ١٠ أسابيع: الدومينز السبعة، +٥٠٠ سؤال محاكاة، وامتحان تجريبي شامل. احجز مقعدك.",
   };
 }
 
 export default async function CphCloneePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const trackPath = locale === "ar" ? "/ar/cph" : PATH;
+  const trackPath = locale === "ar" ? "/ar/lp/mix/cphq" : PATH;
 
   const courseLd = {
     "@context": "https://schema.org", "@type": "Course", name: "CPHQ Preparation Course",
@@ -126,7 +154,7 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
               اجتَز امتحان CPHQ <span className="text-[#B8860B]">من أول مرة</span>
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-slate-600">
-              كورس تحضيري مباشر على Zoom لمدة ١٠ أسابيع مع د. محمد أحمد، يغطّي الدومينز السبعة كاملة — بالعربية والإنجليزية.
+              كورس تحضيري مباشر على Zoom لمدة ١٠ أسابيع، يغطّي الدومينز السبعة كاملة — بالعربية والإنجليزية.
             </p>
             <div className="flex flex-wrap gap-3">
               <a href="#apply" className={cn(BTN, ORANGE)}>احجز مقعدك الآن <ChevronLeft className="size-4" /></a>
@@ -288,6 +316,11 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
       {/* Student review screenshots (gallery) */}
       <StudentReviewGallery shots={REVIEW_SHOTS} recommendPct={96} reviewCount={52} />
 
+      {/* Graduation projects */}
+      <div className="border-t border-slate-200 bg-slate-50">
+        <GraduationProjects projects={GRADUATION_PROJECTS} />
+      </div>
+
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="mb-8 text-center text-3xl font-extrabold tracking-tight text-[#0b2545]">إجابات مريحة لكل ما تسأل</h2>
@@ -301,6 +334,51 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
               <p className="mt-3 text-sm leading-relaxed text-slate-600">{f.a}</p>
             </details>
           ))}
+        </div>
+      </section>
+
+      {/* Payment & installment */}
+      <section className="border-y border-slate-200 bg-slate-50">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#B8860B]">
+              <CreditCard className="size-4" /> طرق الدفع المتاحة
+            </p>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#0b2545]">الدفع والتقسيط</h2>
+            <p className="mt-3 text-slate-600">ادفع بالطريقة الأنسب لك — مع خيار التقسيط بدون فوائد.</p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {PAY_METHODS.map((m) => (
+                <div key={m.title} className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#B8860B]/10 text-[#B8860B]"><m.icon className="size-5" /></span>
+                  <div>
+                    <h3 className="font-bold text-[#0b2545]">{m.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600">{m.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col justify-center rounded-2xl bg-[#0b2545] p-6 text-white shadow-xl ring-1 ring-black/5">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#B8860B] px-3 py-1 text-xs font-bold">
+                <CalendarDays className="size-3.5" /> الأكثر مرونة
+              </span>
+              <h3 className="mt-3 text-2xl font-extrabold tracking-tight">تقسيط بدون فوائد</h3>
+              <p className="mt-2 text-white/80">قسّم رسوم الكورس على ٣ دفعات شهرية متساوية — بدون أي فوائد أو رسوم إضافية.</p>
+              <ul className="mt-4 space-y-2 text-sm">
+                {["٣ أقساط شهرية متساوية", "بدون فوائد أو رسوم خفية", "تبدأ الدراسة فور دفع القسط الأول"].map((b) => (
+                  <li key={b} className="inline-flex items-center gap-2 text-white/90"><CheckCircle2 className="size-4 text-[#e8c14d]" /> {b}</li>
+                ))}
+              </ul>
+              <a href="#apply" className={cn(BTN, ORANGE, "mt-5 w-fit")}>اطلب خطة التقسيط <ChevronLeft className="size-4" /></a>
+            </div>
+          </div>
+
+          <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-slate-500">
+            <ShieldCheck className="size-4 text-emerald-600" /> جميع المدفوعات آمنة ومشفّرة.
+          </p>
         </div>
       </section>
 
@@ -325,6 +403,9 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-slate-200 bg-white/95 p-3 backdrop-blur lg:hidden">
         <a href="#apply" className={cn(BTN, ORANGE, "flex-1")}>احجز مقعدك <ChevronLeft className="size-4" /></a>
       </div>
+
+      {/* Floating WhatsApp */}
+      <WhatsAppFab phone="201115782721" message="مرحبًا، أريد الاستفسار عن كورس CPHQ" />
     </div>
   );
 }

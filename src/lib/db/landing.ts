@@ -10,7 +10,7 @@
 import { respond, clone } from "./delay";
 
 export type LandingStatus = "draft" | "published";
-export type LandingLanguage = "en" | "ar";
+export type LandingLanguage = "en" | "ar" | "mix";
 
 export interface MarketingLandingPage {
   id: string;

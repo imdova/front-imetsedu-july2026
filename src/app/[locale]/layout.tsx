@@ -47,10 +47,10 @@ export async function generateMetadata({
     dal.siteSettings.fetchPublicSettings().then((r) => (r.ok ? r.data : null)).catch(() => null),
   ]);
   // Prefer the typed site-settings branding/general; fall back to the legacy store.
-  const siteName = ss?.general?.siteName || settings?.sitename || "IMETS School of Business";
+  const siteName = ss?.general?.siteName || settings?.sitename || "IMETS Medical School";
   const seoTitle = settings?.seoTitle || siteName;
   const description = settings?.metaDescription || ss?.general?.tagline ||
-    "IMETS School of Business — a modern online courses platform for professional and executive education.";
+    "IMETS Medical School — a modern online courses platform for professional healthcare education.";
   const keywords = settings?.keywords || undefined;
   const faviconUrl = ss?.branding?.faviconUrl || theme?.favicon;
   const ogImage = ss?.branding?.ogImage || undefined;

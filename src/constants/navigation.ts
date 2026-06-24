@@ -236,5 +236,5 @@ export const PUBLIC_NAV: NavItem[] = [
 
 export const BRAND = {
   name: "IMETS",
-  fullName: "IMETS School of Business",
+  fullName: "IMETS Medical School",
 } as const;

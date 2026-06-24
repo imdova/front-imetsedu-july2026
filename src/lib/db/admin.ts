@@ -489,7 +489,7 @@ export async function getInstructorById(id: string): Promise<InstructorDetail | 
   ] as InstructorCourseRow[]).slice(0, Math.max(1, Math.min(3, ins.courses)));
   return clone({
     ...ins,
-    bio: `${ins.titleEn} with ${ins.experience} years of industry experience, teaching practitioner-led programs at IMETS School of Business.`,
+    bio: `${ins.titleEn} with ${ins.experience} years of industry experience, teaching practitioner-led programs at IMETS Medical School.`,
     joinedAt: "2024-09-01",
     totalStudents: courseList.reduce((s, c) => s + c.students, 0),
     courseList,

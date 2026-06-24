@@ -26,7 +26,7 @@ export default function OpengraphImage() {
       >
         <div style={{ fontSize: 40, fontWeight: 700, letterSpacing: 6, opacity: 0.9 }}>IMETS</div>
         <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.1, marginTop: 12 }}>
-          School of Business
+          Medical School
         </div>
         <div style={{ fontSize: 34, marginTop: 28, opacity: 0.92, maxWidth: 900 }}>
           Professional, accredited, bilingual courses across the MENA region.

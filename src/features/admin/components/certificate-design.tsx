@@ -70,7 +70,7 @@ export function CertificateDesign() {
             <p className="font-heading text-2xl font-bold tracking-tight" style={{ color: accent } as React.CSSProperties}>{title}</p>
             <p className="text-sm text-muted-foreground">This is to certify that</p>
             <p className="font-heading text-3xl font-bold">Yara Mahmoud</p>
-            <p className="max-w-md text-sm text-muted-foreground">has successfully completed the program at IMETS School of Business.</p>
+            <p className="max-w-md text-sm text-muted-foreground">has successfully completed the program at IMETS Medical School.</p>
             <div className="mt-2 border-t pt-2 text-sm font-medium" style={{ borderColor: accent } as React.CSSProperties}>{signatory}</div>
             <p className="font-mono text-xs text-muted-foreground">IMETS-2026-XXXX</p>
           </div>

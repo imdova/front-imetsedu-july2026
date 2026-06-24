@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthCard } from "@/features/auth/components/auth-card";
 
-const ORG = "IMETS School of Business";
+const ORG = "IMETS Medical School";
 
 export default function AcceptInvitationPage() {
   const t = useTranslations("Auth");
