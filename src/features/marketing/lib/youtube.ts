@@ -37,6 +37,7 @@ export type YouTubePlayerInstance = {
   destroy?: () => void;
 };
 
+export const YT_ENDED = 0;
 export const YT_PLAYING = 1;
 export const YT_PAUSED = 2;
-export const YT_ENDED = 0;
+export const YT_BUFFERING = 3;

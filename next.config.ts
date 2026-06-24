@@ -23,6 +23,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.imetsedu.com" },
       // Backend S3 uploads (receipts, course media, avatars).
       { protocol: "https", hostname: "**.amazonaws.com" },
+      // YouTube video poster thumbnails (student testimonial reviews).
+      { protocol: "https", hostname: "i.ytimg.com" },
+      { protocol: "https", hostname: "img.youtube.com" },
     ],
   },
 };

@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import {
   Star, PlayCircle, CheckCircle2, Award, Users, Clock, BookOpen, GraduationCap,
-  MessageCircle, CreditCard, BadgeCheck, CalendarDays, Sparkles, Stethoscope, ChevronLeft,
+  MessageCircle, BadgeCheck, CalendarDays, Sparkles, Stethoscope, ChevronLeft,
+  Layers, ListChecks,
 } from "lucide-react";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { cn } from "@/lib/utils";
-import { CourseApplyForm } from "@/features/marketing/components/course-apply-form";
+import { SimpleLeadForm } from "@/features/marketing/components/simple-lead-form";
 import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
+import { DiscountCountdown } from "@/features/marketing/components/discount-countdown";
+import { StudentVideoReviews, type StudentReviewVideo } from "@/features/marketing/components/student-video-reviews";
 
 const PATH = "/cph";
 const COURSE = "CPHQ Course";
@@ -58,23 +61,22 @@ const STEPS = [
   { title: "اجتَز الامتحان", body: "مع دعم متواصل واختبارات محاكية حتى النجاح." },
 ];
 
-const PLANS = [
-  {
-    name: "الباقة الأساسية", price: "٤٬٥٠٠ جنيه", installments: "أو ٣ أقساط × ١٬٥٥٠ جنيه", highlight: false, cta: "احجز الباقة الأساسية",
-    features: ["١٠ جلسات Zoom مباشرة", "تسجيلات متاحة ١٢ شهرًا", "+٥٠٠ سؤال محاكاة", "امتحان محاكاة واحد", "مجموعة واتساب للدراسة"],
-  },
-  {
-    name: "الباقة المميزة", price: "٦٬٥٠٠ جنيه", installments: "أو ٣ أقساط × ٢٬٢٥٠ جنيه", highlight: true, cta: "احجز الباقة المميزة",
-    features: ["كل مزايا الباقة الأساسية", "٣ استشارات فردية مع المدرّب", "٣ محاولات امتحان محاكاة", "خطة دراسية أسبوعية", "دعم التوظيف بعد الاجتياز"],
-  },
-];
-
-const PAYMENTS = ["بطاقات ائتمان (Visa / Mastercard)", "تحويل بنكي", "InstaPay والمحافظ الإلكترونية", "الدفع النقدي (مكتب القاهرة)", "تقسيط بدون فوائد"];
-
 const TESTIMONIALS = [
   { quote: "اجتزت CPHQ من أول مرة بفضل الاختبارات المحاكية، والشرح بالعربية سهّل الدومينز كلها.", name: "مريم أ.", role: "أخصائية جودة" },
   { quote: "د. محمد شرح كل دومين بوضوح، والتسجيلات ساعدتني أراجع في أي وقت يناسبني.", name: "عمر ك.", role: "مدير جودة" },
   { quote: "الباقة المميزة بالاستشارات الفردية فرق كبير — حصلت على الشهادة ثم تمت ترقيتي.", name: "هالة س.", role: "مسؤولة سلامة المرضى" },
+];
+
+// Student video testimonials. Replace the `id`s with the real testimonial
+// YouTube video ids (one featured first, then the grid).
+const STUDENT_VIDEOS: StudentReviewVideo[] = [
+  { id: "R9-6cBqzczo", name: "مريم أحمد", role: "أخصائية جودة — اجتازت CPHQ من أول مرة" },
+  { id: "4ZaMqmqJ0A8", name: "عمر خالد", role: "مدير جودة" },
+  { id: "R9-6cBqzczo", name: "هالة سمير", role: "مسؤولة سلامة المرضى" },
+  { id: "4ZaMqmqJ0A8", name: "أحمد فؤاد", role: "ممرض أول" },
+  { id: "R9-6cBqzczo", name: "ليلى منصور", role: "صيدلانية" },
+  { id: "4ZaMqmqJ0A8", name: "يوسف نبيل", role: "منسق اعتماد JCI" },
+  { id: "R9-6cBqzczo", name: "سارة عبد الله", role: "أخصائية تحسين الأداء" },
 ];
 
 const FAQS = [
@@ -82,7 +84,7 @@ const FAQS = [
   { q: "هل المحاضرات مباشرة أم مسجّلة؟", a: "مباشرة على Zoom أسبوعيًا، مع تسجيلات متاحة لمدة ١٢ شهرًا لمراجعتها وقتما تشاء." },
   { q: "بأي لغة يُقدَّم البرنامج؟", a: "بالعربية والإنجليزية — الدروس وبنوك الأسئلة والدعم ثنائية اللغة." },
   { q: "أين أؤدّي امتحان CPHQ؟", a: "يُقدَّم من NAHQ عبر Prometric، أونلاين أو في مركز اختبار، ونساعدك في التسجيل وتحديد الموعد." },
-  { q: "هل يوجد تقسيط؟", a: "نعم — تقسيط بدون فوائد على ٣ أقساط لكلتا الباقتين." },
+  { q: "هل يوجد تقسيط؟", a: "نعم — تقسيط بدون فوائد على ٣ أقساط." },
 ];
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -143,10 +145,15 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
           <div className="overflow-hidden rounded-2xl bg-[#0b2545] text-white shadow-xl ring-1 ring-black/5">
             <YouTubePlayer videoId="R9-6cBqzczo" unmuteLabel="اضغط لتشغيل الصوت" />
             <div className="grid grid-cols-3 gap-2 p-4 text-center text-xs">
-              {[["١٠", "أسابيع"], ["٧", "دومينز"], ["+٥٠٠", "سؤال"]].map(([v, l]) => (
-                <div key={l} className="rounded-lg bg-white/5 py-3">
-                  <p className="text-lg font-bold">{v}</p>
-                  <p className="text-white/70">{l}</p>
+              {[
+                { icon: CalendarDays, v: "10", l: "Weeks" },
+                { icon: Layers, v: "7", l: "Domains" },
+                { icon: ListChecks, v: "+500", l: "Questions" },
+              ].map((s) => (
+                <div key={s.l} className="flex flex-col items-center rounded-lg bg-white/5 py-3">
+                  <s.icon className="mb-1 size-5 text-[#e8c14d]" />
+                  <p className="text-lg font-bold">{s.v}</p>
+                  <p className="text-white/70">{s.l}</p>
                 </div>
               ))}
             </div>
@@ -161,6 +168,11 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
           {AUTH.map((a) => <span key={a} className="rounded-md bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">{a}</span>)}
         </div>
       </section>
+
+      {/* Limited-time 50% discount + countdown */}
+      <div className="bg-white py-10 sm:py-14">
+        <DiscountCountdown lang="en" hours={7} storageKey="cph_offer_deadline" showPrice={false} ctaHref="#apply" />
+      </div>
 
       {/* Features */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -250,33 +262,6 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="border-y border-slate-200 bg-slate-50">
-        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <h2 className="mb-10 text-center text-3xl font-extrabold tracking-tight text-[#0b2545]">اختر الباقة المناسبة لك</h2>
-          <div className="grid gap-5 sm:grid-cols-2">
-            {PLANS.map((p) => (
-              <div key={p.name} className={cn("flex flex-col rounded-2xl bg-white p-6 shadow-sm", p.highlight ? "ring-2 ring-[#B8860B]" : "ring-1 ring-slate-200")}>
-                {p.highlight && <span className="mb-2 w-fit rounded-full bg-[#B8860B] px-2.5 py-0.5 text-xs font-bold text-white">الأكثر اختيارًا</span>}
-                <h3 className="text-lg font-bold text-[#0b2545]">{p.name}</h3>
-                <p className="mt-2 text-3xl font-extrabold text-[#0b2545]">{p.price}</p>
-                <p className="text-sm text-slate-500">{p.installments}</p>
-                <ul className="mt-4 flex-1 space-y-2 text-sm">
-                  {p.features.map((f) => <li key={f} className="flex items-start gap-2 text-slate-700"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#B8860B]" /> {f}</li>)}
-                </ul>
-                <a href="#apply" className={cn(BTN, "mt-5", p.highlight ? ORANGE : "border border-[#0b2545]/20 text-[#0b2545] hover:bg-[#0b2545]/5")}>{p.cta}</a>
-              </div>
-            ))}
-          </div>
-          <div className="mt-10 text-center">
-            <p className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500"><CreditCard className="size-4" /> طرق الدفع المتاحة</p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {PAYMENTS.map((m) => <span key={m} className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">{m}</span>)}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Testimonials */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="mb-10 text-center text-3xl font-extrabold tracking-tight text-[#0b2545]">ممن اجتازوا الامتحان فعلاً</h2>
@@ -294,6 +279,11 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
         </div>
       </section>
 
+      {/* Student video testimonials */}
+      <div className="border-y border-slate-200 bg-slate-50">
+        <StudentVideoReviews videos={STUDENT_VIDEOS} />
+      </div>
+
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="mb-8 text-center text-3xl font-extrabold tracking-tight text-[#0b2545]">إجابات مريحة لكل ما تسأل</h2>
@@ -310,26 +300,25 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
         </div>
       </section>
 
-      {/* Apply (navy) */}
-      <section id="apply" style={{ backgroundColor: NAVY }} className="text-white">
+      {/* Apply (navy) — English lead capture */}
+      <section id="apply" dir="ltr" style={{ backgroundColor: NAVY }} className="text-left text-white">
         <div className="mx-auto grid max-w-5xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8">
           <div className="space-y-4">
-            <h2 className="text-3xl font-extrabold tracking-tight">احجز مقعدك في الدفعة القادمة</h2>
-            <p className="text-white/80">قدّم في 60 ثانية وسيتواصل معك مستشار القبول لتأكيد مقعدك وخطتك الدراسية — مجانًا ودون التزام.</p>
+            <h2 className="text-3xl font-extrabold tracking-tight">Book your seat in the next cohort</h2>
+            <p className="text-white/80">Apply in 60 seconds and an admissions advisor will reach out to confirm your seat and study plan — free, no obligation.</p>
             <ul className="space-y-2 text-sm">
-              {["المقاعد المتاحة 7 من 30 — تبدأ ١٥ يونيو ٢٠٢٦", "تقسيط بدون فوائد على ٣ أقساط", "ضمان الدعم حتى النجاح"].map((b) => (
+              {["Seats are limited — next cohort starts soon", "Free eligibility review & personalized study plan", "Support guaranteed until you pass"].map((b) => (
                 <li key={b} className="inline-flex items-center gap-2 text-white/90"><CheckCircle2 className="size-4 text-[#e8c14d]" /> {b}</li>
               ))}
             </ul>
-            <p className="inline-flex items-center gap-2 text-sm text-white/70"><Stethoscope className="size-4" /> للممرضين والأطباء والصيادلة ومتخصصي الجودة</p>
+            <p className="inline-flex items-center gap-2 text-sm text-white/70"><Stethoscope className="size-4" /> For doctors, dentists, pharmacists, nurses & quality professionals</p>
           </div>
-          <CourseApplyForm path={trackPath} courseName={COURSE} lang="ar" />
+          <SimpleLeadForm path={trackPath} courseName={COURSE} />
         </div>
       </section>
 
       {/* Sticky mobile CTA */}
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-slate-200 bg-white/95 p-3 backdrop-blur lg:hidden">
-        <span className="shrink-0 text-sm font-bold text-[#0b2545]">٤٬٥٠٠ جنيه</span>
         <a href="#apply" className={cn(BTN, ORANGE, "flex-1")}>احجز مقعدك <ChevronLeft className="size-4" /></a>
       </div>
     </div>

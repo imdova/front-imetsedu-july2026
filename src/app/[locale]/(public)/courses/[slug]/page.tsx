@@ -25,7 +25,7 @@ import { CourseWhatYouLearn } from "@/features/marketing/components/course-what-
 import { CourseWhoShouldAttend } from "@/features/marketing/components/course-who-should-attend";
 import { CourseApplyDialog } from "@/features/marketing/components/course-apply-dialog";
 import { CourseSectionNav } from "@/features/marketing/components/course-section-nav";
-import { VideoFacade } from "@/features/marketing/components/video-facade";
+import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
 import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
@@ -171,29 +171,22 @@ export default async function CourseDetailPage({
 
   const enrollCard = (
     <div className="overflow-hidden rounded-2xl bg-card shadow-[0_12px_48px_rgba(15,23,42,0.14)] ring-1 ring-border/60">
-      <div className="relative aspect-video bg-muted">
-        {previewVideoId ? (
-          <VideoFacade
-            videoId={previewVideoId}
-            thumbnail={course.thumbnailUrl}
-            title={course.titleEn}
-            autoPlay
+      {previewVideoId ? (
+        <YouTubePlayer videoId={previewVideoId} autoPlay={false} />
+      ) : (
+        <div className="relative aspect-video bg-muted">
+          <Image
+            src={course.thumbnailUrl}
+            alt={course.titleEn}
+            fill
+            sizes="360px"
+            className="object-cover"
           />
-        ) : (
-          <>
-            <Image
-              src={course.thumbnailUrl}
-              alt={course.titleEn}
-              fill
-              sizes="360px"
-              className="object-cover"
-            />
-            <span className="absolute inset-0 grid place-items-center bg-black/20">
-              <PlayCircle className="size-14 text-white/90" />
-            </span>
-          </>
-        )}
-      </div>
+          <span className="absolute inset-0 grid place-items-center bg-black/20">
+            <PlayCircle className="size-14 text-white/90" />
+          </span>
+        </div>
+      )}
       <div className="space-y-4 p-5">
         <div className="flex items-baseline gap-2">
           <span className="font-heading text-3xl font-bold text-primary tabular-nums">
@@ -273,23 +266,14 @@ export default async function CourseDetailPage({
               <span className="line-clamp-1 text-foreground">{courseTitle}</span>
             </nav>
             <section className="marketing-gradient-bg overflow-hidden rounded-2xl px-6 py-8 shadow-2xl shadow-blue-950/30 ring-1 ring-inset ring-white/10 sm:rounded-[1.75rem] sm:px-8 sm:py-9 lg:rounded-[2rem] lg:px-10 lg:py-10">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
-                <div className="space-y-4 lg:max-w-3xl">
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300 sm:text-base">
-                    {t("heroJourneyLead")}
-                  </p>
-                  <h1 className="font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
-                    {course.titleEn}
-                  </h1>
-                  <CourseHeroMeta course={course} price={price} onSale={onSale} />
-                </div>
-
-                <p
-                  className="text-base leading-relaxed text-white/80 sm:text-lg lg:max-w-[14rem] lg:shrink-0 lg:pt-8 lg:text-end xl:max-w-xs"
-                  dir="rtl"
-                >
-                  {course.titleAr}
+              <div className="space-y-4 lg:max-w-3xl">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300 sm:text-base">
+                  {t("heroJourneyLead")}
                 </p>
+                <h1 className="font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
+                  {course.titleEn}
+                </h1>
+                <CourseHeroMeta course={course} price={price} onSale={onSale} />
               </div>
             </section>
 

@@ -17,10 +17,14 @@ import { loadYouTubeApi } from "@/features/marketing/lib/youtube";
 export function YouTubePlayer({
   videoId,
   unmuteLabel = "Tap for sound",
+  autoPlay = true,
   className,
 }: {
   videoId: string;
   unmuteLabel?: string;
+  /** Autoplay (muted, then attempt unmute). When false, the video loads paused —
+   * the user plays/pauses/mutes via the native controls (no forced background sound). */
+  autoPlay?: boolean;
   className?: string;
 }) {
   const hostRef = React.useRef<HTMLDivElement>(null);
@@ -35,13 +39,22 @@ export function YouTubePlayer({
       const YT = (window as any).YT;
       playerRef.current = new YT.Player(hostRef.current, {
         videoId,
-        playerVars: { autoplay: 1, mute: 1, controls: 1, rel: 0, playsinline: 1, modestbranding: 1 },
+        playerVars: {
+          autoplay: autoPlay ? 1 : 0,
+          mute: autoPlay ? 1 : 0,
+          controls: 1,
+          rel: 0,
+          playsinline: 1,
+          modestbranding: 1,
+        },
         events: {
           onReady: (e: any) => {
             setReady(true);
-            try { e.target.unMute(); e.target.setVolume(100); } catch { /* ignore */ }
-            try { e.target.playVideo(); } catch { /* ignore */ }
-            window.setTimeout(() => { try { setMuted(!!e.target.isMuted()); } catch { /* ignore */ } }, 500);
+            if (autoPlay) {
+              try { e.target.unMute(); e.target.setVolume(100); } catch { /* ignore */ }
+              try { e.target.playVideo(); } catch { /* ignore */ }
+              window.setTimeout(() => { try { setMuted(!!e.target.isMuted()); } catch { /* ignore */ } }, 500);
+            }
           },
           onStateChange: (e: any) => {
             if (e.data === YT.PlayerState.PLAYING) {
@@ -55,7 +68,7 @@ export function YouTubePlayer({
       cancelled = true;
       try { playerRef.current?.destroy?.(); } catch { /* ignore */ }
     };
-  }, [videoId]);
+  }, [videoId, autoPlay]);
 
   const unmute = () => {
     const p = playerRef.current;
@@ -66,7 +79,7 @@ export function YouTubePlayer({
   return (
     <div className={cn("relative aspect-video w-full overflow-hidden bg-black", className)}>
       <div ref={hostRef} className="size-full" />
-      {ready && muted && (
+      {ready && autoPlay && muted && (
         <button
           type="button"
           onClick={unmute}
