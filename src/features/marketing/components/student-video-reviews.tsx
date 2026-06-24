@@ -62,6 +62,7 @@ export function StudentVideoReviews({
   className?: string;
 }) {
   if (!videos.length) return null;
+  const isSingle = videos.length === 1;
   const [feature, ...rest] = videos;
 
   return (
@@ -74,12 +75,27 @@ export function StudentVideoReviews({
         <p className="mt-3 text-slate-600">{subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <ReviewCard video={feature} feature />
-        {rest.map((v, i) => (
-          <ReviewCard key={`${v.id}-${i}`} video={v} />
-        ))}
-      </div>
+      {isSingle ? (
+        // Single video → vertical "story" format, centered.
+        <div className="mx-auto w-full max-w-[320px] sm:max-w-sm">
+          <figure className="group relative overflow-hidden rounded-3xl bg-black shadow-xl ring-1 ring-slate-200">
+            <div className="relative aspect-[9/16]">
+              <VideoFacade videoId={feature.id} thumbnail={poster(feature.id)} title={feature.name} />
+            </div>
+            <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-4 pt-10">
+              <p className="text-base font-bold text-white">{feature.name}</p>
+              {feature.role && <p className="text-xs text-white/75">{feature.role}</p>}
+            </figcaption>
+          </figure>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <ReviewCard video={feature} feature />
+          {rest.map((v, i) => (
+            <ReviewCard key={`${v.id}-${i}`} video={v} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

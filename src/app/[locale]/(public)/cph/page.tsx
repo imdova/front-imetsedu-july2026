@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import {
   Star, PlayCircle, CheckCircle2, Award, Users, Clock, BookOpen, GraduationCap,
-  MessageCircle, BadgeCheck, CalendarDays, Sparkles, Stethoscope, ChevronLeft,
-  Layers, ListChecks,
+  MessageCircle, BadgeCheck, CalendarDays, Stethoscope, ChevronLeft,
+  Layers, ListChecks, ChevronRight, Building2,
+  BarChart3, TrendingUp, ShieldCheck, FileCheck, ClipboardList, HeartPulse, Target,
 } from "lucide-react";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
@@ -11,8 +12,11 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { cn } from "@/lib/utils";
 import { SimpleLeadForm } from "@/features/marketing/components/simple-lead-form";
 import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
+import { BrandImage } from "@/components/shared/brand-image";
+import { BRAND } from "@/constants/navigation";
 import { DiscountCountdown } from "@/features/marketing/components/discount-countdown";
 import { StudentVideoReviews, type StudentReviewVideo } from "@/features/marketing/components/student-video-reviews";
+import { StudentReviewGallery, type ReviewShot } from "@/features/marketing/components/student-review-gallery";
 
 const PATH = "/cph";
 const COURSE = "CPHQ Course";
@@ -34,24 +38,24 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { icon: BadgeCheck, value: "٩٢٪", label: "نجاح من أول محاولة" },
-  { icon: Clock, value: "١٠ أسابيع", label: "مدة البرنامج" },
-  { icon: BookOpen, value: "٨ وحدات", label: "مبنية على Exam Blueprint" },
-  { icon: GraduationCap, value: "+٥٠٠", label: "سؤال محاكاة" },
-  { icon: Users, value: "+٣٬٢٠٠", label: "ممارس تم تدريبه" },
-  { icon: Award, value: "١٥ سنة", label: "خبرة في التدريب" },
+  { icon: BadgeCheck, value: "92%", label: "First-attempt pass rate" },
+  { icon: Clock, value: "10 weeks", label: "Program duration" },
+  { icon: BookOpen, value: "8 units", label: "Built on the Exam Blueprint" },
+  { icon: GraduationCap, value: "+500", label: "Practice questions" },
+  { icon: Users, value: "+3,200", label: "Practitioners trained" },
+  { icon: Award, value: "15 years", label: "Training experience" },
 ];
 
 // Curriculum is always presented in English (per request).
 const MODULES = [
-  "Organizational Leadership",
-  "Health Data Analytics",
-  "Performance & Process Improvement",
-  "Patient Safety",
-  "Regulatory & Accreditation Compliance",
-  "Quality Review & Accountability",
-  "Population Health & Care Transitions",
-  "Exam Strategy & Full Mock Exams",
+  { icon: Users, title: "Organizational Leadership", desc: "Strategy, governance, project & change management, and building a culture of quality." },
+  { icon: BarChart3, title: "Health Data Analytics", desc: "Collecting, measuring and interpreting data to drive quality decisions." },
+  { icon: TrendingUp, title: "Performance & Process Improvement", desc: "Lean, Six Sigma and PDSA tools to design and improve care processes." },
+  { icon: ShieldCheck, title: "Patient Safety", desc: "Risk management, error reduction and a proactive culture of safety." },
+  { icon: FileCheck, title: "Regulatory & Accreditation Compliance", desc: "Standards, surveys and readiness for JCI, CBAHI and accreditation bodies." },
+  { icon: ClipboardList, title: "Quality Review & Accountability", desc: "Peer review, credentialing and performance accountability." },
+  { icon: HeartPulse, title: "Population Health & Care Transitions", desc: "Care coordination, safe transitions and population-level outcomes." },
+  { icon: Target, title: "Exam Strategy & Full Mock Exams", desc: "Question-bank practice, timed mock exams and exam-day tactics." },
 ];
 
 const STEPS = [
@@ -61,22 +65,17 @@ const STEPS = [
   { title: "اجتَز الامتحان", body: "مع دعم متواصل واختبارات محاكية حتى النجاح." },
 ];
 
-const TESTIMONIALS = [
-  { quote: "اجتزت CPHQ من أول مرة بفضل الاختبارات المحاكية، والشرح بالعربية سهّل الدومينز كلها.", name: "مريم أ.", role: "أخصائية جودة" },
-  { quote: "د. محمد شرح كل دومين بوضوح، والتسجيلات ساعدتني أراجع في أي وقت يناسبني.", name: "عمر ك.", role: "مدير جودة" },
-  { quote: "الباقة المميزة بالاستشارات الفردية فرق كبير — حصلت على الشهادة ثم تمت ترقيتي.", name: "هالة س.", role: "مسؤولة سلامة المرضى" },
+// Review screenshots. Default: one composite "reviews board" image saved at
+// public/reviews/reviews-board.png. To switch to individual screenshots later,
+// list them here as { src, alt } and the gallery renders a masonry grid.
+const REVIEW_SHOTS: ReviewShot[] = [
+  { src: "/reviews/reviews-board.png", alt: "IMETS Medical School student reviews — 96% recommend" },
 ];
 
-// Student video testimonials. Replace the `id`s with the real testimonial
-// YouTube video ids (one featured first, then the grid).
+// Student video testimonials. One video → vertical "story" layout; add more
+// entries (first is featured) and it switches to the featured + grid layout.
 const STUDENT_VIDEOS: StudentReviewVideo[] = [
-  { id: "R9-6cBqzczo", name: "مريم أحمد", role: "أخصائية جودة — اجتازت CPHQ من أول مرة" },
-  { id: "4ZaMqmqJ0A8", name: "عمر خالد", role: "مدير جودة" },
-  { id: "R9-6cBqzczo", name: "هالة سمير", role: "مسؤولة سلامة المرضى" },
-  { id: "4ZaMqmqJ0A8", name: "أحمد فؤاد", role: "ممرض أول" },
-  { id: "R9-6cBqzczo", name: "ليلى منصور", role: "صيدلانية" },
-  { id: "4ZaMqmqJ0A8", name: "يوسف نبيل", role: "منسق اعتماد JCI" },
-  { id: "R9-6cBqzczo", name: "سارة عبد الله", role: "أخصائية تحسين الأداء" },
+  { id: "dP_Mdn8VJGQ", name: "مراجعة طالب IMETS", role: "تجربة حقيقية" },
 ];
 
 const FAQS = [
@@ -131,7 +130,7 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
             </p>
             <div className="flex flex-wrap gap-3">
               <a href="#apply" className={cn(BTN, ORANGE)}>احجز مقعدك الآن <ChevronLeft className="size-4" /></a>
-              <a href="#curriculum" className={cn(BTN, "border border-[#0b2545]/20 text-[#0b2545] hover:bg-[#0b2545]/5")}>تعرّف على المنهج</a>
+              <a href="#curriculum" className={cn(BTN, "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90")}>تعرّف على المنهج</a>
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm text-slate-600">
               <span className="inline-flex items-center gap-1.5">
@@ -191,6 +190,38 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
         </div>
       </section>
 
+      {/* About IMETS Medical School */}
+      <section dir="ltr" className="border-y border-slate-200 bg-slate-50 text-left">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8">
+          <div className="space-y-5">
+            <BrandImage
+              kind="navbar"
+              alt={BRAND.fullName}
+              className="h-12 w-auto max-w-[200px] object-contain"
+              fallback={
+                <span className="inline-flex items-center gap-2 text-xl font-extrabold text-[#0b2545]">
+                  <span className="grid size-10 place-items-center rounded-xl bg-[#0b2545] text-white"><Building2 className="size-5" /></span>
+                  {BRAND.fullName}
+                </span>
+              }
+            />
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0b2545]">
+              About IMETS Medical School
+            </h2>
+            <p className="leading-relaxed text-slate-600">
+              IMETS Medical School is a specialized healthcare-education institute helping doctors, dentists,
+              pharmacists, nurses and quality professionals earn internationally recognized certifications and
+              advance their careers. For over 15 years we&apos;ve trained more than 3,200 practitioners across the
+              region — combining expert faculty, exam-focused curricula, and bilingual (Arabic &amp; English) support.
+            </p>
+            <a href="#apply" className={cn(BTN, ORANGE)}>Join the next cohort <ChevronRight className="size-4" /></a>
+          </div>
+          <div className="overflow-hidden rounded-2xl bg-[#0b2545] shadow-xl ring-1 ring-black/5">
+            <YouTubePlayer videoId="SSlmmUH2Ado" autoPlay={false} />
+          </div>
+        </div>
+      </section>
+
       {/* Stats band (navy) */}
       <section style={{ backgroundColor: NAVY }} className="text-white">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-12 sm:px-6 lg:grid-cols-3 lg:px-8">
@@ -208,44 +239,31 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
 
       {/* Curriculum */}
       <section id="curriculum" dir="ltr" className="mx-auto max-w-5xl px-4 py-16 text-left sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-[#0b2545]">The seven domains — in full</h2>
-          <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#B8860B]/10 px-3 py-1 text-sm font-semibold text-[#8a6508]">
+        <div className="mb-10 text-center">
+          <h2 className="text-3xl font-extrabold tracking-tight text-[#0b2545]">What you&apos;ll master</h2>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#B8860B]/10 px-3 py-1 text-sm font-semibold text-[#8a6508]">
             <BookOpen className="size-4" /> 10 weeks · 8 units built on the Exam Blueprint
           </p>
         </div>
         <ol className="grid gap-4 sm:grid-cols-2">
           {MODULES.map((m, i) => (
-            <li key={i} className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#0b2545] text-sm font-bold text-white">{i + 1}</span>
-              <p className="text-sm font-medium leading-relaxed text-[#0b2545]">{m}</p>
+            <li
+              key={i}
+              className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#B8860B]/40 hover:shadow-md"
+            >
+              <span className="relative grid size-11 shrink-0 place-items-center rounded-xl bg-[#0b2545] text-white transition group-hover:bg-[#B8860B]">
+                <m.icon className="size-5" />
+                <span className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-[#B8860B] text-[10px] font-bold text-white ring-2 ring-white">
+                  {i + 1}
+                </span>
+              </span>
+              <div>
+                <h3 className="font-bold text-[#0b2545]">{m.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">{m.desc}</p>
+              </div>
             </li>
           ))}
         </ol>
-      </section>
-
-      {/* Instructor */}
-      <section className="border-y border-slate-200 bg-slate-50">
-        <div className="mx-auto grid max-w-5xl items-center gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
-          <div className="mx-auto grid aspect-square w-full max-w-xs place-items-center rounded-2xl bg-gradient-to-br from-[#13315c] to-[#0b2545] text-white/40">
-            <GraduationCap className="size-24" />
-          </div>
-          <div className="space-y-4">
-            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#B8860B]"><Sparkles className="size-4" /> تعلّم مع خبير حقيقي</p>
-            <div>
-              <h2 className="text-2xl font-extrabold tracking-tight text-[#0b2545]">د. محمد أحمد</h2>
-              <p className="text-sm text-slate-600">استشاري إدارة جودة الرعاية الصحية · خبرة +١٥ سنة</p>
-            </div>
-            <p className="leading-relaxed text-slate-600">
-              حاصل على شهادات CPHQ و CSSBB و LSSBB، ومستشار اعتماد JCI لأكثر من ١٢ مستشفى. درّب أكثر من ٢٢٬٠٠٠ ممارس صحي — وكل درس يعكس ما يختبره امتحان CPHQ فعليًا اليوم.
-            </p>
-            <ul className="grid gap-2 text-sm sm:grid-cols-2">
-              {["CPHQ · CSSBB · LSSBB", "مستشار اعتماد JCI لـ +١٢ مستشفى", "+٢٢٬٠٠٠ ممارس مدرّب", "خبرة +١٥ سنة"].map((p) => (
-                <li key={p} className="inline-flex items-center gap-2 text-slate-700"><CheckCircle2 className="size-4 text-[#B8860B]" /> {p}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
       </section>
 
       {/* Steps */}
@@ -262,27 +280,13 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="mb-10 text-center text-3xl font-extrabold tracking-tight text-[#0b2545]">ممن اجتازوا الامتحان فعلاً</h2>
-        <div className="grid gap-5 lg:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <span className="flex text-amber-400">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-4 fill-current" />)}</span>
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-slate-700">{t.quote}</p>
-              <div className="mt-4 flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-full bg-[#0b2545]/10 font-bold text-[#0b2545]">{t.name.charAt(0)}</span>
-                <div><p className="text-sm font-bold text-[#0b2545]">{t.name}</p><p className="text-xs text-slate-500">{t.role}</p></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Student video testimonials */}
       <div className="border-y border-slate-200 bg-slate-50">
         <StudentVideoReviews videos={STUDENT_VIDEOS} />
       </div>
+
+      {/* Student review screenshots (gallery) */}
+      <StudentReviewGallery shots={REVIEW_SHOTS} recommendPct={96} reviewCount={52} />
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
