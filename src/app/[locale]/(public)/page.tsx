@@ -4,6 +4,11 @@ import {
   ShieldCheck,
   Languages,
   Star,
+  Layers,
+  Quote,
+  Users,
+  BookOpen,
+  TrendingUp,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -19,6 +24,7 @@ import {
   CareerCtaSection,
   HowItWorksSection,
   OrganizationsSection,
+  PartnersSection,
 } from "@/features/marketing/components/home-marketing-sections";
 import { SITE_NAME, seoAlternates, socialMeta, metaDescription } from "@/lib/seo";
 import { resolveSeoMetadata } from "@/lib/public-seo";
@@ -64,10 +70,10 @@ export default async function HomePage({
   const instructors = (instructorsRes.ok ? instructorsRes.data : []).slice(0, 4);
 
   const stats = [
-    { value: "18.4K", label: t("heroStat1") },
-    { value: "38", label: t("heroStat2") },
-    { value: "64", label: t("heroStat3") },
-    { value: "92%", label: t("heroStat4") },
+    { value: "18.4K", label: t("heroStat1"), icon: Users },
+    { value: "38", label: t("heroStat2"), icon: GraduationCap },
+    { value: "64", label: t("heroStat3"), icon: BookOpen },
+    { value: "92%", label: t("heroStat4"), icon: TrendingUp },
   ];
 
   const features = [
@@ -85,7 +91,7 @@ export default async function HomePage({
 
   return (
     <>
-      <MarketingHero stats={stats} />
+      <MarketingHero stats={stats} videoId="SSlmmUH2Ado" />
 
       {/* Featured courses */}
       <Section title={t("featuredTitle")} subtitle={t("featuredSubtitle")}
@@ -106,15 +112,18 @@ export default async function HomePage({
               <Link
                 key={cat.id}
                 href="/courses"
-                className="group flex items-center justify-between rounded-xl border border-border/70 bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                className="group flex items-center gap-4 rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
               >
-                <div>
-                  <p className="font-medium">{cat.label}</p>
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <Layers className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{cat.label}</p>
                   <p className="text-sm text-muted-foreground">
                     {t("coursesCount", { count: cat.subcategories.length * 4 })}
                   </p>
                 </div>
-                <ArrowRight className="size-5 text-muted-foreground transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
+                <ArrowRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary rtl:rotate-180 rtl:group-hover:-translate-x-1" />
               </Link>
             ))}
           </div>
@@ -125,12 +134,15 @@ export default async function HomePage({
       <Section title={t("whyTitle")} subtitle={t("whySubtitle")} centered>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => (
-            <div key={f.title} className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm">
-              <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
+            <div
+              key={f.title}
+              className="group rounded-2xl border border-border/60 bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-warning/40 hover:shadow-md"
+            >
+              <span className="grid size-12 place-items-center rounded-xl bg-gradient-to-br from-warning/20 to-warning/5 text-warning ring-1 ring-warning/25 transition-transform group-hover:scale-105">
                 <f.icon className="size-5" />
               </span>
               <h3 className="mt-4 font-heading text-base font-semibold">{f.title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{f.desc}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -152,14 +164,14 @@ export default async function HomePage({
               <Link
                 key={ins.id}
                 href={`/instructors/${ins.id}`}
-                className="flex flex-col items-center rounded-2xl border border-border/70 bg-card p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+                className="group flex flex-col items-center rounded-2xl border border-border/60 bg-card p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
               >
-                <Avatar className="size-16 border">
-                  <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
+                <Avatar className="size-16 ring-2 ring-primary/15 ring-offset-2 ring-offset-card transition-transform group-hover:scale-105">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/15 to-primary/5 text-lg font-semibold text-primary">
                     {getInitials(ins.label)}
                   </AvatarFallback>
                 </Avatar>
-                <p className="mt-3 font-medium">{ins.label}</p>
+                <p className="mt-4 font-semibold">{ins.label}</p>
                 <p className="text-sm text-muted-foreground">{ins.title}</p>
               </Link>
             ))}
@@ -171,13 +183,14 @@ export default async function HomePage({
       <Section title={t("testimonialsTitle")} centered>
         <div className="grid gap-6 lg:grid-cols-3">
           {testimonials.map((tt) => (
-            <figure key={tt.name} className="flex flex-col rounded-2xl border border-border/70 bg-card p-6 shadow-sm">
-              <div className="flex gap-0.5 text-warning">
+            <figure key={tt.name} className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+              <Quote className="absolute end-5 top-5 size-10 text-warning/20 transition-colors group-hover:text-warning/30" />
+              <div className="relative flex gap-0.5 text-warning">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="size-4 fill-current" />
                 ))}
               </div>
-              <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
+              <blockquote className="relative mt-4 flex-1 text-sm leading-relaxed text-foreground">
                 “{tt.quote}”
               </blockquote>
               <figcaption className="mt-5 flex items-center gap-3">
@@ -196,6 +209,8 @@ export default async function HomePage({
         </div>
       </Section>
 
+      <PartnersSection />
+
       <OrganizationsSection />
       <CareerCtaSection />
     </>
@@ -204,11 +219,11 @@ export default async function HomePage({
 
 function Heading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="space-y-2">
-      <h2 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
+    <div className="space-y-2.5">
+      <h2 className="text-balance font-heading text-2xl font-bold tracking-[-0.01em] sm:text-3xl lg:text-[2rem]">
         {title}
       </h2>
-      {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
+      {subtitle && <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground">{subtitle}</p>}
     </div>
   );
 }

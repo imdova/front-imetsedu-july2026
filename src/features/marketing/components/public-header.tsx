@@ -44,41 +44,39 @@ export function PublicHeader({ logoLight }: { logoLight?: string }) {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <BrandImage
-            kind="navbar"
-            alt={BRAND.fullName}
-            className={cn("h-9 max-w-[160px] object-contain", isHome && "brightness-0 invert")}
-            fallback={
-              logoLight ? (
-                <img
-                  src={logoLight}
-                  alt={BRAND.fullName}
-                  className={cn("h-9 max-w-[160px] object-contain", isHome && "brightness-0 invert")}
-                />
-              ) : (
-                <>
-                  <span
-                    className={cn(
-                      "grid size-9 place-items-center rounded-xl text-white shadow-md",
-                      isHome
-                        ? "bg-white/15 ring-1 ring-white/20"
-                        : "bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] shadow-primary/25",
-                    )}
-                  >
-                    <GraduationCap className="size-5" />
-                  </span>
-                  <span
-                    className={cn(
-                      "text-base font-semibold tracking-tight",
-                      isHome ? "text-white" : "text-foreground",
-                    )}
-                  >
-                    {BRAND.fullName}
-                  </span>
-                </>
-              )
-            }
-          />
+          {isHome ? (
+            // White + gold brand logo for the blue hero header.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/logo-white.svg"
+              alt={BRAND.fullName}
+              className="h-9 w-auto max-w-[190px] object-contain"
+            />
+          ) : (
+            <BrandImage
+              kind="navbar"
+              alt={BRAND.fullName}
+              className="h-9 max-w-[160px] object-contain"
+              fallback={
+                logoLight ? (
+                  <img
+                    src={logoLight}
+                    alt={BRAND.fullName}
+                    className="h-9 max-w-[160px] object-contain"
+                  />
+                ) : (
+                  <>
+                    <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.62_0.19_286)] text-white shadow-md shadow-primary/25">
+                      <GraduationCap className="size-5" />
+                    </span>
+                    <span className="text-base font-semibold tracking-tight text-foreground">
+                      {BRAND.fullName}
+                    </span>
+                  </>
+                )
+              }
+            />
+          )}
         </Link>
 
         <nav className="ms-6 hidden items-center gap-1 lg:flex">
