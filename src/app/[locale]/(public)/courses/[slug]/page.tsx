@@ -5,20 +5,28 @@ import {
   Clock,
   BarChart3,
   PlayCircle,
-  CheckCircle2,
   Globe,
   CalendarDays,
+  Award,
+  Infinity as InfinityIcon,
+  ChevronRight,
 } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { formatCurrency, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { CourseHeroMeta } from "@/features/marketing/components/course-hero-meta";
 import { CourseCurriculum } from "@/features/marketing/components/course-curriculum";
+import { CourseWhatYouLearn } from "@/features/marketing/components/course-what-you-learn";
+import { CourseWhoShouldAttend } from "@/features/marketing/components/course-who-should-attend";
 import { CourseApplyDialog } from "@/features/marketing/components/course-apply-dialog";
+import { CourseSectionNav } from "@/features/marketing/components/course-section-nav";
 import { VideoFacade } from "@/features/marketing/components/video-facade";
+import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
   SITE_NAME, localeUrl, seoAlternates, socialMeta, metaDescription,
@@ -26,23 +34,9 @@ import {
 } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 
-/** Convert a YouTube watch/share URL to an autoplaying (muted) embed URL.
- * Muted autoplay is required by browser policies; the user can unmute. */
-function youTubeEmbed(url?: string): string | null {
-  if (!url) return null;
-  const m = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/,
-  );
-  const id = m?.[1];
-  if (!id) return null;
-  const p = new URLSearchParams({
-    autoplay: "1", mute: "1", rel: "0", playsinline: "1", modestbranding: "1",
-  });
-  return `https://www.youtube.com/embed/${id}?${p.toString()}`;
-}
 
-/** Next cohort start — always two weeks from today. */
-function nextCohortStartDate(locale: string): string {
+/** Registration deadline — always two weeks from today. */
+function registrationEndDate(locale: string): string {
   const start = new Date();
   start.setDate(start.getDate() + 14);
   return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
@@ -98,7 +92,7 @@ export default async function CourseDetailPage({
   const instructor = instructors[course.titleEn.length % instructors.length];
   const onSale = course.salePriceEGP > 0 && course.salePriceEGP < course.priceEGP;
   const price = onSale ? course.salePriceEGP : course.priceEGP;
-  const previewEmbed = youTubeEmbed(course.previewVideoUrl);
+  const previewVideoId = extractYouTubeVideoId(course.previewVideoUrl);
 
   const outcomes = [
     "Build and interpret professional models from scratch",
@@ -116,7 +110,7 @@ export default async function CourseDetailPage({
   const meta = [
     { icon: BarChart3, label: t("level"), value: course.difficulty },
     { icon: Clock, label: t("duration"), value: "12 weeks" },
-    { icon: CalendarDays, label: t("startDate"), value: nextCohortStartDate(locale) },
+    { icon: CalendarDays, label: t("startDate"), value: registrationEndDate(locale) },
     { icon: PlayCircle, label: t("lessons"), value: `${course.lectures}` },
     { icon: Globe, label: t("language"), value: "EN · AR" },
   ];
@@ -151,11 +145,40 @@ export default async function CourseDetailPage({
   const courseUrl = localeUrl(`/courses/${slug}`, locale);
   const courseTitle = locale === "ar" ? course.titleAr : course.titleEn;
 
+  const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
+
+  const includes = [
+    { icon: PlayCircle, label: `${course.lectures} ${tr("live & on-demand lessons", "درسًا مباشرًا وعند الطلب")}` },
+    { icon: Globe, label: tr("English & Arabic", "الإنجليزية والعربية") },
+    { icon: Award, label: tr("Certificate of completion", "شهادة إتمام") },
+    { icon: InfinityIcon, label: tr("Lifetime access to materials", "وصول مدى الحياة للمواد") },
+  ];
+
+  const faqs = [
+    { q: tr("Do I need prior experience?", "هل أحتاج خبرة سابقة؟"), a: tr("No — the program starts from the fundamentals and builds up, with mentor support throughout.", "لا — يبدأ البرنامج من الأساسيات ويتدرّج، مع دعم المرشدين طوال الوقت.") },
+    { q: tr("Is the course online or in person?", "هل الدورة أونلاين أم حضوريًا؟"), a: tr("100% online — live sessions over Zoom plus self-paced lessons you can revisit anytime.", "أونلاين 100% — جلسات مباشرة عبر Zoom ودروس بوتيرتك يمكنك مراجعتها في أي وقت.") },
+    { q: tr("Will I get a certificate?", "هل سأحصل على شهادة؟"), a: tr("Yes — you earn a verifiable certificate of completion to add to your CV and LinkedIn.", "نعم — تحصل على شهادة إتمام موثّقة تضيفها لسيرتك الذاتية وLinkedIn.") },
+    { q: tr("How do I enroll?", "كيف أسجّل؟"), a: tr("Tap Apply now, fill the short form, and an advisor will contact you to confirm your seat and answer any questions.", "اضغط قدّم الآن، واملأ النموذج القصير، وسيتواصل معك مستشار لتأكيد مقعدك والإجابة عن أسئلتك.") },
+  ];
+
+  const navItems = [
+    { id: "overview", label: tr("Overview", "نظرة عامة") },
+    { id: "learn", label: t("whatYouLearn") },
+    ...(course.modules?.length ? [{ id: "curriculum", label: t("curriculum") }] : []),
+    { id: "instructor", label: t("aboutInstructor") },
+    { id: "faq", label: tr("FAQ", "الأسئلة الشائعة") },
+  ];
+
   const enrollCard = (
     <div className="overflow-hidden rounded-2xl bg-card shadow-[0_12px_48px_rgba(15,23,42,0.14)] ring-1 ring-border/60">
       <div className="relative aspect-video bg-muted">
-        {previewEmbed ? (
-          <VideoFacade embedUrl={previewEmbed} thumbnail={course.thumbnailUrl} title={course.titleEn} />
+        {previewVideoId ? (
+          <VideoFacade
+            videoId={previewVideoId}
+            thumbnail={course.thumbnailUrl}
+            title={course.titleEn}
+            autoPlay
+          />
         ) : (
           <>
             <Image
@@ -194,6 +217,17 @@ export default async function CourseDetailPage({
             </li>
           ))}
         </ul>
+        <div className="border-t border-border/60 pt-4">
+          <p className="text-sm font-semibold">{tr("This course includes", "تشمل هذه الدورة")}</p>
+          <ul className="mt-2.5 space-y-2 text-sm text-muted-foreground">
+            {includes.map((i) => (
+              <li key={i.label} className="flex items-center gap-2.5">
+                <i.icon className="size-4 shrink-0 text-primary" />
+                {i.label}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
@@ -216,15 +250,34 @@ export default async function CourseDetailPage({
             { name: t("catalogTitle"), url: localeUrl("/courses", locale) },
             { name: courseTitle, url: courseUrl },
           ]),
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: f.a },
+            })),
+          },
         ]}
       />
       {/* Hero + floating enroll card */}
       <div className="overflow-x-hidden">
         <div className="mx-auto w-full max-w-[100rem] px-4 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pt-6">
           <div className="mx-auto max-w-7xl">
+            <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <Link href="/" className="hover:text-foreground">{tr("Home", "الرئيسية")}</Link>
+              <ChevronRight className="size-3.5 rtl:rotate-180" />
+              <Link href="/courses" className="hover:text-foreground">{t("catalogTitle")}</Link>
+              <ChevronRight className="size-3.5 rtl:rotate-180" />
+              <span className="line-clamp-1 text-foreground">{courseTitle}</span>
+            </nav>
             <section className="marketing-gradient-bg overflow-hidden rounded-2xl px-6 py-8 shadow-2xl shadow-blue-950/30 ring-1 ring-inset ring-white/10 sm:rounded-[1.75rem] sm:px-8 sm:py-9 lg:rounded-[2rem] lg:px-10 lg:py-10">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
                 <div className="space-y-4 lg:max-w-3xl">
+                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300 sm:text-base">
+                    {t("heroJourneyLead")}
+                  </p>
                   <h1 className="font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
                     {course.titleEn}
                   </h1>
@@ -244,32 +297,41 @@ export default async function CourseDetailPage({
               <div className="min-w-0">
                 <aside className="mt-6 lg:hidden">{enrollCard}</aside>
 
-                <div className="space-y-10 py-8 sm:py-10 lg:pt-6 lg:pb-12">
-                  {richBlock(t("courseDescription"), description)}
-                  {richBlock(t("whoShouldAttend"), whoShouldAttend)}
+                <CourseSectionNav
+                  items={navItems}
+                  className="sticky top-16 z-20 -mx-4 mt-6 bg-background/90 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:mx-0 lg:mt-2 lg:px-0"
+                />
 
-                  <div>
-                    <h2 className="font-heading text-xl font-semibold">{t("whatYouLearn")}</h2>
-                    <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                      {outcomes.map((o) => (
-                        <li key={o} className="flex items-start gap-2.5 text-sm">
-                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-                          {o}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                <div className="space-y-12 py-8 sm:py-10 lg:pt-8 lg:pb-12">
+                  <section id="overview" className="scroll-mt-32">
+                    {richBlock(t("courseDescription"), description)}
+                  </section>
+
+                  <CourseWhatYouLearn
+                    title={t("whatYouLearn")}
+                    subtitle={t("whatYouLearnLead")}
+                    items={outcomes}
+                    locale={locale}
+                  />
 
                   {course.modules?.length ? (
-                    <div>
+                    <section id="curriculum" className="scroll-mt-32">
                       <h2 className="font-heading text-xl font-semibold">{t("curriculum")}</h2>
                       <div className="mt-4">
                         <CourseCurriculum modules={course.modules} locale={locale} />
                       </div>
-                    </div>
+                    </section>
                   ) : null}
 
-                  <div>
+                  {whoShouldAttend ? (
+                    <CourseWhoShouldAttend
+                      title={t("whoShouldAttend")}
+                      content={whoShouldAttend}
+                      locale={locale}
+                    />
+                  ) : null}
+
+                  <section id="instructor" className="scroll-mt-32">
                     <h2 className="font-heading text-xl font-semibold">{t("aboutInstructor")}</h2>
                     <div className="mt-4 flex items-start gap-4 rounded-xl border border-border/70 bg-card p-5">
                       <Avatar className="size-14 border">
@@ -286,7 +348,22 @@ export default async function CourseDetailPage({
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </section>
+
+                  <section id="faq" className="scroll-mt-32">
+                    <h2 className="font-heading text-xl font-semibold">{tr("Frequently asked questions", "الأسئلة الشائعة")}</h2>
+                    <div className="mt-4 space-y-3">
+                      {faqs.map((f) => (
+                        <details key={f.q} className="group rounded-xl border border-border/70 bg-card px-5 py-4">
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium">
+                            {f.q}
+                            <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 rtl:rotate-180 rtl:group-open:-rotate-90" />
+                          </summary>
+                          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+                        </details>
+                      ))}
+                    </div>
+                  </section>
                 </div>
               </div>
 
@@ -312,6 +389,25 @@ export default async function CourseDetailPage({
           </div>
         </section>
       )}
+
+      {/* Sticky mobile enroll bar */}
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border/70 bg-background/95 px-4 py-2.5 shadow-[0_-4px_20px_rgba(15,23,42,0.10)] backdrop-blur lg:hidden">
+        <div className="min-w-0 leading-tight">
+          <p className="font-heading text-xl font-bold text-primary tabular-nums">{formatCurrency(price, "EGP")}</p>
+          {onSale && (
+            <p className="text-xs text-muted-foreground line-through tabular-nums">
+              {formatCurrency(course.priceEGP, "EGP")}
+            </p>
+          )}
+        </div>
+        <div className="ms-auto w-44 shrink-0">
+          <CourseApplyDialog
+            courseId={course.id}
+            courseTitle={course.titleEn}
+            trigger={<Button size="lg" className="w-full">{t("applyNow")}</Button>}
+          />
+        </div>
+      </div>
     </>
   );
 }

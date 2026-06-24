@@ -20,12 +20,6 @@ function formatHeroPrice(amount: number) {
   return `EGP ${Math.round(amount).toLocaleString("en-US")}`;
 }
 
-function heroStartDate(): string {
-  const start = new Date();
-  start.setDate(start.getDate() + 14);
-  return `${start.getDate()}-${start.getMonth() + 1}-${start.getFullYear()}`;
-}
-
 function StarRating({ rating }: { rating: number }) {
   return (
     <span className="inline-flex items-center gap-0.5" aria-hidden>
@@ -80,7 +74,7 @@ export async function CourseHeroMeta({
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-3 sm:gap-x-4">
-      <span className="rounded-full bg-white px-3.5 py-1 text-xs font-semibold text-[#0a1424] shadow-sm">
+      <span className="rounded-full bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 px-3.5 py-1 text-xs font-semibold text-[#0a1424] shadow-sm ring-1 ring-amber-500/40">
         {t("heroOnline")}
       </span>
 
@@ -122,10 +116,6 @@ export async function CourseHeroMeta({
       <MetaDivider />
 
       <MetaItem icon={Monitor}>{t("heroOnlineZoom")}</MetaItem>
-
-      <MetaDivider />
-
-      <MetaItem icon={CalendarDays}>{heroStartDate()}</MetaItem>
     </div>
   );
 }

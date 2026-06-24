@@ -45,9 +45,12 @@ const EMPTY = { fullName: "", email: "", specialty: "", code: "+20", phone: "" }
 export function CourseApplyDialog({
   courseId,
   courseTitle,
+  trigger,
 }: {
   courseId: string;
   courseTitle: string;
+  /** Optional custom trigger (e.g. a compact button for the sticky mobile bar). */
+  trigger?: React.ReactNode;
 }) {
   const t = useTranslations("Marketing");
   const [open, setOpen] = React.useState(false);
@@ -87,7 +90,7 @@ export function CourseApplyDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="w-full">{t("applyNow")}</Button>
+        {trigger ?? <Button size="lg" className="w-full">{t("applyNow")}</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
