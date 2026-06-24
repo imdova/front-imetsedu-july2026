@@ -25,6 +25,7 @@ export interface MarketingLandingPage {
   views: number;
   clicks: number;
   ctr: number; // derived: clicks/views %
+  registrations: number; // captured leads for this path
   createdAt: string;
   updatedAt: string;
 }
@@ -75,7 +76,7 @@ const stamp = () => new Date().toISOString();
 const ctrOf = (clicks: number, views: number) =>
   views > 0 ? Math.round((clicks / views) * 1000) / 10 : 0;
 
-type Row = Omit<MarketingLandingPage, "ctr">;
+type Row = Omit<MarketingLandingPage, "ctr" | "registrations">;
 
 const pages: Row[] = [
   {
@@ -136,7 +137,11 @@ const leads: ExamLead[] = [
 let pageSeq = pages.length;
 let leadSeq = leads.length;
 
-const withCtr = (r: Row): MarketingLandingPage => ({ ...r, ctr: ctrOf(r.clicks, r.views) });
+const withCtr = (r: Row): MarketingLandingPage => ({
+  ...r,
+  ctr: ctrOf(r.clicks, r.views),
+  registrations: leads.filter((l) => l.path === r.path).length,
+});
 
 /* ── Landing pages ── */
 export async function getLandingPages(

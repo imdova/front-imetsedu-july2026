@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-  Plus, Pencil, Trash2, ExternalLink, LayoutTemplate, CheckCircle2, Eye, MousePointerClick, Percent,
+  Plus, Pencil, Trash2, Copy, ExternalLink, LayoutTemplate, CheckCircle2, Eye, UserPlus, Percent, MousePointerClick,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,13 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -38,10 +38,10 @@ const LANG_TABS: { key: LandingLanguage; label: string }[] = [
   { key: "mix", label: "Mix" },
 ];
 
-function ctrClass(ctr: number) {
-  if (ctr >= 5) return "text-success";
-  if (ctr >= 2) return "text-warning";
-  return "text-muted-foreground";
+function ctrPill(ctr: number) {
+  if (ctr >= 5) return "bg-success/12 text-success ring-success/20";
+  if (ctr >= 2) return "bg-warning/12 text-warning ring-warning/20";
+  return "bg-muted text-muted-foreground ring-border/60";
 }
 
 export function LandingPagesPanel({
@@ -63,6 +63,10 @@ export function LandingPagesPanel({
   const langOf = (p: MarketingLandingPage) => p.language ?? "en";
   const langCount = (l: LandingLanguage) => rows.filter((r) => langOf(r) === l).length;
   const visibleRows = React.useMemo(() => rows.filter((r) => langOf(r) === lang), [rows, lang]);
+  const totalRegistrations = React.useMemo(
+    () => rows.reduce((s, r) => s + (r.registrations ?? 0), 0),
+    [rows],
+  );
 
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<MarketingLandingPage | null>(null);
@@ -109,6 +113,29 @@ export function LandingPagesPanel({
     }
   };
 
+  const toInput = (p: MarketingLandingPage): LandingPageInput => ({
+    name: p.name, path: p.path, status: p.status, language: p.language ?? "en",
+    campaign: p.campaign, audience: p.audience, description: p.description, thumbnailUrl: p.thumbnailUrl,
+  });
+
+  const toggleStatus = async (p: MarketingLandingPage) => {
+    const status: LandingStatus = p.status === "published" ? "draft" : "published";
+    setRows((prev) => prev.map((r) => (r.id === p.id ? { ...r, status } : r))); // optimistic
+    const res = await dal.landing.updateLandingPage(p.id, { ...toInput(p), status });
+    if (!res.ok) { toast.error(res.error); refresh(); }
+  };
+
+  const duplicate = async (p: MarketingLandingPage) => {
+    const res = await dal.landing.createLandingPage({
+      ...toInput(p),
+      name: `${p.name} (copy)`,
+      path: `${p.path}-copy`,
+      status: "draft",
+    });
+    if (res.ok) { toast.success("Landing page duplicated"); refresh(); }
+    else toast.error(res.error);
+  };
+
   const remove = async (p: MarketingLandingPage) => {
     const okConfirm = await confirm({
       title: "Delete landing page",
@@ -127,17 +154,24 @@ export function LandingPagesPanel({
       accessorKey: "name",
       header: "Page",
       cell: ({ row }) => (
-        <div className="space-y-0.5">
-          <Link
-            href={`/admin/marketing/landing/${row.original.id}`}
-            className="font-medium text-foreground hover:text-primary hover:underline"
-          >
-            {row.original.name}
-          </Link>
-          <p className="font-mono text-xs text-muted-foreground">{row.original.path}</p>
-          {row.original.audience && (
-            <p className="text-xs text-muted-foreground">{row.original.audience}</p>
-          )}
+        <div className="flex items-center gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
+            <LayoutTemplate className="size-4" />
+          </span>
+          <div className="min-w-0 space-y-1">
+            <Link
+              href={`/admin/marketing/landing/${row.original.id}`}
+              className="font-medium text-foreground hover:text-primary hover:underline"
+            >
+              {row.original.name}
+            </Link>
+            <p className="truncate">
+              <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">{row.original.path}</span>
+            </p>
+            {row.original.audience && (
+              <p className="truncate text-xs text-muted-foreground">{row.original.audience}</p>
+            )}
+          </div>
         </div>
       ),
     },
@@ -145,31 +179,58 @@ export function LandingPagesPanel({
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant={row.original.status === "published" ? "default" : "secondary"}>
-          {row.original.status === "published" ? "Published" : "Draft"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={row.original.status === "published"}
+            onCheckedChange={() => toggleStatus(row.original)}
+            aria-label={row.original.status === "published" ? "Set to draft" : "Publish"}
+          />
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <span className={cn("size-1.5 rounded-full", row.original.status === "published" ? "bg-success" : "bg-muted-foreground/40")} />
+            {row.original.status === "published" ? "Published" : "Draft"}
+          </span>
+        </div>
       ),
     },
     {
       accessorKey: "campaign",
       header: "Campaign",
-      cell: ({ row }) => <span className="text-sm">{row.original.campaign || "—"}</span>,
+      cell: ({ row }) => row.original.campaign
+        ? <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground/80">{row.original.campaign}</span>
+        : <span className="text-muted-foreground">—</span>,
     },
     {
       accessorKey: "views",
       header: "Views",
-      cell: ({ row }) => <span className="tabular-nums">{row.original.views.toLocaleString()}</span>,
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5 tabular-nums">
+          <Eye className="size-3.5 text-muted-foreground" />{row.original.views.toLocaleString()}
+        </span>
+      ),
     },
     {
       accessorKey: "clicks",
       header: "Clicks",
-      cell: ({ row }) => <span className="tabular-nums">{row.original.clicks.toLocaleString()}</span>,
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5 tabular-nums">
+          <MousePointerClick className="size-3.5 text-muted-foreground" />{row.original.clicks.toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "registrations",
+      header: "Registrations",
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-primary ring-1 ring-primary/15">
+          <UserPlus className="size-3.5" />{(row.original.registrations ?? 0).toLocaleString()}
+        </span>
+      ),
     },
     {
       accessorKey: "ctr",
       header: "CTR",
       cell: ({ row }) => (
-        <span className={cn("font-medium tabular-nums", ctrClass(row.original.ctr))}>
+        <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ring-1", ctrPill(row.original.ctr))}>
           {row.original.ctr}%
         </span>
       ),
@@ -191,6 +252,9 @@ export function LandingPagesPanel({
               <ExternalLink className="size-4" />
             </Button>
           </a>
+          <Button variant="ghost" size="sm" onClick={() => duplicate(row.original)} title="Duplicate">
+            <Copy className="size-4" />
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => openEdit(row.original)} title="Edit">
             <Pencil className="size-4" />
           </Button>
@@ -205,11 +269,11 @@ export function LandingPagesPanel({
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <KpiCard label="Landing pages" value={stats.total} icon={LayoutTemplate} intent="primary" />
-        <KpiCard label="Published" value={stats.published} icon={CheckCircle2} intent="success" />
-        <KpiCard label="Total views" value={stats.views.toLocaleString()} icon={Eye} intent="info" />
-        <KpiCard label="CTA clicks" value={stats.clicks.toLocaleString()} icon={MousePointerClick} intent="warning" />
-        <KpiCard label="Avg CTR" value={`${stats.ctr}%`} icon={Percent} intent="primary" />
+        <KpiCard label="Landing pages" value={stats.total} icon={LayoutTemplate} intent="primary" helperText={`${stats.published} live · ${stats.drafts} drafts`} className="transition-shadow hover:shadow-md" />
+        <KpiCard label="Published" value={stats.published} icon={CheckCircle2} intent="success" helperText="visible to visitors" className="transition-shadow hover:shadow-md" />
+        <KpiCard label="Total views" value={stats.views.toLocaleString()} icon={Eye} intent="info" helperText="all-time page views" className="transition-shadow hover:shadow-md" />
+        <KpiCard label="Registrations" value={totalRegistrations.toLocaleString()} icon={UserPlus} intent="warning" helperText="leads captured" className="transition-shadow hover:shadow-md" />
+        <KpiCard label="Avg CTR" value={`${stats.ctr}%`} icon={Percent} intent="primary" helperText="clicks ÷ views" className="transition-shadow hover:shadow-md" />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -243,19 +307,28 @@ export function LandingPagesPanel({
         </Button>
       </div>
 
-      <div className="flex gap-1 border-b border-border/60">
-        {LANG_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setLang(tab.key)}
-            className={cn(
-              "-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors",
-              lang === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {tab.label} <span className="text-xs text-muted-foreground">({langCount(tab.key)})</span>
-          </button>
-        ))}
+      <div className="inline-flex items-center gap-1 rounded-xl bg-muted/60 p-1">
+        {LANG_TABS.map((tab) => {
+          const active = lang === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setLang(tab.key)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all",
+                active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {tab.label}
+              <span className={cn(
+                "rounded-full px-1.5 text-xs tabular-nums",
+                active ? "bg-primary/10 text-primary" : "bg-muted-foreground/10 text-muted-foreground",
+              )}>
+                {langCount(tab.key)}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <DataTable columns={columns} data={visibleRows} isLoading={loading} pageSize={8} />

@@ -3,7 +3,6 @@ import { setRequestLocale } from "next-intl/server";
 import { dal } from "@/lib/dal";
 import { PageHeader } from "@/components/shared/page-header";
 import { LandingPagesPanel } from "@/features/marketing-admin/components/landing-pages-panel";
-import { LandingManager } from "@/features/marketing-admin/components/landing-manager";
 
 export const metadata = { robots: { index: false } };
 
@@ -17,16 +16,9 @@ export default async function LandingPagesPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [
-    pagesRes, statsRes, testimonialsRes, sponsorsRes, insightsRes, subscribersRes, messagesRes,
-  ] = await Promise.all([
+  const [pagesRes, statsRes] = await Promise.all([
     dal.landing.fetchLandingPages({ sort: "newest" }),
     dal.landing.fetchLandingStats(),
-    dal.landing.fetchTestimonials(),
-    dal.landing.fetchSponsors(),
-    dal.landing.fetchInsights(),
-    dal.landing.fetchSubscribers(),
-    dal.landing.fetchContactMessages(),
   ]);
 
   return (
@@ -41,14 +33,6 @@ export default async function LandingPagesPage({
           initialStats={statsRes.ok ? statsRes.data : EMPTY_STATS}
         />
       </div>
-
-      <LandingManager
-        initialTestimonials={testimonialsRes.ok ? testimonialsRes.data : []}
-        initialSponsors={sponsorsRes.ok ? sponsorsRes.data : []}
-        initialInsights={insightsRes.ok ? insightsRes.data : []}
-        initialSubscribers={subscribersRes.ok ? subscribersRes.data : []}
-        initialMessages={messagesRes.ok ? messagesRes.data : []}
-      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { dal } from "@/lib/dal";
+import { postWebhook } from "@/lib/webhook";
 import { fbLeadContext, fireBrowserLead } from "@/lib/meta-events";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +58,7 @@ type FieldKey = "name" | "email" | "whatsapp" | "speciality";
  * tracks the landing view on mount + a conversion on submit, and fires the
  * browser-side Meta Lead event (deduped against the server CAPI event).
  */
-export function SimpleLeadForm({ path, courseName }: { path: string; courseName: string }) {
+export function SimpleLeadForm({ path, courseName, webhookUrl }: { path: string; courseName: string; webhookUrl?: string }) {
   const [form, setForm] = React.useState({ name: "", email: "", code: "+20", whatsapp: "", speciality: "" });
   const [touched, setTouched] = React.useState<Record<FieldKey, boolean>>({
     name: false, email: false, whatsapp: false, speciality: false,
@@ -114,6 +115,12 @@ export function SimpleLeadForm({ path, courseName }: { path: string; courseName:
       setDone(true);
       dal.landing.trackLanding(path, "click").catch(() => {});
       fireBrowserLead(fb.eventId, { content_name: courseName });
+      if (webhookUrl) {
+        postWebhook(webhookUrl, {
+          name: form.name.trim(), email: form.email.trim(), whatsapp,
+          speciality: form.speciality, interest: courseName, path, source: "landing-form",
+        });
+      }
     } else {
       toast.error(res.error);
     }

@@ -26,6 +26,7 @@ import { CourseWhoShouldAttend } from "@/features/marketing/components/course-wh
 import { CourseApplyDialog } from "@/features/marketing/components/course-apply-dialog";
 import { CourseSectionNav } from "@/features/marketing/components/course-section-nav";
 import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
+import { WhatsAppFab } from "@/features/marketing/components/whatsapp-fab";
 import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
@@ -146,6 +147,7 @@ export default async function CourseDetailPage({
   const courseTitle = locale === "ar" ? course.titleAr : course.titleEn;
 
   const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
+  const applyWebhook = course.slug === "cphq-preparation" ? "https://aut.jobova.net/webhook/cphq" : undefined;
 
   const includes = [
     { icon: PlayCircle, label: `${course.lectures} ${tr("live & on-demand lessons", "درسًا مباشرًا وعند الطلب")}` },
@@ -198,7 +200,7 @@ export default async function CourseDetailPage({
             </span>
           )}
         </div>
-        <CourseApplyDialog courseId={course.id} courseTitle={course.titleEn} />
+        <CourseApplyDialog courseId={course.id} courseTitle={course.titleEn} webhookUrl={applyWebhook} />
         <ul className="space-y-2 pt-1 text-sm">
           {meta.map((m) => (
             <li key={m.label} className="flex items-center justify-between">
@@ -388,10 +390,19 @@ export default async function CourseDetailPage({
           <CourseApplyDialog
             courseId={course.id}
             courseTitle={course.titleEn}
+            webhookUrl={applyWebhook}
             trigger={<Button size="lg" className="w-full">{t("applyNow")}</Button>}
           />
         </div>
       </div>
+
+      {course.slug === "cphq-preparation" && (
+        <WhatsAppFab
+          phone="201115782721"
+          message={tr("Hello, I'd like to ask about the CPHQ course", "مرحبًا، أريد الاستفسار عن كورس CPHQ")}
+          label={tr("Chat with us on WhatsApp", "تواصل معنا عبر واتساب")}
+        />
+      )}
     </>
   );
 }

@@ -6,6 +6,7 @@ import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
+import { postWebhook } from "@/lib/webhook";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,11 +47,14 @@ export function CourseApplyDialog({
   courseId,
   courseTitle,
   trigger,
+  webhookUrl,
 }: {
   courseId: string;
   courseTitle: string;
   /** Optional custom trigger (e.g. a compact button for the sticky mobile bar). */
   trigger?: React.ReactNode;
+  /** Optional external webhook to also receive the lead (best-effort). */
+  webhookUrl?: string;
 }) {
   const t = useTranslations("Marketing");
   const [open, setOpen] = React.useState(false);
@@ -79,6 +83,13 @@ export function CourseApplyDialog({
     });
     setSaving(false);
     if (res.ok) {
+      if (webhookUrl) {
+        postWebhook(webhookUrl, {
+          fullName: form.fullName.trim(), email: form.email.trim(),
+          phone: `${form.code} ${form.phone.trim()}`, specialty: form.specialty.trim() || undefined,
+          course: courseTitle, courseId, source: "course-apply",
+        });
+      }
       toast.success(t("applySuccess"));
       setOpen(false);
       setForm(EMPTY);

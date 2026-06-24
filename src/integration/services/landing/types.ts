@@ -11,6 +11,7 @@ export interface LandingPageDto {
   thumbnailUrl: string;
   views: number;
   clicks: number;
+  registrations?: number;
   createdAt: string;
   updatedAt: string;
 }

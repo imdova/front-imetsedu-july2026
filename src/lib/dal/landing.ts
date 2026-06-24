@@ -19,6 +19,7 @@ const mapPage = (d: svc.LandingPageDto): MarketingLandingPage => ({
   language: (d.language as MarketingLandingPage["language"]) ?? "en",
   campaign: d.campaign, audience: d.audience, description: d.description, thumbnailUrl: d.thumbnailUrl,
   views: d.views, clicks: d.clicks, ctr: ctrOf(d.clicks, d.views),
+  registrations: d.registrations ?? 0,
   createdAt: d.createdAt, updatedAt: d.updatedAt,
 });
 const mapLead = (d: svc.ExamLeadDto): ExamLead => ({

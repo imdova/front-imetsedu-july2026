@@ -395,7 +395,7 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
             </ul>
             <p className="inline-flex items-center gap-2 text-sm text-white/70"><Stethoscope className="size-4" /> For doctors, dentists, pharmacists, nurses & quality professionals</p>
           </div>
-          <SimpleLeadForm path={trackPath} courseName={COURSE} />
+          <SimpleLeadForm path={trackPath} courseName={COURSE} webhookUrl="https://aut.jobova.net/webhook/cphq" />
         </div>
       </section>
 
