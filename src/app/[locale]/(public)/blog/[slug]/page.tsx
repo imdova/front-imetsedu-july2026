@@ -57,16 +57,41 @@ export default async function ArticleDetailPage({
     "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt,
-    image: post.coverImageUrl || undefined,
+    image: post.coverImageUrl || `${SITE_URL}/blog/${post.slug}/og`,
     datePublished: post.publishedAt,
-    author: post.authorName ? { "@type": "Person", name: post.authorName } : undefined,
+    dateModified: post.updatedAt || post.publishedAt,
+    inLanguage: post.language || locale,
+    keywords: post.tags?.length ? post.tags.join(", ") : undefined,
+    articleSection: post.category || undefined,
+    author: post.authorName
+      ? { "@type": "Organization", name: post.authorName }
+      : { "@type": "Organization", name: SITE_NAME },
     publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
     mainEntityOfPage: localeUrl(`/blog/${post.slug}`, locale),
   };
 
+  // GEO/SEO: surface every FAQ block as FAQPage structured data so search and
+  // AI answer engines can cite the Q&A directly.
+  const faqs = (post.sections ?? [])
+    .flatMap((s) => s.cols)
+    .flatMap((c) => c.blocks)
+    .filter((b) => b.type === "faq")
+    .flatMap((b) => b.faqs ?? []);
+  const faqLd = faqs.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      }
+    : null;
+
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <JsonLd data={articleLd} />
+      <JsonLd data={faqLd ? [articleLd, faqLd] : articleLd} />
       <Link href="/blog" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4 rtl:rotate-180" /> All articles
       </Link>
