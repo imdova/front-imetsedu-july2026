@@ -19,10 +19,14 @@ export default async function StaffPipelinePage({
 
   const t = await getTranslations("Crm");
 
-  const [leadsRes, pipelineRes] = await Promise.all([
+  const [leadsRes, pipelineRes, groupsRes, categoriesRes, subcategoriesRes] = await Promise.all([
     dal.crm.fetchLeads({ counselorId }),
     dal.crm.fetchPipeline(),
+    dal.groups.fetchGroups(),
+    dal.groups.fetchGroupCategories(),
+    dal.groups.fetchGroupSubcategories(),
   ]);
+  const groupOptions = (groupsRes.ok ? groupsRes.data : []).map((g) => ({ value: g.id, label: g.title, categoryId: g.categoryId, subcategoryId: g.subcategoryId }));
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-6">
@@ -31,6 +35,9 @@ export default async function StaffPipelinePage({
         leads={leadsRes.ok ? leadsRes.data : []}
         stages={pipelineRes.ok ? pipelineRes.data.stages : []}
         basePath="/staff"
+        groupOptions={groupOptions}
+        categories={categoriesRes.ok ? categoriesRes.data : []}
+        subcategories={subcategoriesRes.ok ? subcategoriesRes.data : []}
       />
     </div>
   );

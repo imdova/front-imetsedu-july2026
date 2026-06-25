@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Phone, MessageCircle, Mail, MessageSquare, Paperclip, Flame, Clock, Trophy, Ghost, Ban, XCircle, HelpCircle } from "lucide-react";
 
 import type { Lead } from "@/lib/db/crm";
+import type { GroupCategoryRow, GroupSubcategoryRow } from "@/lib/dal/groups";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,13 +26,15 @@ export interface TransitionLogData {
 }
 
 export function LeadTransitionModal({
-  lead, targetStage, onConfirm, onCancel, groupOptions = [],
+  lead, targetStage, onConfirm, onCancel, groupOptions = [], categories = [], subcategories = [],
 }: {
   lead: Lead;
   targetStage: "contacted" | "enrolled" | "lost";
   onConfirm: (data?: TransitionLogData) => void;
   onCancel: () => void;
-  groupOptions?: { value: string; label: string }[];
+  groupOptions?: { value: string; label: string; categoryId?: string; subcategoryId?: string }[];
+  categories?: GroupCategoryRow[];
+  subcategories?: GroupSubcategoryRow[];
 }) {
   const t = useTranslations("Crm");
 
@@ -47,7 +50,12 @@ export function LeadTransitionModal({
   const [lostNotes, setLostNotes] = React.useState("");
   // enrolled state
   const [verified, setVerified] = React.useState(false);
+  const [categoryId, setCategoryId] = React.useState("");
+  const [subcategoryId, setSubcategoryId] = React.useState("");
   const [group, setGroup] = React.useState("");
+
+  const subOptions = subcategories.filter((s) => !categoryId || s.parentId === categoryId);
+  const filteredGroupOptions = groupOptions.filter((g) => !subcategoryId || g.subcategoryId === subcategoryId);
 
   const channels = [
     { key: "call", label: t("channelCall"), icon: Phone },
@@ -96,7 +104,7 @@ export function LeadTransitionModal({
                   <Label>{t("outcomeLabel")} <span className="text-destructive">*</span></Label>
                   <Select value={outcome} onValueChange={setOutcome}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       <SelectItem value="interested">{t("outcomeInterested")}</SelectItem>
                       <SelectItem value="callback">{t("outcomeCallback")}</SelectItem>
                       <SelectItem value="not">{t("outcomeNotInterested")}</SelectItem>
@@ -107,7 +115,7 @@ export function LeadTransitionModal({
                   <Label>{t("qualifiedLabel")}</Label>
                   <Select defaultValue="no">
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       <SelectItem value="yes">{t("yesLabel")}</SelectItem>
                       <SelectItem value="no">{t("noLabel")}</SelectItem>
                     </SelectContent>
@@ -124,24 +132,23 @@ export function LeadTransitionModal({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>{t("categoryLabel")} <span className="text-destructive">*</span></Label>
-                  <Select><SelectTrigger><SelectValue placeholder={t("selectCategoryPh")} /></SelectTrigger>
-                    <SelectContent>{["Healthcare", "Business", "Finance"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setSubcategoryId(""); setGroup(""); }}>
+                    <SelectTrigger><SelectValue placeholder={t("selectCategoryPh")} /></SelectTrigger>
+                    <SelectContent position="popper">{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("subCategoryLabel")} <span className="text-destructive">*</span></Label>
-                  <Select><SelectTrigger><SelectValue placeholder={t("selectSubCategoryPh")} /></SelectTrigger>
-                    <SelectContent>{["Healthcare Quality", "Infection Control"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <Select value={subcategoryId} onValueChange={(v) => { setSubcategoryId(v); setGroup(""); }} disabled={!categoryId}>
+                    <SelectTrigger><SelectValue placeholder={t("selectSubCategoryPh")} /></SelectTrigger>
+                    <SelectContent position="popper">{subOptions.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("groupLabelField")} <span className="text-destructive">*</span></Label>
-                  <Select value={group} onValueChange={setGroup}>
+                  <Select value={group} onValueChange={setGroup} disabled={!subcategoryId}>
                     <SelectTrigger><SelectValue placeholder={t("selectGroupPh")} /></SelectTrigger>
-                    <SelectContent>
-                      {(groupOptions.length ? groupOptions : [{ value: "CPHQ-G42", label: "CPHQ-G42" }, { value: "CPHQ-G41", label: "CPHQ-G41" }, { value: "CIC-2026", label: "CIC-2026" }])
-                        .map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                    </SelectContent>
+                    <SelectContent position="popper">{filteredGroupOptions.map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
@@ -149,7 +156,7 @@ export function LeadTransitionModal({
                   <div className="flex gap-2">
                     <Input type="number" defaultValue={0} className="flex-1" dir="ltr" />
                     <Select defaultValue="EGP"><SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                      <SelectContent>{["EGP", "SAR", "USD"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                      <SelectContent position="popper">{["EGP", "SAR", "USD"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 </div>
@@ -198,14 +205,14 @@ export function LeadTransitionModal({
               if (targetStage === "contacted") {
                 onConfirm({ contactChannel: channel, contactOutcome: outcome, notes: contactNotes.trim() || undefined });
               } else if (targetStage === "enrolled") {
-                onConfirm(groupOptions.length > 0 ? { groupId: group || undefined } : undefined);
+                onConfirm({ groupId: group });
               } else if (targetStage === "lost") {
                 onConfirm({ lossReason: reason, notes: lostNotes.trim() || undefined });
               } else {
                 onConfirm(undefined);
               }
             }}
-            disabled={targetStage === "enrolled" && (!verified || (groupOptions.length > 0 && !group))}
+            disabled={targetStage === "enrolled" && (!verified || !categoryId || !subcategoryId || !group)}
           >
             {t("confirmMove")}
           </Button>

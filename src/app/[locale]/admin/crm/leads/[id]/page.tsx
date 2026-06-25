@@ -22,12 +22,14 @@ export default async function AdminLeadDetailPage({
 
   const t = await getTranslations("Crm");
 
-  const [leadRes, pipelineRes, pipelinesRes, coursesRes, groupsRes] = await Promise.all([
+  const [leadRes, pipelineRes, pipelinesRes, coursesRes, groupsRes, categoriesRes, subcategoriesRes] = await Promise.all([
     dal.crm.fetchLead(id),
     dal.crm.fetchPipeline(),
     dal.crm.fetchLeadPipelines(),
     dal.courses.fetchCourses(),
     dal.groups.fetchGroups(),
+    dal.groups.fetchGroupCategories(),
+    dal.groups.fetchGroupSubcategories(),
   ]);
 
   if (!leadRes.ok || !leadRes.data) notFound();
@@ -50,7 +52,7 @@ export default async function AdminLeadDetailPage({
     image: c.thumbnailUrl,
   }));
   // Real groups for the "enrolled" transition (lead is added to the chosen group).
-  const groupOptions = (groupsRes.ok ? groupsRes.data : []).map((g) => ({ value: g.id, label: g.title }));
+  const groupOptions = (groupsRes.ok ? groupsRes.data : []).map((g) => ({ value: g.id, label: g.title, categoryId: g.categoryId, subcategoryId: g.subcategoryId }));
 
   // Stage lists for each pipeline the lead belongs to (per-pipeline status menu).
   const stageRes = await Promise.all(
@@ -73,6 +75,8 @@ export default async function AdminLeadDetailPage({
         pipelineStages={pipelineStages}
         courseOptions={courseOptions}
         groupOptions={groupOptions}
+        categories={categoriesRes.ok ? categoriesRes.data : []}
+        subcategories={subcategoriesRes.ok ? subcategoriesRes.data : []}
         basePath="/admin/crm"
       />
     </div>
