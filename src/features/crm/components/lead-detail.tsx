@@ -131,7 +131,7 @@ export function LeadDetail({
   const tv = t as unknown as (k: string, vals?: Record<string, string>) => string;
   // Action-button permission gates (hidden/disabled when not permitted).
   const canEdit = usePermission("crm.leads.edit");
-  const canNote = usePermission("crm.leads.add_note");
+  const canNote = usePermission("crm.leads.note");
   const canAssign = usePermission("crm.leads.assign");
   const canCert = usePermission("lms.certificates.upload");
   const { stages: crmStages, getDisplayName } = usePipelineStages(stages);
