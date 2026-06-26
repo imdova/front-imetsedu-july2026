@@ -18,6 +18,7 @@ export function YouTubePlayer({
   videoId,
   unmuteLabel = "Tap for sound",
   autoPlay = true,
+  unmuteOnStart = true,
   className,
 }: {
   videoId: string;
@@ -25,6 +26,10 @@ export function YouTubePlayer({
   /** Autoplay (muted, then attempt unmute). When false, the video loads paused —
    * the user plays/pauses/mutes via the native controls (no forced background sound). */
   autoPlay?: boolean;
+  /** When false, autoplay stays MUTED (no auto-unmute). Muted autoplay is the only
+   * mode mobile browsers allow, so this keeps the video playing on phones; the
+   * tap-for-sound button still lets the user enable audio. */
+  unmuteOnStart?: boolean;
   className?: string;
 }) {
   const hostRef = React.useRef<HTMLDivElement>(null);
@@ -50,9 +55,24 @@ export function YouTubePlayer({
         events: {
           onReady: (e: any) => {
             setReady(true);
-            if (autoPlay) {
+            if (!autoPlay) return;
+            try { e.target.playVideo(); } catch { /* ignore */ }
+            if (unmuteOnStart) {
+              // Try to play WITH sound (works on desktop). Mobile blocks unmuted
+              // autoplay and pauses the video — so if it isn't playing shortly
+              // after, fall back to MUTED autoplay so it keeps running; the user
+              // can then unmute via the tap button or native controls.
               try { e.target.unMute(); e.target.setVolume(100); } catch { /* ignore */ }
-              try { e.target.playVideo(); } catch { /* ignore */ }
+              window.setTimeout(() => {
+                try {
+                  if (e.target.getPlayerState?.() !== YT.PlayerState.PLAYING) {
+                    e.target.mute();
+                    e.target.playVideo();
+                  }
+                } catch { /* ignore */ }
+                try { setMuted(!!e.target.isMuted()); } catch { /* ignore */ }
+              }, 400);
+            } else {
               window.setTimeout(() => { try { setMuted(!!e.target.isMuted()); } catch { /* ignore */ } }, 500);
             }
           },
@@ -68,7 +88,7 @@ export function YouTubePlayer({
       cancelled = true;
       try { playerRef.current?.destroy?.(); } catch { /* ignore */ }
     };
-  }, [videoId, autoPlay]);
+  }, [videoId, autoPlay, unmuteOnStart]);
 
   const unmute = () => {
     const p = playerRef.current;

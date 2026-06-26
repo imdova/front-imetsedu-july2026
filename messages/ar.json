@@ -854,7 +854,23 @@
   },
   "Staff": {
     "profileSubtitle": "إدارة ملفك الشخصي وصورتك.",
-    "personalInfo": "المعلومات الشخصية"
+    "personalInfo": "المعلومات الشخصية",
+    "settingsSubtitle": "إدارة البريد الإلكتروني وكلمة المرور لتسجيل الدخول.",
+    "emailTitle": "البريد الإلكتروني",
+    "emailDesc": "حدّث البريد الإلكتروني المستخدم لتسجيل الدخول. أدخل كلمة المرور الحالية للتأكيد.",
+    "currentEmail": "البريد الحالي",
+    "newEmail": "البريد الجديد",
+    "currentPasswordLabel": "كلمة المرور الحالية",
+    "changeEmailBtn": "تحديث البريد",
+    "emailChanged": "تم تحديث البريد الإلكتروني",
+    "passwordTitle": "كلمة المرور",
+    "passwordDesc": "اختر كلمة مرور قوية لا تستخدمها في مواقع أخرى.",
+    "newPasswordLabel": "كلمة المرور الجديدة",
+    "confirmPasswordLabel": "تأكيد كلمة المرور الجديدة",
+    "changePasswordBtn": "تحديث كلمة المرور",
+    "passwordChanged": "تم تغيير كلمة المرور",
+    "passwordsDontMatch": "كلمتا المرور غير متطابقتين",
+    "fillRequired": "يرجى ملء جميع الحقول المطلوبة"
   },
   "Auth": {
     "loginTitle": "مرحبًا بعودتك",

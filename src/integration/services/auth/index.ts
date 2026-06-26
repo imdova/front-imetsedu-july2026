@@ -5,6 +5,7 @@ export {
   updateProfile,
   refresh,
   changePassword,
+  changeEmail,
   forgotPassword,
   resetPassword,
 } from "./auth.service";

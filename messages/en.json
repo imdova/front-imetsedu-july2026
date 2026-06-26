@@ -854,7 +854,23 @@
   },
   "Staff": {
     "profileSubtitle": "Manage your staff profile and photo.",
-    "personalInfo": "Personal information"
+    "personalInfo": "Personal information",
+    "settingsSubtitle": "Manage your sign-in email and password.",
+    "emailTitle": "Email address",
+    "emailDesc": "Update the email you use to sign in. Enter your current password to confirm.",
+    "currentEmail": "Current email",
+    "newEmail": "New email",
+    "currentPasswordLabel": "Current password",
+    "changeEmailBtn": "Update email",
+    "emailChanged": "Email updated",
+    "passwordTitle": "Password",
+    "passwordDesc": "Choose a strong password you don't use elsewhere.",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm new password",
+    "changePasswordBtn": "Update password",
+    "passwordChanged": "Password changed",
+    "passwordsDontMatch": "Passwords don't match",
+    "fillRequired": "Please fill in all required fields"
   },
   "Auth": {
     "loginTitle": "Welcome back",

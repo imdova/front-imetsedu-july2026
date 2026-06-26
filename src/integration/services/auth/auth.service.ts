@@ -79,6 +79,11 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
   return api.post<{ message?: string }>("/auth/change-password", { currentPassword, newPassword });
 }
 
+/** PATCH /users/me/email — change own email (requires current password). */
+export function changeEmail(newEmail: string, currentPassword: string): Promise<Result<AuthUserDto>> {
+  return api.patch<AuthUserDto>("/users/me/email", { newEmail, currentPassword });
+}
+
 export interface UpdateProfileInput {
   name?: string;
   image?: string;
