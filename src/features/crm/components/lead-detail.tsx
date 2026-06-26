@@ -32,6 +32,7 @@ import { toast } from "sonner";
 
 import { Link } from "@/i18n/navigation";
 import type { Lead, PipelineStage, ActivityKind, FollowUpStatus } from "@/lib/db/crm";
+import type { GroupCategoryRow, GroupSubcategoryRow } from "@/lib/dal/groups";
 import { dal } from "@/lib/dal";
 import { STAGE_MAP } from "@/lib/crm/map-lead";
 import { usePermission } from "@/hooks/use-permission";
@@ -115,6 +116,8 @@ export function LeadDetail({
   pipelineStages = [],
   courseOptions = [],
   groupOptions = [],
+  categories = [],
+  subcategories = [],
   basePath = "/admin/crm",
 }: {
   lead: Lead;
@@ -122,7 +125,9 @@ export function LeadDetail({
   assignablePipelines?: { id: string; title: string }[];
   pipelineStages?: PipelineStageList[];
   courseOptions?: { value: string; label: string; image?: string }[];
-  groupOptions?: { value: string; label: string }[];
+  groupOptions?: { value: string; label: string; categoryId?: string; subcategoryId?: string }[];
+  categories?: GroupCategoryRow[];
+  subcategories?: GroupSubcategoryRow[];
   basePath?: string;
 }) {
   const t = useTranslations("Crm");
@@ -131,7 +136,7 @@ export function LeadDetail({
   const tv = t as unknown as (k: string, vals?: Record<string, string>) => string;
   // Action-button permission gates (hidden/disabled when not permitted).
   const canEdit = usePermission("crm.leads.edit");
-  const canNote = usePermission("crm.leads.add_note");
+  const canNote = usePermission("crm.leads.note");
   const canAssign = usePermission("crm.leads.assign");
   const canCert = usePermission("lms.certificates.upload");
   const { stages: crmStages, getDisplayName } = usePipelineStages(stages);
@@ -748,6 +753,8 @@ export function LeadDetail({
           lead={lead}
           targetStage={pendingStage.targetStage}
           groupOptions={groupOptions}
+          categories={categories}
+          subcategories={subcategories}
           onConfirm={(data) => { void pendingStage.run(data); setPendingStage(null); }}
           onCancel={() => setPendingStage(null)}
         />

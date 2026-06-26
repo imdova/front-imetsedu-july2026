@@ -22,11 +22,14 @@ export default async function LeadDetailPage({
 
   const t = await getTranslations("Crm");
 
-  const [leadRes, pipelineRes, pipelinesRes, coursesRes] = await Promise.all([
+  const [leadRes, pipelineRes, pipelinesRes, coursesRes, groupsRes, categoriesRes, subcategoriesRes] = await Promise.all([
     dal.crm.fetchLead(id),
     dal.crm.fetchPipeline(),
     dal.crm.fetchLeadPipelines(),
     dal.courses.fetchCourses(),
+    dal.groups.fetchGroups(),
+    dal.groups.fetchGroupCategories(),
+    dal.groups.fetchGroupSubcategories(),
   ]);
 
   if (!leadRes.ok || !leadRes.data) notFound();
@@ -48,6 +51,7 @@ export default async function LeadDetailPage({
     label: c.titleEn || c.titleAr || c.slug,
     image: c.thumbnailUrl,
   }));
+  const groupOptions = (groupsRes.ok ? groupsRes.data : []).map((g) => ({ value: g.id, label: g.title, categoryId: g.categoryId, subcategoryId: g.subcategoryId }));
 
   const stageRes = await Promise.all(
     (leadRes.data.pipelines ?? []).map((p) => dal.crm.fetchPipelineStages(p.id)),
@@ -68,6 +72,9 @@ export default async function LeadDetailPage({
         assignablePipelines={assignablePipelines}
         pipelineStages={pipelineStages}
         courseOptions={courseOptions}
+        groupOptions={groupOptions}
+        categories={categoriesRes.ok ? categoriesRes.data : []}
+        subcategories={subcategoriesRes.ok ? subcategoriesRes.data : []}
         basePath="/staff"
       />
     </div>

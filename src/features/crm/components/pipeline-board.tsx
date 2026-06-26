@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
 import type { Lead, PipelineStage } from "@/lib/db/crm";
+import type { GroupCategoryRow, GroupSubcategoryRow } from "@/lib/dal/groups";
 import { dal } from "@/lib/dal";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -54,13 +55,16 @@ const STAGE_PROBABILITY: Record<string, number> = {
 };
 
 export function PipelineBoard({
-  leads, stages, basePath, groupOptions = [], courseNameById = {},
+  leads, stages, basePath, groupOptions = [], categories = [], subcategories = [], courseNameById = {},
 }: {
   leads: Lead[];
   stages: PipelineStage[];
   basePath: string;
   /** Real groups for the "enrolled" transition modal's group selector. */
-  groupOptions?: { value: string; label: string }[];
+  groupOptions?: { value: string; label: string; categoryId?: string; subcategoryId?: string }[];
+  /** Group categories/sub-categories, for the "enrolled" modal's cascading pickers. */
+  categories?: GroupCategoryRow[];
+  subcategories?: GroupSubcategoryRow[];
   /** Map of course id → display name, fetched server-side. */
   courseNameById?: Record<string, string>;
 }) {
@@ -203,6 +207,8 @@ export function PipelineBoard({
           lead={pending.lead}
           targetStage={pending.to}
           groupOptions={groupOptions}
+          categories={categories}
+          subcategories={subcategories}
           onConfirm={(data) => { void commitMove(pending.lead, pending.from, pending.to, data?.groupId); setPending(null); }}
           onCancel={() => setPending(null)}
         />

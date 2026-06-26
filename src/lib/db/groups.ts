@@ -11,6 +11,9 @@ export interface GroupRow {
   image: string;
   category: string;
   subcategory: string;
+  /** Raw parent ids, used to cascade-filter category → sub-category → group pickers. */
+  categoryId: string;
+  subcategoryId: string;
   createdAt: string;
   startDate: string;
   endDate: string;
@@ -54,9 +57,6 @@ export interface GroupDetail extends GroupRow {
   lectureDay: string;
   assignedLms: number;
   roster: RosterStudent[];
-  /** Raw ids/fields needed to pre-fill the edit-group form. */
-  categoryId: string;
-  subcategoryId: string;
   groupImages: string[];
   whatsappGroupLink: string;
   /** Raw ISO dates (startDate/endDate above are display-formatted). */
@@ -65,7 +65,7 @@ export interface GroupDetail extends GroupRow {
 }
 
 const groups: GroupRow[] = [
-  { id: "grp_g42", title: "cphq - g42", image: "", category: "Healthcare", subcategory: "Healthcare Quality", createdAt: "Jun 14, 2026", startDate: "Jun 15, 2026", endDate: "Jun 30, 2026", startTime: "19:00", endTime: "21:00", status: "pending", students: 1, revenue: 0 },
+  { id: "grp_g42", title: "cphq - g42", image: "", category: "Healthcare", subcategory: "Healthcare Quality", categoryId: "", subcategoryId: "", createdAt: "Jun 14, 2026", startDate: "Jun 15, 2026", endDate: "Jun 30, 2026", startTime: "19:00", endTime: "21:00", status: "pending", students: 1, revenue: 0 },
 ];
 
 const rosterByGroup: Record<string, RosterStudent[]> = {

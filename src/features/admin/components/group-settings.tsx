@@ -26,6 +26,7 @@ export function GroupSettings({
 }) {
   const t = useTranslations("Admin");
   const [tab, setTab] = React.useState<Tab>("categories");
+  const [cats, setCats] = React.useState(categories);
 
   return (
     <div className="space-y-5">
@@ -45,9 +46,9 @@ export function GroupSettings({
       </div>
 
       {tab === "categories" ? (
-        <TaxoTab kind="category" initial={categories} />
+        <TaxoTab key="category" kind="category" initial={cats} onRowsChange={setCats} />
       ) : (
-        <TaxoTab kind="subcategory" initial={subcategories} parents={categories} />
+        <TaxoTab key="subcategory" kind="subcategory" initial={subcategories} parents={cats} />
       )}
     </div>
   );
@@ -57,13 +58,20 @@ function TaxoTab({
   kind,
   initial,
   parents = [],
+  onRowsChange,
 }: {
   kind: "category" | "subcategory";
   initial: (GroupCategoryRow | GroupSubcategoryRow)[];
   parents?: GroupCategoryRow[];
+  onRowsChange?: (rows: GroupCategoryRow[]) => void;
 }) {
   const t = useTranslations("Admin");
   const [rows, setRows] = React.useState(initial);
+
+  React.useEffect(() => {
+    onRowsChange?.(rows as GroupCategoryRow[]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
   const [name, setName] = React.useState("");
   const [parentId, setParentId] = React.useState("");
   const [search, setSearch] = React.useState("");
