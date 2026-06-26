@@ -151,7 +151,7 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
               <CalendarDays className="size-3.5" /> الدفعة القادمة تبدأ ١٥ يونيو ٢٠٢٦ · المقاعد المتاحة 7 من 30
             </span>
             <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#0b2545] sm:text-4xl lg:text-5xl">
-              اجتَز امتحان CPHQ <span className="text-[#B8860B]">من أول مرة</span>
+              إزاي أبقي أخصائي جودة صحية <span className="text-[#B8860B]">معتمد دوليًا</span>
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-slate-600">
               كورس تحضيري مباشر على Zoom لمدة ١٠ أسابيع، يغطّي الدومينز السبعة كاملة — بالعربية والإنجليزية.
