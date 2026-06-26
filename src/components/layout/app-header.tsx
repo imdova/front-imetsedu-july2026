@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Menu, Plus, Search, LogOut } from "lucide-react";
+import { Menu, Plus, Search, LogOut, UserCog, Settings } from "lucide-react";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { ADMIN_NAV, BRAND, type NavSection } from "@/constants/navigation";
@@ -49,6 +49,12 @@ export function AppHeader({ nav = ADMIN_NAV, showCreate = true }: AppHeaderProps
     clearSessionCookie();
     router.push("/login");
   };
+
+  // Account links (Profile / Settings) for THIS workspace, derived from its nav
+  // so the header avatar menu always points at the right routes.
+  const accountItems = nav.flatMap((s) => s.items);
+  const profileItem = accountItems.find((i) => i.href.endsWith("/profile"));
+  const settingsItem = accountItems.find((i) => i.href.endsWith("/settings") && !i.adminOnly);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/70 bg-background/70 px-4 backdrop-blur-xl sm:px-6">
@@ -118,6 +124,23 @@ export function AppHeader({ nav = ADMIN_NAV, showCreate = true }: AppHeaderProps
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel className="truncate">{user?.email ?? user?.name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {profileItem && (
+              <DropdownMenuItem asChild>
+                <Link href={profileItem.href}>
+                  <UserCog className="size-4" />
+                  {t(`Nav.${profileItem.titleKey}`)}
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {settingsItem && (
+              <DropdownMenuItem asChild>
+                <Link href={settingsItem.href}>
+                  <Settings className="size-4" />
+                  {t(`Nav.${settingsItem.titleKey}`)}
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {(profileItem || settingsItem) && <DropdownMenuSeparator />}
             <DropdownMenuItem variant="destructive" onClick={handleLogout}>
               <LogOut className="size-4" />
               {t("Common.logout")}
