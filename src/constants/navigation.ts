@@ -134,6 +134,12 @@ export const ADMIN_NAV: NavSection[] = [
       { titleKey: "reports", href: "/admin/reports", icon: "ChartLine", adminOnly: true },
     ],
   },
+  {
+    labelKey: "sectionAccount",
+    items: [
+      { titleKey: "profile", href: "/admin/profile", icon: "UserCog" },
+    ],
+  },
 ];
 
 

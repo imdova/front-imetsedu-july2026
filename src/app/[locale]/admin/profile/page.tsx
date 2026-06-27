@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { StaffProfileSettings } from "@/features/staff/components/staff-profile-settings";
 
-export default async function StaffProfilePage({
+export default async function AdminProfilePage({
   params,
 }: {
   params: Promise<{ locale: string }>;

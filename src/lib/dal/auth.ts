@@ -11,8 +11,9 @@ export const getProfile = (accessToken?: string) => authSvc.getProfile(accessTok
 export const updateProfile = (input: Parameters<typeof authSvc.updateProfile>[0]) =>
   authSvc.updateProfile(input);
 export const refresh = (refreshToken: string) => authSvc.refresh(refreshToken);
-export const changePassword = (currentPassword: string, newPassword: string) =>
-  authSvc.changePassword(currentPassword, newPassword);
+export const changePassword = (currentPassword: string, newPassword: string, confirmPassword?: string) =>
+  authSvc.changePassword(currentPassword, newPassword, confirmPassword);
+
 export const changeEmail = (newEmail: string, currentPassword: string) =>
   authSvc.changeEmail(newEmail, currentPassword);
 export const forgotPassword = (email: string) => authSvc.forgotPassword(email);

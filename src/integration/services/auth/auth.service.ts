@@ -75,9 +75,18 @@ export function refresh(refreshToken: string): Promise<Result<AuthResponse>> {
   return api.post<AuthResponse>("/auth/refresh", { refresh_token: refreshToken }, { requireAuth: false });
 }
 
-export function changePassword(currentPassword: string, newPassword: string): Promise<Result<{ message?: string }>> {
-  return api.post<{ message?: string }>("/auth/change-password", { currentPassword, newPassword });
+export function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword?: string,
+): Promise<Result<{ message?: string }>> {
+  return api.post<{ message?: string }>("/auth/change-password", {
+    currentPassword,
+    newPassword,
+    confirmPassword: confirmPassword ?? newPassword,
+  });
 }
+
 
 /** PATCH /users/me/email — change own email (requires current password). */
 export function changeEmail(newEmail: string, currentPassword: string): Promise<Result<AuthUserDto>> {
