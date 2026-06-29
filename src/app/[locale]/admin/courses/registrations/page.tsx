@@ -15,7 +15,7 @@ export default async function AdminRegistrationsPage({ params }: { params: Promi
   // "Registrations" = applicants captured by the public course apply form, i.e.
   // CRM leads that carry a course of interest.
   const [leadsRes, coursesRes, counselorsRes] = await Promise.all([
-    dal.crm.fetchLeads(),
+    dal.crm.fetchLeads({ source: "Website" }),
     dal.courses.fetchCourses(),
     dal.crm.fetchCounselors(),
   ]);
