@@ -2410,6 +2410,7 @@
     "stageWaiting": "Waiting for Payment",
     "stageEnrolled": "Enrolled",
     "stageLost": "Lost",
+    "stageDead": "Dead",
     "priorityHot": "Hot",
     "priorityWarm": "Warm",
     "priorityCold": "Cold",

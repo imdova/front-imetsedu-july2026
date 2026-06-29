@@ -8,6 +8,7 @@ export const STAGE_LABEL_KEY: Record<string, string> = {
   waiting_payment: "stageWaiting",
   enrolled: "stageEnrolled",
   lost: "stageLost",
+  dead: "stageDead",
 };
 
 export const STAGE_STYLE: Record<string, string> = {
@@ -17,6 +18,7 @@ export const STAGE_STYLE: Record<string, string> = {
   waiting_payment: "border-transparent bg-warning/18 text-warning",
   enrolled: "border-transparent bg-success/15 text-success",
   lost: "border-transparent bg-muted text-muted-foreground",
+  dead: "border-transparent bg-destructive/12 text-destructive",
 };
 
 /** Top border accent for Kanban columns. */
@@ -27,6 +29,7 @@ export const STAGE_ACCENT: Record<string, string> = {
   waiting_payment: "bg-warning",
   enrolled: "bg-success",
   lost: "bg-muted-foreground",
+  dead: "bg-destructive",
 };
 
 export const PRIORITY_LABEL_KEY: Record<string, string> = {

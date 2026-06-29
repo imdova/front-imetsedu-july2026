@@ -19,6 +19,7 @@ const STAGE_COLORS: Record<string, string> = {
   invoice_sent: "#0EA5E9",
   enrolled: "#10B981",
   lost: "#6B7280",
+  dead: "#EF4444",
 };
 
 export interface CrmStageDisplay {
@@ -53,7 +54,7 @@ export function usePipelineStages(
         key: s.key,
         name: crmOptions[i] ?? s.name ?? s.key,
         color: STAGE_COLORS[s.key] ?? "#6366f1",
-        isTerminal: s.key === "enrolled" || s.key === "lost",
+        isTerminal: s.key === "enrolled" || s.key === "lost" || s.key === "dead",
       }));
     }
     return STAGE_KEY_ORDER.map((key, i) => ({

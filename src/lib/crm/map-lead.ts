@@ -26,6 +26,7 @@ export const STAGE_MAP: Record<string, string> = {
   waiting: "waiting_payment",
   enrolled: "enrolled",
   lost: "lost",
+  dead: "dead",
 };
 
 function relativeTime(iso?: string): string {
