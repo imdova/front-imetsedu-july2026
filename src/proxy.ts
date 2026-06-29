@@ -1,12 +1,21 @@
 import createMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "./i18n/routing";
+import { homeForRole, type AppRole } from "./lib/auth-session";
 
 /** Locale negotiation + prefix handling for every page request. */
 const intlMiddleware = createMiddleware(routing);
 
 /** Areas that require a signed-in session (presence of the role cookie). */
 const PROTECTED = ["/admin", "/staff", "/instructor", "/student"];
+
+/** Roles allowed inside each protected area — wrong role gets bounced to its own home. */
+const AREA_ROLES: Record<string, AppRole[]> = {
+  "/admin": ["admin", "staff"],
+  "/staff": ["admin", "staff"],
+  "/instructor": ["instructor"],
+  "/student": ["student"],
+};
 
 /* -------------------------------------------------------------------------- */
 /*  SEO redirects — admin-managed (/admin/seo/redirects), enforced at the edge */
@@ -58,16 +67,28 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const isProtected = PROTECTED.some((p) => rest === p || rest.startsWith(`${p}/`));
-  if (isProtected && !req.cookies.get("imets_role")) {
-    const url = req.nextUrl.clone();
-    url.pathname = `${localePrefix}/login`;
-    url.search = `?next=${encodeURIComponent(pathname)}`;
-    return NextResponse.redirect(url);
+  const area = PROTECTED.find((p) => rest === p || rest.startsWith(`${p}/`));
+  const role = req.cookies.get("imets_role")?.value as AppRole | undefined;
+
+  if (area) {
+    if (!role) {
+      const url = req.nextUrl.clone();
+      url.pathname = `${localePrefix}/login`;
+      url.search = `?next=${encodeURIComponent(pathname)}`;
+      return NextResponse.redirect(url);
+    }
+
+    // Logged in, but wrong area for this role (e.g. a student opening /admin) — send them home.
+    if (!AREA_ROLES[area].includes(role)) {
+      const url = req.nextUrl.clone();
+      url.pathname = `${localePrefix}${homeForRole(role)}`;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   // Admin-managed SEO redirects (public paths only; protected areas skipped).
-  if (!isProtected) {
+  if (!area) {
     const hit = (await getRedirects()).find((r) => r.from === rest);
     if (hit) {
       const status = Number(hit.type) || 308;
