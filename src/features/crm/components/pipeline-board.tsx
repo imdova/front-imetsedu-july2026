@@ -496,7 +496,7 @@ function ForecastView({ stages, board, t, tr }: any) {
           </tr>
         </thead>
         <tbody>
-          {stages.filter((s: PipelineStage) => s.key !== "lost").map((s: PipelineStage) => {
+          {stages.filter((s: PipelineStage) => s.key !== "lost" && s.key !== "dead").map((s: PipelineStage) => {
             const count = (board[s.key] ?? []).length;
             const prob = STAGE_PROBABILITY[s.key] ?? 0;
             return (

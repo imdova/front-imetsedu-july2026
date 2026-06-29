@@ -155,6 +155,7 @@ export const DEFAULT_PIPELINE: Pipeline = {
     { key: "waiting_payment", name: "Waiting for Payment", order: 2 },
     { key: "enrolled", name: "Enrolled", order: 3 },
     { key: "lost", name: "Lost", order: 4 },
+    { key: "dead", name: "Dead", order: 5 },
   ],
 };
 
