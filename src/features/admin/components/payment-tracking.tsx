@@ -100,8 +100,8 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
   const upcoming = allInst.filter((i) => i.status === "SCHEDULED");
   const unpaidCount = allInst.filter((i) => i.status !== "PAID").length;
 
-  // Distinct courses/groups for the filter dropdown.
-  const courses = Array.from(new Set(plans.map((p) => p.group).filter(Boolean))) as string[];
+  // Distinct courses for the filter dropdown.
+  const courses = Array.from(new Set(plans.map((p) => p.courseTitle).filter(Boolean))) as string[];
 
   const matchTab = (p: Invoice) => {
     const inst = p.installments ?? [];
@@ -113,7 +113,7 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
 
   const rows = plans
     .filter(matchTab)
-    .filter((p) => course === "all" || p.group === course)
+    .filter((p) => course === "all" || p.courseTitle === course)
     .filter((p) => {
       if (ptype === "all") return true;
       const n = p.installments?.length ?? 0;
