@@ -600,6 +600,8 @@ function mapPipelineSummary(p: any): db.PipelineSummary {
   return {
     id: p?._id ?? p?.id ?? "",
     title: p?.title ?? "Pipeline",
+    description: p?.description ?? undefined,
+    isPrimary: p?.isPrimary ?? false,
     source: p?.salesAgent?.name ?? "Custom",
     createdAt: p?.createdAt
       ? new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -650,6 +652,20 @@ export const createPipeline = async (
     return ok(mapPipelineSummary(res.data));
   } catch (err) {
     return fail(toMessage(err, "Failed to create pipeline"));
+  }
+};
+
+/** LIVE: update a pipeline's metadata (PATCH /crm/pipelines/:id). */
+export const updatePipeline = async (
+  id: string,
+  input: { title?: string; description?: string; isPrimary?: boolean },
+): Promise<Result<db.PipelineSummary>> => {
+  const res = await leadsSvc.updatePipeline(id, input);
+  if (!res.ok) return res;
+  try {
+    return ok(mapPipelineSummary(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to update pipeline"));
   }
 };
 
