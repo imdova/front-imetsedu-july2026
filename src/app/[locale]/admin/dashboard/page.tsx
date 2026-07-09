@@ -3,8 +3,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
 import { Button } from "@/components/ui/button";
-import { KpiGrid } from "@/features/dashboard/components/kpi-grid";
-import { RevenueChart } from "@/features/dashboard/components/revenue-chart";
+import { PlatformStatsCards } from "@/features/dashboard/components/platform-stats-cards";
+import { FinanceRevenueChart } from "@/features/dashboard/components/finance-revenue-chart";
 import { AuditEventsCard } from "@/features/dashboard/components/audit-events-card";
 import {
   TopCoursesCard, LeadPipelineCard, RecentTransactionsCard, TopCounselorsCard, AlertsCard,
@@ -31,7 +31,7 @@ export default async function DashboardPage({
   const t = await getTranslations("Platform");
 
   const [
-    kpisRes,
+    statsRes,
     revenueRes,
     topCoursesRes,
     pipelineRes,
@@ -43,8 +43,8 @@ export default async function DashboardPage({
     countryRes,
     batchesRes,
   ] = await Promise.all([
-    dal.platform.fetchKpis(),
-    dal.platform.fetchRevenueSeries(),
+    dal.platform.fetchPlatformStats(),
+    dal.platform.fetchRevenueTrend(30),
     dal.platform.fetchTopCourses(),
     dal.platform.fetchLeadPipeline(),
     dal.platform.fetchRecentTransactions(),
@@ -56,8 +56,8 @@ export default async function DashboardPage({
     dal.platform.fetchActiveBatches(),
   ]);
 
-  const kpis = kpisRes.ok ? kpisRes.data : [];
-  const revenue = revenueRes.ok ? revenueRes.data : [];
+  const platformStats = statsRes.ok ? statsRes.data : null;
+  const revenueTrend = revenueRes.ok ? revenueRes.data : null;
   const topCourses = topCoursesRes.ok ? topCoursesRes.data : [];
   const pipeline = pipelineRes.ok ? pipelineRes.data : [];
   const recentTxns = recentTxnsRes.ok ? recentTxnsRes.data : [];
@@ -84,13 +84,13 @@ export default async function DashboardPage({
         </Button>
       </div>
 
-      {/* KPI tiles */}
-      <KpiGrid kpis={kpis} />
+      {/* Platform stats */}
+      <PlatformStatsCards initialStats={platformStats} initialRange="90d" />
 
       {/* Revenue chart + priority alerts */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RevenueChart data={revenue} />
+          <FinanceRevenueChart initial={revenueTrend} initialDays={30} />
         </div>
         <AlertsCard alerts={alerts} />
       </div>

@@ -13,6 +13,10 @@ import { mapInvoice } from "@/lib/finance/map-finance";
 import { getInvoiceById, downloadInvoicePdf } from "@integration/services/invoices";
 import { getCourseById } from "@integration/services/courses";
 import { getLeadById } from "@integration/services/leads/leads.service";
+import { dal } from "@/lib/dal";
+import { useAuth } from "@/store";
+import { useConfirm } from "@/hooks/use-confirm";
+import { useRouter } from "@/i18n/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,10 +25,32 @@ import { ReceiptPreview, type Receipt, formatBytes } from "./mark-as-paid-modal"
 
 export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { invoice?: Invoice; id?: string; logoLight?: string; logoDark?: string }) {
   const t = useTranslations("Finance");
+  const router = useRouter();
+  const { user } = useAuth();
+  const canManage = !user?.staffRole; // super-admin only
+  const { confirm, Confirmation } = useConfirm();
   const [invoice, setInvoice] = React.useState<Invoice | null>(initial ?? null);
   const [isLoading, setIsLoading] = React.useState(!initial);
   const [receipt, setReceipt] = React.useState<Receipt | null>(null);
   const [downloading, setDownloading] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+
+  const handleDelete = async () => {
+    if (!invoice) return;
+    const okToDelete = await confirm({
+      title: t("deleteInvoice"),
+      description: t("deleteInvoiceConfirm", { number: invoice.number }),
+      confirmText: t("deleteInvoice"),
+      variant: "destructive",
+    });
+    if (!okToDelete) return;
+    setDeleting(true);
+    const res = await dal.finance.deleteInvoice(invoice.id);
+    setDeleting(false);
+    if (!res.ok) { toast.error(res.error); return; }
+    toast.success(t("invoiceDeleted"));
+    router.back();
+  };
 
   const downloadPdf = async () => {
     if (!invoice) return;
@@ -185,9 +211,14 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
             </Button>
           )}
           {!isPaid && <Button variant="outline" className="gap-1.5 text-destructive" onClick={() => toast.error(t("invoiceCancelled"))}><Ban className="size-4" />{t("cancelInvoice")}</Button>}
-          <Button variant="outline" className="gap-1.5 text-destructive" onClick={() => toast.error(t("invoiceDeleted"))}><Trash2 className="size-4" />{t("deleteInvoice")}</Button>
+          {canManage && (
+            <Button variant="outline" className="gap-1.5 text-destructive" disabled={deleting} onClick={handleDelete}>
+              {deleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}{t("deleteInvoice")}
+            </Button>
+          )}
         </div>
       </div>
+      {Confirmation}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Invoice document */}

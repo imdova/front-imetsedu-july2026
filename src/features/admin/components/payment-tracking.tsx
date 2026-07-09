@@ -4,7 +4,7 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
   Users, Wallet, AlertTriangle, CalendarClock, CircleCheck, Search, Filter,
-  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download, Receipt,
+  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download, Receipt, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -12,6 +12,8 @@ import type { Invoice, Installment } from "@/lib/db/finance";
 import { mapLeadPaymentPlanToInvoice } from "@/lib/finance/map-finance";
 import { getPayments } from "@integration/services/payments";
 import { dal } from "@/lib/dal";
+import { useAuth } from "@/store";
+import { useConfirm } from "@/hooks/use-confirm";
 import { useRouter } from "@/i18n/navigation";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -44,6 +46,9 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
 
 export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: { invoices?: Invoice[]; counselorId?: string }) {
   const t = useTranslations("Admin");
+  const { user } = useAuth();
+  const canManage = !user?.staffRole; // super-admin only
+  const { confirm, Confirmation } = useConfirm();
   const [tab, setTab] = React.useState<"all" | "overdue" | "upcoming" | "paid">("all");
   const [search, setSearch] = React.useState("");
   const [view, setView] = React.useState<"list" | "grid">("list");
@@ -79,6 +84,7 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
           setInvoices(plans.map((lead: any, idx: number) => ({
               ...mapLeadPaymentPlanToInvoice(lead),
               id: `${lead._id ?? idx}-${idx}`,
+              studentId: lead._id,
             })));
         }
       } catch {
@@ -156,6 +162,25 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
     const body = encodeURIComponent(t("ptReminderBody"));
     window.open(`mailto:?bcc=${encodeURIComponent(emails.join(","))}&subject=${subject}&body=${body}`, "_self");
     toast.success(t("ptRemindersSent", { n: emails.length }));
+  };
+
+  const removePlan = async (p: Invoice) => {
+    if (!p.studentId) { toast.error(t("ptPlanMissingRef")); return; }
+    const okToDelete = await confirm({
+      title: t("ptDeletePlan"),
+      description: t("ptDeletePlanConfirm", { name: p.studentName }),
+      confirmText: t("ptDeletePlan"),
+      variant: "destructive",
+    });
+    if (!okToDelete) return;
+    const res = await dal.crm.deletePaymentPlan(p.studentId, 0);
+    if (res.ok) {
+      setInvoices((prev) => prev.filter((x) => x.id !== p.id));
+      setSelected((prev) => { const next = new Set(prev); next.delete(p.id); return next; });
+      toast.success(t("ptPlanDeleted"));
+    } else {
+      toast.error(res.error);
+    }
   };
 
   const exportCsv = () => {
@@ -279,13 +304,14 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
           view === "grid" ? (
             <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
               {rows.map((p) => (
-                <PlanCard key={p.id} plan={p} t={t} selected={selected.has(p.id)} onToggle={() => toggleOne(p.id)} activeTab={tab} />
+                <PlanCard key={p.id} plan={p} t={t} selected={selected.has(p.id)} onToggle={() => toggleOne(p.id)} activeTab={tab} canManage={canManage} onDelete={removePlan} />
               ))}
             </div>
           ) : (
             <PlanTable
               rows={rows} t={t} selected={selected} onToggle={toggleOne}
               allSelected={allSelected} someSelected={someSelected} toggleAll={toggleAll} activeTab={tab}
+              canManage={canManage} onDelete={removePlan}
             />
           )
         )}
@@ -301,6 +327,7 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
           <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-muted-foreground" onClick={() => setSelected(new Set())}><X className="size-3.5" />{t("ptClearSelection")}</Button>
         </div>
       )}
+      {Confirmation}
     </div>
   );
 }
@@ -308,7 +335,7 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
 /** Tabular payment-plans view (à la the old project): one row per plan with the
  * student, course/group, fees, progress, status and per-installment cells. */
 function PlanTable({
-  rows, t, selected, onToggle, allSelected, someSelected, toggleAll, activeTab,
+  rows, t, selected, onToggle, allSelected, someSelected, toggleAll, activeTab, canManage, onDelete,
 }: {
   rows: Invoice[];
   t: (k: string, vals?: Record<string, string | number>) => string;
@@ -318,6 +345,8 @@ function PlanTable({
   someSelected: boolean;
   toggleAll: () => void;
   activeTab: "all" | "overdue" | "upcoming" | "paid";
+  canManage: boolean;
+  onDelete: (p: Invoice) => void;
 }) {
   const maxInstall = Math.max(1, ...rows.map((p) => p.installments?.length ?? 0));
   return (
@@ -334,6 +363,7 @@ function PlanTable({
             {Array.from({ length: maxInstall }).map((_, i) => (
               <th key={i} className="px-3 py-3 text-center font-semibold">{t("colInstall", { n: i + 1 })}</th>
             ))}
+            {canManage && <th className="w-10 px-3 py-3" />}
           </tr>
         </thead>
         <tbody>
@@ -379,6 +409,13 @@ function PlanTable({
                     </td>
                   );
                 })}
+                {canManage && (
+                  <td className="px-3 py-3">
+                    <Button variant="ghost" size="icon" className="size-8" title={t("ptDeletePlan")} onClick={() => onDelete(p)}>
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </td>
+                )}
               </tr>
             );
           })}
@@ -389,13 +426,15 @@ function PlanTable({
 }
 
 function PlanCard({
-  plan, t, selected, onToggle, activeTab,
+  plan, t, selected, onToggle, activeTab, canManage, onDelete,
 }: {
   plan: Invoice;
   t: (k: string, vals?: Record<string, string | number>) => string;
   selected: boolean;
   onToggle: () => void;
   activeTab: "all" | "overdue" | "upcoming" | "paid";
+  canManage: boolean;
+  onDelete: (p: Invoice) => void;
 }) {
   const inst = plan.installments ?? [];
   const visibleInst = activeTab === "overdue" ? inst.filter((i) => i.status === "DUE") : inst;
@@ -421,7 +460,14 @@ function PlanCard({
             <p className="truncate text-xs text-muted-foreground">{plan.group || plan.studentEmail}</p>
           </div>
         </div>
-        <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium", PLAN_STATUS_STYLE[status])}>{statusLabel}</span>
+        <div className="flex shrink-0 items-center gap-1">
+          <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-medium", PLAN_STATUS_STYLE[status])}>{statusLabel}</span>
+          {canManage && (
+            <Button variant="ghost" size="icon" className="size-7" title={t("ptDeletePlan")} onClick={() => onDelete(plan)}>
+              <Trash2 className="size-3.5 text-destructive" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Amounts */}

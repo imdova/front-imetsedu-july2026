@@ -90,6 +90,16 @@ export const markInvoicePaid = async (id: string): Promise<Result<db.Invoice>> =
   }
 };
 
+/**
+ * LIVE: hard-delete an invoice via DELETE /crm/invoices/:id. Handles both a
+ * manual invoice id and a compound installment id (leadId-planIndex-instIndex) —
+ * the backend `removeInvoice` parses either. Super-admin only (backend guard).
+ */
+export const deleteInvoice = async (id: string): Promise<Result<boolean>> => {
+  const res = await invoicesSvc.deleteInvoice(id);
+  return res.ok ? ok(true) : res;
+};
+
 // The dummy DB and the backend disagree on one label: "requested" ↔ "pending".
 const REFUND_STATUS_TO_API: Record<db.RefundStatus, refundsSvc.RefundStatus> = {
   requested: "pending",

@@ -14,6 +14,38 @@ async function wrap<T>(fn: () => Promise<T>, msg: string): Promise<Result<T>> {
   }
 }
 
+/** Platform-accurate stats straight from GET /dashboard/stats (typed, no template mapping). */
+export interface PlatformStats {
+  revenue: { value: number; changePercent: number | null; label: string };
+  students: { total: number; active: number; inactive: number };
+  newLeads: { period: number; allTime: number };
+  lmsCourses: { total: number; draft: number; enrolled: number };
+  conversion: { rate: number; enrolled: number; totalLeads: number };
+  pendingPayments: { value: number; count: number; successRate: number };
+}
+
+export type PlatformStatsRange = "today" | "7d" | "30d" | "90d" | "ytd" | "all";
+
+/** LIVE: raw platform stats from GET /dashboard/stats (scoped to a date range). */
+export const fetchPlatformStats = async (dateRange?: PlatformStatsRange): Promise<Result<PlatformStats>> => {
+  const res = await api.get<any>("/dashboard/stats", { params: dateRange ? { dateRange } : {} });
+  if (!res.ok) return res;
+  const s = res.data ?? {};
+  const n = (v: unknown) => Number(v ?? 0);
+  return ok({
+    revenue: {
+      value: n(s?.revenue?.value),
+      changePercent: s?.revenue?.changePercent != null ? Number(s.revenue.changePercent) : null,
+      label: s?.revenue?.label ?? "",
+    },
+    students: { total: n(s?.students?.total), active: n(s?.students?.active), inactive: n(s?.students?.inactive) },
+    newLeads: { period: n(s?.newLeads?.period), allTime: n(s?.newLeads?.allTime) },
+    lmsCourses: { total: n(s?.lmsCourses?.total), draft: n(s?.lmsCourses?.draft), enrolled: n(s?.lmsCourses?.enrolled) },
+    conversion: { rate: n(s?.conversion?.rate), enrolled: n(s?.conversion?.enrolled), totalLeads: n(s?.conversion?.totalLeads) },
+    pendingPayments: { value: n(s?.pendingPayments?.value), count: n(s?.pendingPayments?.count), successRate: n(s?.pendingPayments?.successRate) },
+  });
+};
+
 /** LIVE: KPI cards from GET /dashboard/stats (the cards with a backend source). */
 export const fetchKpis = async (): Promise<Result<db.Kpi[]>> => {
   const res = await api.get<unknown>("/dashboard/stats");
@@ -26,6 +58,23 @@ export const fetchKpis = async (): Promise<Result<db.Kpi[]>> => {
 };
 export const fetchRevenueSeries = () =>
   wrap(db.getRevenueSeries, "Failed to load revenue");
+
+export interface RevenueTrendPoint { date: string; revenue: number }
+export interface RevenueTrend { days: number; currency: string; points: RevenueTrendPoint[] }
+
+/** LIVE: daily paid-invoice revenue from GET /dashboard/revenue-trend (sparse — only days with revenue). */
+export const fetchRevenueTrend = async (days = 30): Promise<Result<RevenueTrend>> => {
+  const res = await api.get<any>("/dashboard/revenue-trend", { params: { days } });
+  if (!res.ok) return res;
+  const d = res.data ?? {};
+  return ok({
+    days: Number(d?.days ?? days),
+    currency: d?.currency ?? "USD",
+    points: Array.isArray(d?.data)
+      ? d.data.map((p: any) => ({ date: String(p?.date ?? ""), revenue: Number(p?.revenue ?? 0) }))
+      : [],
+  });
+};
 export const fetchOpenReports = () =>
   wrap(db.getOpenReports, "Failed to load reports");
 export const fetchCountryBars = () =>
