@@ -17,34 +17,6 @@ const AREA_ROLES: Record<string, AppRole[]> = {
   "/student": ["student"],
 };
 
-/* -------------------------------------------------------------------------- */
-/*  SEO redirects — admin-managed (/admin/seo/redirects), enforced at the edge */
-/*  with a 60s in-memory cache so the backend is hit at most once per minute    */
-/*  per edge instance. Fail-open: if the API is unavailable, no redirect runs.  */
-/* -------------------------------------------------------------------------- */
-interface RedirectRule { from: string; to: string; type: string }
-const REDIRECT_TTL = 60_000;
-let redirectCache: { at: number; rules: RedirectRule[] } | null = null;
-
-async function getRedirects(): Promise<RedirectRule[]> {
-  if (redirectCache && Date.now() - redirectCache.at < REDIRECT_TTL) {
-    return redirectCache.rules;
-  }
-  try {
-    const base = process.env.NEXT_PUBLIC_API_URL || "https://main-api.imetsedu.com";
-    const res = await fetch(`${base}/seo/redirects`, { cache: "no-store" });
-    if (!res.ok) throw new Error(String(res.status));
-    const data: unknown = await res.json();
-    const rules: RedirectRule[] = Array.isArray(data)
-      ? data.map((r) => ({ from: String(r.from), to: String(r.to), type: String(r.type ?? "301") }))
-      : [];
-    redirectCache = { at: Date.now(), rules };
-    return rules;
-  } catch {
-    return redirectCache?.rules ?? [];
-  }
-}
-
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -84,21 +56,6 @@ export default async function proxy(req: NextRequest) {
       url.pathname = `${localePrefix}${homeForRole(role)}`;
       url.search = "";
       return NextResponse.redirect(url);
-    }
-  }
-
-  // Admin-managed SEO redirects (public paths only; protected areas skipped).
-  if (!area) {
-    const hit = (await getRedirects()).find((r) => r.from === rest);
-    if (hit) {
-      const status = Number(hit.type) || 308;
-      if (/^https?:\/\//.test(hit.to)) {
-        return NextResponse.redirect(hit.to, status);
-      }
-      const url = req.nextUrl.clone();
-      url.pathname = `${localePrefix}${hit.to}`;
-      url.search = "";
-      return NextResponse.redirect(url, status);
     }
   }
 

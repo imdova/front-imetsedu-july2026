@@ -49,6 +49,38 @@ export function PipelinesInventory({
   const [delTarget, setDelTarget] = React.useState<PipelineSummary | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
+  // Edit-pipeline modal
+  const [editTarget, setEditTarget] = React.useState<PipelineSummary | null>(null);
+  const [editTitle, setEditTitle] = React.useState("");
+  const [editDesc, setEditDesc] = React.useState("");
+  const [editIsPrimary, setEditIsPrimary] = React.useState(false);
+  const [editSaving, setEditSaving] = React.useState(false);
+
+  const openEdit = (p: PipelineSummary) => {
+    setEditTarget(p);
+    setEditTitle(p.title);
+    setEditDesc(p.description ?? "");
+    setEditIsPrimary(p.isPrimary ?? false);
+  };
+
+  const submitEdit = async () => {
+    if (!editTarget || !editTitle.trim()) { toast.error(t("pipelineTitleRequired")); return; }
+    setEditSaving(true);
+    const res = await dal.crm.updatePipeline(editTarget.id, {
+      title: editTitle.trim(),
+      description: editDesc.trim() || undefined,
+      isPrimary: editIsPrimary,
+    });
+    setEditSaving(false);
+    if (res.ok) {
+      setRows((prev) => prev.map((r) => (r.id === editTarget.id ? { ...r, ...res.data } : r)));
+      setEditTarget(null);
+      toast.success(t("pipelineUpdated", { title: res.data.title }));
+    } else {
+      toast.error(res.error);
+    }
+  };
+
   const submitCreate = async () => {
     if (!title.trim()) { toast.error(t("pipelineTitleRequired")); return; }
     setSaving(true);
@@ -173,7 +205,7 @@ export function PipelinesInventory({
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-1.5">
                         <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => openPipeline(p.id)}><LayoutGrid className="size-3.5" />{t("open")}</Button>
-                        <Button variant="ghost" size="sm" className="h-8 gap-1.5" disabled={!canEdit}><Pencil className="size-3.5" />{t("edit")}</Button>
+                        <Button variant="ghost" size="sm" className="h-8 gap-1.5" disabled={!canEdit} onClick={() => openEdit(p)}><Pencil className="size-3.5" />{t("edit")}</Button>
                         <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-destructive" onClick={() => setDelTarget(p)} disabled={!canDelete}><Trash2 className="size-3.5" />{t("delete")}</Button>
                       </div>
                     </td>
@@ -184,6 +216,36 @@ export function PipelinesInventory({
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit pipeline */}
+      <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("editPipeline")}</DialogTitle>
+            <DialogDescription>{t("editPipelineHint")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t("pipelineTitleLabel")} <span className="text-destructive">*</span></Label>
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder={t("pipelineTitlePh")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("pipelineDescLabel")}</Label>
+              <Textarea rows={3} value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder={t("pipelineDescPh")} />
+            </div>
+            <label className="flex cursor-pointer items-center justify-between rounded-lg border p-3">
+              <span className="text-sm font-medium">{t("pipelinePrimary")}</span>
+              <Switch checked={editIsPrimary} onCheckedChange={setEditIsPrimary} />
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditTarget(null)} disabled={editSaving}>{t("cancel")}</Button>
+            <Button onClick={submitEdit} disabled={!editTitle.trim() || editSaving} className="gap-1.5">
+              {editSaving ? <Loader2 className="size-4 animate-spin" /> : <Pencil className="size-4" />}{t("saveChangesLead")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* New pipeline */}
       <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setTitle(""); setDesc(""); setIsPrimary(false); } }}>

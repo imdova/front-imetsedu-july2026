@@ -439,6 +439,8 @@ export const getCounselors = () => respond(COUNSELORS);
 export interface PipelineSummary {
   id: string;
   title: string;
+  description?: string;
+  isPrimary?: boolean;
   source: string;
   createdAt: string;
   leads: number;

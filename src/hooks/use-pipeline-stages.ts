@@ -49,8 +49,7 @@ export function usePipelineStages(
     if (rawStages && rawStages.length > 0) {
       const sorted = [...rawStages].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       const visible = options?.skipFilter ? sorted : sorted.filter((s) => !EXCLUDED_STAGE_KEYS.has(s.key));
-      const sliced = crmOptions.length > 0 ? visible.slice(0, crmOptions.length) : visible;
-      return sliced.map((s, i) => ({
+      return visible.map((s, i) => ({
         key: s.key,
         name: crmOptions[i] ?? s.name ?? s.key,
         color: STAGE_COLORS[s.key] ?? "#6366f1",
