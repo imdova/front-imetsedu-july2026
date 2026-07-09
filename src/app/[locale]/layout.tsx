@@ -6,7 +6,8 @@ import { setRequestLocale } from "next-intl/server";
 
 import "../globals.css";
 import { routing, isRtl } from "@/i18n/routing";
-import { ThemeProvider, ThemeNoFlashScript } from "@/components/providers/theme-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ThemeNoFlashScript } from "@/components/providers/theme-no-flash-script";
 import { ApiBootstrap } from "@/components/providers/api-bootstrap";
 import { configureServerApiClient } from "@/lib/api-client.server";
 import { Toaster } from "@/components/ui/sonner";

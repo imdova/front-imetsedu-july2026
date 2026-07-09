@@ -2,17 +2,18 @@
 
 import * as React from "react";
 
+import { THEME_STORAGE_KEY } from "./theme-constants";
+
 /**
  * Lightweight class-based theme provider (replaces next-themes).
  *
- * next-themes renders an inline `<script>` on the client too, which React 19
- * flags ("script tag while rendering React component"). Here the no-flash
- * bootstrap is a *server-rendered* script in the root layout (see
- * `ThemeNoFlashScript`), so nothing inline is created during a client render.
+ * The no-flash bootstrap script lives in a separate *server* component
+ * (`ThemeNoFlashScript` in `./theme-no-flash-script`) so React never renders a
+ * `<script>` during a client render (which React 19 flags and never executes).
  * `useTheme()` keeps the same shape the app already used.
  */
 export type Theme = "light" | "dark" | "system";
-export const THEME_STORAGE_KEY = "theme";
+export { THEME_STORAGE_KEY };
 
 interface ThemeCtx {
   theme: Theme;
@@ -30,12 +31,6 @@ function applyTheme(theme: Theme): "light" | "dark" {
   el.classList.toggle("dark", dark);
   el.style.colorScheme = dark ? "dark" : "light";
   return dark ? "dark" : "light";
-}
-
-/** Inline script (server-rendered) that sets the theme class before paint. */
-export function ThemeNoFlashScript() {
-  const js = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
-  return <script dangerouslySetInnerHTML={{ __html: js }} />;
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

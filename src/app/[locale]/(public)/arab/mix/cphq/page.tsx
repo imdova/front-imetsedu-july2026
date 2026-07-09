@@ -4,8 +4,7 @@ import {
   Star, PlayCircle, CheckCircle2, Award, Users, Clock, BookOpen, GraduationCap,
   MessageCircle, BadgeCheck, CalendarDays, Stethoscope, ChevronLeft,
   Layers, ListChecks, ChevronRight, Building2,
-  BarChart3, TrendingUp, ShieldCheck, FileCheck, ClipboardList, HeartPulse, Target,
-  CreditCard, Wallet, Banknote, Landmark,
+  CreditCard, Wallet, Banknote, Landmark, ShieldCheck,
 } from "lucide-react";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
@@ -17,9 +16,10 @@ import { BrandImage } from "@/components/shared/brand-image";
 import { BRAND } from "@/constants/navigation";
 import { DiscountCountdown } from "@/features/marketing/components/discount-countdown";
 import { StudentVideoReviews, type StudentReviewVideo } from "@/features/marketing/components/student-video-reviews";
-import { StudentReviewGallery, type ReviewShot } from "@/features/marketing/components/student-review-gallery";
+import { StudentReviewCards } from "@/features/marketing/components/student-review-cards";
 import { GraduationProjects, type GraduationProject } from "@/features/marketing/components/graduation-projects";
 import { WhatsAppFab } from "@/features/marketing/components/whatsapp-fab";
+import { MasterCurriculumAccordion } from "@/features/marketing/components/master-curriculum-accordion";
 
 const PATH = "/arab/mix/cphq";
 const COURSE = "CPHQ Course";
@@ -49,18 +49,6 @@ const STATS = [
   { icon: Award, value: "15 years", label: "Training experience" },
 ];
 
-// Curriculum is always presented in English (per request).
-const MODULES = [
-  { icon: Users, title: "Organizational Leadership", desc: "Strategy, governance, project & change management, and building a culture of quality." },
-  { icon: BarChart3, title: "Health Data Analytics", desc: "Collecting, measuring and interpreting data to drive quality decisions." },
-  { icon: TrendingUp, title: "Performance & Process Improvement", desc: "Lean, Six Sigma and PDSA tools to design and improve care processes." },
-  { icon: ShieldCheck, title: "Patient Safety", desc: "Risk management, error reduction and a proactive culture of safety." },
-  { icon: FileCheck, title: "Regulatory & Accreditation Compliance", desc: "Standards, surveys and readiness for JCI, CBAHI and accreditation bodies." },
-  { icon: ClipboardList, title: "Quality Review & Accountability", desc: "Peer review, credentialing and performance accountability." },
-  { icon: HeartPulse, title: "Population Health & Care Transitions", desc: "Care coordination, safe transitions and population-level outcomes." },
-  { icon: Target, title: "Exam Strategy & Full Mock Exams", desc: "Question-bank practice, timed mock exams and exam-day tactics." },
-];
-
 const STEPS = [
   { title: "سجّل بياناتك", body: "احجز مقعدك مجانًا في الدفعة القادمة خلال 60 ثانية." },
   { title: "تأكيد المقعد", body: "يتواصل معك المستشار لتأكيد الأهلية والإجابة عن أسئلتك." },
@@ -73,13 +61,6 @@ const PAY_METHODS = [
   { icon: Landmark, title: "تحويل بنكي", body: "حوّل الرسوم مباشرة إلى الحساب البنكي للمعهد." },
   { icon: Wallet, title: "محافظ إلكترونية", body: "فودافون كاش و InstaPay وغيرها من المحافظ." },
   { icon: Banknote, title: "الدفع النقدي", body: "ادفع نقدًا في مقر المعهد عند التسجيل." },
-];
-
-// Review screenshots. Default: one composite "reviews board" image saved at
-// public/reviews/reviews-board.png. To switch to individual screenshots later,
-// list them here as { src, alt } and the gallery renders a masonry grid.
-const REVIEW_SHOTS: ReviewShot[] = [
-  { src: "/reviews/reviews-board.png", alt: "IMETS Medical School student reviews — 96% recommend" },
 ];
 
 // Student video testimonials. Each keeps its natural orientation — set
@@ -101,7 +82,12 @@ const GRADUATION_PROJECTS: GraduationProject[] = [
 
 const FAQS = [
   { q: "ما هي شهادة CPHQ ومن يصدرها؟", a: "هي شهادة Certified Professional in Healthcare Quality الصادرة عن الرابطة الوطنية لجودة الرعاية الصحية (NAHQ) في الولايات المتحدة، وتُعدّ المعيار الذهبي عالميًا لمتخصصي جودة الرعاية الصحية." },
-  { q: "هل أحتاج خبرة سابقة؟", a: "لا يوجد شرط صارم، لكن الخبرة في جودة الرعاية الصحية تفيد. نراجع ملفّك مجانًا وننصحك بجاهزيتك قبل الحجز." },
+  { q: "هل أحتاج خبرة قبل الكورس؟", a: "لا يوجد شرط صارم لسنوات الخبرة، لكن أي خلفية في الرعاية الصحية أو الجودة تساعدك. نراجع ملفّك مجانًا ونحدّد لك نقطة البداية المناسبة قبل التسجيل." },
+  { q: "هل الكورس مناسب للأطباء؟", a: "نعم — البرنامج مصمَّم لكل العاملين في الرعاية الصحية، وللأطباء تحديدًا يغطي قيادة الجودة والاعتماد وسلامة المرضى وإدارة البيانات بما يناسب ممارستك السريرية والإدارية." },
+  { q: "هل مناسب للتمريض؟", a: "بالتأكيد — كثير من خريجينا من التمريض. المحتوى يربط مباشرة بسلامة المرضى وتحسين العمليات والاعتماد، ومناسب لمسارات مشرف التمريض وضمان الجودة." },
+  { q: "هل الشهادة معترف بها؟", a: "نعم — CPHQ صادرة عن NAHQ الأمريكية وهي معترف بها دوليًا في المستشفيات والهيئات الصحية والاعتماد (JCI وCBAHI وغيرها)، وتعزّز مسارك في إدارة الجودة." },
+  { q: "هل فيه تقسيط؟", a: "نعم — تقسيط بدون فوائد على ٣ أقساط شهرية متساوية، وتبدأ الدراسة فور دفع القسط الأول." },
+  { q: "هل فيه متابعة بعد انتهاء الكورس؟", a: "نعم — نواصل معك بعد انتهاء البرنامج حتى موعد امتحانك: مراجعات، أسئلة محاكية، ودعم من المدرّب حتى تجتاز CPHQ." },
   { q: "ما شكل الامتحان وكم مدته؟", a: "امتحان إلكتروني من ١٤٠ سؤال اختيار من متعدد (تتضمن أسئلة تجريبية غير محتسبة) يُؤدّى خلال ٣ ساعات عبر Prometric." },
   { q: "بأي لغة يُعقد امتحان CPHQ؟", a: "يُعقد الامتحان باللغة الإنجليزية، ولهذا نُقدّم الشرح وبنوك الأسئلة بالعربية والإنجليزية معًا لنجهّزك تمامًا للمصطلحات الإنجليزية." },
   { q: "بأي لغة يُقدَّم البرنامج؟", a: "بالعربية والإنجليزية — الدروس وبنوك الأسئلة والدعم ثنائية اللغة." },
@@ -109,9 +95,7 @@ const FAQS = [
   { q: "أين أؤدّي امتحان CPHQ؟", a: "يُقدَّم من NAHQ عبر Prometric، أونلاين أو في مركز اختبار، ونساعدك في التسجيل وتحديد الموعد." },
   { q: "ما مدة صلاحية الشهادة وكيف أُجدّدها؟", a: "شهادة CPHQ صالحة لمدة سنتين، وتُجدَّد عبر استيفاء ساعات التعليم المستمر المعتمدة (CE) التي تحددها NAHQ." },
   { q: "ماذا لو لم أجتز الامتحان؟", a: "نوفّر دعمًا متواصلًا واختبارات محاكية حتى تجتاز؛ ويتابع معك المدرّب نقاط ضعفك ويعيد تأهيلك للمحاولة التالية بثقة." },
-  { q: "هل البرنامج مناسب لكل التخصصات الصحية؟", a: "نعم — للأطباء وأطباء الأسنان والصيادلة والممرضين ومتخصصي الجودة وكل العاملين في الرعاية الصحية الراغبين في احتراف الجودة." },
   { q: "متى تبدأ الدفعة القادمة؟", a: "تنطلق الدفعة القادمة قريبًا والمقاعد محدودة — سجّل بياناتك ليتواصل معك المستشار بموعد البدء وتفاصيل الجدول." },
-  { q: "هل يوجد تقسيط؟", a: "نعم — تقسيط بدون فوائد على ٣ أقساط شهرية متساوية، وتبدأ الدراسة فور دفع القسط الأول." },
 ];
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -150,15 +134,15 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
             <span className="inline-flex items-center gap-2 rounded-full bg-[#B8860B]/10 px-3 py-1 text-xs font-semibold text-[#8a6508]">
               <CalendarDays className="size-3.5" /> الدفعة القادمة تبدأ ١٥ يونيو ٢٠٢٦ · المقاعد المتاحة 7 من 30
             </span>
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#0b2545] sm:text-4xl lg:text-5xl">
-              إزاي أبقي أخصائي جودة صحية <span className="text-[#B8860B]">معتمد دوليًا</span>
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#0b2545] sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+              احصل على شهادة <span className="text-[#B8860B]">CPHQ الأمريكية</span> وابدأ مسيرتك في الجودة الصحية بثقة
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-slate-600">
-              كورس تحضيري مباشر على Zoom لمدة ١٠ أسابيع، يغطّي الدومينز السبعة كاملة — بالعربية والإنجليزية.
+              برنامج تدريبي شامل يؤهلك لاجتياز امتحان CPHQ من أول مرة مع محاضرين معتمدين ودعم مستمر حتى الامتحان.
             </p>
             <div className="flex flex-wrap gap-3">
-              <a href="#apply" className={cn(BTN, ORANGE)}>احجز مقعدك الآن <ChevronLeft className="size-4" /></a>
-              <a href="#curriculum" className={cn(BTN, "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90")}>تعرّف على المنهج</a>
+              <a href="#apply" className={cn(BTN, ORANGE)}>ابدأ الآن <ChevronLeft className="size-4" /></a>
+              <a href="#apply" className={cn(BTN, "border border-[#0b2545]/20 bg-white text-[#0b2545] shadow-sm hover:bg-[#0b2545]/5")}>واحجز مكانك</a>
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm text-slate-600">
               <span className="inline-flex items-center gap-1.5">
@@ -265,34 +249,7 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
         </div>
       </section>
 
-      {/* Curriculum */}
-      <section id="curriculum" dir="ltr" className="mx-auto max-w-5xl px-4 py-16 text-left sm:px-6 lg:px-8">
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-[#0b2545]">What you&apos;ll master</h2>
-          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#B8860B]/10 px-3 py-1 text-sm font-semibold text-[#8a6508]">
-            <BookOpen className="size-4" /> 10 weeks · 8 units built on the Exam Blueprint
-          </p>
-        </div>
-        <ol className="grid gap-4 sm:grid-cols-2">
-          {MODULES.map((m, i) => (
-            <li
-              key={i}
-              className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#B8860B]/40 hover:shadow-md"
-            >
-              <span className="relative grid size-11 shrink-0 place-items-center rounded-xl bg-[#0b2545] text-white transition group-hover:bg-[#B8860B]">
-                <m.icon className="size-5" />
-                <span className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-[#B8860B] text-[10px] font-bold text-white ring-2 ring-white">
-                  {i + 1}
-                </span>
-              </span>
-              <div>
-                <h3 className="font-bold text-[#0b2545]">{m.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-slate-600">{m.desc}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <MasterCurriculumAccordion />
 
       {/* Steps */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -313,8 +270,7 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
         <StudentVideoReviews videos={STUDENT_VIDEOS} />
       </div>
 
-      {/* Student review screenshots (gallery) */}
-      <StudentReviewGallery shots={REVIEW_SHOTS} recommendPct={96} reviewCount={52} />
+      <StudentReviewCards recommendPct={96} reviewCount={52} />
 
       {/* Graduation projects */}
       <div className="border-t border-slate-200 bg-slate-50">
@@ -401,7 +357,7 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
 
       {/* Sticky mobile CTA */}
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-slate-200 bg-white/95 p-3 backdrop-blur lg:hidden">
-        <a href="#apply" className={cn(BTN, ORANGE, "flex-1")}>احجز مقعدك <ChevronLeft className="size-4" /></a>
+        <a href="#apply" className={cn(BTN, ORANGE, "flex-1")}>ابدأ الآن <ChevronLeft className="size-4" /></a>
       </div>
 
       {/* Floating WhatsApp */}
