@@ -124,19 +124,19 @@ export function DiscountCountdown({
 
   return (
     <section dir={isRtl ? "rtl" : "ltr"} className={cn("mx-auto max-w-6xl px-4 sm:px-6 lg:px-8", className)}>
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0b2545] to-[#13315c] p-6 text-white shadow-xl ring-1 ring-black/5 sm:p-10">
+      <div className="relative overflow-hidden rounded-3xl bg-[radial-gradient(ellipse_120%_90%_at_50%_-10%,#1e6ef0_0%,#0b3fa8_42%,#051a4a_100%)] p-6 text-white shadow-xl ring-1 ring-white/10 sm:p-10">
         {/* ambient gold glow */}
-        <div className="pointer-events-none absolute -left-16 -top-20 size-56 rounded-full bg-[#B8860B]/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -right-10 size-56 rounded-full bg-[#e8c14d]/10 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 -top-20 size-56 rounded-full bg-[#f4c430]/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -right-10 size-56 rounded-full bg-[#1e6ef0]/20 blur-3xl" />
 
         <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           {/* offer copy + price */}
           <div className={cn("space-y-4 text-center", isRtl ? "lg:text-right" : "lg:text-left")}>
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#B8860B] px-3 py-1 text-xs font-bold text-white shadow">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#f4c430] px-3 py-1 text-xs font-bold text-[#051a4a] shadow">
               <Flame className="size-3.5" /> {t.badge}
             </span>
             <h2 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
-              {t.headPre}<span className="text-[#e8c14d]">{t.headPercent}</span>{t.headPost}
+              {t.headPre}<span className="text-[#f4c430]">{t.headPercent}</span>{t.headPost}
             </h2>
             <p className="mx-auto max-w-md text-white/80 lg:mx-0">
               {t.desc}
@@ -144,11 +144,11 @@ export function DiscountCountdown({
             {showPrice ? (
               <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                 <span className="text-lg text-white/50 line-through">{priceWas} {currency}</span>
-                <span className="text-3xl font-extrabold text-[#e8c14d]">{priceNow} {currency}</span>
-                <span className="rounded-lg bg-[#e8c14d]/15 px-2 py-1 text-sm font-bold text-[#e8c14d]">{t.save}</span>
+                <span className="text-3xl font-extrabold text-[#f4c430]">{priceNow} {currency}</span>
+                <span className="rounded-lg bg-[#f4c430]/15 px-2 py-1 text-sm font-bold text-[#f4c430]">{t.save}</span>
               </div>
             ) : (
-              <span className="inline-flex items-center gap-2 rounded-lg bg-[#e8c14d]/15 px-3 py-1.5 text-base font-bold text-[#e8c14d]">
+              <span className="inline-flex items-center gap-2 rounded-lg bg-[#f4c430]/15 px-3 py-1.5 text-base font-bold text-[#f4c430]">
                 {t.saveLong}
               </span>
             )}
@@ -174,7 +174,7 @@ export function DiscountCountdown({
             </div>
             <a
               href={ctaHref}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#B8860B] px-6 py-3.5 text-base font-bold text-white shadow-lg transition hover:bg-[#9a7209]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f4c430] px-6 py-3.5 text-base font-bold text-[#051a4a] shadow-lg transition hover:bg-[#e0b020]"
             >
               {t.cta} <Chevron className="size-5" />
             </a>

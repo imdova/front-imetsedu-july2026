@@ -9,6 +9,7 @@ export interface LandingPageDto {
   audience: string;
   description: string;
   thumbnailUrl: string;
+  whatsappNumber?: string;
   views: number;
   clicks: number;
   registrations?: number;

@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-  Plus, Pencil, Trash2, Copy, ExternalLink, LayoutTemplate, CheckCircle2, Eye, UserPlus, Percent, MousePointerClick,
+  Plus, Pencil, Trash2, Copy, ExternalLink, LayoutTemplate, CheckCircle2, Eye, UserPlus, Percent, MousePointerClick, MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils/time-ago";
 
 const emptyForm: LandingPageInput = {
-  name: "", path: "", status: "draft", language: "en", campaign: "", audience: "", description: "",
+  name: "", path: "", status: "draft", language: "en", campaign: "", audience: "", description: "", whatsappNumber: "",
 };
 const LANG_TABS: { key: LandingLanguage; label: string }[] = [
   { key: "en", label: "English" },
@@ -94,7 +94,7 @@ export function LandingPagesPanel({
     setEditing(p);
     setForm({
       name: p.name, path: p.path, status: p.status, language: p.language ?? "en", campaign: p.campaign,
-      audience: p.audience, description: p.description, thumbnailUrl: p.thumbnailUrl,
+      audience: p.audience, description: p.description, thumbnailUrl: p.thumbnailUrl, whatsappNumber: p.whatsappNumber ?? "",
     });
     setOpen(true);
   };
@@ -116,7 +116,15 @@ export function LandingPagesPanel({
   const toInput = (p: MarketingLandingPage): LandingPageInput => ({
     name: p.name, path: p.path, status: p.status, language: p.language ?? "en",
     campaign: p.campaign, audience: p.audience, description: p.description, thumbnailUrl: p.thumbnailUrl,
+    whatsappNumber: p.whatsappNumber ?? "",
   });
+
+  const saveWhatsapp = async (p: MarketingLandingPage, whatsappNumber: string) => {
+    setRows((prev) => prev.map((r) => (r.id === p.id ? { ...r, whatsappNumber } : r))); // optimistic
+    const res = await dal.landing.updateLandingPage(p.id, { ...toInput(p), whatsappNumber });
+    if (res.ok) toast.success("WhatsApp number saved");
+    else { toast.error(res.error); refresh(); }
+  };
 
   const toggleStatus = async (p: MarketingLandingPage) => {
     const status: LandingStatus = p.status === "published" ? "draft" : "published";
@@ -198,6 +206,18 @@ export function LandingPagesPanel({
       cell: ({ row }) => row.original.campaign
         ? <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground/80">{row.original.campaign}</span>
         : <span className="text-muted-foreground">—</span>,
+    },
+    {
+      id: "whatsappNumber",
+      header: () => (
+        <span className="inline-flex items-center gap-1.5"><MessageCircle className="size-3.5 text-emerald-600" /> WhatsApp Number</span>
+      ),
+      cell: ({ row }) => (
+        <WhatsAppCell
+          value={row.original.whatsappNumber ?? ""}
+          onSave={(v) => saveWhatsapp(row.original, v)}
+        />
+      ),
     },
     {
       accessorKey: "views",
@@ -379,6 +399,15 @@ export function LandingPagesPanel({
                 <Input value={form.audience} onChange={(e) => setForm((f) => ({ ...f, audience: e.target.value }))} />
               </Field>
             </div>
+            <Field label="WhatsApp Number">
+              <Input
+                value={form.whatsappNumber ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, whatsappNumber: e.target.value }))}
+                placeholder="201115782721 (with country code, no +)"
+                dir="ltr"
+                inputMode="tel"
+              />
+            </Field>
             <Field label="Description">
               <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} />
             </Field>
@@ -394,6 +423,53 @@ export function LandingPagesPanel({
 
       {Confirmation}
     </div>
+  );
+}
+
+/** WhatsApp number cell — shows the number with an edit (pencil) icon;
+ * click to edit, commits on blur or Enter, Escape cancels. */
+function WhatsAppCell({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = React.useState(false);
+  const [v, setV] = React.useState(value);
+  React.useEffect(() => { setV(value); }, [value]);
+
+  const commit = () => {
+    setEditing(false);
+    const next = v.trim();
+    if (next !== (value ?? "").trim()) onSave(next);
+  };
+
+  if (editing) {
+    return (
+      <Input
+        autoFocus
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") { setV(value); setEditing(false); }
+        }}
+        placeholder="e.g. 201115782721"
+        dir="ltr"
+        inputMode="tel"
+        className="h-8 w-40 text-sm tabular-nums"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      title="Edit WhatsApp number"
+      className="group inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-sm transition-colors hover:bg-muted"
+    >
+      <span dir="ltr" className={cn("tabular-nums", value ? "text-foreground" : "text-muted-foreground")}>
+        {value || "Not set"}
+      </span>
+      <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-50 transition-opacity group-hover:opacity-100" />
+    </button>
   );
 }
 

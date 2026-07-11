@@ -25,8 +25,8 @@ import { MasterCurriculumAccordion } from "@/features/marketing/components/maste
 import { LeadFormModal } from "@/features/marketing/components/lead-form-modal";
 import { CountUp } from "@/features/marketing/components/count-up";
 
-const PATH = "/lp/mix/cphq2";
-const COURSE = "CPHQ Course";
+const PATH = "/lp/mix/quality-diploma";
+const COURSE = "Healthcare Quality Diploma (AIHCM)";
 
 /* Palette: royal blue = primary identity · gold = CTA / accent only (matches campaign creative) */
 const BLUE_GRAD =
@@ -137,21 +137,21 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const admin = await resolveSeoMetadata(PATH).catch(() => ({} as Metadata));
   return {
     ...admin,
-    title: "كورس تحضير امتحان CPHQ — اجتزه من أول مرة | IMETS",
-    description: "كورس CPHQ تحضيري مباشر على Zoom لمدة ١٠ أسابيع: الدومينز السبعة، +٥٠٠ سؤال محاكاة، وامتحان تجريبي شامل. احجز مقعدك.",
+    title: "الدبلوم المهني في الجودة الصحية باعتماد AIHCM | IMETS",
+    description: "دبلوم مهني في الجودة الصحية معتمد من المعهد الأمريكي للرعاية الصحية وإدارة المستشفيات (AIHCM) — محاضرات مباشرة، بنك أسئلة، ودعم مستمر حتى الاحتراف. احجز مقعدك.",
   };
 }
 
-export default async function Cphq2MixPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function QualityDiplomaMixPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const trackPath = locale === "ar" ? "/ar/lp/mix/cphq2" : PATH;
+  const trackPath = locale === "ar" ? "/ar/lp/mix/quality-diploma" : PATH;
   // Connected WhatsApp number — editable from Admin → Marketing → Landing; falls back to the default.
   const WA = (await dal.landing.fetchLandingWhatsapp(trackPath)) || "201115782721";
 
   const courseLd = {
-    "@context": "https://schema.org", "@type": "Course", name: "CPHQ Preparation Course",
-    description: "CPHQ exam preparation — 10-week live program covering the seven domains, 500+ practice questions and a full mock exam.",
+    "@context": "https://schema.org", "@type": "Course", name: "Professional Diploma in Healthcare Quality (AIHCM)",
+    description: "Professional Diploma in Healthcare Quality accredited by the American Institute for Healthcare & Hospital Management (AIHCM) — live lectures, question bank and continuous support.",
     provider: { "@type": "Organization", name: "IMETS", sameAs: process.env.NEXT_PUBLIC_SITE_URL || "https://imetsedu.com" },
   };
   const faqLd = {
@@ -173,8 +173,8 @@ export default async function Cphq2MixPage({ params }: { params: Promise<{ local
             <span className="inline-flex items-center gap-2 rounded-full bg-[#f4c430] px-3 py-1 text-xs font-bold text-[#051a4a] shadow">
               <CalendarDays className="size-3.5" /> الدفعة القادمة تبدأ ١٨ يوليو ٢٠٢٦ · المقاعد المتاحة 7 من 30
             </span>
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
-              إزاي تدخل مجال الجودة وتبقي <span className="text-[#f4c430]">أخصائي جودة صحية معتمد دوليا</span>
+            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl lg:text-[2.35rem] lg:leading-tight">
+              احصل علي <span className="text-[#f4c430]">الدبلوم المهني في الجودة الصحية</span> باعتماد المعهد الأمريكي للرعاية الصحية وإدارة المستشفيات — AIHCM
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-white/80">
               برنامج تدريبي شامل يؤهّلك لاجتياز امتحان CPHQ — الذي تمنح شهادته NAHQ الأمريكية — من أول مرة، مع محاضرين معتمدين ودعم مستمر حتى الامتحان.
@@ -245,7 +245,7 @@ export default async function Cphq2MixPage({ params }: { params: Promise<{ local
 
       {/* Limited-time 50% discount + countdown */}
       <div className="bg-gradient-to-b from-white to-blue-50/60 py-10 sm:py-14">
-        <DiscountCountdown lang="en" hours={7} storageKey="cphq2_offer_deadline" showPrice={false} ctaHref="#apply" />
+        <DiscountCountdown lang="en" hours={7} storageKey="quality_diploma_offer_deadline" showPrice={false} ctaHref="#apply" />
       </div>
 
       {/* Features */}

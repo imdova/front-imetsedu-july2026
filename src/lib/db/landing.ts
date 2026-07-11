@@ -22,6 +22,7 @@ export interface MarketingLandingPage {
   audience: string;
   description: string;
   thumbnailUrl?: string;
+  whatsappNumber?: string; // connected WhatsApp number for this landing page
   views: number;
   clicks: number;
   ctr: number; // derived: clicks/views %
@@ -39,6 +40,7 @@ export type LandingPageInput = {
   audience: string;
   description: string;
   thumbnailUrl?: string;
+  whatsappNumber?: string;
 };
 
 export interface LandingStats {

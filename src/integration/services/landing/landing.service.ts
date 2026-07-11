@@ -2,7 +2,7 @@ import { api, type Result } from "@integration/services/http/client";
 import {
   API_LANDING_PAGES, API_LANDING_PAGES_STATS, apiLandingPage,
   API_EXAM_LEADS, API_EXAM_LEADS_STATS, API_EXAM_LEADS_EMAIL, apiExamLead,
-  API_LANDING_TRACK, API_FREE_EXAM_CAPTURE,
+  API_LANDING_TRACK, API_LANDING_PUBLIC_CONFIG, API_FREE_EXAM_CAPTURE,
   API_LANDING_TESTIMONIALS, apiLandingTestimonial, API_LANDING_SPONSORS, apiLandingSponsor,
   API_LANDING_INSIGHTS, apiLandingInsight, API_LANDING_NEWSLETTER, apiLandingSubscriber,
   API_LANDING_CONTACT, apiLandingMessage,
@@ -47,6 +47,10 @@ export const emailLeads = (ids: string[] | undefined, subject: string, html: str
 /* ── Public ── */
 export const trackLanding = (path: string, type: "view" | "click") =>
   api.post<{ success: boolean }>(API_LANDING_TRACK, { path, type }, { requireAuth: false });
+export const getPublicConfig = (path: string) =>
+  api.get<{ path: string; whatsappNumber: string; status: string }>(API_LANDING_PUBLIC_CONFIG, {
+    params: { path }, requireAuth: false,
+  });
 export const captureLead = (input: Record<string, unknown>) =>
   api.post<{ _id: string }>(API_FREE_EXAM_CAPTURE, input, { requireAuth: false });
 

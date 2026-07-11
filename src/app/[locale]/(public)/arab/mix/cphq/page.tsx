@@ -19,6 +19,7 @@ import { StudentVideoReviews, type StudentReviewVideo } from "@/features/marketi
 import { StudentReviewCards } from "@/features/marketing/components/student-review-cards";
 import { GraduationProjects, type GraduationProject } from "@/features/marketing/components/graduation-projects";
 import { WhatsAppFab } from "@/features/marketing/components/whatsapp-fab";
+import { dal } from "@/lib/dal";
 import { MasterCurriculumAccordion } from "@/features/marketing/components/master-curriculum-accordion";
 
 const PATH = "/arab/mix/cphq";
@@ -112,6 +113,8 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
   const { locale } = await params;
   setRequestLocale(locale);
   const trackPath = locale === "ar" ? "/ar/arab/mix/cphq" : PATH;
+  // Connected WhatsApp number — editable from Admin → Marketing → Landing; falls back to the default.
+  const WA = (await dal.landing.fetchLandingWhatsapp(PATH)) || "201142293143";
 
   const courseLd = {
     "@context": "https://schema.org", "@type": "Course", name: "CPHQ Preparation Course",
@@ -361,7 +364,7 @@ export default async function CphCloneePage({ params }: { params: Promise<{ loca
       </div>
 
       {/* Floating WhatsApp */}
-      <WhatsAppFab phone="201142293143" message="مرحبًا، أريد الاستفسار عن كورس CPHQ" />
+      <WhatsAppFab phone={WA} message="مرحبًا، أريد الاستفسار عن كورس CPHQ" />
     </div>
   );
 }
