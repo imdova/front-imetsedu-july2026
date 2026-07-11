@@ -180,7 +180,9 @@ export function mapLeadPaymentPlanToInvoice(lead: any): Invoice {
     issuedDate: fmtDate(plan.createdAt),
     issuedAtISO: plan.createdAt,
     dueDate: firstUnpaid?.dueDate ?? "—",
-    group: lead.group?.title,
+    // Prefer the live group title from the backend groups lookup; fall back to
+    // the groupName snapshot stored on the payment plan when the lookup misses.
+    group: lead.group?.title ?? plan.groupName ?? undefined,
     courseId: plan.courses?.[0] ?? undefined,
     courseTitle: lead.group?.course?.title ?? plan.courseName ?? undefined,
     installments,

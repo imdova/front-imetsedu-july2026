@@ -6,6 +6,8 @@ import {
   type SortingState,
   type RowSelectionState,
   type ColumnFiltersState,
+  type VisibilityState,
+  type OnChangeFn,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
@@ -40,6 +42,13 @@ interface DataTableProps<TData, TValue> {
   emptyState?: React.ReactNode;
   pageSize?: number;
   className?: string;
+  /** Controlled column visibility (e.g. persisted per user). Falls back to
+   * internal state when omitted, so existing tables are unaffected. */
+  columnVisibility?: VisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  /** Extra classes for the table header row (e.g. a colored header). Applied
+   * on top of the default; use `[&_th]:text-white` to recolor header text. */
+  headerClassName?: string;
 }
 
 /**
@@ -58,20 +67,29 @@ export function DataTable<TData, TValue>({
   emptyState,
   pageSize = 8,
   className,
+  columnVisibility,
+  onColumnVisibilityChange,
+  headerClassName,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+  // Column visibility is controlled when a value is passed, else self-managed.
+  const [internalVisibility, setInternalVisibility] =
+    React.useState<VisibilityState>({});
+  const visibility = columnVisibility ?? internalVisibility;
+  const setVisibility = onColumnVisibilityChange ?? setInternalVisibility;
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnFilters, rowSelection },
+    state: { sorting, columnFilters, rowSelection, columnVisibility: visibility },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: setVisibility,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -79,6 +97,8 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize } },
     enableRowSelection: true,
   });
+
+  const visibleColCount = table.getVisibleLeafColumns().length;
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
@@ -88,7 +108,7 @@ export function DataTable<TData, TValue>({
 
       <div className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
         <Table>
-          <TableHeader className="bg-muted/40">
+          <TableHeader className={cn("bg-muted/40", headerClassName)}>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
@@ -115,7 +135,7 @@ export function DataTable<TData, TValue>({
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={`sk-${i}`}>
-                  {columns.map((_col, j) => (
+                  {Array.from({ length: visibleColCount }).map((_col, j) => (
                     <TableCell key={`sk-${i}-${j}`}>
                       <Skeleton className="h-5 w-full max-w-[160px]" />
                     </TableCell>
@@ -141,7 +161,7 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={columns.length} className="h-48">
+                <TableCell colSpan={visibleColCount} className="h-48">
                   {emptyState ?? (
                     <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                       <Inbox className="size-8 opacity-50" />

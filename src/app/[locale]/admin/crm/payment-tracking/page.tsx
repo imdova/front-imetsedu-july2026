@@ -21,13 +21,10 @@ export default async function AdminPaymentTrackingPage({
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ptCrumb")}</p>
-        <PageHeader title={t("paymentTrackingTitle")} description={t("paymentTrackingSubtitle")}>
-          <Button variant="outline" className="gap-1.5"><Receipt className="size-4" />{t("transactionsLedger")}</Button>
-          <Button variant="outline" className="gap-1.5"><Download className="size-4" />{t("exportBtn")}</Button>
-        </PageHeader>
-      </div>
+      <PageHeader title={t("paymentTrackingTitle")}>
+        <Button variant="outline" className="gap-1.5"><Receipt className="size-4" />{t("transactionsLedger")}</Button>
+        <Button variant="outline" className="gap-1.5"><Download className="size-4" />{t("exportBtn")}</Button>
+      </PageHeader>
       <PaymentTracking counselorId={counselorId} />
     </div>
   );

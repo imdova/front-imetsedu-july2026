@@ -48,6 +48,11 @@ export interface Invoice {
   studentId?: string;
   installmentIndex?: number;
   paymentPlanIndex?: number;
+  /** Lead's assigned counselor/agent (enriched from the leads endpoint). */
+  agentId?: string;
+  agentName?: string;
+  /** ISO timestamp the lead moved into the "enrolled" pipeline stage. */
+  enrolledAtISO?: string;
 }
 
 export interface Payment {

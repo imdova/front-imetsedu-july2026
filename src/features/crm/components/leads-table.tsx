@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Search, ChevronLeft, ChevronRight, Download, UserPlus, ArrowRightLeft, GitBranch, Trash2, X, ChevronDown } from "lucide-react";
+import type { VisibilityState } from "@tanstack/react-table";
+import { Search, ChevronLeft, ChevronRight, Download, UserPlus, ArrowRightLeft, GitBranch, Trash2, X, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -62,6 +64,9 @@ const RANGES = [
   "today", "yesterday", "this_week", "last_week", "this_month", "last_month", "3_months", "custom",
 ] as const;
 type Range = (typeof RANGES)[number] | "all";
+
+/** localStorage key persisting the leads-table column visibility selection. */
+const COLS_STORAGE_KEY = "crm:leads-table-cols-v1";
 
 /** Monday-start week boundary for a given date (local time). */
 function startOfWeek(d: Date): number {
@@ -122,6 +127,26 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   const [customTo, setCustomTo] = React.useState("");
   const [quickTab, setQuickTab] = React.useState<"all" | "unassigned" | "overdue" | "today">("all");
 
+  // Persisted column-visibility selection. Start empty (all visible) to match
+  // the server render, then hydrate from localStorage on the client.
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(COLS_STORAGE_KEY);
+      if (raw) setColumnVisibility(JSON.parse(raw) as VisibilityState);
+    } catch { /* ignore malformed / unavailable storage */ }
+  }, []);
+  const onColumnVisibilityChange = React.useCallback<React.Dispatch<React.SetStateAction<VisibilityState>>>(
+    (updater) => {
+      setColumnVisibility((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        try { window.localStorage.setItem(COLS_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    },
+    [],
+  );
+
   const { getOptionsById, isMounted: varsMounted } = useCrmVariables();
   const { stages: crmStages } = usePipelineStages(stages);
 
@@ -165,20 +190,28 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
     return crmStages.map((s) => ({ value: s.key, label: s.name }));
   }, [crmStages]);
 
+  // Rows narrowed by the selected date range only (not the quick tab). Both the
+  // tab count badges and the table derive from this, so the date-range chips
+  // (All time / Today / … / Custom) reflect on the leads count numbers too.
+  const rangeRows = React.useMemo(
+    () => rows.filter((row) => inRange(row.createdAtISO, range, { from: customFrom, to: customTo })),
+    [rows, range, customFrom, customTo],
+  );
+
   const counts = React.useMemo(() => ({
-    all: rows.length,
-    unassigned: rows.filter((r) => !r.counselorId).length,
-    overdue: rows.filter((r) => r.followUps.some((f) => f.status === "overdue")).length,
-    today: rows.filter((r) => r.followUps.some((f) => f.status === "today")).length,
-  }), [rows]);
+    all: rangeRows.length,
+    unassigned: rangeRows.filter((r) => !r.counselorId).length,
+    overdue: rangeRows.filter((r) => r.followUps.some((f) => f.status === "overdue")).length,
+    today: rangeRows.filter((r) => r.followUps.some((f) => f.status === "today")).length,
+  }), [rangeRows]);
 
   const displayRows = React.useMemo(() => {
-    let r = rows.filter((row) => inRange(row.createdAtISO, range, { from: customFrom, to: customTo }));
+    let r = rangeRows;
     if (quickTab === "unassigned") r = r.filter((row) => !row.counselorId);
     else if (quickTab === "overdue") r = r.filter((row) => row.followUps.some((f) => f.status === "overdue"));
     else if (quickTab === "today") r = r.filter((row) => row.followUps.some((f) => f.status === "today"));
     return r;
-  }, [rows, quickTab, range, customFrom, customTo]);
+  }, [rangeRows, quickTab]);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -258,6 +291,20 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
     [t, router, basePath],
   );
 
+  // Toggleable columns for the column manager (derived from the column defs, so
+  // it works without the TanStack table instance).
+  const hideableColumns = React.useMemo(
+    () =>
+      columns
+        .filter((c) => c.enableHiding !== false)
+        .map((c) => {
+          const id = (c.id ?? (c as { accessorKey?: string }).accessorKey ?? "") as string;
+          return { id, label: c.meta?.label ?? id };
+        })
+        .filter((c) => c.id),
+    [columns],
+  );
+
   const tabs = [
     { key: "all" as const, label: t("tabAllLeads"), count: counts.all },
     { key: "unassigned" as const, label: t("tabUnassigned"), count: counts.unassigned },
@@ -296,31 +343,63 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
         </div>
       </div>
 
-      {/* Date-range chips */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {(["all", ...RANGES] as Range[]).map((r) => (
-          <button
-            key={r}
-            onClick={() => setRange(r)}
-            className={cn(
-              "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
-              range === r ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/40",
-            )}
-          >
-            {t(`range_${r}` as never)}
-          </button>
-        ))}
-        {range === "custom" && (
-          <div className="flex items-center gap-1.5">
-            <Input type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="h-9 w-auto" aria-label={t("rangeFrom")} />
-            <span className="text-sm text-muted-foreground">{t("rangeTo")}</span>
-            <Input type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="h-9 w-auto" aria-label={t("rangeTo")} />
-          </div>
-        )}
+      {/* Search (left) + date-range chips + column manager (right) — one row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full sm:w-[333px]">
+          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchLeads")} className="ps-9" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(["all", ...RANGES] as Range[]).map((r) => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
+              className={cn(
+                "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                range === r ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/40",
+              )}
+            >
+              {t(`range_${r}` as never)}
+            </button>
+          ))}
+          {range === "custom" && (
+            <div className="flex items-center gap-1.5">
+              <Input type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="h-9 w-auto" aria-label={t("rangeFrom")} />
+              <span className="text-sm text-muted-foreground">{t("rangeTo")}</span>
+              <Input type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="h-9 w-auto" aria-label={t("rangeTo")} />
+            </div>
+          )}
+        </div>
+
+        <div className="ms-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <SlidersHorizontal className="size-4" />
+                <span className="hidden sm:inline">{t("columns")}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>{t("toggleColumns")}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {hideableColumns.map((c) => (
+                <DropdownMenuCheckboxItem
+                  key={c.id}
+                  checked={columnVisibility[c.id] !== false}
+                  onCheckedChange={(v) => onColumnVisibilityChange((prev) => ({ ...prev, [c.id]: !!v }))}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {c.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      {/* Filter grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {/* Filters — one row, beside each other */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8">
         <Filter label={t("filterPriority")} value={priority} onChange={setPriority} all={t("allPriorities")}
           options={priorityFilterOptions} />
         <Filter label={t("filterSource")} value={source} onChange={setSource} all={t("allSources")}
@@ -345,7 +424,10 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
         columns={columns}
         data={displayRows}
         isLoading={loading}
-        pageSize={10}
+        pageSize={50}
+        columnVisibility={columnVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
+        headerClassName="bg-blue-600 [&_th]:text-white"
         bulkBar={(table) => {
           const ids = table.getSelectedRowModel().rows.map((r) => r.original.id);
           const reset = () => table.resetRowSelection();
@@ -365,12 +447,6 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
             />
           );
         }}
-        toolbar={() => (
-          <div className="relative min-w-[200px] flex-1">
-            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchLeads")} className="ps-9" />
-          </div>
-        )}
         footer={(table) => {
           const selected = table.getFilteredSelectedRowModel().rows.length;
           const total = table.getFilteredRowModel().rows.length;

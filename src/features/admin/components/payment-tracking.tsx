@@ -3,8 +3,8 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
-  Users, Wallet, AlertTriangle, CalendarClock, CircleCheck, Search, Filter,
-  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download, Receipt, Trash2,
+  Users, Wallet, AlertTriangle, CalendarClock, CircleCheck, Search, Layers,
+  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download, Receipt, Trash2, SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +21,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /** Per-installment visual treatment. */
 const INST_STYLE: Record<Installment["status"], { box: string; icon: React.ElementType; dot: string }> = {
@@ -44,15 +47,98 @@ const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
   completed: "border-success/30 bg-success/10 text-success",
 };
 
+/** Toggleable table columns for the column manager (Student is always shown). */
+const PLAN_COLUMNS: { key: string; labelKey: string }[] = [
+  { key: "agent", labelKey: "ptColAgent" },
+  { key: "group", labelKey: "colGroup" },
+  { key: "enrolledAt", labelKey: "ptColEnrolledAt" },
+  { key: "total", labelKey: "ptColTotal" },
+  { key: "progress", labelKey: "ptProgress" },
+  { key: "status", labelKey: "colStatus" },
+  { key: "installments", labelKey: "ptColInstallments" },
+];
+/** localStorage key persisting the payment-tracking column visibility selection. */
+const PT_COLS_STORAGE_KEY = "crm:payment-tracking-cols-v1";
+
+/** Split a timestamp into a date line and a time line ("Jul 9, 2026" / "06:22 PM"). */
+function fmtDateParts(iso?: string): { date: string; time: string } {
+  if (!iso) return { date: "—", time: "" };
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { date: "—", time: "" };
+  return {
+    date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    time: d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
+/** Upcoming-installment time windows shown to the right of the tabs. */
+const UPCOMING_WINDOWS: { key: string; labelKey: string }[] = [
+  { key: "all", labelKey: "ptUpAll" },
+  { key: "this_week", labelKey: "ptUpThisWeek" },
+  { key: "next_week", labelKey: "ptUpNextWeek" },
+  { key: "this_month", labelKey: "ptUpThisMonth" },
+  { key: "next_month", labelKey: "ptUpNextMonth" },
+];
+
+/** Monday-start week boundary (local midnight) for a given date. */
+function startOfWeek(d: Date): number {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dow = (x.getDay() + 6) % 7; // 0 = Monday
+  x.setDate(x.getDate() - dow);
+  return x.getTime();
+}
+
+/** Whether an installment's (display-formatted) due date falls in a window. */
+function dueInWindow(dueStr: string | undefined, window: string): boolean {
+  if (!dueStr || dueStr === "—") return false;
+  const d = new Date(dueStr);
+  if (Number.isNaN(d.getTime())) return false;
+  const now = new Date();
+  const day = 86_400_000;
+  const sow = startOfWeek(now);
+  const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  switch (window) {
+    case "this_week": return ts >= sow && ts < sow + 7 * day;
+    case "next_week": return ts >= sow + 7 * day && ts < sow + 14 * day;
+    case "this_month": return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    case "next_month": {
+      const nm = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      return d.getFullYear() === nm.getFullYear() && d.getMonth() === nm.getMonth();
+    }
+    default: return true;
+  }
+}
+
 export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: { invoices?: Invoice[]; counselorId?: string }) {
   const t = useTranslations("Admin");
   const { user } = useAuth();
   const canManage = !user?.staffRole; // super-admin only
   const { confirm, Confirmation } = useConfirm();
   const [tab, setTab] = React.useState<"all" | "overdue" | "upcoming" | "paid">("all");
+  const [upcomingRange, setUpcomingRange] = React.useState<"all" | "this_week" | "next_week" | "this_month" | "next_month">("all");
   const [search, setSearch] = React.useState("");
   const [view, setView] = React.useState<"list" | "grid">("list");
+
+  // Persisted table column visibility (remembers the user's last selection).
+  const [columnVis, setColumnVis] = React.useState<Record<string, boolean>>({});
+  React.useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(PT_COLS_STORAGE_KEY);
+      if (raw) setColumnVis(JSON.parse(raw));
+    } catch { /* ignore malformed / unavailable storage */ }
+  }, []);
+  const toggleColumn = React.useCallback((key: string, visible: boolean) => {
+    setColumnVis((prev) => {
+      const next = { ...prev, [key]: visible };
+      try { window.localStorage.setItem(PT_COLS_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+  const isColVisible = React.useCallback((key: string) => columnVis[key] !== false, [columnVis]);
+
   const [course, setCourse] = React.useState("all");
+  const [group, setGroup] = React.useState("all");
+  const [agent, setAgent] = React.useState("all");
   const [ptype, setPtype] = React.useState("all");
   const [pstatus, setPstatus] = React.useState("all");
   const [invoices, setInvoices] = React.useState<Invoice[]>(serverInvoices);
@@ -63,29 +149,55 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
     async function load() {
       setIsLoading(true);
       try {
-        // The payment-tracking endpoint's own `counselorId` filter can't be
-        // trusted (its lead rows don't reliably carry counselor info), so
-        // narrow by cross-referencing against the leads endpoint instead —
-        // that's the same source of truth the "all leads" page filters by.
-        const [res, ownLeadsRes] = await Promise.all([
+        // Always pull leads too: they carry the assigned agent (counselor) and
+        // the pipeline history we need for "Enrolled at" — neither is in the
+        // payments response. Doubles as the staff-scoping source (the payments
+        // endpoint's own counselor filter can't be trusted).
+        const [res, leadsRes, groupsRes] = await Promise.all([
           getPayments({ limit: 5000 } as any),
-          counselorId ? dal.crm.fetchLeads({ counselorId }) : Promise.resolve(null),
+          dal.crm.fetchLeads(counselorId ? { counselorId } : {}),
+          dal.groups.fetchGroups(),
         ]);
         if (!active) return;
         if (res.ok && res.data) {
+          // groupId → title, to resolve the enrolled group name below.
+          const groupNameById = new Map<string, string>();
+          if (groupsRes.ok) for (const g of groupsRes.data) groupNameById.set(g.id, g.title);
+          // leadId → { agent, moved-to-enrolled date, enrolled group } from the leads endpoint.
+          const leadInfo = new Map<string, { agentId: string; agentName: string; enrolledAtISO: string; groupName: string }>();
+          if (leadsRes.ok) {
+            for (const l of leadsRes.data) {
+              const enrolledEntry = [...(l.pipelineHistory ?? [])].reverse().find((h) => h.stage === "enrolled");
+              const gid = enrolledEntry?.logData?.groupId;
+              leadInfo.set(l.id, {
+                agentId: l.counselorId || "",
+                agentName: l.counselorId ? l.counselorName : "",
+                enrolledAtISO: enrolledEntry?.at || "",
+                groupName: gid ? (groupNameById.get(gid) || "") : "",
+              });
+            }
+          }
           let rows: any[] = (res.data as any)?.leadPayments?.data ?? [];
-          if (counselorId && ownLeadsRes?.ok) {
-            const ownIds = new Set(ownLeadsRes.data.map((l) => l.id));
-            rows = rows.filter((lead: any) => ownIds.has(lead?._id ?? lead?.id));
+          if (counselorId && leadsRes.ok) {
+            rows = rows.filter((lead: any) => leadInfo.has(lead?._id ?? lead?.id));
           }
           const plans = rows.filter(
             (lead: any) => Array.isArray(lead?.paymentPlan?.installments) && lead.paymentPlan.installments.length > 0,
           );
-          setInvoices(plans.map((lead: any, idx: number) => ({
-              ...mapLeadPaymentPlanToInvoice(lead),
+          setInvoices(plans.map((lead: any, idx: number) => {
+            const info = leadInfo.get(lead._id ?? lead.id ?? "");
+            const mapped = mapLeadPaymentPlanToInvoice(lead);
+            return {
+              ...mapped,
               id: `${lead._id ?? idx}-${idx}`,
               studentId: lead._id,
-            })));
+              agentId: info?.agentId || "",
+              agentName: info?.agentName || "",
+              enrolledAtISO: info?.enrolledAtISO || "",
+              // Real group: plan/backend lookup first, else the lead's enrolled group.
+              group: mapped.group || info?.groupName || undefined,
+            };
+          }));
         }
       } catch {
       } finally {
@@ -106,8 +218,10 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
   const upcoming = allInst.filter((i) => i.status === "SCHEDULED");
   const unpaidCount = allInst.filter((i) => i.status !== "PAID").length;
 
-  // Distinct courses for the filter dropdown.
+  // Distinct courses / groups / agents for the filter dropdowns.
   const courses = Array.from(new Set(plans.map((p) => p.courseTitle).filter(Boolean))) as string[];
+  const groups = Array.from(new Set(plans.map((p) => p.group).filter(Boolean))) as string[];
+  const agents = Array.from(new Set(plans.map((p) => p.agentName).filter(Boolean))) as string[];
 
   const matchTab = (p: Invoice) => {
     const inst = p.installments ?? [];
@@ -120,6 +234,9 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
   const rows = plans
     .filter(matchTab)
     .filter((p) => course === "all" || p.courseTitle === course)
+    .filter((p) => group === "all" || p.group === group)
+    .filter((p) => agent === "all" || p.agentName === agent)
+    .filter((p) => upcomingRange === "all" || (p.installments ?? []).some((i) => i.status === "SCHEDULED" && dueInWindow(i.dueDate, upcomingRange)))
     .filter((p) => {
       if (ptype === "all") return true;
       const n = p.installments?.length ?? 0;
@@ -132,8 +249,8 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
       p.studentEmail.toLowerCase().includes(search.toLowerCase()) ||
       (p.group ?? "").toLowerCase().includes(search.toLowerCase()));
 
-  const filtersActive = course !== "all" || ptype !== "all" || pstatus !== "all" || !!search;
-  const clearFilters = () => { setCourse("all"); setPtype("all"); setPstatus("all"); setSearch(""); };
+  const filtersActive = course !== "all" || group !== "all" || agent !== "all" || ptype !== "all" || pstatus !== "all" || upcomingRange !== "all" || !!search;
+  const clearFilters = () => { setCourse("all"); setGroup("all"); setAgent("all"); setPtype("all"); setPstatus("all"); setUpcomingRange("all"); setSearch(""); };
 
   // ─── Multi-select + bulk actions ───
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
@@ -200,6 +317,7 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
   };
 
   const kpis = [
+    { label: t("ptPaymentPlans"), value: `${plans.length}`, sub: t("ptPaymentPlansSub"), icon: Layers, tone: "bg-primary/12 text-primary" },
     { label: t("ptScheduled"), value: `${plans.length}`, sub: t("ptScheduledSub"), icon: Users, tone: "bg-success/15 text-success" },
     { label: t("ptOwed"), value: formatCurrency(owed, "EGP"), sub: t("ptOwedSub", { count: unpaidCount }), icon: Wallet, tone: "bg-chart-3/15 text-chart-3" },
     { label: t("ptPastDue"), value: `${pastDue.length}`, sub: t("ptPastDueSub", { amount: formatCurrency(pastDue.reduce((s, i) => s + i.amount, 0), "EGP"), count: plans.filter((p) => (p.installments ?? []).some((i) => i.status === "DUE")).length }), icon: AlertTriangle, tone: "bg-warning/18 text-warning" },
@@ -216,7 +334,7 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpis.map((k) => (
           <div key={k.label} className="rounded-xl border border-border/70 bg-card p-5 shadow-sm">
             <div className="flex items-start justify-between gap-2">
@@ -237,18 +355,28 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
             {tb.label}
           </button>
         ))}
+        {/* Upcoming-installment time windows */}
+        <div className="flex flex-wrap items-center gap-1.5 lg:ms-auto">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("ptUpcomingLabel")}:</span>
+          {UPCOMING_WINDOWS.map((w) => (
+            <button key={w.key} onClick={() => setUpcomingRange((prev) => (prev === w.key ? "all" : (w.key as typeof upcomingRange)))}
+              className={cn("rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                upcomingRange === w.key ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/40")}>
+              {t(w.labelKey)}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-4 rounded-xl border bg-card p-4">
-        <div className="flex items-center justify-between gap-2">
-          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"><Filter className="size-4" />{t("ptFilters")}</p>
-          {filtersActive && (
+        {filtersActive && (
+          <div className="flex items-center justify-end">
             <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-muted-foreground" onClick={clearFilters}>
               <X className="size-3.5" />{t("ptClearFilters")}
             </Button>
-          )}
-        </div>
-        <div className="grid gap-3 lg:grid-cols-[1fr_repeat(3,minmax(0,180px))]">
+          </div>
+        )}
+        <div className="grid items-start gap-3 lg:grid-cols-[1fr_repeat(5,minmax(0,150px))_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("ptSearchPlaceholder")} className="ps-9" />
@@ -258,6 +386,20 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
             <SelectContent>
               <SelectItem value="all">{t("ptAllCourses")}</SelectItem>
               {courses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={group} onValueChange={setGroup}>
+            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("ptAllGroups")}</SelectItem>
+              {groups.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={agent} onValueChange={setAgent}>
+            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("ptAllAgents")}</SelectItem>
+              {agents.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={ptype} onValueChange={setPtype}>
@@ -278,15 +420,36 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
               <SelectItem value="completed">{t("ptStatusCompleted")}</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-            <Checkbox checked={allSelected ? true : someSelected ? "indeterminate" : false} onCheckedChange={toggleAll} disabled={rows.length === 0} />
-            {selected.size > 0 ? t("ptSelectedCount", { n: selected.size }) : t("ptShowingPlans", { n: rows.length })}
-          </label>
-          <div className="inline-flex rounded-lg border p-0.5">
-            <button onClick={() => setView("list")} className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium", view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}><List className="size-4" />{t("ptList")}</button>
-            <button onClick={() => setView("grid")} className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium", view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}><LayoutGrid className="size-4" />{t("ptGrid")}</button>
+          {/* Column manager + list/grid view toggle — same row as search & filters */}
+          <div className="flex items-center gap-2 lg:justify-end">
+            {view === "list" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-10 gap-1.5">
+                    <SlidersHorizontal className="size-4" />
+                    <span className="hidden sm:inline">{t("ptColumns")}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuLabel>{t("ptToggleColumns")}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {PLAN_COLUMNS.map((c) => (
+                    <DropdownMenuCheckboxItem
+                      key={c.key}
+                      checked={isColVisible(c.key)}
+                      onCheckedChange={(v) => toggleColumn(c.key, !!v)}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {t(c.labelKey)}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            <div className="inline-flex rounded-lg border p-0.5">
+              <button onClick={() => setView("list")} className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium", view === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}><List className="size-4" />{t("ptList")}</button>
+              <button onClick={() => setView("grid")} className={cn("inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium", view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}><LayoutGrid className="size-4" />{t("ptGrid")}</button>
+            </div>
           </div>
         </div>
 
@@ -311,7 +474,7 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
             <PlanTable
               rows={rows} t={t} selected={selected} onToggle={toggleOne}
               allSelected={allSelected} someSelected={someSelected} toggleAll={toggleAll} activeTab={tab}
-              canManage={canManage} onDelete={removePlan}
+              canManage={canManage} onDelete={removePlan} show={isColVisible}
             />
           )
         )}
@@ -335,7 +498,7 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
 /** Tabular payment-plans view (à la the old project): one row per plan with the
  * student, course/group, fees, progress, status and per-installment cells. */
 function PlanTable({
-  rows, t, selected, onToggle, allSelected, someSelected, toggleAll, activeTab, canManage, onDelete,
+  rows, t, selected, onToggle, allSelected, someSelected, toggleAll, activeTab, canManage, onDelete, show,
 }: {
   rows: Invoice[];
   t: (k: string, vals?: Record<string, string | number>) => string;
@@ -347,20 +510,23 @@ function PlanTable({
   activeTab: "all" | "overdue" | "upcoming" | "paid";
   canManage: boolean;
   onDelete: (p: Invoice) => void;
+  show: (key: string) => boolean;
 }) {
   const maxInstall = Math.max(1, ...rows.map((p) => p.installments?.length ?? 0));
   return (
     <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full text-sm" style={{ minWidth: `${720 + maxInstall * 120}px` }}>
+      <table className="w-full text-sm" style={{ minWidth: `${990 + maxInstall * 120}px` }}>
         <thead>
-          <tr className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+          <tr className="border-b bg-blue-600 text-xs uppercase tracking-wide text-white [&_th]:text-white">
             <th className="w-10 px-3 py-3"><Checkbox checked={allSelected ? true : someSelected ? "indeterminate" : false} onCheckedChange={toggleAll} /></th>
             <th className="px-3 py-3 text-start font-semibold">{t("colStudent")}</th>
-            <th className="px-3 py-3 text-start font-semibold">{t("colGroup")}</th>
-            <th className="px-3 py-3 text-end font-semibold">{t("ptColTotal")}</th>
-            <th className="px-3 py-3 text-start font-semibold">{t("ptProgress")}</th>
-            <th className="px-3 py-3 text-start font-semibold">{t("colStatus")}</th>
-            {Array.from({ length: maxInstall }).map((_, i) => (
+            {show("agent") && <th className="px-3 py-3 text-start font-semibold">{t("ptColAgent")}</th>}
+            {show("group") && <th className="px-3 py-3 text-start font-semibold">{t("colGroup")}</th>}
+            {show("enrolledAt") && <th className="px-3 py-3 text-start font-semibold">{t("ptColEnrolledAt")}</th>}
+            {show("total") && <th className="px-3 py-3 text-end font-semibold">{t("ptColTotal")}</th>}
+            {show("progress") && <th className="px-3 py-3 text-start font-semibold">{t("ptProgress")}</th>}
+            {show("status") && <th className="px-3 py-3 text-start font-semibold">{t("colStatus")}</th>}
+            {show("installments") && Array.from({ length: maxInstall }).map((_, i) => (
               <th key={i} className="px-3 py-3 text-center font-semibold">{t("colInstall", { n: i + 1 })}</th>
             ))}
             {canManage && <th className="w-10 px-3 py-3" />}
@@ -386,22 +552,52 @@ function PlanTable({
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-3 text-muted-foreground">{p.group ?? "—"}</td>
-                <td className="px-3 py-3 text-end font-medium tabular-nums">{formatCurrency(p.amount, p.currency)}</td>
-                <td className="px-3 py-3">
-                  <div className="flex min-w-[120px] items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div className={cn("h-full rounded-full", status === "overdue" ? "bg-destructive" : status === "completed" ? "bg-success" : "bg-primary")} style={{ width: `${pct}%` }} />
+                {show("agent") && (
+                  <td className="px-3 py-3">
+                    {p.agentName ? (
+                      <span className="inline-flex items-center gap-2 text-sm">
+                        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-chart-2/20 text-[0.6rem] font-semibold text-chart-2">{getInitials(p.agentName)}</span>
+                        <span className="truncate">{p.agentName}</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">{t("ptUnassigned")}</span>
+                    )}
+                  </td>
+                )}
+                {show("group") && <td className="px-3 py-3 text-muted-foreground">{p.group ?? "—"}</td>}
+                {show("enrolledAt") && (
+                  <td className="px-3 py-3">
+                    {(() => {
+                      const { date, time } = fmtDateParts(p.enrolledAtISO);
+                      if (date === "—") return <span className="text-xs text-muted-foreground">—</span>;
+                      return (
+                        <div className="text-xs leading-tight text-muted-foreground">
+                          <div className="whitespace-nowrap">{date}</div>
+                          {time && <div className="whitespace-nowrap">{time}</div>}
+                        </div>
+                      );
+                    })()}
+                  </td>
+                )}
+                {show("total") && <td className="px-3 py-3 text-end font-medium tabular-nums">{formatCurrency(p.amount, p.currency)}</td>}
+                {show("progress") && (
+                  <td className="px-3 py-3">
+                    <div className="flex min-w-[120px] items-center gap-2">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                        <div className={cn("h-full rounded-full", status === "overdue" ? "bg-destructive" : status === "completed" ? "bg-success" : "bg-primary")} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs font-semibold tabular-nums text-muted-foreground">{pct}%</span>
                     </div>
-                    <span className="text-xs font-semibold tabular-nums text-muted-foreground">{pct}%</span>
-                  </div>
-                </td>
-                <td className="px-3 py-3">
-                  <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-medium", PLAN_STATUS_STYLE[status])}>
-                    {t(status === "active" ? "ptStatusActive" : status === "overdue" ? "ptStatusOverdue" : "ptStatusCompleted")}
-                  </span>
-                </td>
-                {Array.from({ length: maxInstall }).map((_, i) => {
+                  </td>
+                )}
+                {show("status") && (
+                  <td className="px-3 py-3">
+                    <span className={cn("rounded-full border px-2.5 py-0.5 text-xs font-medium", PLAN_STATUS_STYLE[status])}>
+                      {t(status === "active" ? "ptStatusActive" : status === "overdue" ? "ptStatusOverdue" : "ptStatusCompleted")}
+                    </span>
+                  </td>
+                )}
+                {show("installments") && Array.from({ length: maxInstall }).map((_, i) => {
                   const it = visibleInst[i];
                   return (
                     <td key={i} className="px-3 py-3">
@@ -468,6 +664,24 @@ function PlanCard({
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Agent + enrolled-at */}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="font-medium">{t("ptColAgent")}:</span>
+          {plan.agentName || t("ptUnassigned")}
+        </span>
+        {(() => {
+          const { date, time } = fmtDateParts(plan.enrolledAtISO);
+          if (date === "—") return null;
+          return (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="font-medium">{t("ptColEnrolledAt")}:</span>
+              {date}{time ? ` · ${time}` : ""}
+            </span>
+          );
+        })()}
       </div>
 
       {/* Amounts */}

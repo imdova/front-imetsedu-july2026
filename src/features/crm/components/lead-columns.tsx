@@ -1,9 +1,16 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, RowData } from "@tanstack/react-table";
 import { Phone, MessageCircle, Mail, Pencil, Globe, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+
+declare module "@tanstack/react-table" {
+  // Human-readable label used by the column manager (headers can be JSX).
+  interface ColumnMeta<TData extends RowData, TValue> {
+    label?: string;
+  }
+}
 
 import type { Lead } from "@/lib/db/crm";
 import { dal } from "@/lib/dal";
@@ -25,13 +32,15 @@ async function sendSetPassword(lead: Lead, t: CrmT) {
   else toast.error(res.error);
 }
 
-function fmtDate(iso?: string, fallback?: string): string {
-  if (!iso) return fallback ?? "—";
+/** Split a timestamp into a date line and a time line (e.g. "Jul 9, 2026" / "06:22 PM"). */
+function fmtDateParts(iso?: string, fallback?: string): { date: string; time: string } {
+  if (!iso) return { date: fallback ?? "—", time: "" };
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return fallback ?? "—";
-  return d.toLocaleString("en-US", {
-    month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
+  if (Number.isNaN(d.getTime())) return { date: fallback ?? "—", time: "" };
+  return {
+    date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    time: d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+  };
 }
 
 export function getLeadColumns(
@@ -57,10 +66,26 @@ export function getLeadColumns(
         />
       ),
       enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      id: "rowNumber",
+      header: () => <span>{t("colNumber")}</span>,
+      // Continuous 1-based number in current sort order, across pages.
+      cell: ({ row, table }) => {
+        const rows = table.getRowModel().rows;
+        const pos = rows.findIndex((r) => r.id === row.id);
+        const { pageIndex, pageSize } = table.getState().pagination;
+        const n = pos < 0 ? row.index + 1 : pageIndex * pageSize + pos + 1;
+        return <span className="text-xs tabular-nums text-muted-foreground">{n}</span>;
+      },
+      enableSorting: false,
+      enableHiding: false,
     },
     {
       accessorKey: "fullName",
       header: ({ column }) => <DataTableColumnHeader column={column} title={t("colLead")} />,
+      enableHiding: false,
       cell: ({ row }) => {
         const l = row.original;
         return (
@@ -89,6 +114,7 @@ export function getLeadColumns(
     {
       accessorKey: "counselorName",
       header: t("colAssignedAgent"),
+      meta: { label: t("colAssignedAgent") },
       cell: ({ row }) => {
         const l = row.original;
         const assigned = !!l.counselorId;
@@ -107,11 +133,13 @@ export function getLeadColumns(
     {
       accessorKey: "specialty",
       header: t("colSpecialty"),
+      meta: { label: t("colSpecialty") },
       cell: ({ row }) => <span className="text-sm">{row.original.specialty || "—"}</span>,
     },
     {
       accessorKey: "source",
       header: t("colSource"),
+      meta: { label: t("colSource") },
       cell: ({ row }) => {
         const s = row.original.source;
         return s && s !== "—" ? <Badge variant="outline">{s}</Badge> : <span className="text-sm text-muted-foreground">—</span>;
@@ -120,6 +148,7 @@ export function getLeadColumns(
     {
       id: "course",
       header: t("colCourse"),
+      meta: { label: t("colCourse") },
       cell: ({ row }) => {
         const names = row.original.courseNames ?? [];
         if (!names.length) return <span className="text-sm text-muted-foreground">—</span>;
@@ -134,13 +163,21 @@ export function getLeadColumns(
     {
       accessorKey: "createdAtISO",
       header: ({ column }) => <DataTableColumnHeader column={column} title={t("colCreated")} />,
-      cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">{fmtDate(row.original.createdAtISO, row.original.createdAt)}</span>
-      ),
+      meta: { label: t("colCreated") },
+      cell: ({ row }) => {
+        const { date, time } = fmtDateParts(row.original.createdAtISO, row.original.createdAt);
+        return (
+          <div className="text-xs leading-tight text-muted-foreground">
+            <div className="whitespace-nowrap">{date}</div>
+            {time && <div className="whitespace-nowrap">{time}</div>}
+          </div>
+        );
+      },
     },
     {
       id: "pipeline",
       header: t("colPipeline"),
+      meta: { label: t("colPipeline") },
       cell: ({ row }) =>
         row.original.pipelineName ? (
           <Badge variant="outline" className="gap-1 border-primary/30 text-primary">{row.original.pipelineName}</Badge>
@@ -151,11 +188,13 @@ export function getLeadColumns(
     {
       accessorKey: "stageKey",
       header: t("colPipelineStatus"),
+      meta: { label: t("colPipelineStatus") },
       cell: ({ row }) => <StageBadge stageKey={row.original.stageKey} />,
     },
     {
       accessorKey: "priority",
       header: t("colStatus"),
+      meta: { label: t("colStatus") },
       cell: ({ row }) => <PriorityBadge priority={row.original.priority} />,
     },
     {
@@ -186,6 +225,7 @@ export function getLeadColumns(
         );
       },
       enableSorting: false,
+      enableHiding: false,
     },
   ];
 }

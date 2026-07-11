@@ -46,18 +46,27 @@ async function wrap<T>(fn: () => Promise<T>, msg: string): Promise<Result<T>> {
  * since the backend has no query support for them. */
 export const fetchLeads = async (filters: db.LeadFilters = {}): Promise<Result<db.Lead[]>> => {
   const f = (v?: string) => (v && v !== "all" ? v : undefined);
-  const res = await leadsSvc.listLeads({
-    limit: 200,
+  const query = {
     search: f(filters.search),
     stage: filters.stage && filters.stage !== "all" ? (REVERSE_STAGE[filters.stage] ?? filters.stage) : undefined,
     priority: f(filters.priority),
     counselor: f(filters.counselorId),
     pipeline: f(filters.pipeline),
     dateRange: f(filters.dateRange),
-  });
+  };
+  // Load every matching lead — no fixed cap. Fetch a first window, then if the
+  // backend reports more leads than we received (meta.total), re-fetch once with
+  // limit === total so the table always reflects the real count.
+  const res = await leadsSvc.listLeads({ ...query, page: 1, limit: 500 });
   if (!res.ok) return res;
+  let raw = Array.isArray(res.data?.data) ? res.data.data : [];
+  const total = Number(res.data?.meta?.total ?? raw.length);
+  if (total > raw.length) {
+    const full = await leadsSvc.listLeads({ ...query, page: 1, limit: total });
+    if (full.ok && Array.isArray(full.data?.data)) raw = full.data.data;
+  }
   try {
-    let rows = (Array.isArray(res.data?.data) ? res.data.data : []).map(mapLead);
+    let rows = raw.map(mapLead);
     // Client-side narrowing for fields the backend can't query (or that it
     // enum-validates, like `source`, which would reject custom CRM sources).
     // Case-insensitive: older leads may have been stored with different
