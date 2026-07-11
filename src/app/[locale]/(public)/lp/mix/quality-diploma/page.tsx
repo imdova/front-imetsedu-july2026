@@ -5,7 +5,7 @@ import {
   MessageCircle, BadgeCheck, CalendarDays, Stethoscope, ChevronLeft,
   Layers, ListChecks, ChevronRight, Building2,
   CreditCard, Wallet, Banknote, Landmark, ShieldCheck,
-  Phone, Send,
+  Phone, Send, TrendingUp, Briefcase,
 } from "lucide-react";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
@@ -38,12 +38,12 @@ const GOLD_CTA = "bg-[#f4c430] text-[#051a4a] shadow-md hover:bg-[#e0b020]";
 const AUTH = ["NAHQ · CPHQ", "SCFHS", "DHA", "DOH", "QCHP", "Prometric"];
 
 const FEATURES = [
-  { icon: PlayCircle, title: "محاضرات مباشرة على Zoom", body: "بثّ مباشر أسبوعي مع تسجيلات متاحة لمدة ١٢ شهرًا تراجعها وقتما تشاء." },
-  { icon: MessageCircle, title: "دعم بالعربية والإنجليزية", body: "شرح ثنائي اللغة لكل مفهوم — باللغة التي تفهمها بوضوح أكبر." },
-  { icon: BookOpen, title: "+٥٠٠ سؤال محاكاة", body: "بنك أسئلة اختيار من متعدد مع شروح مفصّلة لكل إجابة." },
-  { icon: ClipboardCheckIcon, title: "امتحان محاكاة شامل", body: "اختبار كامل بوقت محدد يحاكي تجربة امتحان CPHQ الحقيقي." },
-  { icon: Users, title: "مجموعة دراسة على واتساب", body: "مجتمع داعم للأسئلة والمتابعة اليومية مع الزملاء والمدرّب." },
-  { icon: Award, title: "شهادة دولية معتمدة", body: "استعداد كامل لاجتياز CPHQ المعتمدة من NAHQ عالميًا." },
+  { icon: PlayCircle, title: "🎥 محاضرات عملية مع خبراء الجودة", body: "تتعلّم من متخصصين معتمدين بأمثلة واقعية من داخل المستشفيات — بثّ مباشر أسبوعي وتسجيلات متاحة ١٢ شهرًا." },
+  { icon: GraduationCap, title: "👨‍🏫 متابعة حتى التخرّج", body: "مدرّب يتابع تقدّمك خطوة بخطوة ويجيب أسئلتك حتى تُنهي الدبلوم بثقة — لا تُترك وحدك." },
+  { icon: ClipboardCheckIcon, title: "📋 مشاريع تحاكي بيئة العمل الحقيقية", body: "تطبّق ما تتعلّمه على حالات عملية شبيهة بما ستواجهه فعليًا في وظائف الجودة الصحية." },
+  { icon: MessageCircle, title: "🗣️ شرح بالعربية والإنجليزية", body: "كل مفهوم يُشرح باللغة التي تفهمها بوضوح — ومصطلحات مهنية جاهزة لبيئة العمل." },
+  { icon: Users, title: "🤝 مجتمع ودعم على واتساب", body: "مجموعة داعمة للأسئلة والمتابعة اليومية مع الزملاء والمدرّب طوال البرنامج." },
+  { icon: Award, title: "🏅 شهادة معتمدة من AIHCM", body: "دبلوم مهني تُعزّز سيرتك الذاتية — باعتماد المعهد الأمريكي للرعاية الصحية وإدارة المستشفيات." },
 ];
 
 const STATS = [
@@ -76,22 +76,49 @@ const WEBHOOK = "https://aut.jobova.net/webhook/cphq";
 const OUTCOMES = [
   { icon: Building2, title: "فرص أفضل في المستشفيات", body: "مؤهل مطلوب في المستشفيات والمنشآت الساعية لاعتماد الجودة." },
   { icon: GraduationCap, title: "تعزيز فرص الترقية", body: "خطوة معتمدة نحو أدوار قيادة الجودة وسلامة المرضى." },
-  { icon: BadgeCheck, title: "شهادة معترف بها دوليًا", body: "CPHQ من NAHQ الأمريكية — معيار عالمي في جودة الرعاية الصحية." },
+  { icon: BadgeCheck, title: "شهادة معتمدة تُقوّي سيرتك", body: "دبلوم مهني باعتماد المعهد الأمريكي AIHCM — يعزّز حضورك المهني في الجودة الصحية." },
   { icon: Award, title: "ميزة تنافسية", body: "تميّزك عند التقديم على وظائف الجودة والاعتماد." },
 ];
 
-// "Is this for you?" — objection handling.
-const AUDIENCE = ["طبيب", "صيدلي", "تمريض", "طبيب أسنان", "مدير / أخصائي جودة", "مكافحة عدوى", "إداري مستشفيات", "خريج يستهدف الجودة"];
+// "Is this diploma for you?" — audience fit (placed right after the hero).
+const AUDIENCE = ["أطباء", "صيادلة", "تمريض", "أطباء أسنان", "أخصائيو الجودة", "خريجو العلوم الصحية", "حديثو التخرّج", "إداريو المستشفيات"];
+
+// Point 9 — what the student gets immediately after signing up (reassurance before the form).
+const POST_SIGNUP = [
+  "الدخول الفوري إلى المنصة",
+  "المحاضرات المباشرة والمسجّلة",
+  "مجموعة الواتساب للدعم والمتابعة",
+  "الشهادة المعتمدة عند الإتمام",
+  "المشاريع التطبيقية العملية",
+  "المتابعة المستمرة حتى التخرّج",
+];
 
 // Why IMETS vs. other academies / online courses.
 const COMPARE = [
+  { feature: "دعم وتوجيه مهني للتقديم على الوظائف (Career Support)", others: "❌" },
   { feature: "حضور أونلاين لايف عن طريق ZOOM", others: "أحيانًا" },
-  { feature: "متابعة مستمرة حتى الامتحان", others: "❌" },
-  { feature: "محاضرون معتمدون", others: "أحيانًا" },
+  { feature: "متابعة مستمرة حتى التخرّج", others: "❌" },
+  { feature: "محاضرون معتمدون من خبراء الجودة", others: "أحيانًا" },
   { feature: "تسجيلات متاحة ١٢ شهرًا", others: "❌" },
-  { feature: "بنك أسئلة شامل ومحدّث", others: "أحيانًا" },
-  { feature: "مشاريع عملية وتطبيقية", others: "❌" },
+  { feature: "مشاريع عملية تحاكي بيئة العمل", others: "❌" },
   { feature: "مجتمع خريجين وتواصل مستمر", others: "❌" },
+];
+
+// Point 2 — "Why healthcare quality?" (sell the field before the provider).
+const WHY_FIELD = [
+  { icon: TrendingUp, title: "من أكثر التخصصات طلبًا", body: "الطلب على متخصصي الجودة في تزايد مع توسّع الاعتماد ومعايير سلامة المرضى." },
+  { icon: Building2, title: "مطلوب في المستشفيات الخاصة والحكومية", body: "كل منشأة تسعى للاعتماد تحتاج كوادر جودة مؤهّلة — فرصك ليست محصورة في جهة واحدة." },
+  { icon: Layers, title: "يفتح أمامك مجالات وأدوارًا جديدة", body: "من التمريض أو الصيدلة أو الإدارة إلى أدوار الجودة والاعتماد وتحسين العمليات." },
+  { icon: Briefcase, title: "يعزّز فرص الترقّي المهني", body: "مؤهّل معتمد يميّزك أمام مديرك وعند التقديم على الأدوار القيادية في الجودة." },
+];
+
+// Point 4 — pain points from the ad, mirrored on the page → then "the solution".
+const PAINS = [
+  "شغّال في مستشفى وعايز تطوّر مسارك المهني؟",
+  "عايز تتحوّل لمجال الجودة الصحية بخطوة واضحة؟",
+  "مش عارف تبدأ منين ولا إيه أول خطوة؟",
+  "محتاج شهادة قوية معتمدة تفرق في سيرتك الذاتية؟",
+  "بتقدّم على وظائف والردود قليلة أو مفيش؟",
 ];
 
 // Student video testimonials. Each keeps its natural orientation — set
@@ -173,11 +200,14 @@ export default async function QualityDiplomaMixPage({ params }: { params: Promis
             <span className="inline-flex items-center gap-2 rounded-full bg-[#f4c430] px-3 py-1 text-xs font-bold text-[#051a4a] shadow">
               <CalendarDays className="size-3.5" /> الدفعة القادمة تبدأ ١٨ يوليو ٢٠٢٦ · المقاعد المتاحة 7 من 30
             </span>
-            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl lg:text-[2.35rem] lg:leading-tight">
-              احصل علي <span className="text-[#f4c430]">الدبلوم المهني في الجودة الصحية</span> باعتماد المعهد الأمريكي للرعاية الصحية وإدارة المستشفيات — AIHCM
+            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl lg:text-[2.4rem] lg:leading-tight">
+              جهّز نفسك لـ <span className="text-[#f4c430]">وظائف الجودة الصحية</span> في المستشفيات وابدأ مسارك بثقة
             </h1>
-            <p className="max-w-xl text-lg leading-relaxed text-white/80">
-              برنامج تدريبي شامل يؤهّلك لاجتياز امتحان CPHQ — الذي تمنح شهادته NAHQ الأمريكية — من أول مرة، مع محاضرين معتمدين ودعم مستمر حتى الامتحان.
+            <p className="text-lg font-bold leading-relaxed text-white sm:text-xl">
+              الدبلوم المهني في الجودة الصحية من IMETS — باعتماد المعهد الأمريكي للرعاية الصحية وإدارة المستشفيات (AIHCM).
+            </p>
+            <p className="max-w-xl leading-relaxed text-white/75">
+              برنامج تدريبي عملي يؤهّلك للعمل في الجودة الصحية والاعتماد وسلامة المرضى — بمحاضرين خبراء ومشاريع تطبيقية ودعم مستمر حتى التخرّج.
             </p>
             <div className="flex flex-wrap gap-3">
               <LeadFormModal
@@ -215,12 +245,62 @@ export default async function QualityDiplomaMixPage({ params }: { params: Promis
         </div>
       </section>
 
+      {/* Is this diploma for you? — right after the hero to cut hesitation fast */}
+      <section className="border-b border-blue-100 bg-blue-50/50">
+        <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-extrabold tracking-tight text-[#0a2f7a]">هل الدبلوم ده مناسب ليك؟</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-slate-600">لو أنت من أيٍّ من هؤلاء، فالدبلوم مصمَّم لك.</p>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {AUDIENCE.map((a) => (
+              <div key={a} className="inline-flex items-center gap-2.5 rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-[#0a2f7a]">
+                <CheckCircle2 className="size-5 shrink-0 text-[#0b3fa8]" /> {a}
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <a href="#apply" className={cn(BTN, GOLD_CTA)}>ينطبق عليّ — احجز مكاني <ChevronLeft className="size-4" /></a>
+          </div>
+        </div>
+      </section>
+
+      {/* Limited-time discount — kept right under the hero so the offer is seen early */}
+      <div className="bg-gradient-to-b from-white to-blue-50/60 py-8 sm:py-10">
+        <DiscountCountdown lang="en" hours={7} storageKey="quality_diploma_offer_deadline" showPrice={false} ctaHref="#apply" />
+      </div>
+
+      {/* Pain → solution — mirror the ad's problem, then present the fix */}
+      <section className="border-y border-blue-100 bg-white">
+        <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-extrabold tracking-tight text-[#0a2f7a]">هل ده بينطبق عليك؟</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-slate-600">لو جاوبت بنعم على أيٍّ منها، فأنت في المكان الصحيح.</p>
+          <div className="mx-auto mt-8 grid max-w-2xl gap-3">
+            {PAINS.map((p) => (
+              <div key={p} className="flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-[15px] font-semibold text-[#0a2f7a]">
+                <CheckCircle2 className="size-5 shrink-0 text-[#0b3fa8]" /> {p}
+              </div>
+            ))}
+          </div>
+          <div className={cn("mx-auto mt-8 max-w-2xl rounded-2xl p-6 text-center text-white shadow-lg", BLUE_GRAD)}>
+            <p className="text-sm font-semibold text-[#f4c430]">الحل</p>
+            <p className="mt-1 text-xl font-extrabold sm:text-2xl">الدبلوم المهني في الجودة الصحية من IMETS</p>
+            <p className="mt-2 text-white/80">خطوة واضحة تبدأ بها مسارك في الجودة الصحية — بمنهج عملي ودعم حتى التخرّج.</p>
+            <div className="mt-5 flex justify-center">
+              <LeadFormModal
+                path={trackPath} courseName={COURSE} webhookUrl={WEBHOOK}
+                triggerClassName={cn(BTN, GOLD_CTA)}
+                triggerLabel={<>ابدأ الآن <ChevronLeft className="size-4" /></>}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Outcomes — sell the result, not the course */}
       <section className="border-b border-blue-100 bg-gradient-to-b from-blue-50/80 to-white">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="mx-auto mb-8 max-w-2xl text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-[#0a2f7a]">ماذا ستحصل بعد اجتياز CPHQ؟</h2>
-            <p className="mt-3 text-slate-600">الكورس وسيلة — والنتيجة هي ما يهمّك. إليك ما تفتحه لك شهادة CPHQ فعليًا.</p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0a2f7a]">ماذا ستحصل بعد الدبلوم؟</h2>
+            <p className="mt-3 text-slate-600">البرنامج وسيلة — والنتيجة هي ما يهمّك. إليك ما يفتحه لك الدبلوم المهني فعليًا.</p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {OUTCOMES.map((o) => (
@@ -243,16 +323,11 @@ export default async function QualityDiplomaMixPage({ params }: { params: Promis
         </div>
       </section>
 
-      {/* Limited-time 50% discount + countdown */}
-      <div className="bg-gradient-to-b from-white to-blue-50/60 py-10 sm:py-14">
-        <DiscountCountdown lang="en" hours={7} storageKey="quality_diploma_offer_deadline" showPrice={false} ctaHref="#apply" />
-      </div>
-
       {/* Features */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto mb-10 max-w-2xl text-center">
           <h2 className="text-3xl font-extrabold tracking-tight text-[#0a2f7a]">مميزات الدبلومة كاملة</h2>
-          <p className="mt-3 text-slate-600">كل ما تحتاجه لاجتياز CPHQ بثقة — في برنامج واحد.</p>
+          <p className="mt-3 text-slate-600">كل ما تحتاجه لتحترف الجودة الصحية وتجهّز نفسك لسوق العمل — في برنامج واحد.</p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
@@ -263,19 +338,29 @@ export default async function QualityDiplomaMixPage({ params }: { params: Promis
             </div>
           ))}
         </div>
+        <div className="mt-10 text-center">
+          <a href="#apply" className={cn(BTN, GOLD_CTA)}>احجز مكانك في الدبلوم <ChevronLeft className="size-4" /></a>
+        </div>
       </section>
 
-      {/* Is this course right for you? — objection handling */}
-      <section className="border-b border-blue-100 bg-blue-50/50">
-        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <h2 className="text-center text-3xl font-extrabold tracking-tight text-[#0a2f7a]">هل الكورس مناسب لك؟</h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-slate-600">إذا كنت من أيٍّ من هؤلاء، فالبرنامج مصمَّم لك.</p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {AUDIENCE.map((a) => (
-              <div key={a} className="inline-flex items-center gap-2.5 rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm font-semibold text-[#0a2f7a]">
-                <CheckCircle2 className="size-5 shrink-0 text-[#0b3fa8]" /> {a}
+      {/* Why healthcare quality — sell the field before the provider */}
+      <section className="border-y border-blue-100 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-8 max-w-2xl text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0a2f7a]">لماذا الجودة الصحية؟</h2>
+            <p className="mt-3 text-slate-600">قبل أن تختار المعهد، اعرف لماذا يستحق هذا المجال استثمار وقتك.</p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {WHY_FIELD.map((w) => (
+              <div key={w.title} className="rounded-2xl border border-blue-100 bg-blue-50/40 p-6 text-center shadow-sm transition hover:border-[#0b3fa8]/30 hover:shadow-md">
+                <span className={cn("mx-auto grid size-12 place-items-center rounded-xl", BLUE_ICON)}><w.icon className="size-6" /></span>
+                <h3 className="mt-4 font-bold text-[#0a2f7a]">{w.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{w.body}</p>
               </div>
             ))}
+          </div>
+          <div className="mt-10 text-center">
+            <a href="#apply" className={cn(BTN, GOLD_CTA)}>ابدأ مسارك في الجودة الصحية <ChevronLeft className="size-4" /></a>
           </div>
         </div>
       </section>
@@ -321,6 +406,9 @@ export default async function QualityDiplomaMixPage({ params }: { params: Promis
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="mt-8 text-center">
+          <a href="#apply" className={cn(BTN, GOLD_CTA)}>سجّل الآن في IMETS <ChevronLeft className="size-4" /></a>
         </div>
       </section>
 
@@ -462,6 +550,23 @@ export default async function QualityDiplomaMixPage({ params }: { params: Promis
         </div>
       </section>
 
+      {/* What you get after signing up — reassurance right before the form */}
+      <section dir="rtl" className="bg-white">
+        <div className="mx-auto max-w-4xl px-4 pt-16 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-extrabold tracking-tight text-[#0a2f7a]">ماذا ستحصل فور تسجيلك؟</h2>
+          <div className="mx-auto mt-8 grid max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {POST_SIGNUP.map((item) => (
+              <div key={item} className="flex items-center gap-2.5 rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm font-semibold text-[#0a2f7a]">
+                <CheckCircle2 className="size-5 shrink-0 text-[#0b3fa8]" /> {item}
+              </div>
+            ))}
+          </div>
+          <p className="mt-8 text-center text-lg font-extrabold text-[#0a2f7a]">
+            احجز مكانك الآن لتكون من <span className="text-[#0b3fa8]">دفعة يوليو</span> — المقاعد محدودة.
+          </p>
+        </div>
+      </section>
+
       {/* Urgency + contact — right above the form */}
       <section dir="rtl" className="bg-white">
         <div className="mx-auto max-w-5xl px-4 pt-14 sm:px-6 lg:px-8">
@@ -507,11 +612,17 @@ export default async function QualityDiplomaMixPage({ params }: { params: Promis
         </div>
       </section>
 
-      {/* Sticky mobile CTA — opens the form modal */}
-      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-slate-200 bg-white/95 p-3 backdrop-blur lg:hidden">
+      {/* Sticky mobile bar — call · whatsapp · book */}
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-slate-200 bg-white/95 p-2.5 backdrop-blur lg:hidden">
+        <a href={`tel:+${WA}`} title="اتصال" className="grid size-11 shrink-0 place-items-center rounded-xl border border-blue-200 text-[#0b3fa8]">
+          <Phone className="size-5" />
+        </a>
+        <a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer" title="واتساب" className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#25D366] text-white">
+          <MessageCircle className="size-5" />
+        </a>
         <LeadFormModal
           path={trackPath} courseName={COURSE} webhookUrl={WEBHOOK}
-          triggerClassName={cn(BTN, GOLD_CTA, "w-full flex-1")}
+          triggerClassName={cn(BTN, GOLD_CTA, "flex-1")}
           triggerLabel={<>احجز الآن <ChevronLeft className="size-4" /></>}
         />
       </div>

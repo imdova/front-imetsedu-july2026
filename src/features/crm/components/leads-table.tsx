@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { getLeadColumns } from "./lead-columns";
+import { ImportLeadsDialog } from "./import-leads-dialog";
 
 type Option = { value: string; label: string };
 
@@ -283,12 +284,16 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
             </button>
           ))}
         </div>
-        {canExport && (
-          <Button variant="outline" size="sm" className="mb-1 gap-1.5" onClick={onExport} disabled={exporting}>
-            <Download className="size-4" />
-            {t("exportData")}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Super-admins can bulk-import leads from an Excel sheet. */}
+          {!isStaff && <ImportLeadsDialog counselors={counselors} onImported={load} />}
+          {canExport && (
+            <Button variant="outline" size="sm" className="mb-1 gap-1.5" onClick={onExport} disabled={exporting}>
+              <Download className="size-4" />
+              {t("exportData")}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Date-range chips */}

@@ -162,6 +162,39 @@ export const createLead = async (
   }
 };
 
+export interface BulkCreateLeadsResult {
+  created: number;
+  duplicates: number;
+  failed: { phone: string; error: string }[];
+}
+
+/** LIVE: create many leads (POST /crm/leads per row, mirrors bulkDeleteLeads).
+ * Runs in small concurrent batches. Duplicate-phone conflicts are counted
+ * separately (the backend 409s on an existing phone/email) rather than failing
+ * the whole import. Used by the Excel importer. */
+export const bulkCreateLeads = async (
+  inputs: db.CreateLeadInput[],
+): Promise<Result<BulkCreateLeadsResult>> => {
+  const out: BulkCreateLeadsResult = { created: 0, duplicates: 0, failed: [] };
+  const CHUNK = 8;
+  for (let i = 0; i < inputs.length; i += CHUNK) {
+    const batch = inputs.slice(i, i + CHUNK);
+    const settled = await Promise.all(
+      batch.map((input) => createLead(input).then((res) => ({ input, res }))),
+    );
+    for (const { input, res } of settled) {
+      if (res.ok) {
+        out.created += 1;
+      } else if (/exist|duplicate|conflict|409/i.test(res.error)) {
+        out.duplicates += 1;
+      } else {
+        out.failed.push({ phone: input.phone, error: res.error });
+      }
+    }
+  }
+  return ok(out);
+};
+
 /** LIVE: full edit of a lead's fields via PATCH /crm/leads/:id (UpdateLeadDto is
  * a partial of CreateLeadDto, so the same field mapping applies). */
 export const updateLead = async (
