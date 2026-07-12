@@ -8,13 +8,17 @@ export default async function AdminUsersPage({ params }: { params: Promise<{ loc
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [usersRes, invitesRes] = await Promise.all([
+  const [usersRes, invitesRes, rolesRes, deptsRes] = await Promise.all([
     dal.userManagement.fetchUmUsers(),
     dal.userManagement.fetchUmInvitations(),
+    dal.userManagement.fetchUmRoles(),
+    dal.userManagement.fetchUmDepartments(),
   ]);
 
   const rawUsers = usersRes.ok ? usersRes.data : [];
   const invitations = invitesRes.ok ? invitesRes.data : [];
+  const roles = rolesRes.ok ? rolesRes.data : [];
+  const departments = deptsRes.ok ? deptsRes.data : [];
 
   const pendingInvitations = invitations.filter((i) => i.status === "pending");
 
@@ -48,7 +52,7 @@ export default async function AdminUsersPage({ params }: { params: Promise<{ loc
 
   return (
     <div className="mx-auto max-w-375">
-      <UsersWorkspace users={allUsers} stats={stats} />
+      <UsersWorkspace users={allUsers} stats={stats} roles={roles} departments={departments} />
     </div>
   );
 }

@@ -42,7 +42,23 @@ export const DEFAULT_FULL_SETTINGS: FullSiteSettings = {
 
 /** Admin GET — full settings incl. the CAPI token. */
 export const fetchFullSettings = () => ssSvc.getAdminSettings();
-/** Admin PATCH — deep-merge a partial patch (per group, server-side). */
-export const updateFullSettings = (patch: SiteSettingsPatch) => ssSvc.updateSettings(patch);
+
+/** The 8 settings groups the backend DTO accepts. */
+const SETTINGS_GROUPS: (keyof FullSiteSettings)[] = [
+  "general", "branding", "theme", "contact", "social", "integrations", "features", "maintenance",
+];
+
+/** Admin PATCH — deep-merge a partial patch (per group, server-side).
+ * The admin GET returns a Mongo document (`_id`, `__v`, `createdAt`, `updatedAt`)
+ * and the editor echoes the whole object back on save; strip everything except
+ * the 8 known groups so the strict (`forbidNonWhitelisted`) backend DTO doesn't
+ * 400 on those extra top-level keys. */
+export const updateFullSettings = (patch: SiteSettingsPatch) => {
+  const clean: Record<string, unknown> = {};
+  for (const g of SETTINGS_GROUPS) {
+    if (patch[g] !== undefined) clean[g] = patch[g];
+  }
+  return ssSvc.updateSettings(clean as SiteSettingsPatch);
+};
 /** Public GET — settings minus the CAPI token (cached). */
 export const fetchPublicSettings = () => ssSvc.getPublicSettings();

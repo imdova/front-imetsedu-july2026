@@ -40,14 +40,37 @@ async function wrap<T>(fn: () => Promise<T>, msg: string): Promise<Result<T>> {
   }
 }
 
+const digitsOf = (s?: string) => (s ?? "").replace(/\D/g, "");
+
+/** A search term is a phone lookup when it's only phone characters with ≥6 digits. */
+const isPhoneSearch = (s?: string) =>
+  !!s && /^[+\d()\s-]+$/.test(s.trim()) && digitsOf(s).length >= 6;
+
+/** Match a lead's phone / WhatsApp against a digits-only query in any common
+ * format: local (01220717190), international (201220717190) or bare (1220717190).
+ * The backend regex is format-sensitive, so this runs client-side after fetch. */
+function leadPhoneMatches(queryDigits: string, lead: db.Lead): boolean {
+  if (!queryDigits) return false;
+  const cc = digitsOf(lead.phoneCountryCode);
+  for (const n of [digitsOf(lead.phone), digitsOf(lead.whatsApp)]) {
+    if (!n) continue;
+    const candidates = [n, cc + n, "0" + n, cc + "0" + n];
+    if (candidates.some((c) => c.includes(queryDigits) || queryDigits.includes(c))) return true;
+  }
+  return false;
+}
+
 /** LIVE: leads from GET /crm/leads. Server-supported filters (search, stage,
  * priority, source, counselor, pipeline, dateRange) are pushed to the API per
  * the backend QueryLeadDto; specialty / country / course are filtered client-side
  * since the backend has no query support for them. */
 export const fetchLeads = async (filters: db.LeadFilters = {}): Promise<Result<db.Lead[]>> => {
   const f = (v?: string) => (v && v !== "all" ? v : undefined);
+  // Phone lookups are matched client-side (any format), so keep the raw phone
+  // out of the backend's format-sensitive regex search.
+  const phoneSearch = isPhoneSearch(filters.search) ? digitsOf(filters.search) : "";
   const query = {
-    search: f(filters.search),
+    search: phoneSearch ? undefined : f(filters.search),
     stage: filters.stage && filters.stage !== "all" ? (REVERSE_STAGE[filters.stage] ?? filters.stage) : undefined,
     priority: f(filters.priority),
     counselor: f(filters.counselorId),
@@ -77,6 +100,7 @@ export const fetchLeads = async (filters: db.LeadFilters = {}): Promise<Result<d
     if (f(filters.specialty)) rows = rows.filter((r) => eq(r.specialty, filters.specialty));
     if (f(filters.country)) rows = rows.filter((r) => eq(r.country, filters.country));
     if (f(filters.courseId)) rows = rows.filter((r) => r.coursesOfInterest.includes(filters.courseId!));
+    if (phoneSearch) rows = rows.filter((r) => leadPhoneMatches(phoneSearch, r));
     return ok(rows);
   } catch (err) {
     return fail(toMessage(err, "Failed to map leads"));

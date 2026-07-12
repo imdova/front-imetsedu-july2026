@@ -79,6 +79,24 @@ export const deactivateUmUser = (id: string): Promise<Result<void>> =>
 export const deleteUmUser = (id: string): Promise<Result<void>> =>
   api.delete<void>(`/user-management/staff/${id}`);
 
+/** LIVE: edit a staff member's profile and/or reassign role/department
+ * (PATCH /user-management/staff/:id). Returns the re-mapped user. */
+export const updateUmUser = async (
+  id: string,
+  patch: {
+    name?: string; email?: string; number?: string;
+    professionalTitle?: string; staffRole?: string; department?: string;
+  },
+): Promise<Result<UmUser>> => {
+  const res = await api.patch<unknown>(`/user-management/staff/${id}`, patch);
+  if (!res.ok) return res;
+  try {
+    return ok(mapStaff(one<any>(res.data)));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to update user"));
+  }
+};
+
 /* ───────────────────────── Departments ───────────────────────── */
 
 /** LIVE: departments from GET /user-management/departments. */

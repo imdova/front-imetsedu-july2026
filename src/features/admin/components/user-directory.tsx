@@ -4,17 +4,24 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
   Users, CheckCircle2, Mail, Search, Columns3, RefreshCw, Download, ShieldCheck,
-  UserPlus, MoreHorizontal, Eye, Pencil, Send, Ban, Trash2,
+  UserPlus, MoreHorizontal, Eye, Pencil, Send, Ban, Trash2, UserCog, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { UmUser, UmStats, UmUserStatus } from "@/lib/db/user-management";
+import type { UmUser, UmStats, UmUserStatus, UmRole, UmDepartment } from "@/lib/db/user-management";
 import { useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -50,22 +57,85 @@ function Kpi({ label, value, sub, subTone, icon, tone }: {
   );
 }
 
-export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStats }) {
+export function UserDirectory({
+  users, stats, roles = [], departments = [],
+}: {
+  users: UmUser[]; stats: UmStats; roles?: UmRole[]; departments?: UmDepartment[];
+}) {
   const t = useTranslations("Admin");
   const router = useRouter();
   const [list, setList] = React.useState<UmUser[]>(users);
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<"all" | UmUserStatus>("all");
+  const [roleFilter, setRoleFilter] = React.useState("all");
+  const [deptFilter, setDeptFilter] = React.useState("all");
   const [page, setPage] = React.useState(0);
+
+  // Edit-profile + change-role dialogs
+  const [editUser, setEditUser] = React.useState<UmUser | null>(null);
+  const [editForm, setEditForm] = React.useState({ name: "", title: "", phone: "" });
+  const [roleUser, setRoleUser] = React.useState<UmUser | null>(null);
+  const [roleForm, setRoleForm] = React.useState({ staffRole: "", department: "" });
+  const [busy, setBusy] = React.useState(false);
+
+  const openEdit = (u: UmUser) => {
+    setEditUser(u);
+    setEditForm({ name: u.name, title: u.title === "—" ? "" : u.title, phone: u.phone ?? "" });
+  };
+  const saveEdit = async () => {
+    if (!editUser || !editForm.name.trim()) return;
+    setBusy(true);
+    const res = await dal.userManagement.updateUmUser(editUser.id, {
+      name: editForm.name.trim(),
+      professionalTitle: editForm.title.trim(),
+      number: editForm.phone.trim(),
+    });
+    setBusy(false);
+    if (res.ok) {
+      const id = editUser.id;
+      setList((p) => p.map((x) => (x.id === id
+        ? { ...x, name: editForm.name.trim(), title: editForm.title.trim() || x.title, phone: editForm.phone.trim(), initials: res.data.initials }
+        : x)));
+      setEditUser(null);
+      toast.success(t("umActionEditSaved"));
+    } else toast.error(res.error);
+  };
+
+  const openRole = (u: UmUser) => {
+    setRoleUser(u);
+    setRoleForm({
+      staffRole: roles.find((r) => r.name === u.role)?.id ?? "",
+      department: departments.find((d) => d.name === u.department)?.id ?? "",
+    });
+  };
+  const saveRole = async () => {
+    if (!roleUser || !roleForm.staffRole) return;
+    setBusy(true);
+    const res = await dal.userManagement.updateUmUser(roleUser.id, {
+      staffRole: roleForm.staffRole,
+      ...(roleForm.department ? { department: roleForm.department } : {}),
+    });
+    setBusy(false);
+    if (res.ok) {
+      const id = roleUser.id;
+      const roleName = roles.find((r) => r.id === roleForm.staffRole)?.name ?? res.data.role;
+      const deptName = departments.find((d) => d.id === roleForm.department)?.name ?? res.data.department;
+      setList((p) => p.map((x) => (x.id === id ? { ...x, role: roleName, department: deptName } : x)));
+      setRoleUser(null);
+      toast.success(t("umActionRoleChanged"));
+    } else toast.error(res.error);
+  };
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
     return list.filter((u) => {
       if (status !== "all" && u.status !== status) return false;
+      if (roleFilter !== "all" && u.role !== roleFilter) return false;
+      if (deptFilter !== "all" && u.department !== deptFilter) return false;
       if (!q) return true;
       return [u.name, u.email, u.title, u.role, u.department].some((f) => f.toLowerCase().includes(q));
     });
-  }, [list, search, status]);
+  }, [list, search, status, roleFilter, deptFilter]);
 
   const view = (u: UmUser) => router.push(`/admin/users/${u.id}`);
 
@@ -87,6 +157,29 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
       ? await dal.userManagement.deactivateUmUser(u.id)
       : await dal.userManagement.activateUmUser(u.id);
     if (res.ok) toast.success(suspend ? t("umActionSuspend") : t("umActionActivate"));
+    else { setList(prev); toast.error(res.error); }
+  };
+
+  /** Reassign a staff member's role directly from the Role column. */
+  const changeRole = async (u: UmUser, roleId: string) => {
+    const role = roles.find((r) => r.id === roleId);
+    if (!role || role.name === u.role) return;
+    const prev = list;
+    setList((p) => p.map((x) => (x.id === u.id ? { ...x, role: role.name } : x)));
+    const res = await dal.userManagement.updateUmUser(u.id, { staffRole: roleId });
+    if (res.ok) toast.success(t("umActionRoleChanged"));
+    else { setList(prev); toast.error(res.error); }
+  };
+
+  /** Set a staff member's status directly from the Status column. */
+  const changeStatus = async (u: UmUser, next: "active" | "suspended") => {
+    if (next === u.status) return;
+    const prev = list;
+    setStatusOf(u.id, next);
+    const res = next === "suspended"
+      ? await dal.userManagement.deactivateUmUser(u.id)
+      : await dal.userManagement.activateUmUser(u.id);
+    if (res.ok) toast.success(next === "suspended" ? t("umActionSuspend") : t("umActionActivate"));
     else { setList(prev); toast.error(res.error); }
   };
 
@@ -189,9 +282,23 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
             <Input value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }}
               placeholder={t("umSearch")} className="ps-9" />
           </div>
+          <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder={t("umColRole")} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("umAllRoles")}</SelectItem>
+              {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={deptFilter} onValueChange={(v) => { setDeptFilter(v); setPage(0); }}>
+            <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder={t("umColDepartment")} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("umAllDepartments")}</SelectItem>
+              {departments.map((d) => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-2">
             <Button variant="outline" className="gap-2"><Columns3 className="size-4" />{t("umColumns")}</Button>
-            <Button variant="outline" size="icon" aria-label={t("umRefresh")} onClick={() => { setSearch(""); setStatus("all"); setPage(0); toast.success(t("umRefresh")); }}>
+            <Button variant="outline" size="icon" aria-label={t("umRefresh")} onClick={() => { setSearch(""); setStatus("all"); setRoleFilter("all"); setDeptFilter("all"); setPage(0); toast.success(t("umRefresh")); }}>
               <RefreshCw className="size-4" />
             </Button>
             <Button variant="outline" size="icon" aria-label={t("umExport")} onClick={exportCsv}>
@@ -210,7 +317,7 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
                 <th className="px-4 py-3 text-start">{t("umColTitle")}</th>
                 <th className="px-4 py-3 text-start">{t("umColRole")}</th>
                 <th className="px-4 py-3 text-start">{t("umColDepartment")}</th>
-                <th className="px-4 py-3 text-start">{t("umColExpires")}</th>
+                <th className="px-4 py-3 text-start">{t("umColCreated")}</th>
                 <th className="px-4 py-3 text-start">{t("umColStatus")}</th>
                 <th className="px-4 py-3 text-end">{t("umColActions")}</th>
               </tr>
@@ -231,10 +338,51 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                     <td className="px-4 py-3 text-muted-foreground">{u.title}</td>
-                    <td className="px-4 py-3">{u.role}</td>
+                    <td className="px-4 py-3">
+                      {u.status === "pending" || roles.length === 0 ? (
+                        u.role
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button type="button" className="inline-flex items-center gap-1 rounded-md text-start hover:opacity-80">
+                              {u.role}
+                              <ChevronDown className="size-3.5 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                            {roles.map((r) => (
+                              <DropdownMenuItem key={r.id} onClick={() => changeRole(u, r.id)} disabled={r.name === u.role}>
+                                <ShieldCheck className="size-4" />{r.name}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{u.department}</td>
-                    <td className="px-4 py-3 tabular-nums text-muted-foreground">{u.expiresAt ?? t("umNever")}</td>
-                    <td className="px-4 py-3"><StatusPill status={u.status} label={statusLabel(u.status)} /></td>
+                    <td className="px-4 py-3 tabular-nums text-muted-foreground">{u.acceptedAt ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      {u.status === "pending" ? (
+                        <StatusPill status={u.status} label={statusLabel(u.status)} />
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button type="button" className="inline-flex items-center gap-1 rounded-md hover:opacity-80">
+                              <StatusPill status={u.status} label={statusLabel(u.status)} />
+                              <ChevronDown className="size-3.5 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuItem onClick={() => changeStatus(u, "active")} disabled={u.status === "active"}>
+                              <CheckCircle2 className="size-4 text-success" />{t("umStActive")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => changeStatus(u, "suspended")} disabled={u.status === "suspended"}>
+                              <Ban className="size-4 text-destructive" />{t("umStSuspended")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-end">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -242,7 +390,12 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => view(u)}><Eye className="size-4" />{t("umActionView")}</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => view(u)}><Pencil className="size-4" />{t("umActionEdit")}</DropdownMenuItem>
+                          {u.status !== "pending" && (
+                            <>
+                              <DropdownMenuItem onClick={() => openEdit(u)}><Pencil className="size-4" />{t("umActionEdit")}</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openRole(u)}><UserCog className="size-4" />{t("umChangeRole")}</DropdownMenuItem>
+                            </>
+                          )}
                           {u.status === "pending" && (
                             <DropdownMenuItem onClick={() => resend(u)}><Send className="size-4" />{t("umActionResend")}</DropdownMenuItem>
                           )}
@@ -275,6 +428,62 @@ export function UserDirectory({ users, stats }: { users: UmUser[]; stats: UmStat
           </div>
         </div>
       </div>
+
+      {/* Edit profile */}
+      <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t("umEditUser")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t("umFieldName")}</Label>
+              <Input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("umColTitle")}</Label>
+              <Input value={editForm.title} onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))} placeholder="e.g. Sales Manager" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("umFieldPhone")}</Label>
+              <Input value={editForm.phone} onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))} dir="ltr" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditUser(null)}>{t("umCancel")}</Button>
+            <Button onClick={saveEdit} disabled={!editForm.name.trim() || busy}>{t("umSaveChanges")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change role */}
+      <Dialog open={!!roleUser} onOpenChange={(o) => { if (!o) setRoleUser(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t("umChangeRole")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t("umColRole")}</Label>
+              {roles.length === 0 ? (
+                <Input disabled value={t("umNoRoles")} className="text-muted-foreground" />
+              ) : (
+                <Select value={roleForm.staffRole || undefined} onValueChange={(v) => setRoleForm((f) => ({ ...f, staffRole: v }))}>
+                  <SelectTrigger className="w-full"><SelectValue placeholder={t("umSelectRole")} /></SelectTrigger>
+                  <SelectContent>{roles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("umColDepartment")}</Label>
+              <Select value={roleForm.department || undefined} onValueChange={(v) => setRoleForm((f) => ({ ...f, department: v }))}>
+                <SelectTrigger className="w-full"><SelectValue placeholder={t("umSelectDepartment")} /></SelectTrigger>
+                <SelectContent>{departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRoleUser(null)}>{t("umCancel")}</Button>
+            <Button onClick={saveRole} disabled={!roleForm.staffRole || busy}>{t("umSaveChanges")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

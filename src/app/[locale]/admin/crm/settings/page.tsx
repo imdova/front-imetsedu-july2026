@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { CrmVariables } from "@/features/crm/components/crm-variables";
+import { CrmSettingsTabs } from "@/features/crm/components/crm-settings-tabs";
 
 export default async function AdminCrmSettingsPage({
   params,
@@ -15,7 +15,7 @@ export default async function AdminCrmSettingsPage({
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
       <PageHeader title={t("crmSettingsTitle")} description={t("crmSettingsSubtitle")} />
-      <CrmVariables />
+      <CrmSettingsTabs />
     </div>
   );
 }

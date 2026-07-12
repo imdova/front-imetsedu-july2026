@@ -31,7 +31,8 @@ import * as messageTemplates from "./message-templates";
 import * as pricing from "./pricing";
 import * as paymentMethods from "./payment-methods";
 import * as registrationSheets from "./registration-sheets";
+import * as commission from "./commission";
 
-export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog, messageTemplates, pricing, paymentMethods, registrationSheets };
+export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog, messageTemplates, pricing, paymentMethods, registrationSheets, commission };
 
 export type { Result } from "@integration/lib/api-client";

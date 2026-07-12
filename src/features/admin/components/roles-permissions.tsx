@@ -8,13 +8,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { UmRole, UmDepartment, UmCategory, UmRisk } from "@/lib/db/user-management";
+import type { UmRole, UmDepartment, UmCategory, UmRisk, UmUser, UmUserStatus } from "@/lib/db/user-management";
 import { TOTAL_PERMISSIONS } from "@/lib/db/user-management";
 import { useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +39,9 @@ const RISK_DOT: Record<UmRisk, string> = {
 };
 
 export function RolesPermissions({
-  roles: initialRoles, departments: initialDepts, registry,
+  roles: initialRoles, departments: initialDepts, registry, users = [],
 }: {
-  roles: UmRole[]; departments: UmDepartment[]; registry: UmCategory[];
+  roles: UmRole[]; departments: UmDepartment[]; registry: UmCategory[]; users?: UmUser[];
 }) {
   const t = useTranslations("Admin");
   const [tab, setTab] = React.useState<"roles" | "departments">("roles");
@@ -59,14 +60,14 @@ export function RolesPermissions({
       </div>
 
       {tab === "roles"
-        ? <RolesPanel initialRoles={initialRoles} registry={registry} departments={initialDepts} />
+        ? <RolesPanel initialRoles={initialRoles} registry={registry} departments={initialDepts} users={users} />
         : <DepartmentsPanel initialDepts={initialDepts} />}
     </div>
   );
 }
 
 /* ────────────────────────────── Roles panel ──────────────────────────────── */
-function RolesPanel({ initialRoles, registry, departments }: { initialRoles: UmRole[]; registry: UmCategory[]; departments: UmDepartment[] }) {
+function RolesPanel({ initialRoles, registry, departments, users }: { initialRoles: UmRole[]; registry: UmCategory[]; departments: UmDepartment[]; users: UmUser[] }) {
   const t = useTranslations("Admin");
   const [roles, setRoles] = React.useState(initialRoles);
   const [search, setSearch] = React.useState("");
@@ -77,7 +78,63 @@ function RolesPanel({ initialRoles, registry, departments }: { initialRoles: UmR
   const [newRoleDept, setNewRoleDept] = React.useState(departments[0]?.id ?? "");
   const [busy, setBusy] = React.useState(false);
 
+  // Edit-role (metadata) dialog
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [editName, setEditName] = React.useState("");
+  const [editDept, setEditDept] = React.useState("");
+  const [editDesc, setEditDesc] = React.useState("");
+
+  // Staff list (kept in state so it can be re-fetched after a role rename).
+  const [userList, setUserList] = React.useState(users);
+  // Sub-tab inside the role detail view.
+  const [roleTab, setRoleTab] = React.useState<"permissions" | "users">("permissions");
+
   const selected = roles.find((r) => r.id === selectedId) ?? null;
+  // Live user counts per role, derived from the staff list (the role's own
+  // `users` field is not populated by the backend). Matched by role name — the
+  // same key the "Users with this role" table uses, so they always agree.
+  const userCountByRole = React.useMemo(() => {
+    const m = new Map<string, number>();
+    for (const u of userList) m.set(u.role, (m.get(u.role) ?? 0) + 1);
+    return m;
+  }, [userList]);
+  const countFor = (name: string) => userCountByRole.get(name) ?? 0;
+  // Users assigned to the selected role (matched by role name).
+  const roleUsers = React.useMemo(
+    () => (selected ? userList.filter((u) => u.role === selected.name) : []),
+    [userList, selected],
+  );
+
+  const openEdit = () => {
+    if (!selected) return;
+    setEditName(selected.name);
+    setEditDept(selected.departmentId ?? "");
+    setEditDesc(selected.description ?? "");
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!selected || !editName.trim()) return;
+    setBusy(true);
+    const res = await dal.userManagement.saveUmRole({
+      id: selected.id,
+      granted: [...granted],
+      name: editName.trim(),
+      ...(editDept ? { department: editDept } : {}),
+      description: editDesc.trim(),
+    });
+    setBusy(false);
+    if (res.ok) {
+      setRoles((prev) => prev.map((r) => (r.id === res.data.id ? res.data : r)));
+      setEditOpen(false);
+      toast.success(t("umRoleUpdated"));
+      // A rename changes the title carried on each staff record — refresh so the
+      // "Users with this role" table reconciles without a page reload.
+      dal.userManagement.fetchUmUsers().then((u) => { if (u.ok) setUserList(u.data); });
+    } else {
+      toast.error(res.error);
+    }
+  };
 
   const selectRole = (id: string) => {
     const r = roles.find((x) => x.id === id);
@@ -214,7 +271,7 @@ function RolesPanel({ initialRoles, registry, departments }: { initialRoles: UmR
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{r.name}</p>
                 <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  {t("umRoleUsers", { n: r.users })}
+                  {t("umRoleUsers", { n: countFor(r.name) })}
                   <span className={cn("size-1.5 rounded-full", RISK_DOT[r.risk])} />{riskLabel(r.risk)}
                 </p>
               </div>
@@ -238,7 +295,7 @@ function RolesPanel({ initialRoles, registry, departments }: { initialRoles: UmR
                 <div>
                   <h2 className="text-lg font-semibold">{selected.name}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {t("umRoleHeaderSub", { role: selected.custom ? t("umCustomRole") : t("umBuiltinRole"), users: selected.users })}
+                    {t("umRoleHeaderSub", { role: selected.custom ? t("umCustomRole") : t("umBuiltinRole"), users: countFor(selected.name) })}
                   </p>
                 </div>
               </div>
@@ -247,13 +304,75 @@ function RolesPanel({ initialRoles, registry, departments }: { initialRoles: UmR
                   {t("umRiskLabel", { level: riskLabel(selected.risk), score: granted.size })}
                 </span>
                 <Button size="sm" className="gap-1.5" disabled={!dirty || busy} onClick={save}><Save className="size-4" />{t("umSaveChanges")}</Button>
+                <Button size="sm" variant="outline" className="gap-1.5" disabled={busy} onClick={openEdit}><Pencil className="size-4" />{t("umEdit")}</Button>
                 <Button size="sm" variant="outline" className="gap-1.5" disabled={busy} onClick={duplicate}><Copy className="size-4" />{t("umDuplicate")}</Button>
                 <Button size="sm" variant="outline" className="gap-1.5 text-destructive hover:text-destructive" disabled={busy} onClick={remove}><Trash2 className="size-4" />{t("umDelete")}</Button>
               </div>
             </div>
           </div>
 
+          {/* Sub-tabs: Permissions / Users */}
+          <div className="flex gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm">
+            {(["permissions", "users"] as const).map((k) => (
+              <button key={k} type="button" onClick={() => setRoleTab(k)}
+                className={cn("inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                  roleTab === k ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                {k === "permissions" ? <ShieldCheck className="size-4" /> : <UsersRound className="size-4" />}
+                {k === "permissions" ? t("umTabPermissions") : t("umTabUsers")}
+                {k === "users" && (
+                  <span className={cn("rounded-full px-1.5 text-xs tabular-nums", roleTab === k ? "bg-white/20" : "bg-muted text-muted-foreground")}>
+                    {roleUsers.length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Assigned users */}
+          {roleTab === "users" && (
+          <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <UsersRound className="size-4" />{t("umAssignedUsers")}
+              </p>
+              <Badge className="tabular-nums">{roleUsers.length}</Badge>
+            </div>
+            {roleUsers.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">{t("umAssignedUsersEmpty")}</p>
+            ) : (
+              <div className="mt-4 overflow-x-auto rounded-xl border border-border/60">
+                <table className="w-full min-w-[34rem] text-sm">
+                  <thead>
+                    <tr className="border-b border-border/60 text-xs uppercase tracking-wide text-muted-foreground">
+                      <th className="px-4 py-2.5 text-start font-medium">{t("umColUser")}</th>
+                      <th className="px-4 py-2.5 text-start font-medium">{t("umColEmail")}</th>
+                      <th className="px-4 py-2.5 text-start font-medium">{t("umColDepartment")}</th>
+                      <th className="px-4 py-2.5 text-start font-medium">{t("umColStatus")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {roleUsers.map((u) => (
+                      <tr key={u.id} className="border-b border-border/40 last:border-0 hover:bg-muted/40">
+                        <td className="px-4 py-2.5">
+                          <span className="inline-flex items-center gap-2.5">
+                            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{u.initials}</span>
+                            <span className="font-medium">{u.name}</span>
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{u.email}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{u.department}</td>
+                        <td className="px-4 py-2.5"><UserStatusBadge status={u.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          )}
+
           {/* Permissions */}
+          {roleTab === "permissions" && (
           <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -283,6 +402,7 @@ function RolesPanel({ initialRoles, registry, departments }: { initialRoles: UmR
               </div>
             </div>
           </div>
+          )}
         </section>
       ) : (
         <section className="grid place-items-center rounded-2xl border border-dashed border-border/70 bg-card p-16 text-center">
@@ -291,7 +411,51 @@ function RolesPanel({ initialRoles, registry, departments }: { initialRoles: UmR
           <p className="mt-1 text-sm text-muted-foreground">{t("umNoRoleSelectedHint")}</p>
         </section>
       )}
+
+      {/* Edit role (name / department / description) */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{t("umEditRole")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>{t("umNewRoleName")}</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("umDepartment")}</Label>
+              {departments.length === 0 ? (
+                <Input disabled value={t("umNoDepartments")} className="text-muted-foreground" />
+              ) : (
+                <Select value={editDept || undefined} onValueChange={setEditDept}>
+                  <SelectTrigger className="w-full"><SelectValue placeholder={t("umSelectDepartment")} /></SelectTrigger>
+                  <SelectContent>{departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("umRoleDescription")}</Label>
+              <Textarea rows={2} value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>{t("umCancel")}</Button>
+            <Button onClick={saveEdit} disabled={!editName.trim() || busy}>{t("umSaveChanges")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function UserStatusBadge({ status }: { status: UmUserStatus }) {
+  const tone =
+    status === "active" ? "bg-success/10 text-success"
+    : status === "pending" ? "bg-amber-500/10 text-amber-600"
+    : "bg-destructive/10 text-destructive";
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize", tone)}>
+      {status}
+    </span>
   );
 }
 

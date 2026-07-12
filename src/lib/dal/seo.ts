@@ -34,8 +34,20 @@ export async function fetchSettings(): Promise<Result<db.SeoSettings>> {
   const res = await svc.getSettings();
   return res.ok ? ok(res.data as db.SeoSettings) : res;
 }
+/** The exact fields the backend `UpdateSeoSettingsDto` accepts. */
+const SEO_SETTINGS_KEYS: (keyof db.SeoSettings)[] = [
+  "siteName", "titleTemplate", "defaultTitle", "defaultDescription", "defaultOgImage",
+  "twitterHandle", "canonicalBaseUrl", "keywords", "indexable", "robotsTxt", "sitemapEnabled",
+];
 export async function updateSettings(patch: Partial<db.SeoSettings>): Promise<Result<db.SeoSettings>> {
-  const res = await svc.updateSettings(patch);
+  // `fetchSettings` returns the raw Mongo document (`_id`, `__v`, `createdAt`,
+  // `updatedAt`) and the editor echoes it back on save; strip everything except
+  // the known fields so the strict (`forbidNonWhitelisted`) backend DTO doesn't 400.
+  const clean: Record<string, unknown> = {};
+  for (const k of SEO_SETTINGS_KEYS) {
+    if (patch[k] !== undefined) clean[k] = patch[k];
+  }
+  const res = await svc.updateSettings(clean as Partial<db.SeoSettings>);
   return res.ok ? ok(res.data as db.SeoSettings) : res;
 }
 

@@ -50,7 +50,7 @@ export function SeoSitemapsPanel() {
   const [loading, setLoading] = React.useState(true);
   const [open, setOpen] = React.useState(false);
   const [url, setUrl] = React.useState("");
-  const [type, setType] = React.useState("");
+  const [type, setType] = React.useState("xml");
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -62,8 +62,8 @@ export function SeoSitemapsPanel() {
 
   const add = async () => {
     if (!url.trim()) return;
-    const res = await dal.seo.createSitemap({ url, type: type || "general" });
-    if (res.ok) { toast.success("Sitemap added"); setOpen(false); setUrl(""); setType(""); load(); } else toast.error(res.error);
+    const res = await dal.seo.createSitemap({ url, type: type || "xml" });
+    if (res.ok) { toast.success("Sitemap added"); setOpen(false); setUrl(""); setType("xml"); load(); } else toast.error(res.error);
   };
   const recrawl = async (s: Sitemap) => { const res = await dal.seo.recrawlSitemap(s.id); if (res.ok) { toast.success("Recrawled"); load(); } };
   const remove = async (s: Sitemap) => {
@@ -144,8 +144,24 @@ export function SeoSitemapsPanel() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Submit sitemap</DialogTitle></DialogHeader>
           <div className="grid gap-4">
-            <Field label="URL"><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://imetsedu.com/sitemap.xml" /></Field>
-            <Field label="Type"><Input value={type} onChange={(e) => setType(e.target.value)} placeholder="index / courses / blog" /></Field>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Sitemap URL <span className="text-destructive">*</span>
+              </Label>
+              <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="/sitemap.xml" />
+              <p className="text-xs text-muted-foreground">Absolute (https://…) or a path like /sitemap.xml</p>
+            </div>
+            <Field label="Type">
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="xml">XML</SelectItem>
+                  <SelectItem value="image">IMAGE</SelectItem>
+                  <SelectItem value="video">VIDEO</SelectItem>
+                  <SelectItem value="news">NEWS</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={add} disabled={!url.trim()}>Submit</Button></DialogFooter>
         </DialogContent>
