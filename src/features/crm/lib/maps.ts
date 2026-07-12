@@ -11,6 +11,19 @@ export const STAGE_LABEL_KEY: Record<string, string> = {
   dead: "stageDead",
 };
 
+/** Compact table badge labels — full name shown on hover via tooltip. */
+export const STAGE_SHORT_LABEL_KEY: Record<string, string> = {
+  new: "stageNewShort",
+  new_inquiries: "stageNewShort",
+  contacted: "stageQualifiedShort",
+  qualified: "stageQualifiedShort",
+  waiting_payment: "stageWaitingShort",
+  waiting: "stageWaitingShort",
+  enrolled: "stageEnrolledShort",
+  lost: "stageLostShort",
+  dead: "stageDeadShort",
+};
+
 export const STAGE_STYLE: Record<string, string> = {
   new: "border-transparent bg-chart-3/15 text-chart-3",
   contacted: "border-transparent bg-primary/12 text-primary",

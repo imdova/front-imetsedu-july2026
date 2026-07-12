@@ -115,6 +115,8 @@ export function courseLd(opts: {
   locale: string;
   price?: number;
   currency?: string;
+  rating?: number;
+  reviewCount?: number;
 }) {
   return {
     "@context": "https://schema.org",
@@ -125,6 +127,17 @@ export function courseLd(opts: {
     ...(opts.image ? { image: opts.image } : {}),
     inLanguage: opts.locale,
     provider: { "@type": "EducationalOrganization", name: SITE_NAME, sameAs: SITE_URL },
+    ...(opts.rating && opts.rating > 0 && opts.reviewCount && opts.reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: opts.rating,
+            reviewCount: opts.reviewCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
     ...(opts.price && opts.price > 0
       ? { offers: { "@type": "Offer", price: opts.price, priceCurrency: opts.currency ?? "EGP", category: "Paid", url: opts.url } }
       : {}),

@@ -255,14 +255,21 @@
     background-color: color-mix(in oklch, var(--sidebar-foreground) 45%, transparent);
   }
 
-  /* Shared marketing / course hero blue gradient */
+  /* Shared marketing / course hero — royal blue primary (campaign identity) */
   .marketing-gradient-bg {
-    background-color: #0a1424;
+    background-color: #051a4a;
     background-image:
-      radial-gradient(ellipse 90% 65% at 50% 38%, #2f6fe8 0%, #1c4fa3 42%, transparent 72%),
-      radial-gradient(ellipse 120% 80% at 50% -15%, #0a1424 0%, transparent 58%),
-      radial-gradient(ellipse 100% 70% at 50% 115%, #0a1424 0%, transparent 52%),
-      linear-gradient(180deg, #0d1a30 0%, #0a1424 50%, #07101c 100%);
+      radial-gradient(ellipse 100% 70% at 50% 35%, #1e6ef0 0%, #0b3fa8 38%, transparent 68%),
+      radial-gradient(circle at 78% 42%, rgba(244, 196, 48, 0.12) 0%, transparent 28%),
+      radial-gradient(ellipse 120% 80% at 50% -12%, #051a4a 0%, transparent 55%),
+      radial-gradient(ellipse 100% 70% at 50% 118%, #031033 0%, transparent 50%),
+      linear-gradient(180deg, #0a2f7a 0%, #051a4a 48%, #030f2e 100%);
+  }
+
+  /* Faint tech-grid texture for marketing heroes */
+  .marketing-hero-grid {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 
   /* Modern blue gradient rail — matches marketing hero */
@@ -310,12 +317,13 @@
     background-size: 22px 22px;
   }
 
-  /* Dark marketing panels (home sections) */
+  /* Dark marketing panels (home sections) — royal blue identity */
   .marketing-dark-section {
-    background-color: #0a1424;
+    background-color: #051a4a;
     background-image:
-      radial-gradient(ellipse 85% 55% at 50% 0%, oklch(0.38 0.1 264 / 0.45) 0%, transparent 62%),
-      linear-gradient(180deg, #0c1628 0%, #080f1a 100%);
+      radial-gradient(ellipse 90% 60% at 50% 0%, #1e6ef0 0%, #0b3fa8 35%, transparent 65%),
+      radial-gradient(ellipse 70% 50% at 100% 100%, rgba(11, 63, 168, 0.55) 0%, transparent 55%),
+      linear-gradient(180deg, #0a2f7a 0%, #051a4a 55%, #030f2e 100%);
     color: oklch(0.98 0.005 255);
   }
 

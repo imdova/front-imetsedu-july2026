@@ -58,6 +58,10 @@ export interface CourseFormData {
   subcategory: string;
   descriptionAr: string;
   descriptionEn: string;
+  headlineAr?: string;
+  headlineEn?: string;
+  subHeadlineAr?: string;
+  subHeadlineEn?: string;
   whoCanAttendAr: string;
   whoCanAttendEn: string;
   whatYouWillLearnAr: string[];

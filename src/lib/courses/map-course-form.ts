@@ -43,6 +43,10 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
     subcategory: idOf(raw.subcategory),
     descriptionEn: raw.descriptionEn ?? "",
     descriptionAr: raw.descriptionAr ?? "",
+    headlineEn: raw.headlineEn ?? "",
+    headlineAr: raw.headlineAr ?? "",
+    subHeadlineEn: raw.subHeadlineEn ?? "",
+    subHeadlineAr: raw.subHeadlineAr ?? "",
     whoCanAttendEn: raw.whoCanAttendEn ?? "",
     whoCanAttendAr: raw.whoCanAttendAr ?? "",
     pricing: {

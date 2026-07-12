@@ -16,6 +16,12 @@ export const fetchSmStudents = async (): Promise<Result<SmStudent[]>> => {
   }
 };
 
+/** LIVE: email a "set your password" link to a student (POST /students/send-set-password). */
+export const sendStudentSetPassword = async (studentId: string): Promise<Result<boolean>> => {
+  const res = await studentsSvc.sendSetPasswordEmail({ studentId });
+  return res.ok ? ok(true) : res;
+};
+
 export const fetchSmStats = async (): Promise<Result<SmStats>> => {
   const res = await studentsSvc.getStudents();
   if (!res.ok) return res;

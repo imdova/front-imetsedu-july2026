@@ -5,28 +5,29 @@ import { Link } from "@/i18n/navigation";
 
 const STEPS = ["step1", "step2", "step3", "step4"] as const;
 const ORG_FEATURES = ["orgsFeature1", "orgsFeature2", "orgsFeature3"] as const;
+const CORP_AUDIENCES = ["corpHospitals", "corpGroups", "corpGov", "corpUniversities"] as const;
 const PARTNERS = ["NAHQ", "SCFHS", "DHA", "DOH", "QCHP", "Prometric", "PMI", "JCI"] as const;
 
 export async function PartnersSection() {
   const t = await getTranslations("Marketing");
 
   return (
-    <section className="border-y border-border/70 bg-muted/30">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <section className="border-y border-blue-100 bg-gradient-to-b from-blue-50/90 to-white">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-warning">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0b3fa8]">
             {t("partnersLabel")}
           </p>
-          <h2 className="mt-3 text-balance font-heading text-2xl font-bold tracking-tight sm:text-3xl">
+          <h2 className="mt-3 text-balance font-heading text-2xl font-bold tracking-tight text-[#0a2f7a] sm:text-3xl">
             {t("partnersTitle")}
           </h2>
           <p className="mt-3 text-pretty text-muted-foreground">{t("partnersSubtitle")}</p>
         </div>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
           {PARTNERS.map((p) => (
             <span
               key={p}
-              className="inline-flex items-center rounded-xl border border-border/60 bg-card px-5 py-3 font-heading text-base font-bold tracking-tight text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:text-foreground hover:shadow-md"
+              className="inline-flex items-center rounded-xl border border-blue-100 bg-white px-5 py-3 font-heading text-base font-bold tracking-tight text-[#0a2f7a] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#0b3fa8]/40 hover:shadow-md"
             >
               {p}
             </span>
@@ -42,7 +43,7 @@ export async function HowItWorksSection() {
 
   return (
     <section className="mx-auto w-full max-w-[100rem] px-4 py-10 sm:px-6 lg:px-8">
-      <div className="marketing-dark-section mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] px-6 py-12 sm:rounded-[2rem] sm:px-10 sm:py-14 lg:px-14">
+      <div className="marketing-dark-section mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] px-6 py-10 sm:rounded-[2rem] sm:px-10 sm:py-12 lg:px-14">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8c14d]">
             {t("howItWorksLabel")}
@@ -55,7 +56,7 @@ export async function HowItWorksSection() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+        <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           {STEPS.map((key, index) => (
             <article key={key} className="group flex flex-col">
               <span className="step-number-badge inline-flex h-10 w-11 items-center justify-center rounded-lg text-sm font-bold text-[#0a1424] shadow-sm transition-transform group-hover:scale-110">
@@ -81,7 +82,7 @@ export async function OrganizationsSection() {
 
   return (
     <section className="mx-auto w-full max-w-[100rem] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="marketing-dark-section mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] px-6 py-12 sm:rounded-[2rem] sm:px-10 sm:py-14 lg:px-14">
+      <div className="marketing-dark-section mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] px-6 py-10 sm:rounded-[2rem] sm:px-10 sm:py-12 lg:px-14">
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_min(100%,340px)] lg:gap-14">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e8c14d]">
@@ -103,6 +104,17 @@ export async function OrganizationsSection() {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">{t("corpAudiencesLabel")}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {CORP_AUDIENCES.map((key) => (
+                  <span key={key} className="rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-sm font-semibold text-white/90">
+                    {t(key)}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 shadow-xl backdrop-blur-sm transition-colors hover:border-white/20">
@@ -130,28 +142,27 @@ export async function CareerCtaSection() {
   const t = await getTranslations("Marketing");
 
   return (
-    <section className="mx-auto w-full max-w-[100rem] px-4 pb-20 pt-2 sm:px-6 lg:px-8">
-      <div className="marketing-dark-section mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] px-6 py-14 text-center sm:rounded-[2rem] sm:px-10 sm:py-16 lg:px-14">
+    <section className="mx-auto w-full max-w-[100rem] px-4 pb-16 pt-2 sm:px-6 lg:px-8">
+      <div className="marketing-dark-section mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] px-6 py-12 text-center sm:rounded-[2rem] sm:px-10 sm:py-14 lg:px-14">
         <h2 className="font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl">
           {t("careerCtaTitle")}
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/65">
           {t("careerCtaSubtitle")}
         </p>
-        <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+        <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/courses"
-            className="group inline-flex min-w-[11rem] items-center justify-center gap-2 rounded-full bg-[#e8c14d] px-8 py-3.5 text-sm font-semibold text-[#0a1424] shadow-lg shadow-black/20 transition-all hover:-translate-y-0.5 hover:bg-[#edcb66]"
+            className="group inline-flex min-w-[14rem] items-center justify-center gap-2 rounded-full bg-[#f4c430] px-8 py-3.5 text-sm font-bold text-[#051a4a] shadow-lg shadow-black/20 transition-all hover:-translate-y-0.5 hover:bg-[#e0b020]"
           >
-            {t("careerCtaBusiness")}
+            {t("careerCtaPrimary")}
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
           </Link>
           <Link
-            href="/courses"
-            className="group inline-flex min-w-[11rem] items-center justify-center gap-2 rounded-full bg-[#2f6fe8] px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-all hover:-translate-y-0.5 hover:bg-[#3d7bf2]"
+            href="/contact"
+            className="inline-flex min-w-[14rem] items-center justify-center gap-2 rounded-full border-2 border-white/40 bg-white/5 px-8 py-3.5 text-sm font-bold text-white backdrop-blur transition-all hover:-translate-y-0.5 hover:bg-white/15"
           >
-            {t("careerCtaHealthcare")}
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
+            {t("careerCtaSecondary")}
           </Link>
         </div>
       </div>

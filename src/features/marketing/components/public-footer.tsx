@@ -11,29 +11,28 @@ export async function PublicFooter({ logoLight }: { logoLight?: string }) {
 
   const cols = [
     {
-      title: tm("footerExplore"),
+      title: tm("footerColAcademics"),
       links: [
-        { label: tn("navCourses"), href: "/courses" },
-        { label: tn("navInstructors"), href: "/instructors" },
-        { label: tn("navBlog"), href: "/blog" },
+        { label: tm("footerPrograms"), href: "/courses" },
+        { label: tm("footerFaculty"), href: "/instructors" },
+        { label: tm("footerResearch"), href: "/blog" },
       ],
     },
     {
-      title: tm("footerCompany"),
+      title: tm("footerColAdmissions"),
       links: [
-        { label: tm("footerAbout"), href: "/about" },
-        { label: tn("navCareers"), href: "/careers" },
+        { label: tm("footerAdmissions"), href: "/register" },
+        { label: tm("footerStudentServices"), href: "/help" },
+        { label: tm("footerCareerCenter"), href: "/careers" },
+        { label: tm("footerCertVerify"), href: "/verify-certificate" },
+      ],
+    },
+    {
+      title: tm("footerColResources"),
+      links: [
+        { label: tm("footerResources"), href: "/help" },
+        { label: tm("footerNews"), href: "/blog" },
         { label: tn("navContact"), href: "/contact" },
-        { label: tm("footerBecomeInstructor"), href: "/become-instructor" },
-      ],
-    },
-    {
-      title: tm("footerLegal"),
-      links: [
-        { label: tm("footerVerify"), href: "/verify-certificate" },
-        { label: tn("navHelp"), href: "/help" },
-        { label: tm("footerPrivacy"), href: "/privacy" },
-        { label: tm("footerTerms"), href: "/terms" },
       ],
     },
   ];

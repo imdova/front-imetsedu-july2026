@@ -3,13 +3,14 @@
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-  Plus, Trash2, RefreshCw, Radar as RadarIcon, Download, Eraser, Map, Link2, Search, Bot, Unlink, CheckCircle2,
+  Plus, Trash2, Radar as RadarIcon, Download, Eraser, Link2, Search, Bot, Unlink, CheckCircle2,
+  Shuffle, ExternalLink, Globe, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type {
-  Sitemap, SitemapSummary, Backlink, BacklinkSummary, LinkAttribute, BacklinkStatus,
+  Sitemap, SitemapSummary, SitemapStatus, Backlink, BacklinkSummary, LinkAttribute, BacklinkStatus,
   GscRow, GscSummary, GeoMention, GeoSummary, BrokenUrl, BrokenSummary,
 } from "@/lib/db/seo";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -27,7 +29,9 @@ import {
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { useConfirm } from "@/hooks/use-confirm";
-import { timeAgo } from "@/lib/utils/time-ago";
+import { cn } from "@/lib/utils";
+import { SeoPanelHead } from "./seo-panel-head";
+import { SeoStatCard } from "./seo-stat-card";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -67,40 +71,83 @@ export function SeoSitemapsPanel() {
     const res = await dal.seo.deleteSitemap(s.id); if (res.ok) { toast.success("Deleted"); load(); } else toast.error(res.error);
   };
 
-  const columns: ColumnDef<Sitemap>[] = [
-    { accessorKey: "url", header: "Sitemap", cell: ({ row }) => <span className="font-mono text-xs">{row.original.url}</span> },
-    { accessorKey: "type", header: "Type", cell: ({ row }) => <Badge variant="outline">{row.original.type}</Badge> },
-    { accessorKey: "urlsFound", header: "URLs", cell: ({ row }) => <span className="tabular-nums">{row.original.urlsFound}</span> },
-    { accessorKey: "lastCrawled", header: "Last crawled", cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.lastCrawled ? timeAgo(row.original.lastCrawled) : "Never"}</span> },
-    { accessorKey: "status", header: "Status", cell: ({ row }) => <Badge variant={row.original.status === "ok" ? "default" : row.original.status === "error" ? "destructive" : "secondary"}>{row.original.status}</Badge> },
-    {
-      id: "actions", header: "",
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="sm" title="Recrawl" onClick={() => recrawl(row.original)}><RefreshCw className="size-4" /></Button>
-          <Button variant="ghost" size="sm" onClick={() => remove(row.original)}><Trash2 className="size-4 text-destructive" /></Button>
-        </div>
-      ),
-    },
-  ];
+  const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString("en-US") : "Never");
+  const statusPill = (st: SitemapStatus) => {
+    const styles: Record<SitemapStatus, string> = {
+      ok: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
+      error: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300",
+      pending: "border-border bg-muted text-muted-foreground",
+    };
+    const label = st === "ok" ? "SUCCESS" : st === "error" ? "ERROR" : "PENDING";
+    return <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-[0.65rem] font-semibold", styles[st])}>{label}</span>;
+  };
 
   return (
     <div className="space-y-4">
+      <SeoPanelHead
+        crumb="Sitemaps"
+        title="Sitemap Manager"
+        description="Register and monitor your XML sitemaps."
+        action={<Button className="gap-1.5" onClick={() => setOpen(true)}><Plus className="size-4" /> Submit sitemap</Button>}
+      />
+
       <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard label="Sitemaps" value={summary.total} icon={Map} intent="primary" />
-        <KpiCard label="Discovered URLs" value={summary.discoveredUrls.toLocaleString()} icon={Search} intent="info" />
-        <KpiCard label="Error rate" value={`${summary.errorRate}%`} icon={RadarIcon} intent={summary.errorRate > 0 ? "destructive" : "success"} />
+        <SeoStatCard label="Total Sitemaps" value={summary.total} sub="active indices" icon={Globe} tint="emerald" />
+        <SeoStatCard label="Discovered URLs" value={summary.discoveredUrls.toLocaleString()} sub="total links" icon={Link2} tint="blue" />
+        <SeoStatCard label="Error Rate" value={`${summary.errorRate}%`} sub="failed indexing" icon={AlertTriangle} tint={summary.errorRate > 0 ? "rose" : "emerald"} />
       </div>
-      <div className="flex justify-end"><Button className="gap-1.5" onClick={() => setOpen(true)}><Plus className="size-4" /> Add sitemap</Button></div>
-      <DataTable columns={columns} data={rows} isLoading={loading} pageSize={8} />
+
+      <Card>
+        <CardContent className="overflow-x-auto p-0">
+          <table className="w-full min-w-[46rem] text-sm">
+            <thead>
+              <tr className="border-b border-border/60 text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="px-4 py-3 text-start font-medium">Sitemap URL</th>
+                <th className="px-4 py-3 text-start font-medium">Type</th>
+                <th className="px-4 py-3 text-start font-medium">Last Crawled</th>
+                <th className="px-4 py-3 text-start font-medium">URLs Found</th>
+                <th className="px-4 py-3 text-start font-medium">Status</th>
+                <th className="px-4 py-3 text-end font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">Loading…</td></tr>
+              ) : rows.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No sitemaps submitted yet.</td></tr>
+              ) : (
+                rows.map((s) => (
+                  <tr key={s.id} className="border-b border-border/40 last:border-0">
+                    <td className="px-4 py-3 font-mono text-xs">{s.url}</td>
+                    <td className="px-4 py-3 uppercase text-muted-foreground">{s.type || "XML"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{fmt(s.lastCrawled)}</td>
+                    <td className="px-4 py-3 font-medium tabular-nums text-primary">{s.urlsFound}</td>
+                    <td className="px-4 py-3">{statusPill(s.status)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="size-8" title="Recrawl" onClick={() => recrawl(s)}><Shuffle className="size-4" /></Button>
+                        <Button asChild variant="ghost" size="icon" className="size-8" title="Open">
+                          <a href={s.url} target="_blank" rel="noreferrer"><ExternalLink className="size-4" /></a>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="size-8" title="Delete" onClick={() => remove(s)}><Trash2 className="size-4 text-destructive" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Add sitemap</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Submit sitemap</DialogTitle></DialogHeader>
           <div className="grid gap-4">
             <Field label="URL"><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://imetsedu.com/sitemap.xml" /></Field>
             <Field label="Type"><Input value={type} onChange={(e) => setType(e.target.value)} placeholder="index / courses / blog" /></Field>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={add} disabled={!url.trim()}>Add</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={add} disabled={!url.trim()}>Submit</Button></DialogFooter>
         </DialogContent>
       </Dialog>
       {Confirmation}

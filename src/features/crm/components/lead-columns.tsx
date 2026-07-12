@@ -2,8 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import type { ColumnDef, RowData } from "@tanstack/react-table";
-import { Phone, MessageCircle, Mail, Pencil, Globe, KeyRound } from "lucide-react";
-import { toast } from "sonner";
+import { Phone, MessageCircle, Mail, Pencil, Globe, MoreHorizontal, Eye } from "lucide-react";
 
 declare module "@tanstack/react-table" {
   // Human-readable label used by the column manager (headers can be JSX).
@@ -13,24 +12,26 @@ declare module "@tanstack/react-table" {
 }
 
 import type { Lead } from "@/lib/db/crm";
-import { dal } from "@/lib/dal";
 import { getInitials } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DataTableColumnHeader } from "@/components/shared/data-table/data-table-column-header";
-import { StageBadge, PriorityBadge } from "./lead-badges";
+import { StageBadge, PriorityBadge, SourceBadge } from "./lead-badges";
 
 type CrmT = ReturnType<typeof useTranslations<"Crm">>;
-
-/** Email a "set your password" invite to the lead's user account, with confirm. */
-async function sendSetPassword(lead: Lead, t: CrmT) {
-  if (!window.confirm(t("setPwConfirm", { name: lead.fullName }))) return;
-  const res = await dal.crm.sendLeadSetPassword(lead.id);
-  if (res.ok) toast.success(t("setPwSent", { name: lead.fullName }));
-  else toast.error(res.error);
-}
 
 /** Split a timestamp into a date line and a time line (e.g. "Jul 9, 2026" / "06:22 PM"). */
 function fmtDateParts(iso?: string, fallback?: string): { date: string; time: string } {
@@ -41,6 +42,83 @@ function fmtDateParts(iso?: string, fallback?: string): { date: string; time: st
     date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     time: d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
   };
+}
+
+function LeadRowActions({
+  lead,
+  t,
+  onOpen,
+  onEdit,
+}: {
+  lead: Lead;
+  t: CrmT;
+  onOpen: (lead: Lead) => void;
+  onEdit: (lead: Lead) => void;
+}) {
+  const phoneHref = `tel:${lead.phoneCountryCode}${lead.phone}`;
+  const waDigits = (lead.whatsApp ?? lead.phone).replace(/\D/g, "");
+  const hasEmail = Boolean(lead.email);
+
+  return (
+    <div className="flex justify-end">
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8">
+                  <MoreHorizontal className="size-4" />
+                  <span className="sr-only">{t("colActions")}</span>
+                </Button>
+              </DropdownMenuTrigger>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top">{t("colActions")}</TooltipContent>
+        </Tooltip>
+
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem asChild>
+            <a href={phoneHref} className="gap-2">
+              <Phone className="size-4 text-success" />
+              {t("callNow")}
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <a
+              href={`https://wa.me/${waDigits}`}
+              target="_blank"
+              rel="noreferrer"
+              className="gap-2"
+            >
+              <MessageCircle className="size-4 text-success" />
+              {t("whatsAppNow")}
+            </a>
+          </DropdownMenuItem>
+          {hasEmail ? (
+            <DropdownMenuItem asChild>
+              <a href={`mailto:${lead.email}`} className="gap-2">
+                <Mail className="size-4" />
+                {t("actEmail")}
+              </a>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem disabled className="gap-2">
+              <Mail className="size-4" />
+              {t("actEmail")}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem onClick={() => onEdit(lead)} className="gap-2">
+            <Pencil className="size-4" />
+            {t("actEdit")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onOpen(lead)} className="gap-2">
+            <Eye className="size-4" />
+            {t("actView")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 }
 
 export function getLeadColumns(
@@ -94,7 +172,7 @@ export function getLeadColumns(
               <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">{getInitials(l.fullName)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 space-y-0.5">
-              <p className="truncate font-medium hover:text-primary">{l.fullName}</p>
+              <p className="truncate font-bold text-black hover:underline">{l.fullName}</p>
               {(l.phone || l.email) && (
                 <p className="truncate text-xs text-muted-foreground" dir="ltr">
                   {l.phone ? `${l.phoneCountryCode}${l.phone}` : l.email}
@@ -140,9 +218,11 @@ export function getLeadColumns(
       accessorKey: "source",
       header: t("colSource"),
       meta: { label: t("colSource") },
+      size: 100,
+      maxSize: 120,
       cell: ({ row }) => {
         const s = row.original.source;
-        return s && s !== "—" ? <Badge variant="outline">{s}</Badge> : <span className="text-sm text-muted-foreground">—</span>;
+        return s && s !== "—" ? <SourceBadge source={s} /> : <span className="text-sm text-muted-foreground">—</span>;
       },
     },
     {
@@ -175,6 +255,18 @@ export function getLeadColumns(
       },
     },
     {
+      accessorKey: "lastActivity",
+      header: t("colLastActivity"),
+      meta: { label: t("colLastActivity") },
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
+          <span className="size-1.5 rounded-full bg-emerald-500/70" />
+          {row.original.lastActivity || "—"}
+        </span>
+      ),
+      enableSorting: false,
+    },
+    {
       id: "pipeline",
       header: t("colPipeline"),
       meta: { label: t("colPipeline") },
@@ -189,6 +281,8 @@ export function getLeadColumns(
       accessorKey: "stageKey",
       header: t("colPipelineStatus"),
       meta: { label: t("colPipelineStatus") },
+      size: 120,
+      maxSize: 140,
       cell: ({ row }) => <StageBadge stageKey={row.original.stageKey} />,
     },
     {
@@ -200,30 +294,14 @@ export function getLeadColumns(
     {
       id: "actions",
       header: t("colActions"),
-      cell: ({ row }) => {
-        const l = row.original;
-        return (
-          <div className="flex items-center justify-end gap-1">
-            <Button variant="ghost" size="icon" className="size-8 text-success" asChild>
-              <a href={`tel:${l.phoneCountryCode}${l.phone}`} aria-label={t("callNow")}><Phone className="size-4" /></a>
-            </Button>
-            <Button variant="ghost" size="icon" className="size-8 text-success" asChild>
-              <a href={`https://wa.me/${(l.whatsApp ?? l.phone).replace(/\D/g, "")}`} target="_blank" rel="noreferrer" aria-label={t("whatsAppNow")}>
-                <MessageCircle className="size-4" />
-              </a>
-            </Button>
-            <Button variant="ghost" size="icon" className="size-8" asChild disabled={!l.email}>
-              <a href={l.email ? `mailto:${l.email}` : undefined} aria-label={t("actEmail")}><Mail className="size-4" /></a>
-            </Button>
-            <Button variant="ghost" size="icon" className="size-8" onClick={() => onEdit(l)} aria-label={t("editLead")}>
-              <Pencil className="size-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="size-8 text-primary" onClick={() => sendSetPassword(l, t)} aria-label={t("setPwAction")}>
-              <KeyRound className="size-4" />
-            </Button>
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <LeadRowActions
+          lead={row.original}
+          t={t}
+          onOpen={onOpen}
+          onEdit={onEdit}
+        />
+      ),
       enableSorting: false,
       enableHiding: false,
     },

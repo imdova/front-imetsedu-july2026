@@ -38,7 +38,7 @@ export default async function SeoManagerPage({
     <div className="mx-auto max-w-[1400px] space-y-6">
       <PageHeader
         title="SEO Manager"
-        description="Global SEO settings, per-page overrides, redirects and JSON-LD schema."
+        description="Control global search metadata, per-page overrides, and managed redirects."
       />
       <SeoManager
         overview={overviewRes.ok ? overviewRes.data : EMPTY_OVERVIEW}

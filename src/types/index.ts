@@ -82,6 +82,11 @@ export interface CourseRow {
   updatedAt: string;
   /** Preview/promo video (YouTube URL) shown on the public course page. */
   previewVideoUrl?: string;
+  /** Optional hero headline / sub-headline (falls back to the title if blank). */
+  headlineEn?: string;
+  headlineAr?: string;
+  subHeadlineEn?: string;
+  subHeadlineAr?: string;
   /** Long-form content for the public course page (HTML rich text or plain). */
   descriptionEn?: string;
   descriptionAr?: string;

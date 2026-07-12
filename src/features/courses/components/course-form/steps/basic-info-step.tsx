@@ -339,6 +339,64 @@ function BasicInfoMain({
         />
       </FormSection>
 
+      <FormSection title={t("secHero")} description={t("secHeroDesc")}>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FormField
+            control={control}
+            name="headlineEn"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fHeadlineEn")}</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Become a Certified Healthcare Quality Professional" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="headlineAr"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fHeadlineAr")}</FormLabel>
+                <FormControl>
+                  <Input dir="rtl" placeholder="مثال: كن متخصص جودة رعاية صحية معتمد" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="subHeadlineEn"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fSubHeadlineEn")}</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Prepare confidently through live instruction and expert mentorship" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="subHeadlineAr"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fSubHeadlineAr")}</FormLabel>
+                <FormControl>
+                  <Input dir="rtl" placeholder="مثال: استعد للامتحان بثقة عبر التدريب المباشر" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormDescription>{t("fHeroHint")}</FormDescription>
+      </FormSection>
+
       <FormSection title={t("secContent")} description={t("secContentDesc")}>
         <FormField
           control={control}

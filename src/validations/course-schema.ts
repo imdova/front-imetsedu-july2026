@@ -72,6 +72,12 @@ export const courseFormSchema = z.object({
   programType: z.string(),
   attendanceMode: z.enum(["online-zoom", "offline"]),
 
+  /* --- Hero (optional; blank falls back to the course title) --- */
+  headlineEn: z.string().trim(),
+  headlineAr: z.string().trim(),
+  subHeadlineEn: z.string().trim(),
+  subHeadlineAr: z.string().trim(),
+
   /* --- Content --- */
   descriptionEn: z.string().trim(),
   descriptionAr: z.string().trim(),

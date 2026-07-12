@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import {
-  Save, SlidersHorizontal, Image as ImageIcon, Palette, Phone, Share2, BarChart3,
-  ToggleRight, Wrench, CheckCircle2, Circle, AlertTriangle,
+  Save, SlidersHorizontal, Image as ImageIcon, Palette, Phone, Share2, Code2,
+  ToggleRight, Wrench, AlertTriangle, Globe, Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,8 +26,8 @@ const SECTIONS: { id: SectionId; label: string; desc: string; icon: React.Elemen
   { id: "theme", label: "Theme", desc: "Colors, appearance, radius", icon: Palette },
   { id: "contact", label: "Contact", desc: "Support email, phone, address", icon: Phone },
   { id: "social", label: "Social Links", desc: "Your social profiles", icon: Share2 },
-  { id: "integrations", label: "Integrations", desc: "Analytics & tracking", icon: BarChart3 },
-  { id: "features", label: "Features", desc: "Module toggles", icon: ToggleRight },
+  { id: "integrations", label: "Integrations", desc: "Analytics & tracking IDs", icon: Code2 },
+  { id: "features", label: "Feature Flags", desc: "Module toggles", icon: ToggleRight },
   { id: "maintenance", label: "Maintenance", desc: "Take the site offline", icon: Wrench },
 ];
 
@@ -35,24 +35,43 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
   const [form, setForm] = React.useState<SiteSettings>(initial);
   const [active, setActive] = React.useState<SectionId>("general");
   const [saving, setSaving] = React.useState(false);
+  const [dirty, setDirty] = React.useState(false);
 
-  const patch = <K extends SectionId>(section: K, partial: Partial<SiteSettings[K]>) =>
+  const patch = <K extends SectionId>(section: K, partial: Partial<SiteSettings[K]>) => {
     setForm((f) => ({ ...f, [section]: { ...f[section], ...partial } }));
+    setDirty(true);
+  };
 
   const save = async () => {
     setSaving(true);
     const res = await dal.siteSettings.updateFullSettings(form);
     setSaving(false);
-    if (res.ok) toast.success("Settings saved"); else toast.error(res.error);
+    if (res.ok) {
+      setDirty(false);
+      toast.success("Settings saved");
+    } else {
+      toast.error(res.error);
+    }
   };
 
+  // Setup health — % of key fields completed; the list surfaces what's still missing.
   const checklist = [
-    { label: "Site name set", ok: !!form.general.siteName, section: "general" as SectionId },
-    { label: "Support email set", ok: !!form.contact.supportEmail, section: "contact" as SectionId },
-    { label: "Favicon set", ok: !!form.branding.faviconUrl, section: "branding" as SectionId },
-    { label: "Social share image set", ok: !!form.branding.ogImage, section: "branding" as SectionId },
-    { label: "Navbar logo set", ok: !!form.branding.logoUrl, section: "branding" as SectionId },
+    { ok: !!form.general.siteName, todo: "Add site name", section: "general" as SectionId },
+    { ok: !!form.general.tagline, todo: "Add tagline", section: "general" as SectionId },
+    { ok: !!form.branding.logoUrl, todo: "Add navbar logo", section: "branding" as SectionId },
+    { ok: !!form.branding.faviconUrl, todo: "Add favicon", section: "branding" as SectionId },
+    { ok: !!form.branding.ogImage, todo: "Add social share image", section: "branding" as SectionId },
+    { ok: !!form.contact.supportEmail, todo: "Add support email", section: "contact" as SectionId },
+    { ok: !!form.integrations.gaMeasurementId, todo: "Add analytics id", section: "integrations" as SectionId },
+    { ok: !!form.integrations.metaPixelId, todo: "Add meta pixel id", section: "integrations" as SectionId },
+    { ok: !!form.theme.primaryColor, todo: "Add primary color", section: "theme" as SectionId },
   ];
+  const done = checklist.filter((c) => c.ok).length;
+  const pct = Math.round((done / checklist.length) * 100);
+  const todos = checklist.filter((c) => !c.ok);
+  const health = pct < 50 ? "#ef4444" : pct < 80 ? "#f59e0b" : "#10b981";
+
+  const activeMeta = SECTIONS.find((s) => s.id === active)!;
 
   return (
     <div className="space-y-4">
@@ -64,35 +83,72 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Site Settings</h1>
-          <p className="text-sm text-muted-foreground">Global configuration for branding, theme, integrations and more.</p>
+          <p className="text-sm text-muted-foreground">
+            Configure your platform — identity, branding, integrations, modules and more.
+          </p>
         </div>
-        <Button className="gap-1.5" onClick={save} disabled={saving}><Save className="size-4" /> {saving ? "Saving…" : "Save changes"}</Button>
+        {dirty ? (
+          <Button className="gap-1.5" onClick={save} disabled={saving}>
+            <Save className="size-4" /> {saving ? "Saving…" : "Save changes"}
+          </Button>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-success/15 px-3 py-2 text-sm font-medium text-success">
+            <Check className="size-4" /> Saved
+          </span>
+        )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        {/* section nav + checklist */}
+      <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+        {/* section nav + setup health */}
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <nav className="space-y-1">
-            {SECTIONS.map((s) => (
-              <button key={s.id} onClick={() => setActive(s.id)}
-                className={cn("flex w-full items-start gap-3 rounded-lg px-3 py-2 text-start transition-colors", active === s.id ? "bg-primary/10 text-primary" : "hover:bg-muted")}>
-                <s.icon className="mt-0.5 size-4 shrink-0" />
-                <span><span className="block text-sm font-medium">{s.label}</span><span className="block text-xs text-muted-foreground">{s.desc}</span></span>
-              </button>
-            ))}
-          </nav>
           <Card>
-            <CardContent className="space-y-2 py-4">
-              <p className="text-xs font-semibold text-muted-foreground">Completeness</p>
-              {checklist.map((c) => (
-                <button key={c.label} onClick={() => setActive(c.section)} className="flex w-full items-center gap-2 text-start text-xs">
-                  {c.ok ? <CheckCircle2 className="size-3.5 text-success" /> : <Circle className="size-3.5 text-muted-foreground" />}
-                  <span className={c.ok ? "text-muted-foreground" : ""}>{c.label}</span>
-                </button>
-              ))}
+            <CardContent className="p-2">
+              <nav className="space-y-0.5">
+                {SECTIONS.map((s) => (
+                  <button key={s.id} onClick={() => setActive(s.id)}
+                    className={cn("flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm transition-colors",
+                      active === s.id ? "bg-primary/10 font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
+                    <s.icon className="size-4 shrink-0" />
+                    <span>{s.label}</span>
+                  </button>
+                ))}
+              </nav>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="space-y-2.5 py-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Setup Health</p>
+                <span
+                  className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                  style={{ background: `${health}1a`, color: health }}
+                >
+                  {pct}%
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: health }} />
+              </div>
+              {todos.length ? (
+                <ul className="space-y-1 pt-1">
+                  {todos.map((c) => (
+                    <li key={c.todo}>
+                      <button
+                        onClick={() => setActive(c.section)}
+                        className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        • {c.todo}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="pt-1 text-xs font-medium text-success">Everything is set up 🎉</p>
+              )}
             </CardContent>
           </Card>
         </aside>
@@ -100,6 +156,8 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
         {/* active panel */}
         <Card>
           <CardContent className="space-y-5 py-6">
+            <PanelHeader icon={activeMeta.icon} title={activeMeta.label} subtitle={activeMeta.desc} />
+
             {active === "general" && <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <F label="Site name"><Input value={form.general.siteName} onChange={(e) => patch("general", { siteName: e.target.value })} /></F>
@@ -164,20 +222,48 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
             </div>}
 
             {active === "integrations" && <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <F label="GA4 Measurement ID"><Input value={form.integrations.gaMeasurementId} onChange={(e) => patch("integrations", { gaMeasurementId: e.target.value })} placeholder="G-XXXXXXX" /></F>
-                <F label="GTM ID"><Input value={form.integrations.gtmId} onChange={(e) => patch("integrations", { gtmId: e.target.value })} placeholder="GTM-XXXXXX" /></F>
-                <F label="Meta Pixel ID"><Input value={form.integrations.metaPixelId} onChange={(e) => patch("integrations", { metaPixelId: e.target.value })} /></F>
-                <F label="Hotjar ID"><Input value={form.integrations.hotjarId} onChange={(e) => patch("integrations", { hotjarId: e.target.value })} /></F>
-                <F label="Intercom App ID"><Input value={form.integrations.intercomAppId} onChange={(e) => patch("integrations", { intercomAppId: e.target.value })} /></F>
+              <p className="flex items-start gap-2 text-xs leading-relaxed text-primary/80">
+                <Globe className="mt-0.5 size-3.5 shrink-0" />
+                <span>Tracking IDs below are public. The Conversions API token is stored securely on the server and is never sent to browsers.</span>
+              </p>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <IField label="Google Analytics (GA4) ID"><Input value={form.integrations.gaMeasurementId} onChange={(e) => patch("integrations", { gaMeasurementId: e.target.value })} placeholder="G-XXXXXXX" /></IField>
+                <IField label="Google Tag Manager ID"><Input value={form.integrations.gtmId} onChange={(e) => patch("integrations", { gtmId: e.target.value })} placeholder="GTM-XXXXXX" /></IField>
+                <IField label="Meta Pixel ID"><Input value={form.integrations.metaPixelId} onChange={(e) => patch("integrations", { metaPixelId: e.target.value })} placeholder="990261693785375" /></IField>
+                <IField label="Hotjar ID"><Input value={form.integrations.hotjarId} onChange={(e) => patch("integrations", { hotjarId: e.target.value })} placeholder="1234567" /></IField>
+                <IField label="Intercom App ID"><Input value={form.integrations.intercomAppId} onChange={(e) => patch("integrations", { intercomAppId: e.target.value })} placeholder="abcd1234" /></IField>
               </div>
-              <div className="space-y-4 rounded-xl border border-border/60 p-4">
-                <Toggle label="Enable Conversions API (server-side)" checked={form.integrations.metaCapiEnabled} onChange={(v) => patch("integrations", { metaCapiEnabled: v })} />
-                <F label="Access Token (secret)">
-                  <Input type="password" value={form.integrations.metaCapiToken ?? ""} onChange={(e) => patch("integrations", { metaCapiToken: e.target.value })} placeholder="••••••••" />
-                </F>
-                <p className="text-xs text-muted-foreground">Never exposed publicly — stripped from the public settings endpoint and the client bundle.</p>
-                <F label="Test Event Code (optional)"><Input value={form.integrations.metaTestEventCode} onChange={(e) => patch("integrations", { metaTestEventCode: e.target.value })} /></F>
+
+              <div className="space-y-4 rounded-xl border border-border/60 p-5">
+                <div>
+                  <p className="font-semibold">Facebook Conversions API (CAPI)</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Sends conversion events (Purchase, Lead, ViewContent, InitiateCheckout, …) server-side, alongside the Pixel, for more accurate tracking. Uses the Meta Pixel ID above.
+                  </p>
+                </div>
+
+                <label className="flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-card px-4 py-3">
+                  <span>
+                    <span className="block text-sm font-medium">Enable Conversions API</span>
+                    <span className="block text-xs text-muted-foreground">Send server-side events to Meta using the access token below.</span>
+                  </span>
+                  <Switch checked={form.integrations.metaCapiEnabled} onCheckedChange={(v) => patch("integrations", { metaCapiEnabled: v })} />
+                </label>
+
+                <IField label="Access Token">
+                  <Input type="password" value={form.integrations.metaCapiToken ?? ""} onChange={(e) => patch("integrations", { metaCapiToken: e.target.value })} placeholder="••••••••••••••••" />
+                </IField>
+                <p className="-mt-2 text-xs text-muted-foreground">
+                  Events Manager → Settings → Generate access token. Stored securely server-side; never exposed to the browser.
+                </p>
+
+                <IField label="Test Event Code (optional)">
+                  <Input value={form.integrations.metaTestEventCode} onChange={(e) => patch("integrations", { metaTestEventCode: e.target.value })} placeholder="TEST12345" />
+                </IField>
+                <p className="-mt-2 text-xs text-muted-foreground">
+                  For Events Manager → Test Events. Leave empty in production.
+                </p>
               </div>
             </>}
 
@@ -198,8 +284,27 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
   );
 }
 
+function PanelHeader({ icon: Icon, title, subtitle }: { icon: React.ElementType; title: string; subtitle: string }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-border/60 pb-4">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="size-5" />
+      </span>
+      <div>
+        <p className="font-semibold leading-tight">{title}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Small muted-label field (used across most tabs). */
 function F({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label className="text-xs font-medium text-muted-foreground">{label}</Label>{children}</div>;
+}
+/** Integrations field — darker, form-style label to match the tracking-ID layout. */
+function IField({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div className="space-y-1.5"><Label className="text-sm font-medium text-foreground">{label}</Label>{children}</div>;
 }
 function Toggle({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import type { VisibilityState } from "@tanstack/react-table";
-import { Search, ChevronLeft, ChevronRight, Download, UserPlus, ArrowRightLeft, GitBranch, Trash2, X, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Download, UserPlus, ArrowRightLeft, GitBranch, Trash2, X, ChevronDown, SlidersHorizontal, Columns3 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
@@ -39,6 +39,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { getLeadColumns } from "./lead-columns";
 import { ImportLeadsDialog } from "./import-leads-dialog";
@@ -126,6 +134,7 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   const [customFrom, setCustomFrom] = React.useState("");
   const [customTo, setCustomTo] = React.useState("");
   const [quickTab, setQuickTab] = React.useState<"all" | "unassigned" | "overdue" | "today">("all");
+  const [advancedOpen, setAdvancedOpen] = React.useState(false);
 
   // Persisted column-visibility selection. Start empty (all visible) to match
   // the server render, then hydrate from localStorage on the client.
@@ -223,6 +232,36 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   }, [search, stage, source, counselorId, lockedCounselorId, priority, specialty, country, courseId, pipeline]);
 
   const active = search || [stage, source, counselorId, priority, specialty, country, courseId, pipeline].some((v) => v !== "all");
+
+  const advancedCount = React.useMemo(
+    () => [priority, specialty, country].filter((v) => v !== "all").length,
+    [priority, specialty, country],
+  );
+
+  const hasActiveFilters = Boolean(
+    active || range !== "all" || customFrom || customTo,
+  );
+
+  const clearAdvanced = () => {
+    setPriority("all");
+    setSpecialty("all");
+    setCountry("all");
+  };
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setStage("all");
+    setSource("all");
+    if (!lockedCounselorId) setCounselorId("all");
+    setPriority("all");
+    setSpecialty("all");
+    setCountry("all");
+    setCourseId("all");
+    setPipeline("all");
+    setRange("all");
+    setCustomFrom("");
+    setCustomTo("");
+  };
 
   React.useEffect(() => {
     if (!active) {
@@ -343,82 +382,192 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
         </div>
       </div>
 
-      {/* Search (left) + date-range chips + column manager (right) — one row */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-[333px]">
-          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchLeads")} className="ps-9" />
+      {/* Basic filters — HubSpot-style bar */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("basicFilters")}</p>
+
+        {/* Search (left) + date range chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-[420px]">
+            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("searchLeads")} className="ps-9" />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(["all", ...RANGES] as Range[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRange(r)}
+                className={cn(
+                  "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                  range === r ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/40",
+                )}
+              >
+                {t(`range_${r}` as never)}
+              </button>
+            ))}
+            {range === "custom" && (
+              <div className="flex items-center gap-1.5">
+                <Input type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="h-9 w-auto" aria-label={t("rangeFrom")} />
+                <span className="text-sm text-muted-foreground">{t("rangeTo")}</span>
+                <Input type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="h-9 w-auto" aria-label={t("rangeTo")} />
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(["all", ...RANGES] as Range[]).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={cn(
-                "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
-                range === r ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/40",
-              )}
-            >
-              {t(`range_${r}` as never)}
-            </button>
-          ))}
-          {range === "custom" && (
-            <div className="flex items-center gap-1.5">
-              <Input type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="h-9 w-auto" aria-label={t("rangeFrom")} />
-              <span className="text-sm text-muted-foreground">{t("rangeTo")}</span>
-              <Input type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="h-9 w-auto" aria-label={t("rangeTo")} />
-            </div>
+        <div className="flex flex-wrap items-end gap-2">
+          {!isStaff && (
+            <Filter
+              label={t("filterCounselor")}
+              value={counselorId}
+              onChange={setCounselorId}
+              all={t("everyone")}
+              options={counselors.map((c) => ({ value: c.id, label: c.name }))}
+              className="w-[150px]"
+            />
           )}
-        </div>
 
-        <div className="ms-auto">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <SlidersHorizontal className="size-4" />
-                <span className="hidden sm:inline">{t("columns")}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>{t("toggleColumns")}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {hideableColumns.map((c) => (
-                <DropdownMenuCheckboxItem
-                  key={c.id}
-                  checked={columnVisibility[c.id] !== false}
-                  onCheckedChange={(v) => onColumnVisibilityChange((prev) => ({ ...prev, [c.id]: !!v }))}
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  {c.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Filter
+            label={t("filterCourse")}
+            value={courseId}
+            onChange={setCourseId}
+            all={t("allCourses")}
+            options={courseOptions}
+            className="w-[150px]"
+          />
+
+          <Filter
+            label={t("filterSource")}
+            value={source}
+            onChange={setSource}
+            all={t("allSources")}
+            options={sourceFilterOptions}
+            className="w-[130px]"
+          />
+
+          <Filter
+            label={t("filterPipeline")}
+            value={pipeline}
+            onChange={setPipeline}
+            all={t("allPipelines")}
+            options={pipelines}
+            className="w-[150px]"
+          />
+
+          <Filter
+            label={t("filterPipelineStatus")}
+            value={stage}
+            onChange={setStage}
+            all={t("allStatuses")}
+            options={pipelineStageOptions}
+            className="w-[150px]"
+          />
+
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => setAdvancedOpen(true)}
+          >
+            <SlidersHorizontal className="size-4" />
+            {t("advancedFilters")}
+            {advancedCount > 0 && (
+              <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
+                {advancedCount}
+              </span>
+            )}
+          </Button>
+
+          {hasActiveFilters && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="gap-1.5 text-muted-foreground"
+              onClick={clearAllFilters}
+            >
+              <X className="size-4" />
+              {t("clearFilters")}
+            </Button>
+          )}
+
+          <div className="ms-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Columns3 className="size-4" />
+                  <span className="hidden sm:inline">{t("columns")}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel>{t("toggleColumns")}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {hideableColumns.map((c) => (
+                  <DropdownMenuCheckboxItem
+                    key={c.id}
+                    checked={columnVisibility[c.id] !== false}
+                    onCheckedChange={(v) => onColumnVisibilityChange((prev) => ({ ...prev, [c.id]: !!v }))}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {c.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
-      {/* Filters — one row, beside each other */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8">
-        <Filter label={t("filterPriority")} value={priority} onChange={setPriority} all={t("allPriorities")}
-          options={priorityFilterOptions} />
-        <Filter label={t("filterSource")} value={source} onChange={setSource} all={t("allSources")}
-          options={sourceFilterOptions} />
-        {!isStaff && (
-          <Filter label={t("filterCounselor")} value={counselorId} onChange={setCounselorId} all={t("everyone")}
-            options={counselors.map((c) => ({ value: c.id, label: c.name }))} />
-        )}
-        <Filter label={t("filterCourse")} value={courseId} onChange={setCourseId} all={t("allCourses")}
-          options={courseOptions} />
-        <Filter label={t("filterSpecialty")} value={specialty} onChange={setSpecialty} all={t("allSpecialties")}
-          options={specialtyFilterOptions} />
-        <Filter label={t("filterCountry")} value={country} onChange={setCountry} all={t("allCountries")}
-          options={countryOptions} />
-        <Filter label={t("filterPipeline")} value={pipeline} onChange={setPipeline} all={t("allPipelines")}
-          options={pipelines} />
-        <Filter label={t("filterPipelineStatus")} value={stage} onChange={setStage} all={t("allStatuses")}
-          options={pipelineStageOptions} />
-      </div>
+      {/* Advanced filters drawer */}
+      <Sheet open={advancedOpen} onOpenChange={setAdvancedOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md">
+          <SheetHeader className="border-b">
+            <SheetTitle>{t("advancedFilters")}</SheetTitle>
+            <SheetDescription>{t("advancedFiltersDesc")}</SheetDescription>
+          </SheetHeader>
+
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-2">
+            <Filter
+              label={t("filterPriority")}
+              value={priority}
+              onChange={setPriority}
+              all={t("allPriorities")}
+              options={priorityFilterOptions}
+            />
+            <Filter
+              label={t("filterSpecialty")}
+              value={specialty}
+              onChange={setSpecialty}
+              all={t("allSpecialties")}
+              options={specialtyFilterOptions}
+            />
+            <Filter
+              label={t("filterCountry")}
+              value={country}
+              onChange={setCountry}
+              all={t("allCountries")}
+              options={countryOptions}
+            />
+          </div>
+
+          <SheetFooter className="border-t sm:flex-row">
+            <Button
+              type="button"
+              variant="ghost"
+              className="gap-1.5"
+              onClick={clearAdvanced}
+              disabled={advancedCount === 0}
+            >
+              <X className="size-4" />
+              {t("clearAdvancedFilters")}
+            </Button>
+            <Button type="button" onClick={() => setAdvancedOpen(false)}>
+              {t("applyAdvancedFilters")}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       <DataTable
         columns={columns}
@@ -592,15 +741,17 @@ function Filter({
   onChange,
   all,
   options,
+  className,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   all: string;
   options: Option[];
+  className?: string;
 }) {
   return (
-    <div className="space-y-1">
+    <div className={cn("min-w-[120px] space-y-1", className)}>
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger className="w-full">

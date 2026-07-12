@@ -4,11 +4,20 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
   Users, Layers, UserPlus, Award, Download, Search, Columns3, Calendar,
-  ChevronLeft, ChevronRight, Mail, Phone, MoreHorizontal, UsersRound, Trash2,
+  ChevronLeft, ChevronRight, Mail, Phone, MoreHorizontal, UsersRound, Trash2, KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { dal } from "@/lib/dal";
 import type { SmStudent, SmStats, SmPayment } from "@/lib/db/students-mgmt";
+
+/** Email a "set your password" link to a student's account, with confirm. */
+async function sendStudentPw(s: SmStudent, t: (k: string, v?: Record<string, string | number>) => string) {
+  if (!window.confirm(t("smSetPwConfirm", { name: s.name }))) return;
+  const res = await dal.studentsMgmt.sendStudentSetPassword(s.id);
+  if (res.ok) toast.success(t("smSetPwSent", { name: s.name }));
+  else toast.error(res.error);
+}
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -295,7 +304,10 @@ export function StudentsManagement({ students, stats }: { students: SmStudent[];
                   <td className="px-3 py-3"><PaymentBadge payment={s.payment} label={t(("smPay" + s.payment[0].toUpperCase() + s.payment.slice(1)) as never)} /></td>
                   <td className="px-3 py-3 tabular-nums">{s.totalAmount != null ? `$${s.totalAmount.toLocaleString()}` : <span className="text-muted-foreground">{t("smNoData")}</span>}</td>
                   <td className="px-3 py-3 text-end">
-                    <Button variant="ghost" size="icon" className="size-8" onClick={() => toast.info(s.name)}><MoreHorizontal className="size-4" /></Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="size-8 text-primary" title={t("smSetPw")} onClick={() => sendStudentPw(s, t)}><KeyRound className="size-4" /></Button>
+                      <Button variant="ghost" size="icon" className="size-8" onClick={() => toast.info(s.name)}><MoreHorizontal className="size-4" /></Button>
+                    </div>
                   </td>
                 </tr>
               ))}

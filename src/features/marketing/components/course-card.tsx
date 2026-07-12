@@ -10,6 +10,10 @@ import {
   Monitor,
   Star,
   Users,
+  GraduationCap,
+  Radio,
+  Languages,
+  Flame,
 } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
@@ -33,6 +37,8 @@ export function CourseCard({ course }: { course: CourseRow }) {
   const price = onSale ? course.salePriceEGP : course.priceEGP;
   const discountPct = deriveDiscount(course.priceEGP, course.salePriceEGP);
   const reviews = reviewCountFor(course);
+  const isBestSeller = course.isBestseller || course.students >= 800;
+  const isMostPopular = course.isTopRated || course.rating >= 4.7;
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition-shadow hover:shadow-md">
@@ -47,8 +53,22 @@ export function CourseCard({ course }: { course: CourseRow }) {
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           className="object-cover transition-transform duration-300 hover:scale-[1.02]"
         />
+
+        <div className="absolute inset-x-2.5 top-2.5 flex flex-wrap gap-1.5">
+          {isBestSeller && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#f4c430] px-2.5 py-1 text-[11px] font-bold leading-none text-[#051a4a] shadow">
+              <Flame className="size-3" /> {t("cardBadgeBestSeller")}
+            </span>
+          )}
+          {isMostPopular && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#0b3fa8] px-2.5 py-1 text-[11px] font-bold leading-none text-white shadow">
+              <Star className="size-3 fill-current" /> {t("cardBadgeMostPopular")}
+            </span>
+          )}
+        </div>
+
         {onSale && discountPct > 0 && (
-          <span className="absolute top-2.5 end-2.5 rounded-full bg-[#d32f2f] px-2.5 py-0.5 text-xs font-bold leading-none text-white">
+          <span className="absolute bottom-2.5 end-2.5 rounded-full bg-[#d32f2f] px-2.5 py-0.5 text-xs font-bold leading-none text-white">
             -{discountPct}%
           </span>
         )}
@@ -66,6 +86,24 @@ export function CourseCard({ course }: { course: CourseRow }) {
           <span className="text-xs text-muted-foreground">
             {t("cardReviews", { count: reviews })}
           </span>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          <CardBadge
+            icon={GraduationCap}
+            label={t("cardBadgeCertificate")}
+            tone="bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800"
+          />
+          <CardBadge
+            icon={Radio}
+            label={t("cardBadgeLive")}
+            tone="bg-rose-50 text-rose-700 ring-1 ring-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-800"
+          />
+          <CardBadge
+            icon={Languages}
+            label={t("cardBadgeBilingual")}
+            tone="bg-violet-50 text-violet-700 ring-1 ring-violet-200/80 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-xs text-muted-foreground">
@@ -130,6 +168,15 @@ function StarRating({ rating }: { rating: number }) {
           />
         );
       })}
+    </span>
+  );
+}
+
+function CardBadge({ icon: Icon, label, tone }: { icon: ElementType; label: string; tone: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", tone)}>
+      <Icon className="size-3" strokeWidth={2.25} />
+      {label}
     </span>
   );
 }

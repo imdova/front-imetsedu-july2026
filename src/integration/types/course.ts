@@ -27,6 +27,10 @@ export interface Course {
   description: string;
   descriptionAr?: string;
   descriptionEn?: string;
+  headlineAr?: string;
+  headlineEn?: string;
+  subHeadlineAr?: string;
+  subHeadlineEn?: string;
   shortDescription?: string;
   whoCanAttendAr?: string;
   whoCanAttendEn?: string;

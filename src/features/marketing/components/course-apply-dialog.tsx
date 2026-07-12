@@ -101,7 +101,7 @@ export function CourseApplyDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger ?? <Button size="lg" className="w-full">{t("applyNow")}</Button>}
+        {trigger ?? <Button size="lg" className="w-full">{t("startLearning")}</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

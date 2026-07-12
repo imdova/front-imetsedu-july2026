@@ -4,13 +4,21 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, LayoutGrid, MoreHorizontal, Plus, Users, Trophy, TrendingUp, DollarSign, CalendarDays, Clock, Video, UserCog, ChevronRight, Search, Mail, Phone, Award, Trash2, Filter,
+  ArrowLeft, LayoutGrid, MoreHorizontal, Plus, Users, Trophy, TrendingUp, DollarSign, CalendarDays, Clock, Video, UserCog, ChevronRight, Search, Mail, Phone, Award, Trash2, Filter, KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type { GroupDetail, RosterStudent } from "@/lib/db/groups";
+
+/** Email a "set your password" link to a roster student's account, with confirm. */
+async function sendRosterPw(s: RosterStudent, t: (k: string, v?: Record<string, string | number>) => string) {
+  if (!window.confirm(t("smSetPwConfirm", { name: s.name }))) return;
+  const res = await dal.studentsMgmt.sendStudentSetPassword(s.id);
+  if (res.ok) toast.success(t("smSetPwSent", { name: s.name }));
+  else toast.error(res.error);
+}
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -229,7 +237,7 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
                 <td className="px-3 py-4"><div className="flex items-center gap-2"><Switch checked={s.status === "approved"} disabled={isStaff} onCheckedChange={() => !isStaff && toggleStatus(s)} /><span className={cn("inline-flex items-center gap-1 text-xs", s.status === "approved" ? "text-success" : "text-muted-foreground")}><span className={cn("size-1.5 rounded-full", s.status === "approved" ? "bg-success" : "bg-muted-foreground")} />{t("gdApproved")}</span></div></td>
                 <td className="px-3 py-4"><Badge className="border-transparent bg-warning/15 text-warning">{t("gdPaymentPending")}</Badge></td>
                 <td className="px-3 py-4 text-muted-foreground">—</td>
-                <td className="px-5 py-4"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8"><Award className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => removeStudent(s)}><Trash2 className="size-4" /></Button></div></td>
+                <td className="px-5 py-4"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8 text-primary" title={t("smSetPw")} onClick={() => sendRosterPw(s, t)}><KeyRound className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8"><Award className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => removeStudent(s)}><Trash2 className="size-4" /></Button></div></td>
               </tr>
             ))}
           </tbody>
