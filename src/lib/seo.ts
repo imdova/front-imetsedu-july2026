@@ -107,6 +107,25 @@ export function websiteLd() {
   };
 }
 
+export function personLd(opts: {
+  name: string;
+  jobTitle?: string;
+  image?: string;
+  url: string;
+  locale: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: opts.name,
+    ...(opts.jobTitle ? { jobTitle: opts.jobTitle } : {}),
+    ...(opts.image ? { image: opts.image } : {}),
+    url: opts.url,
+    worksFor: { "@type": "EducationalOrganization", name: SITE_NAME, sameAs: SITE_URL },
+    inLanguage: opts.locale,
+  };
+}
+
 export function courseLd(opts: {
   name: string;
   description: string;

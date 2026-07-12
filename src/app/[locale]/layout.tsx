@@ -62,6 +62,10 @@ export async function generateMetadata({
     ...(keywords ? { keywords } : {}),
     ...(faviconUrl ? { icons: { icon: faviconUrl, shortcut: faviconUrl } } : {}),
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://imetsedu.com"),
+    // Google Search Console site verification (rendered site-wide in <head>).
+    verification: {
+      google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "bptXGc6oD5_URjKd6sCkd0FE-4aQXogDUT_U0KWZpGA",
+    },
     // Site-wide social defaults; per-page metadata overrides title/url/images.
     openGraph: {
       type: "website",

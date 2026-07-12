@@ -48,6 +48,8 @@ export interface LookupItem {
   id: string;
   label: string;
   labelAr?: string;
+  /** URL-friendly slug (falls back to id when the backend has none yet). */
+  slug?: string;
 }
 
 /** A category lookup that carries its dependent subcategories. */
@@ -94,6 +96,16 @@ export interface CourseRow {
   whoCanAttendAr?: string;
   /** Curriculum modules with their lessons (for the collapsible curriculum). */
   modules?: CurriculumModule[];
+  /** Instructor display names (for smart catalog search). */
+  instructorNames?: string[];
+  /** Tag labels (for smart catalog search). */
+  tagLabels?: string[];
+  /** Program duration label from the backend (e.g. "8 weeks"). */
+  duration?: string;
+  /** Teaching languages (English / Arabic / Bilingual…). */
+  languages?: string[];
+  /** Delivery modes (online, live, recorded, hybrid…). */
+  deliveryModes?: string[];
 }
 
 export interface CurriculumLesson {

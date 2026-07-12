@@ -10,11 +10,7 @@ import { getTranslations } from "next-intl/server";
 
 import type { CourseRow } from "@/types";
 import { cn, formatCompact } from "@/lib/utils";
-
-function reviewCountFor(course: Pick<CourseRow, "rating" | "students">) {
-  if (course.rating <= 0) return 0;
-  return Math.max(1, Math.round(course.students * 0.04));
-}
+import { courseSocialProof } from "@/features/marketing/lib/course-social-proof";
 
 function formatHeroPrice(amount: number) {
   return `EGP ${Math.round(amount).toLocaleString("en-US")}`;
@@ -24,7 +20,7 @@ function StarRating({ rating }: { rating: number }) {
   return (
     <span className="inline-flex items-center gap-0.5" aria-hidden>
       {Array.from({ length: 5 }, (_, i) => {
-        const filled = rating > 0 && i < Math.round(rating);
+        const filled = i < Math.round(rating);
         return (
           <Star
             key={i}
@@ -70,7 +66,7 @@ export async function CourseHeroMeta({
   onSale: boolean;
 }) {
   const t = await getTranslations("Marketing");
-  const reviews = reviewCountFor(course);
+  const { rating, reviews } = courseSocialProof(course);
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-3 sm:gap-x-4">
@@ -80,17 +76,16 @@ export async function CourseHeroMeta({
 
       <MetaDivider />
 
-      {course.rating > 0 && (
-        <>
-          <div className="flex flex-col gap-0.5">
-            <StarRating rating={course.rating} />
-            <span className="text-[11px] leading-none text-white/65">
-              {t("cardReviews", { count: reviews })}
-            </span>
-          </div>
-          <MetaDivider />
-        </>
-      )}
+      <div className="flex flex-col gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <StarRating rating={rating} />
+          <span className="text-sm font-bold tabular-nums text-amber-300">{rating.toFixed(1)}</span>
+        </div>
+        <span className="text-[11px] leading-none text-white/65">
+          {t("cardReviews", { count: reviews.toLocaleString("en-US") })}
+        </span>
+      </div>
+      <MetaDivider />
 
       <MetaItem icon={GraduationCap}>
         {t("heroStudents", { count: formatCompact(course.students) })}

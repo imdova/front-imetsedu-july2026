@@ -43,7 +43,7 @@ export default async function InstructorsPage({
         {instructors.map((ins, i) => (
           <Link
             key={ins.id}
-            href={`/instructors/${ins.id}`}
+            href={`/instructors/${ins.slug || ins.id}`}
             className="flex items-center gap-4 rounded-2xl border border-border/70 bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
           >
             <Avatar className="size-16 border">

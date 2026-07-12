@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 
+import { redirect } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import { CourseCatalog } from "@/features/marketing/components/course-catalog";
-import { SITE_NAME, seoAlternates, socialMeta } from "@/lib/seo";
+import { CategoryLanding } from "@/features/marketing/components/category-landing";
+import { SITE_NAME, seoAlternates, socialMeta, metaDescription } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 
 export async function generateStaticParams() {
-  const res = await dal.lookups.fetchCategories();
+  const res = await dal.courseTaxonomy.fetchPublicCategories();
   const cats = res.ok ? res.data : [];
-  return cats.map((c) => ({ slug: c.id }));
+  return cats.map((c) => ({ slug: c.slug || c.id }));
 }
 
 export async function generateMetadata({
@@ -19,17 +20,19 @@ export async function generateMetadata({
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const res = await dal.lookups.fetchCategories();
-  const cat = res.ok ? res.data.find((c) => c.id === slug) : null;
-  const t = await getTranslations({ locale, namespace: "Pages" });
-  const title = cat ? cat.label : t("categoryTitle", { name: "" });
-  const description = t("categorySubtitle", { name: cat?.label ?? "" });
-  const path = `/category/${slug}`;
+  const res = await dal.courseTaxonomy.fetchPublicCategories();
+  const cat = res.ok ? res.data.find((c) => (c.slug || c.id) === slug) : null;
+  if (!cat) return {};
+  const name = locale === "ar" ? cat.nameAr : cat.nameEn;
+  const desc = locale === "ar" ? cat.descriptionAr : cat.descriptionEn;
+  const title = `${name} Programs`;
+  const description = metaDescription(desc, `${name} — professional healthcare programs at ${SITE_NAME}.`);
+  const path = `/category/${cat.slug}`;
   return mergeSeo(path, {
     title,
     description,
     alternates: seoAlternates(path, locale),
-    ...socialMeta({ title: `${title} · ${SITE_NAME}`, description, path, locale }),
+    ...socialMeta({ title: `${title} · ${SITE_NAME}`, description, path, locale, image: cat.image }),
   });
 }
 
@@ -40,27 +43,23 @@ export default async function CategoryPage({
 }) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("Pages");
 
   const [catRes, courseRes] = await Promise.all([
-    dal.lookups.fetchCategories(),
+    dal.courseTaxonomy.fetchPublicCategories(),
     dal.courses.fetchCourses(),
   ]);
-  const cat = catRes.ok ? catRes.data.find((c) => c.id === slug) : null;
-  if (!cat) notFound();
+  const cats = catRes.ok ? catRes.data : [];
+  const category = cats.find((c) => (c.slug || c.id) === slug);
+  if (!category) {
+    // Old id-based URL → send it to the clean slug.
+    const byId = cats.find((c) => c.id === slug && c.slug && c.slug !== c.id);
+    if (byId) redirect({ href: `/category/${byId.slug}`, locale });
+    notFound();
+  }
 
-  const label = locale === "ar" && cat.labelAr ? cat.labelAr : cat.label;
-  const courses = (courseRes.ok ? courseRes.data : []).filter(
-    (c) => c.category === cat.label,
-  );
+  // Courses in this category (matched by the category's English name).
+  const courses = (courseRes.ok ? courseRes.data : []).filter((c) => c.category === category.nameEn);
+  const related = cats.filter((c) => c.id !== category.id);
 
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mb-8 space-y-2">
-        <h1 className="font-heading text-3xl font-bold tracking-tight">{label}</h1>
-        <p className="text-muted-foreground">{t("categorySubtitle")}</p>
-      </div>
-      <CourseCatalog courses={courses} />
-    </div>
-  );
+  return <CategoryLanding category={category} courses={courses} related={related} locale={locale} />;
 }

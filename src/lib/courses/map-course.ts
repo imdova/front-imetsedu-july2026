@@ -59,6 +59,47 @@ export function mapCourse(raw: any): CourseRow {
     descriptionAr: raw?.descriptionAr || undefined,
     whoCanAttendEn: raw?.whoCanAttendEn || undefined,
     whoCanAttendAr: raw?.whoCanAttendAr || undefined,
+    instructorNames: Array.isArray(raw?.instructors)
+      ? raw.instructors
+          .map((i: any) =>
+            typeof i === "string"
+              ? i
+              : i?.name ?? [i?.firstName, i?.lastName].filter(Boolean).join(" ").trim() ?? i?.nameEn ?? "",
+          )
+          .filter(Boolean)
+      : Array.isArray(raw?.instructorIds)
+        ? raw.instructorIds
+            .map((i: any) =>
+              typeof i === "string"
+                ? ""
+                : i?.name ?? [i?.firstName, i?.lastName].filter(Boolean).join(" ").trim() ?? "",
+            )
+            .filter(Boolean)
+        : undefined,
+    tagLabels: Array.isArray(raw?.tags)
+      ? raw.tags
+          .map((tg: any) => (typeof tg === "string" ? tg : tg?.nameEn ?? tg?.nameAr ?? tg?.name ?? ""))
+          .filter(Boolean)
+      : undefined,
+    duration: typeof raw?.duration === "string" ? raw.duration : undefined,
+    languages: (() => {
+      const vars = raw?.variables;
+      const fromVars = vars instanceof Map ? vars.get("language") : vars?.language;
+      if (Array.isArray(fromVars)) return fromVars.map(String).filter(Boolean);
+      if (typeof fromVars === "string" && fromVars) return [fromVars];
+      if (Array.isArray(raw?.language)) return raw.language.map(String).filter(Boolean);
+      if (typeof raw?.language === "string" && raw.language) return [raw.language];
+      return undefined;
+    })(),
+    deliveryModes: (() => {
+      const vars = raw?.variables;
+      const attendance = vars instanceof Map ? vars.get("attendanceMode") : vars?.attendanceMode;
+      const modes: string[] = [];
+      if (typeof attendance === "string" && attendance) modes.push(attendance);
+      if (typeof raw?.attendanceMode === "string" && raw.attendanceMode) modes.push(raw.attendanceMode);
+      if (Array.isArray(raw?.deliveryModes)) modes.push(...raw.deliveryModes.map(String));
+      return modes.length ? modes : undefined;
+    })(),
     modules: Array.isArray(raw?.modules)
       ? raw.modules.map((m: any) => ({
           titleEn: m?.titleEn ?? m?.titleAr ?? "Module",

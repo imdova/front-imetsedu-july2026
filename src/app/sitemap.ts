@@ -35,10 +35,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
   if (catsRes?.ok) {
-    for (const c of catsRes.data) entries.push(entry(`/category/${c.id}`));
+    for (const c of catsRes.data) entries.push(entry(`/category/${c.slug || c.id}`));
   }
   if (instRes?.ok) {
-    for (const i of instRes.data) entries.push(entry(`/instructors/${i.id}`));
+    for (const i of instRes.data) entries.push(entry(`/instructors/${i.slug || i.id}`));
   }
 
   return entries;

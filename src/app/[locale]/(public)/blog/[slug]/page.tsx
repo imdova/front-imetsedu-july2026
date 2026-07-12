@@ -1,14 +1,15 @@
 import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarDays, Clock, ArrowLeft } from "lucide-react";
+import Image from "next/image";
+import { CalendarDays, Clock, ChevronRight } from "lucide-react";
 import { setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { Badge } from "@/components/ui/badge";
 import { JsonLd } from "@/components/seo/json-ld";
-import { SITE_URL, SITE_NAME, localeUrl, metaDescription } from "@/lib/seo";
+import { SITE_URL, SITE_NAME, localeUrl, metaDescription, breadcrumbLd } from "@/lib/seo";
 import { ArticleSections, ArticleContent } from "@/features/blog/components/article-sections";
 
 // Memoize per request so generateMetadata + the page share one fetch
@@ -89,12 +90,22 @@ export default async function ArticleDetailPage({
       }
     : null;
 
+  const crumb = breadcrumbLd([
+    { name: locale === "ar" ? "الرئيسية" : "Home", url: localeUrl("/", locale) },
+    { name: locale === "ar" ? "المدونة" : "Blog", url: localeUrl("/blog", locale) },
+    { name: post.title, url: localeUrl(`/blog/${post.slug}`, locale) },
+  ]);
+
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <JsonLd data={faqLd ? [articleLd, faqLd] : articleLd} />
-      <Link href="/blog" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-4 rtl:rotate-180" /> All articles
-      </Link>
+      <JsonLd data={[articleLd, ...(faqLd ? [faqLd] : []), crumb]} />
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <Link href="/" className="hover:text-foreground">{locale === "ar" ? "الرئيسية" : "Home"}</Link>
+        <ChevronRight className="size-3.5 rtl:rotate-180" />
+        <Link href="/blog" className="hover:text-foreground">{locale === "ar" ? "المدونة" : "Blog"}</Link>
+        <ChevronRight className="size-3.5 rtl:rotate-180" />
+        <span className="line-clamp-1 text-foreground">{post.title}</span>
+      </nav>
 
       <header className="mt-4 space-y-3">
         {post.category && <Badge variant="secondary">{post.category}</Badge>}
@@ -108,8 +119,16 @@ export default async function ArticleDetailPage({
       </header>
 
       {post.coverImageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.coverImageUrl} alt={post.title} className="mt-6 w-full rounded-2xl" />
+        <div className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl bg-muted">
+          <Image
+            src={post.coverImageUrl}
+            alt={post.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 768px"
+            priority
+            className="object-cover"
+          />
+        </div>
       )}
 
       <div className="mt-8">

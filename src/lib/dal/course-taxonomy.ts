@@ -31,6 +31,41 @@ export const fetchCourseCategories = (): Promise<Result<TaxonomyRow[]>> =>
 export const fetchCourseSubcategories = (): Promise<Result<CourseSubcategory[]>> =>
   mapList(subCategoriesSvc.listSubCategories, toCourseSubcategory, "Failed to load sub-categories");
 
+/** Rich, public-facing category (for the category landing page). */
+export interface PublicCategory {
+  id: string;
+  nameEn: string;
+  nameAr: string;
+  slug: string;
+  icon?: string;
+  image?: string;
+  headlineEn?: string;
+  headlineAr?: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
+  coursesCount?: number;
+  faqs: { questionEn: string; questionAr: string; answerEn: string; answerAr: string }[];
+}
+
+const toPublicCategory = (c: any): PublicCategory => ({
+  id: c?._id ?? c?.id ?? "",
+  nameEn: c?.nameEn ?? c?.nameAr ?? "—",
+  nameAr: c?.nameAr ?? c?.nameEn ?? "—",
+  slug: c?.slug ?? c?._id ?? "",
+  icon: c?.icon || undefined,
+  image: c?.image || undefined,
+  headlineEn: c?.headlineEn || undefined,
+  headlineAr: c?.headlineAr || undefined,
+  descriptionEn: c?.descriptionEn || undefined,
+  descriptionAr: c?.descriptionAr || undefined,
+  coursesCount: typeof c?.coursesCount === "number" ? c.coursesCount : undefined,
+  faqs: Array.isArray(c?.faqs) ? c.faqs : [],
+});
+
+/** LIVE: all categories with their full public content. */
+export const fetchPublicCategories = (): Promise<Result<PublicCategory[]>> =>
+  mapList(categoriesSvc.listCategories, toPublicCategory, "Failed to load categories");
+
 export const fetchCourseCategory = async (id: string): Promise<Result<any>> =>
   categoriesSvc.getCategoryById(id);
 

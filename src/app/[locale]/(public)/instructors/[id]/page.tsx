@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Star, Briefcase, GraduationCap } from "lucide-react";
+import { Star, Briefcase, GraduationCap, ChevronRight } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { Link, redirect } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CourseCard } from "@/features/marketing/components/course-card";
-import { SITE_NAME, seoAlternates, socialMeta } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SITE_NAME, seoAlternates, socialMeta, localeUrl, personLd, breadcrumbLd } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 
 export async function generateMetadata({
@@ -18,11 +20,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, id } = await params;
   const res = await dal.lookups.fetchInstructors();
-  const instructor = res.ok ? res.data.find((i) => i.id === id) : null;
+  const instructor = res.ok ? res.data.find((i) => (i.slug || i.id) === id || i.id === id) : null;
   if (!instructor) return {};
   const title = instructor.label;
   const description = `${instructor.label}${instructor.title ? ` — ${instructor.title}` : ""}. ${SITE_NAME} instructor.`;
-  const path = `/instructors/${id}`;
+  const path = `/instructors/${instructor.slug || instructor.id}`;
   return mergeSeo(path, {
     title,
     description,
@@ -45,13 +47,40 @@ export default async function InstructorDetailPage({
     dal.courses.fetchCourses(),
   ]);
   const instructors = instructorsRes.ok ? instructorsRes.data : [];
-  const instructor = instructors.find((i) => i.id === id);
-  if (!instructor) notFound();
+  const instructor = instructors.find((i) => (i.slug || i.id) === id);
+  if (!instructor) {
+    // Old id-based URL → send it to the clean slug.
+    const byId = instructors.find((i) => i.id === id && i.slug && i.slug !== i.id);
+    if (byId) redirect({ href: `/instructors/${byId.slug}`, locale });
+    notFound();
+  }
 
   const courses = (coursesRes.ok ? coursesRes.data : []).slice(0, 3);
 
+  const url = localeUrl(`/instructors/${instructor.slug || instructor.id}`, locale);
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <JsonLd
+        data={[
+          personLd({ name: instructor.label, jobTitle: instructor.title, image: instructor.avatarUrl, url, locale }),
+          breadcrumbLd([
+            { name: locale === "ar" ? "الرئيسية" : "Home", url: localeUrl("/", locale) },
+            { name: locale === "ar" ? "الأساتذة" : "Faculty", url: localeUrl("/instructors", locale) },
+            { name: instructor.label, url },
+          ]),
+        ]}
+      />
+
+      {/* Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="mb-5 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <Link href="/" className="hover:text-foreground">{locale === "ar" ? "الرئيسية" : "Home"}</Link>
+        <ChevronRight className="size-3.5 rtl:rotate-180" />
+        <Link href="/instructors" className="hover:text-foreground">{locale === "ar" ? "الأساتذة" : "Faculty"}</Link>
+        <ChevronRight className="size-3.5 rtl:rotate-180" />
+        <span className="line-clamp-1 text-foreground">{instructor.label}</span>
+      </nav>
+
       <div className="flex flex-col items-start gap-6 rounded-2xl border border-border/70 bg-gradient-to-br from-primary/5 to-card p-6 sm:flex-row sm:items-center sm:p-8">
         <Avatar className="size-24 border-2 border-background shadow-md">
           <AvatarFallback className="bg-primary/10 text-2xl font-semibold text-primary">

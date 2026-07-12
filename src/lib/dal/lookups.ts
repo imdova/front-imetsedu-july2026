@@ -35,6 +35,7 @@ export async function fetchCategories(): Promise<Result<CategoryLookup[]>> {
       id: c._id,
       label: c.nameEn ?? c.nameAr ?? "—",
       labelAr: c.nameAr,
+      slug: c.slug || c._id,
       subcategories: byParent.get(c._id) ?? [],
     }));
     return ok(out);
@@ -53,6 +54,7 @@ export async function fetchInstructors(): Promise<Result<InstructorLookup[]>> {
         .map((r): InstructorLookup => ({
           id: r._id ?? r.id ?? "",
           label: r.name ?? ([r.firstName, r.lastName].filter(Boolean).join(" ").trim() || "Instructor"),
+          slug: r.slug || r._id || r.id || "",
           avatarUrl: r.avatar ?? r.image ?? r.avatarUrl ?? r.profileImage,
           title: r.title ?? r.jobTitle ?? r.specialty ?? r.headline,
         }))

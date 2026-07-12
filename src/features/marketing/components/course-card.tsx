@@ -20,14 +20,10 @@ import { Link } from "@/i18n/navigation";
 import type { CourseRow } from "@/types";
 import { cn, deriveDiscount, formatCompact } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { courseSocialProof } from "@/features/marketing/lib/course-social-proof";
 
 function formatEgp(amount: number) {
   return `${amount.toLocaleString("en-US")} EGP`;
-}
-
-function reviewCountFor(course: CourseRow) {
-  if (course.rating <= 0) return 0;
-  return Math.max(1, Math.round(course.students * 0.04));
 }
 
 export function CourseCard({ course }: { course: CourseRow }) {
@@ -36,9 +32,9 @@ export function CourseCard({ course }: { course: CourseRow }) {
     course.salePriceEGP > 0 && course.salePriceEGP < course.priceEGP;
   const price = onSale ? course.salePriceEGP : course.priceEGP;
   const discountPct = deriveDiscount(course.priceEGP, course.salePriceEGP);
-  const reviews = reviewCountFor(course);
+  const { rating, reviews } = courseSocialProof(course);
   const isBestSeller = course.isBestseller || course.students >= 800;
-  const isMostPopular = course.isTopRated || course.rating >= 4.7;
+  const isMostPopular = course.isTopRated || rating >= 4.7;
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition-shadow hover:shadow-md">
@@ -81,10 +77,13 @@ export function CourseCard({ course }: { course: CourseRow }) {
           </h3>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <StarRating rating={course.rating} />
-          <span className="text-xs text-muted-foreground">
-            {t("cardReviews", { count: reviews })}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <StarRating rating={rating} />
+          <span className="font-heading text-sm font-bold tabular-nums text-amber-600">
+            {rating.toFixed(1)}
+          </span>
+          <span className="text-xs font-medium text-muted-foreground">
+            {t("cardReviews", { count: reviews.toLocaleString("en-US") })}
           </span>
         </div>
 

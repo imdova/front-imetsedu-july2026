@@ -84,8 +84,14 @@ export async function PublicFooter({ logoLight }: { logoLight?: string }) {
         ))}
       </div>
       <div className="border-t border-border/70">
-        <div className="mx-auto max-w-7xl px-4 py-5 text-sm text-muted-foreground sm:px-6 lg:px-8">
-          © {BRAND.fullName}. {tm("footerRights")}
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <span>© {BRAND.fullName}. {tm("footerRights")}</span>
+          <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/policy/terms" className="transition-colors hover:text-foreground">{tm("footerTermsLink")}</Link>
+            <Link href="/policy/enrollment" className="transition-colors hover:text-foreground">{tm("footerEnrollmentLink")}</Link>
+            <Link href="/policy/refund" className="transition-colors hover:text-foreground">{tm("footerRefundLink")}</Link>
+            <Link href="/policy/privacy" className="transition-colors hover:text-foreground">{tm("footerPrivacyLink")}</Link>
+          </nav>
         </div>
       </div>
     </footer>
