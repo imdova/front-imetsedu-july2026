@@ -266,7 +266,8 @@ export const PERMISSION_REGISTRY: UmCategory[] = [
         descAr: "الأقساط والأرصدة المستحقة والتذكيرات.",
         icon: "Wallet", accent: "#f59e0b",
         permissions: [
-          p("finance.payment_tracking.view", "View", "عرض"),
+          p("finance.payment_tracking.view", "View (own customers)", "عرض (عملائه فقط)"),
+          p("finance.payment_tracking.view_all", "View all customers", "عرض جميع العملاء"),
           p("finance.payment_tracking.export", "Export", "تصدير"),
           p("finance.payment_tracking.remind", "Send payment reminder", "إرسال تذكير بالدفع"),
           p("finance.payment_tracking.plan", "Adjust payment plan", "تعديل خطة الدفع"),

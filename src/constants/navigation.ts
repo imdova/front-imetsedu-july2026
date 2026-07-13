@@ -124,6 +124,7 @@ export const ADMIN_NAV: NavSection[] = [
       { titleKey: "examLeads", href: "/admin/marketing/leads", icon: "UserPlus", adminOnly: true },
       { titleKey: "emailMarketing", href: "/admin/marketing/email", icon: "Mail", adminOnly: true },
       { titleKey: "seoManager", href: "/admin/marketing/seo", icon: "FileSearch", adminOnly: true },
+      { titleKey: "studentReviews", href: "/admin/marketing/reviews", icon: "MessageSquareQuote", adminOnly: true },
       { titleKey: "platformMarketing", href: "/admin/marketing/platform", icon: "Megaphone", adminOnly: true },
     ],
   },

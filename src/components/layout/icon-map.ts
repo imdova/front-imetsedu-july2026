@@ -40,6 +40,7 @@ import {
   LayoutTemplate,
   FileSearch,
   Megaphone,
+  MessageSquareQuote,
   PenTool,
   type LucideIcon,
 } from "lucide-react";
@@ -90,6 +91,7 @@ export const ICONS: Record<string, LucideIcon> = {
   LayoutTemplate,
   FileSearch,
   Megaphone,
+  MessageSquareQuote,
   PenTool,
 };
 

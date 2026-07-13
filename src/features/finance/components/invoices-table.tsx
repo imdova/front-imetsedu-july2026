@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { ChevronRight, CheckCircle2, Eye, Receipt } from "lucide-react";
+import { ChevronRight, CheckCircle2, Eye, Receipt, Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
+import { downloadInvoicePdf } from "@integration/services/invoices";
 import { useRouter } from "@/i18n/navigation";
 import type { Invoice, Currency } from "@/lib/db/finance";
 import { cn, formatCurrency, getInitials } from "@/lib/utils";
@@ -244,8 +246,17 @@ function InstallmentRow({
 }) {
   const router = useRouter();
   const t = useTranslations("Finance");
+  const [downloading, setDownloading] = React.useState(false);
   const isPaid = inst.status === "paid";
   const planIdx = inst.paymentPlanIndex ?? 0;
+
+  const onDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDownloading(true);
+    const res = await downloadInvoicePdf(inst.id, `${inst.number}.pdf`);
+    setDownloading(false);
+    if (!res.ok) toast.error(res.error);
+  };
   const instIdx = (inst.installmentIndex ?? 0) + 1;
   const label =
     totalPlans > 1
@@ -298,6 +309,18 @@ function InstallmentRow({
             {t("markPaid")}
           </Button>
         )}
+
+        {/* Download PDF */}
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          disabled={downloading}
+          onClick={onDownload}
+          title={t("downloadBtn")}
+        >
+          {downloading ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+        </Button>
 
         {/* View detail */}
         <Button

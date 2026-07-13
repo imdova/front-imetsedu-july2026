@@ -4,7 +4,6 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { PaymentTracking } from "@/features/admin/components/payment-tracking";
-import { getSessionUser } from "@/lib/permission-guard";
 
 export default async function AdminPaymentTrackingPage({
   params,
@@ -15,17 +14,15 @@ export default async function AdminPaymentTrackingPage({
   setRequestLocale(locale);
   const t = await getTranslations("Admin");
 
-  const user = await getSessionUser();
-  const isStaff = user?.staffRole !== null && user?.staffRole !== undefined;
-  const counselorId = isStaff ? (user?.staffId ?? user?.id) : undefined;
-
+  // Visibility is scoped server-side by the /crm/payments endpoint based on the
+  // caller's permissions (own customers, or all with finance.payment_tracking.view_all).
   return (
     <div className="mx-auto max-w-[1400px] space-y-6">
       <PageHeader title={t("paymentTrackingTitle")}>
         <Button variant="outline" className="gap-1.5"><Receipt className="size-4" />{t("transactionsLedger")}</Button>
         <Button variant="outline" className="gap-1.5"><Download className="size-4" />{t("exportBtn")}</Button>
       </PageHeader>
-      <PaymentTracking counselorId={counselorId} />
+      <PaymentTracking />
     </div>
   );
 }

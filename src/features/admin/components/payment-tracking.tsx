@@ -4,13 +4,14 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import {
   Users, Wallet, AlertTriangle, CalendarClock, CircleCheck, Search, Layers,
-  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download, Receipt, Trash2, SlidersHorizontal,
+  List, LayoutGrid, Check, Clock, AlertCircle, X, Bell, Download, Receipt, Trash2, SlidersHorizontal, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Invoice, Installment } from "@/lib/db/finance";
 import { mapLeadPaymentPlanToInvoice } from "@/lib/finance/map-finance";
 import { getPayments } from "@integration/services/payments";
+import { downloadInvoicePdf } from "@integration/services/invoices";
 import { dal } from "@/lib/dal";
 import { useAuth } from "@/store";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -109,7 +110,7 @@ function dueInWindow(dueStr: string | undefined, window: string): boolean {
   }
 }
 
-export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: { invoices?: Invoice[]; counselorId?: string }) {
+export function PaymentTracking({ invoices: serverInvoices = [] }: { invoices?: Invoice[] }) {
   const t = useTranslations("Admin");
   const { user } = useAuth();
   const canManage = !user?.staffRole; // super-admin only
@@ -143,70 +144,47 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
   const [pstatus, setPstatus] = React.useState("all");
   const [invoices, setInvoices] = React.useState<Invoice[]>(serverInvoices);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let active = true;
     async function load() {
       setIsLoading(true);
-      try {
-        // Always pull leads too: they carry the assigned agent (counselor) and
-        // the pipeline history we need for "Enrolled at" — neither is in the
-        // payments response. Doubles as the staff-scoping source (the payments
-        // endpoint's own counselor filter can't be trusted).
-        const [res, leadsRes, groupsRes] = await Promise.all([
-          getPayments({ limit: 5000 } as any),
-          dal.crm.fetchLeads(counselorId ? { counselorId } : {}),
-          dal.groups.fetchGroups(),
-        ]);
-        if (!active) return;
-        if (res.ok && res.data) {
-          // groupId → title, to resolve the enrolled group name below.
-          const groupNameById = new Map<string, string>();
-          if (groupsRes.ok) for (const g of groupsRes.data) groupNameById.set(g.id, g.title);
-          // leadId → { agent, moved-to-enrolled date, enrolled group } from the leads endpoint.
-          const leadInfo = new Map<string, { agentId: string; agentName: string; enrolledAtISO: string; groupName: string }>();
-          if (leadsRes.ok) {
-            for (const l of leadsRes.data) {
-              const enrolledEntry = [...(l.pipelineHistory ?? [])].reverse().find((h) => h.stage === "enrolled");
-              const gid = enrolledEntry?.logData?.groupId;
-              leadInfo.set(l.id, {
-                agentId: l.counselorId || "",
-                agentName: l.counselorId ? l.counselorName : "",
-                enrolledAtISO: enrolledEntry?.at || "",
-                groupName: gid ? (groupNameById.get(gid) || "") : "",
-              });
-            }
-          }
-          let rows: any[] = (res.data as any)?.leadPayments?.data ?? [];
-          if (counselorId && leadsRes.ok) {
-            rows = rows.filter((lead: any) => leadInfo.has(lead?._id ?? lead?.id));
-          }
-          const plans = rows.filter(
-            (lead: any) => Array.isArray(lead?.paymentPlan?.installments) && lead.paymentPlan.installments.length > 0,
-          );
-          setInvoices(plans.map((lead: any, idx: number) => {
-            const info = leadInfo.get(lead._id ?? lead.id ?? "");
-            const mapped = mapLeadPaymentPlanToInvoice(lead);
-            return {
-              ...mapped,
-              id: `${lead._id ?? idx}-${idx}`,
-              studentId: lead._id,
-              agentId: info?.agentId || "",
-              agentName: info?.agentName || "",
-              enrolledAtISO: info?.enrolledAtISO || "",
-              // Real group: plan/backend lookup first, else the lead's enrolled group.
-              group: mapped.group || info?.groupName || undefined,
-            };
-          }));
-        }
-      } catch {
-      } finally {
-        if (active) setIsLoading(false);
+      setError(null);
+      // The backend scopes rows to what the caller may see (own customers, or
+      // all if they hold finance.payment_tracking.view_all / are super-admin)
+      // and now returns the assigned agent + enrolled date on each row, so no
+      // client-side leads cross-reference or filtering is needed.
+      const res = await getPayments({ limit: 5000 } as any);
+      if (!active) return;
+      if (!res.ok) {
+        setError(res.error || t("ptLoadFailed"));
+        setInvoices([]);
+        setIsLoading(false);
+        return;
       }
+      const rows: any[] = (res.data as any)?.leadPayments?.data ?? [];
+      const plans = rows.filter(
+        (lead: any) => Array.isArray(lead?.paymentPlan?.installments) && lead.paymentPlan.installments.length > 0,
+      );
+      setInvoices(plans.map((lead: any, idx: number) => {
+        const mapped = mapLeadPaymentPlanToInvoice(lead);
+        return {
+          ...mapped,
+          id: `${lead._id ?? idx}-${idx}`,
+          studentId: lead._id,
+          agentId: lead.agentId || "",
+          agentName: lead.agentName || "",
+          enrolledAtISO: lead.enrolledAt || "",
+          group: mapped.group || undefined,
+        };
+      }));
+      setIsLoading(false);
     }
     load();
     return () => { active = false; };
-  }, [counselorId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Each installment invoice is one payment plan / schedule.
   const plans = invoices.filter((i) => i.installments && i.installments.length > 0);
@@ -453,10 +431,15 @@ export function PaymentTracking({ invoices: serverInvoices = [], counselorId }: 
           </div>
         </div>
 
-        {isLoading ? (
+        {error ? (
+          <div className="grid place-items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/5 py-16 text-center">
+            <p className="font-semibold text-destructive">{t("ptLoadFailed")}</p>
+            <p className="max-w-md text-sm text-muted-foreground">{error}</p>
+          </div>
+        ) : isLoading ? (
           <div className="grid place-items-center gap-1.5 py-16 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-            <p className="text-sm text-muted-foreground">Loading payment plans…</p>
+            <p className="text-sm text-muted-foreground">{t("ptLoading")}</p>
           </div>
         ) : rows.length === 0 ? (
           <div className="grid place-items-center gap-1.5 rounded-lg border border-dashed py-16 text-center">
@@ -723,8 +706,28 @@ function InstallChip({ inst, t }: { inst: Installment; t: (k: string, vals?: Rec
   const router = useRouter();
   const s = INST_STYLE[inst.status];
   const hasInvoice = inst.status === "PAID" && !!inst.invoiceId;
+  const [downloading, setDownloading] = React.useState(false);
+
+  const onDownload = async () => {
+    if (!inst.invoiceId) return;
+    setDownloading(true);
+    const res = await downloadInvoicePdf(inst.invoiceId, `invoice-${inst.invoiceId}.pdf`);
+    setDownloading(false);
+    if (!res.ok) toast.error(res.error);
+  };
+
   return (
     <div className="relative">
+      {hasInvoice && (
+        <button
+          onClick={onDownload}
+          disabled={downloading}
+          title={t("ptDownloadInvoice")}
+          className="absolute -top-2.5 -inset-s-2.5 z-10 flex size-6 items-center justify-center rounded-full border-2 border-primary bg-white text-primary shadow-md transition-all hover:bg-primary hover:text-white"
+        >
+          {downloading ? <Loader2 className="size-3 animate-spin" /> : <Download className="size-3" strokeWidth={2.5} />}
+        </button>
+      )}
       {inst.status === "PAID" && (
         <button
           onClick={() => hasInvoice ? router.push(`/admin/crm/invoices/${inst.invoiceId}`) : undefined}

@@ -148,6 +148,7 @@
     "examLeads": "عملاء الاختبار المجاني",
     "emailMarketing": "التسويق بالبريد",
     "seoManager": "مدير تحسين محركات البحث",
+    "studentReviews": "آراء الطلاب",
     "platformMarketing": "تسويق المنصة"
   },
   "Header": {
@@ -2503,6 +2504,9 @@
     "colInstall": "قسط {n}",
     "ptNoMatch": "لا توجد خطط دفع مطابقة",
     "ptTryAnother": "جرّب تبويبًا آخر أو امسح عوامل التصفية.",
+    "ptLoading": "جارٍ تحميل خطط الدفع…",
+    "ptLoadFailed": "تعذّر تحميل خطط الدفع",
+    "ptDownloadInvoice": "تنزيل الفاتورة",
     "ptClearFilters": "مسح عوامل التصفية",
     "ptAllStatuses": "كل الحالات",
     "ptStatusActive": "نشطة",

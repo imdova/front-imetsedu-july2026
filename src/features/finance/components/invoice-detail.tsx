@@ -35,6 +35,15 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
   const [downloading, setDownloading] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
 
+  // Server-generated PDF (Arabic-safe: the backend embeds the Cairo font).
+  const downloadPdf = async () => {
+    if (!invoice) return;
+    setDownloading(true);
+    const res = await downloadInvoicePdf(invoice.id, `${invoice.number}.pdf`);
+    setDownloading(false);
+    if (!res.ok) toast.error(res.error);
+  };
+
   const handleDelete = async () => {
     if (!invoice) return;
     const okToDelete = await confirm({
@@ -50,14 +59,6 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
     if (!res.ok) { toast.error(res.error); return; }
     toast.success(t("invoiceDeleted"));
     router.back();
-  };
-
-  const downloadPdf = async () => {
-    if (!invoice) return;
-    setDownloading(true);
-    const res = await downloadInvoicePdf(invoice.id, `${invoice.number}.pdf`);
-    setDownloading(false);
-    if (!res.ok) toast.error(res.error);
   };
 
   React.useEffect(() => {
