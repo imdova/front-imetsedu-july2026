@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { SystemEmailsTab } from "./system-emails-tab";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -288,6 +289,7 @@ export function EmailMarketing({
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="automations">Automations</TabsTrigger>
+          <TabsTrigger value="system">System Emails</TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaigns" className="space-y-4">
@@ -331,6 +333,10 @@ export function EmailMarketing({
             </div>
           ))}
           <p className="text-xs text-muted-foreground">Use “Edit” to open the visual step builder (wait / email) for each automation.</p>
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-4">
+          <SystemEmailsTab />
         </TabsContent>
       </Tabs>
 

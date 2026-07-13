@@ -1,19 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { SlidersHorizontal, BadgeDollarSign } from "lucide-react";
+import { SlidersHorizontal, BadgeDollarSign, FileText } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CrmVariables } from "./crm-variables";
 import { CommissionPlanEditor } from "./commission-plan-editor";
+import { InvoiceTemplateEditor } from "./invoice-template-editor";
 
 const TABS = [
   { id: "variables", label: "Field Options", icon: SlidersHorizontal },
   { id: "commission", label: "Commission Plan", icon: BadgeDollarSign },
+  { id: "invoiceTemplate", label: "Invoice Template", icon: FileText },
 ] as const;
 
+type TabId = (typeof TABS)[number]["id"];
+
 export function CrmSettingsTabs() {
-  const [tab, setTab] = React.useState<"variables" | "commission">("variables");
+  const [tab, setTab] = React.useState<TabId>("variables");
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm">
@@ -31,7 +35,7 @@ export function CrmSettingsTabs() {
           </button>
         ))}
       </div>
-      {tab === "variables" ? <CrmVariables /> : <CommissionPlanEditor />}
+      {tab === "variables" ? <CrmVariables /> : tab === "commission" ? <CommissionPlanEditor /> : <InvoiceTemplateEditor />}
     </div>
   );
 }

@@ -8,7 +8,6 @@ import { dal } from "@/lib/dal";
 import type { CommissionPlan } from "@/lib/db/commission";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -113,37 +112,42 @@ export function CommissionPlanEditor() {
         </CardContent>
       </Card>
 
-      {/* Role tiers */}
+      {/* Role base bonus (by customers reached) */}
       <Card>
         <CardContent className="space-y-4 py-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Role-based Tiers</p>
-          <p className="-mt-2 text-sm text-muted-foreground">
-            Below <strong>Min customers</strong> no commission is paid. On reaching it the rep earns <strong>Amount at 5</strong>, at the next
-            customer <strong>Amount at 6</strong>, and every additional customer is paid per the program table above.
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <BadgeDollarSign className="size-4" /> Base bonus by role
           </p>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {plan.roles.map((r, i) => (
-              <div key={r.key || i} className="space-y-3 rounded-xl border border-border/60 p-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Role</Label>
-                  <Input value={r.label} onChange={(e) => setRole(i, { label: e.target.value })} />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Min customers</Label>
-                    <Input type="number" min={0} value={String(r.minCustomers)} onChange={(e) => setRole(i, { minCustomers: num(e.target.value) })} className="tabular-nums" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Amount at 5 (EGP)</Label>
-                    <Input type="number" min={0} value={String(r.amountAt5)} onChange={(e) => setRole(i, { amountAt5: num(e.target.value) })} className="tabular-nums" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Amount at 6 (EGP)</Label>
-                    <Input type="number" min={0} value={String(r.amountAt6)} onChange={(e) => setRole(i, { amountAt6: num(e.target.value) })} className="tabular-nums" />
-                  </div>
-                </div>
-              </div>
-            ))}
+          <p className="-mt-2 text-sm text-muted-foreground">
+            Base payout for reaching the customer milestone in a month. Reaching <strong>6 customers</strong> pays the
+            &quot;1st 6&quot; amount, exactly <strong>5</strong> pays the &quot;1st 5&quot; amount, and fewer than 5 pays nothing.
+            From the <strong>7th customer</strong> on, each extra deal adds the per-program amount above.
+          </p>
+          <div className="overflow-x-auto rounded-xl border border-border/60">
+            <table className="w-full min-w-[36rem] text-sm">
+              <thead>
+                <tr className="border-b border-border/60 text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-3 py-2.5 text-start font-medium">Role</th>
+                  <th className="w-48 px-3 py-2.5 text-start font-medium">1st 6 customers (EGP)</th>
+                  <th className="w-48 px-3 py-2.5 text-start font-medium">1st 5 customers (EGP)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plan.roles.map((r, i) => (
+                  <tr key={r.key || i} className="border-b border-border/40 last:border-0">
+                    <td className="px-3 py-2">
+                      <Input value={r.label} onChange={(e) => setRole(i, { label: e.target.value })} placeholder="Role name" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input type="number" min={0} value={String(r.amountAt6)} onChange={(e) => setRole(i, { amountAt6: num(e.target.value) })} className="tabular-nums" />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input type="number" min={0} value={String(r.amountAt5)} onChange={(e) => setRole(i, { amountAt5: num(e.target.value) })} className="tabular-nums" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>

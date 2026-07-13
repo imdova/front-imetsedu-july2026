@@ -58,24 +58,31 @@ export function InvoicesModule({
   const [search, setSearch] = React.useState("");
   const [status, setStatus] = React.useState<string | null>(null);
   const [range, setRange] = React.useState<Range>("all");
+  const [agent, setAgent] = React.useState<string>("all");
 
   React.useEffect(() => {
     let active = true;
     async function load() {
       setIsLoading(true);
       try {
-        const [res, ownLeadsRes] = await Promise.all([
+        // Leads carry the assigned agent (counselor); the invoices endpoint
+        // doesn't. Fetch them (scoped for staff, all for super-admin) to enrich
+        // + narrow the list. Keyed by leadId (= invoice.studentId).
+        const [res, leadsRes] = await Promise.all([
           getInvoices({ limit: 200 }),
-          counselorId ? dal.crm.fetchLeads({ counselorId }) : Promise.resolve(null),
+          dal.crm.fetchLeads(counselorId ? { counselorId } : {}),
         ]);
         if (!active) return;
         if (res.ok && res.data) {
-          let mapped = (res.data.data ?? []).map(mapInvoice);
-          // The list endpoint doesn't support a counselor filter, so narrow
-          // by leadId against the staff's own leads (same source of truth
-          // the "all leads" page filters by).
-          if (counselorId && ownLeadsRes?.ok) {
-            const ownIds = new Set(ownLeadsRes.data.map((l) => l.id));
+          const agentByStudent = new Map<string, { id: string; name: string }>();
+          if (leadsRes.ok) for (const l of leadsRes.data) agentByStudent.set(l.id, { id: l.counselorId, name: l.counselorName });
+          let mapped = (res.data.data ?? []).map(mapInvoice).map((inv) => {
+            const a = inv.studentId ? agentByStudent.get(inv.studentId) : undefined;
+            return a && a.name ? { ...inv, agentId: a.id, agentName: a.name } : inv;
+          });
+          // Staff: narrow to their own leads.
+          if (counselorId && leadsRes.ok) {
+            const ownIds = new Set(leadsRes.data.map((l) => l.id));
             mapped = mapped.filter((inv) => ownIds.has(inv.studentId ?? ""));
           }
           setInvoices(mapped);
@@ -93,8 +100,11 @@ export function InvoicesModule({
   const byTab = invoices.filter((i) =>
     tab === "all" ? true : tab === "installments" ? i.type === "installment" : i.type === "one-off");
 
+  const agents = Array.from(new Set(invoices.map((i) => i.agentName).filter(Boolean))) as string[];
+
   const filtered = byTab.filter((i) => {
     if (status && i.status !== status) return false;
+    if (agent !== "all" && i.agentName !== agent) return false;
     if (!invInRange(i.issuedAtISO, range)) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -169,7 +179,14 @@ export function InvoicesModule({
             </button>
           );
         })}
-        <div className="ms-auto flex items-center gap-2">
+        <div className="ms-auto flex flex-wrap items-center gap-2">
+          <Select value={agent} onValueChange={setAgent}>
+            <SelectTrigger className="h-9 w-44"><SelectValue placeholder={t("invAllAgents")} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("invAllAgents")}</SelectItem>
+              {agents.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={range} onValueChange={(v) => setRange(v as Range)}>
             <SelectTrigger className="h-9 w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
