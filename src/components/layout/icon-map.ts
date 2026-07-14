@@ -43,6 +43,7 @@ import {
   MessageSquareQuote,
   PenTool,
   ScrollText,
+  Link2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -95,6 +96,7 @@ export const ICONS: Record<string, LucideIcon> = {
   MessageSquareQuote,
   PenTool,
   ScrollText,
+  Link2,
 };
 
 export function getIcon(name: string): LucideIcon {

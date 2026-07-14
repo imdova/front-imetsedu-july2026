@@ -2,26 +2,26 @@ import { setRequestLocale } from "next-intl/server";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { requirePermission } from "@/lib/permission-guard";
-import { RulesRegulationsManager } from "@/features/crm/components/rules-regulations-manager";
+import { PaymentLinksManager } from "@/features/crm/components/payment-links-manager";
 
 export const metadata = { robots: { index: false } };
 
-export default async function RulesPage({
+export default async function PaymentLinksPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  await requirePermission("crm.rules.view");
+  await requirePermission("crm.payment_links.view");
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">
       <PageHeader
-        title="Rules and Regulations"
-        description="Work instructions and policies for staff and the students enrollment process."
+        title="Payment Links"
+        description="Generate a PayPal payment link for a course and payment type — set the amount, discount and taxes, then share the link to collect payment in USD."
       />
-      <RulesRegulationsManager />
+      <PaymentLinksManager />
     </div>
   );
 }

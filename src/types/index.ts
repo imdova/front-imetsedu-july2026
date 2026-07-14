@@ -73,6 +73,9 @@ export interface CourseRow {
   difficulty: Difficulty;
   priceEGP: number;
   salePriceEGP: number;
+  /** USD pricing (used by the online / PayPal checkout). 0 when not configured. */
+  priceUSD?: number;
+  salePriceUSD?: number;
   students: number;
   lectures: number;
   rating: number;

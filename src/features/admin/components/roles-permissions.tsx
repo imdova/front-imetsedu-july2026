@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   ShieldCheck, Plus, Search, Save, Copy, Trash2, Building2, ArrowRight, Pencil, GitCommitVertical,
   UserPlus, GitBranch, UsersRound, BarChart3, PlayCircle, Award, GraduationCap, ReceiptText, Undo2, Wallet,
+  Link2, Coins, ScrollText,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   UserPlus, GitBranch, UsersRound, BarChart3, PlayCircle, Award, GraduationCap, ReceiptText, Undo2, Wallet,
+  Link2, Coins, ScrollText,
 };
 
 const RISK_TONE: Record<UmRisk, string> = {

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type { CrmRule, RuleAudience } from "@/lib/dal/crm-rules";
-import { useAuth } from "@/store";
+import { usePermission } from "@/hooks/use-permission";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -53,8 +53,9 @@ function RuleBody({ body }: { body: string }) {
 }
 
 export function RulesRegulationsManager() {
-  const { user } = useAuth();
-  const canManage = !user?.staffRole; // super-admin only
+  const canCreate = usePermission("crm.rules.create");
+  const canEdit = usePermission("crm.rules.edit");
+  const canDelete = usePermission("crm.rules.delete");
   const { confirm, Confirmation } = useConfirm();
 
   const [rules, setRules] = React.useState<CrmRule[]>([]);
@@ -119,14 +120,14 @@ export function RulesRegulationsManager() {
           <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search rules…" className="ps-9" />
         </div>
-        {canManage && <Button className="shrink-0 gap-1.5" onClick={openCreate}><Plus className="size-4" /> Add rule</Button>}
+        {canCreate && <Button className="shrink-0 gap-1.5" onClick={openCreate}><Plus className="size-4" /> Add rule</Button>}
       </div>
 
       {rules.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-gradient-to-b from-muted/30 to-transparent py-20 text-center">
           <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><ScrollText className="size-7" /></span>
           <p className="font-medium text-foreground">No rules yet</p>
-          {canManage && <Button variant="outline" className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> Add rule</Button>}
+          {canCreate && <Button variant="outline" className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> Add rule</Button>}
         </div>
       ) : visible.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 py-16 text-center">
@@ -155,10 +156,10 @@ export function RulesRegulationsManager() {
                       <span className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", g.meta.accent)} />
                       <div className="flex items-start justify-between gap-3 border-b p-4 pt-5">
                         <h3 className={cn("font-semibold text-foreground", titleRtl && "text-right")} dir={titleRtl ? "rtl" : "ltr"}>{r.title}</h3>
-                        {canManage && (
+                        {(canEdit || canDelete) && (
                           <div className="flex shrink-0 items-center opacity-0 transition-opacity group-hover:opacity-100">
-                            <Button variant="ghost" size="icon" className="size-7" title="Edit" onClick={() => openEdit(r)}><Pencil className="size-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="size-7" title="Delete" onClick={() => remove(r)}><Trash2 className="size-3.5 text-destructive" /></Button>
+                            {canEdit && <Button variant="ghost" size="icon" className="size-7" title="Edit" onClick={() => openEdit(r)}><Pencil className="size-3.5" /></Button>}
+                            {canDelete && <Button variant="ghost" size="icon" className="size-7" title="Delete" onClick={() => remove(r)}><Trash2 className="size-3.5 text-destructive" /></Button>}
                           </div>
                         )}
                       </div>

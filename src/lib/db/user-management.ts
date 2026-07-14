@@ -177,6 +177,42 @@ export const PERMISSION_REGISTRY: UmCategory[] = [
           p("crm.dashboard.export", "Export", "تصدير", "PII / financials", "بيانات شخصية / مالية"),
         ],
       },
+      {
+        key: "paymentLinks", en: "Payment Links", ar: "روابط الدفع",
+        descEn: "PayPal payment links per course & installment.",
+        descAr: "روابط دفع PayPal لكل كورس وقسط.",
+        icon: "Link2", accent: "#0ea5e9",
+        permissions: [
+          p("crm.payment_links.view", "View", "عرض"),
+          p("crm.payment_links.create", "Create", "إنشاء"),
+          p("crm.payment_links.edit", "Edit", "تعديل"),
+          p("crm.payment_links.delete", "Delete", "حذف"),
+        ],
+      },
+      {
+        key: "commission", en: "Commission", ar: "العمولات",
+        descEn: "Sales commission deals, plan and insights.",
+        descAr: "عمولات المبيعات والخطة والتحليلات.",
+        icon: "Coins", accent: "#eab308",
+        permissions: [
+          p("crm.commission.view", "View", "عرض"),
+          p("crm.commission.create", "Create", "إنشاء"),
+          p("crm.commission.edit", "Edit", "تعديل"),
+          p("crm.commission.delete", "Delete", "حذف"),
+        ],
+      },
+      {
+        key: "rules", en: "Rules & Regulations", ar: "القواعد واللوائح",
+        descEn: "Work instructions and policies.",
+        descAr: "تعليمات العمل والسياسات.",
+        icon: "ScrollText", accent: "#8b5cf6",
+        permissions: [
+          p("crm.rules.view", "View", "عرض"),
+          p("crm.rules.create", "Create", "إنشاء"),
+          p("crm.rules.edit", "Edit", "تعديل"),
+          p("crm.rules.delete", "Delete", "حذف"),
+        ],
+      },
     ],
   },
   {

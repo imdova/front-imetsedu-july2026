@@ -12,7 +12,7 @@ export default async function CommissionPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  await requirePermission("crm.dashboard.view");
+  await requirePermission("crm.commission.view");
 
   return (
     <div className="mx-auto max-w-[1400px]">

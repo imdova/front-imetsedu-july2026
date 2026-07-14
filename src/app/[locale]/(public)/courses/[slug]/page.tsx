@@ -267,6 +267,11 @@ export default async function CourseDetailPage({
           )}
         </div>
         <CourseApplyDialog courseId={course.id} courseTitle={course.titleEn} webhookUrl={applyWebhook} />
+        <Button asChild variant="outline" className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5">
+          <Link href={`/checkout?course=${course.slug}`}>
+            💳 {tr("Pay online with PayPal", "ادفع أونلاين عبر PayPal")}
+          </Link>
+        </Button>
 
         {/* Trust badges */}
         <div className="grid grid-cols-2 gap-2 text-xs">
