@@ -21,6 +21,7 @@ export const DEFAULT_INVOICE_TEMPLATE: InvoiceTemplate = {
     wordmark: "IMETS",
     tagline: "SCHOOL OF BUSINESS",
     name: "IMETS School of Business",
+    email: "billing@imetsedu.com",
     address: "Cairo, Egypt",
   },
   sections: {

@@ -106,6 +106,7 @@ export function InvoiceTemplateEditor() {
             />
           </F>
           <F label="Company name"><Input value={form.company.name} onChange={(e) => patch("company", { name: e.target.value })} /></F>
+          <F label="Company email"><Input value={form.company.email} onChange={(e) => patch("company", { email: e.target.value })} placeholder="billing@imetsedu.com" /></F>
           <F label="Address"><Input value={form.company.address} onChange={(e) => patch("company", { address: e.target.value })} /></F>
         </Panel>
 
@@ -159,7 +160,11 @@ function InvoicePreview({ t }: { t: InvoiceTemplate }) {
       )}
       <div className="space-y-3 px-4 py-3 text-[11px]">
         {t.sections.showCompany && (
-          <div><div className="font-semibold">{t.company.name}</div><div style={{ color: c.muted }}>{t.company.address}</div></div>
+          <div>
+            <div className="font-semibold">{t.company.name}</div>
+            {t.company.email && <div style={{ color: c.muted }}>{t.company.email}</div>}
+            <div style={{ color: c.muted }}>{t.company.address}</div>
+          </div>
         )}
         <div className="h-px" style={{ background: c.border }} />
         <div className="flex justify-between gap-4">
@@ -204,7 +209,7 @@ function InvoicePreview({ t }: { t: InvoiceTemplate }) {
             <span style={{ color: c.muted }}>Subtotal</span><span>EGP 7,900</span>
           </div>
           <div className="flex items-center justify-between px-2 text-[10px]">
-            <span style={{ color: c.muted }}>Taxes</span><span>EGP 0.00</span>
+            <span style={{ color: c.muted }}>Taxes</span><span>EGP 00.000</span>
           </div>
           <div className="flex items-center justify-between rounded px-2 py-1.5 text-[11px] font-bold" style={{ background: c.primary, color: c.headerText }}>
             <span>Total due</span><span>EGP 7,900</span>

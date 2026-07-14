@@ -17,6 +17,7 @@ export interface InvoiceTemplateCompany {
   wordmark: string;
   tagline: string;
   name: string;
+  email: string;
   address: string;
 }
 
