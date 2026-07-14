@@ -2971,6 +2971,7 @@
     "refundsTitle": "Refunds",
     "refundsSubtitle": "Manage refund requests and their workflow.",
     "newInvoice": "New invoice",
+    "prepaidInvoice": "Prepaid invoice",
     "kpiCollected": "Collected",
     "kpiOutstanding": "Outstanding",
     "kpiOverdue": "Overdue",

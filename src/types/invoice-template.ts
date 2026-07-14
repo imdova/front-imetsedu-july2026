@@ -13,6 +13,7 @@ export interface InvoiceTemplateColors {
 }
 
 export interface InvoiceTemplateCompany {
+  logoUrl: string;
   wordmark: string;
   tagline: string;
   name: string;

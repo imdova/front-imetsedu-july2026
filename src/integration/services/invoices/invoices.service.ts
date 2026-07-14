@@ -8,6 +8,7 @@ export interface CreateInvoiceDto {
   paymentTerms?: string;
   leadId: string;
   coursicesIds?: string[];
+  lineItems?: { description: string; qty: number; unitPrice: number }[];
   currency: string;
   discount: number;
   taxPercent: number;

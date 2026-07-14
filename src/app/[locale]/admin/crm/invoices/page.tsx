@@ -1,4 +1,4 @@
-import { Plus, Download, CreditCard } from "lucide-react";
+import { Download } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
@@ -39,8 +39,6 @@ export default async function AdminInvoicesPage({
     <div className="mx-auto max-w-[1400px] space-y-6">
       <PageHeader title={t("invoicesTitle")} description={t("invoicesSubtitle")}>
         <Button variant="outline" className="gap-1.5"><Download className="size-4" />{t("exportCsv")}</Button>
-        <Button variant="outline" className="gap-1.5"><CreditCard className="size-4" />{t("paidInvoiceBtn")}</Button>
-        <Button className="gap-1.5"><Plus className="size-4" />{t("newInvoice")}</Button>
       </PageHeader>
       <InvoicesModule
         invoices={invoices}

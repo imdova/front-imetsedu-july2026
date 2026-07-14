@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Phone, MessageCircle, Mail, MessageSquare, Paperclip, Flame, Clock, Trophy, Ghost, Ban, XCircle, HelpCircle } from "lucide-react";
+import { Phone, MessageCircle, Mail, MessageSquare, Flame, Clock, Trophy, Ghost, Ban, XCircle, HelpCircle } from "lucide-react";
 
 import type { Lead } from "@/lib/db/crm";
 import type { GroupCategoryRow, GroupSubcategoryRow } from "@/lib/dal/groups";
+import { dal } from "@/lib/dal";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +15,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/shared/searchable-select";
 
 const TITLE_EMOJI: Record<string, string> = { contacted: "📞", enrolled: "✨", lost: "✖️" };
 
 export interface TransitionLogData {
   groupId?: string;
+  courseId?: string;
+  nationality?: "egyptian" | "arab";
   contactChannel?: string;
   contactOutcome?: string;
   notes?: string;
@@ -50,9 +54,24 @@ export function LeadTransitionModal({
   const [lostNotes, setLostNotes] = React.useState("");
   // enrolled state
   const [verified, setVerified] = React.useState(false);
+  const [courseId, setCourseId] = React.useState("");
   const [categoryId, setCategoryId] = React.useState("");
   const [subcategoryId, setSubcategoryId] = React.useState("");
   const [group, setGroup] = React.useState("");
+  const [nationality, setNationality] = React.useState<"egyptian" | "arab">(
+    (lead.country || "").toLowerCase().includes("egypt") || lead.country === "مصر" ? "egyptian" : "arab",
+  );
+  const [courses, setCourses] = React.useState<{ value: string; label: string }[]>([]);
+
+  React.useEffect(() => {
+    if (targetStage !== "enrolled") return;
+    let alive = true;
+    (async () => {
+      const res = await dal.courses.fetchCourses({});
+      if (alive && res.ok) setCourses(res.data.map((c) => ({ value: c.id, label: c.titleEn || c.titleAr || "Course" })));
+    })();
+    return () => { alive = false; };
+  }, [targetStage]);
 
   const subOptions = subcategories.filter((s) => !categoryId || s.parentId === categoryId);
   const filteredGroupOptions = groupOptions.filter((g) => !subcategoryId || g.subcategoryId === subcategoryId);
@@ -130,6 +149,10 @@ export function LeadTransitionModal({
 
             {targetStage === "enrolled" && (
               <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Course</Label>
+                  <SearchableSelect value={courseId} onChange={setCourseId} options={courses} placeholder="Select course…" />
+                </div>
                 <div className="space-y-1.5">
                   <Label>{t("categoryLabel")} <span className="text-destructive">*</span></Label>
                   <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setSubcategoryId(""); setGroup(""); }}>
@@ -151,7 +174,17 @@ export function LeadTransitionModal({
                     <SelectContent position="popper">{filteredGroupOptions.map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1.5">
+                  <Label>Customer nationality <span className="text-destructive">*</span></Label>
+                  <Select value={nationality} onValueChange={(v) => setNationality(v as "egyptian" | "arab")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent position="popper">
+                      <SelectItem value="egyptian">Egyptian</SelectItem>
+                      <SelectItem value="arab">Arab</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
                   <Label>{t("priceLabel")}</Label>
                   <div className="flex gap-2">
                     <Input type="number" defaultValue={0} className="flex-1" dir="ltr" />
@@ -165,10 +198,6 @@ export function LeadTransitionModal({
                   <label className="flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm">
                     <Checkbox checked={verified} onCheckedChange={(c) => setVerified(Boolean(c))} />{t("paymentVerifiedCheck")}
                   </label>
-                </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>{t("paymentReceipt")}</Label>
-                  <Button type="button" variant="outline" className="gap-1.5"><Paperclip className="size-4" />{t("attachReceipt")}</Button>
                 </div>
               </div>
             )}
@@ -205,7 +234,7 @@ export function LeadTransitionModal({
               if (targetStage === "contacted") {
                 onConfirm({ contactChannel: channel, contactOutcome: outcome, notes: contactNotes.trim() || undefined });
               } else if (targetStage === "enrolled") {
-                onConfirm({ groupId: group });
+                onConfirm({ groupId: group, courseId: courseId || undefined, nationality });
               } else if (targetStage === "lost") {
                 onConfirm({ lossReason: reason, notes: lostNotes.trim() || undefined });
               } else {

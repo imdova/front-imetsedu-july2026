@@ -27,7 +27,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { PriorityBadge } from "./lead-badges";
-import { LeadTransitionModal } from "./lead-transition-modal";
+import { LeadTransitionModal, type TransitionLogData } from "./lead-transition-modal";
 import { useCrmVariables } from "@/hooks/use-crm-variables";
 import { usePipelineStages } from "@/hooks/use-pipeline-stages";
 import { usePermission } from "@/hooks/use-permission";
@@ -122,18 +122,19 @@ export function PipelineBoard({
 
   const activeLead = activeId ? Object.values(board).flat().find((l) => l.id === activeId) : null;
 
-  const commitMove = async (lead: Lead, from: string, to: string, groupId?: string) => {
+  const commitMove = async (lead: Lead, from: string, to: string, logData?: TransitionLogData) => {
     setBoard((prev) => ({
       ...prev,
       [from]: prev[from].filter((l) => l.id !== lead.id),
       [to]: [{ ...lead, stageKey: to }, ...prev[to]],
     }));
-    const res = await dal.crm.updateLeadStage(lead.id, to);
+    // Persist the modal selections (group, course, nationality) in the stage history.
+    const res = await dal.crm.updateLeadStage(lead.id, to, logData);
     if (res.ok) {
       toast.success(t("stageMoved", { stage: getDisplayName(to) }));
       // Enrolling adds the lead to the chosen group's roster.
-      if (to === "enrolled" && groupId) {
-        const r = await dal.groups.addLeadToGroup(groupId, lead.id);
+      if (to === "enrolled" && logData?.groupId) {
+        const r = await dal.groups.addLeadToGroup(logData.groupId, lead.id);
         if (r.ok) toast.success(t("addedToGroup"));
         else toast.error(r.error);
       }
@@ -209,7 +210,7 @@ export function PipelineBoard({
           groupOptions={groupOptions}
           categories={categories}
           subcategories={subcategories}
-          onConfirm={(data) => { void commitMove(pending.lead, pending.from, pending.to, data?.groupId); setPending(null); }}
+          onConfirm={(data) => { void commitMove(pending.lead, pending.from, pending.to, data); setPending(null); }}
           onCancel={() => setPending(null)}
         />
       )}

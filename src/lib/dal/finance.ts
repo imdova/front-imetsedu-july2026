@@ -80,6 +80,17 @@ export const fetchRefunds = async (): Promise<Result<db.Refund[]>> => {
  * student portal, which reads the same lead.data.paymentPlans), so a single
  * write reflects everywhere.
  */
+/** LIVE: create a manual invoice (regular or already-paid) via POST /crm/invoices. */
+export const createInvoice = async (input: invoicesSvc.CreateInvoiceDto): Promise<Result<db.Invoice>> => {
+  const res = await invoicesSvc.createInvoice(input);
+  if (!res.ok) return res;
+  try {
+    return ok(mapInvoice(res.data));
+  } catch (err) {
+    return fail(toMessage(err, "Failed to create invoice"));
+  }
+};
+
 export const markInvoicePaid = async (id: string): Promise<Result<db.Invoice>> => {
   const res = await invoicesSvc.updateInvoiceStatus(id, "paid");
   if (!res.ok) return res;

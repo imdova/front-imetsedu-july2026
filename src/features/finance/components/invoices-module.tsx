@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { FileText, Wallet, AlertTriangle, TrendingUp, Search, Layers, ListChecks, Columns3, Receipt } from "lucide-react";
+import { FileText, Wallet, AlertTriangle, TrendingUp, Search, Layers, ListChecks, Columns3, Receipt, FilePlus2, CheckCircle2 } from "lucide-react";
 
 import type { Invoice, FinanceStats } from "@/lib/db/finance";
 import { mapInvoice, mapFinanceStats } from "@/lib/finance/map-finance";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { InvoicesTable } from "./invoices-table";
+import { CreateInvoiceDialog } from "./create-invoice-dialog";
 
 const EMPTY_STATS: FinanceStats = { collected: 0, outstanding: 0, overdue: 0, refunded: 0 };
 const STATUSES = ["pending", "paid"] as const;
@@ -59,6 +60,8 @@ export function InvoicesModule({
   const [status, setStatus] = React.useState<string | null>(null);
   const [range, setRange] = React.useState<Range>("all");
   const [agent, setAgent] = React.useState<string>("all");
+  const [createMode, setCreateMode] = React.useState<null | "regular" | "prepaid">(null);
+  const [reloadKey, setReloadKey] = React.useState(0);
 
   React.useEffect(() => {
     let active = true;
@@ -95,7 +98,7 @@ export function InvoicesModule({
     }
     load();
     return () => { active = false; };
-  }, [counselorId]);
+  }, [counselorId, reloadKey]);
 
   const byTab = invoices.filter((i) =>
     tab === "all" ? true : tab === "installments" ? i.type === "installment" : i.type === "one-off");
@@ -133,7 +136,7 @@ export function InvoicesModule({
 
   return (
     <div className="space-y-5">
-      {/* Type tabs */}
+      {/* Type tabs + create actions */}
       <div className="flex flex-wrap items-center gap-2">
         {tabs.map((tb) => (
           <button key={tb.key} onClick={() => setTab(tb.key)}
@@ -143,6 +146,14 @@ export function InvoicesModule({
             <span className={cn("rounded-full px-1.5 text-xs tabular-nums", tab === tb.key ? "bg-white/20" : "bg-muted")}>{tb.count}</span>
           </button>
         ))}
+        <div className="ms-auto flex items-center gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => setCreateMode("prepaid")}>
+            <CheckCircle2 className="size-4" />{t("prepaidInvoice")}
+          </Button>
+          <Button className="gap-1.5" onClick={() => setCreateMode("regular")}>
+            <FilePlus2 className="size-4" />{t("newInvoice")}
+          </Button>
+        </div>
       </div>
 
       {/* KPIs */}
@@ -209,9 +220,16 @@ export function InvoicesModule({
         <div className="grid place-items-center gap-2 rounded-xl border border-dashed py-20 text-center">
           <Receipt className="size-10 text-muted-foreground/40" />
           <p className="font-medium">{t("noInvoicesYet")}</p>
-          <button className="text-sm font-medium text-primary hover:underline">{t("createFirstInvoice")}</button>
+          <button className="text-sm font-medium text-primary hover:underline" onClick={() => setCreateMode("regular")}>{t("createFirstInvoice")}</button>
         </div>
       )}
+
+      <CreateInvoiceDialog
+        open={createMode !== null}
+        prepaid={createMode === "prepaid"}
+        onOpenChange={(o) => { if (!o) setCreateMode(null); }}
+        onCreated={() => setReloadKey((k) => k + 1)}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Palette, Building2, LayoutList, Tag, Save, RotateCcw } from "lucide-react";
+import { Palette, Building2, LayoutList, Tag, Save, RotateCcw, Mail, CalendarDays, Clock, GraduationCap, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
+import { ImageUpload } from "@/components/shared/image-upload";
 
 type Group = keyof InvoiceTemplate;
 
@@ -61,26 +62,11 @@ export function InvoiceTemplateEditor() {
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
       <div className="space-y-5">
-        {/* Colors */}
-        <Panel icon={Palette} title="Colors" subtitle="Used across the downloadable invoice PDF.">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {COLOR_FIELDS.map((c) => (
-              <F key={c.key} label={c.label}>
-                <ColorInput value={form.colors[c.key]} onChange={(v) => patch("colors", { [c.key]: v } as Partial<InvoiceTemplate["colors"]>)} />
-              </F>
-            ))}
-          </div>
-        </Panel>
-
-        {/* Company */}
-        <Panel icon={Building2} title="Company" subtitle="Branding shown in the header and company block.">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <F label="Wordmark"><Input value={form.company.wordmark} onChange={(e) => patch("company", { wordmark: e.target.value })} /></F>
-            <F label="Tagline"><Input value={form.company.tagline} onChange={(e) => patch("company", { tagline: e.target.value })} /></F>
-            <F label="Company name"><Input value={form.company.name} onChange={(e) => patch("company", { name: e.target.value })} /></F>
-            <F label="Address"><Input value={form.company.address} onChange={(e) => patch("company", { address: e.target.value })} /></F>
-          </div>
-        </Panel>
+        {/* Live preview */}
+        <div>
+          <p className="mb-2 text-xs font-semibold text-muted-foreground">Live preview</p>
+          <InvoicePreview t={form} />
+        </div>
 
         {/* Sections */}
         <Panel icon={LayoutList} title="Sections" subtitle="Toggle which parts appear on the invoice.">
@@ -109,10 +95,29 @@ export function InvoiceTemplateEditor() {
         </div>
       </div>
 
-      {/* Live preview */}
-      <div className="lg:sticky lg:top-20 lg:self-start">
-        <p className="mb-2 text-xs font-semibold text-muted-foreground">Live preview</p>
-        <InvoicePreview t={form} />
+      {/* Company + Colors */}
+      <div className="space-y-5 lg:sticky lg:top-20 lg:self-start">
+        <Panel icon={Building2} title="Company" subtitle="Logo + details shown in the invoice header.">
+          <F label="Logo">
+            <ImageUpload
+              value={form.company.logoUrl}
+              onChange={(url) => patch("company", { logoUrl: url })}
+              hint="Shown in the header (replaces the text wordmark). Use a transparent/white PNG when the header band is colored."
+            />
+          </F>
+          <F label="Company name"><Input value={form.company.name} onChange={(e) => patch("company", { name: e.target.value })} /></F>
+          <F label="Address"><Input value={form.company.address} onChange={(e) => patch("company", { address: e.target.value })} /></F>
+        </Panel>
+
+        <Panel icon={Palette} title="Colors" subtitle="Used across the downloadable invoice PDF.">
+          <div className="grid gap-4">
+            {COLOR_FIELDS.map((c) => (
+              <F key={c.key} label={c.label}>
+                <ColorInput value={form.colors[c.key]} onChange={(v) => patch("colors", { [c.key]: v } as Partial<InvoiceTemplate["colors"]>)} />
+              </F>
+            ))}
+          </div>
+        </Panel>
       </div>
     </div>
   );
@@ -126,8 +131,15 @@ function InvoicePreview({ t }: { t: InvoiceTemplate }) {
       {t.sections.coloredHeader ? (
         <div className="flex items-start justify-between px-4 py-3" style={{ background: c.primary, color: c.headerText }}>
           <div>
-            <div className="text-lg font-bold leading-none">{t.company.wordmark || "IMETS"}</div>
-            <div className="mt-1 text-[8px] uppercase tracking-wider opacity-85">{t.company.tagline}</div>
+            {t.company.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={t.company.logoUrl} alt="Logo" className="h-7 max-w-[130px] object-contain" />
+            ) : (
+              <>
+                <div className="text-lg font-bold leading-none">{t.company.wordmark || "IMETS"}</div>
+                <div className="mt-1 text-[8px] uppercase tracking-wider opacity-85">{t.company.tagline}</div>
+              </>
+            )}
           </div>
           <div className="text-end">
             <div className="text-[9px] uppercase opacity-85">{t.labels.invoiceTitle}</div>
@@ -136,7 +148,12 @@ function InvoicePreview({ t }: { t: InvoiceTemplate }) {
         </div>
       ) : (
         <div className="flex items-start justify-between px-4 py-3">
-          <div className="text-lg font-bold" style={{ color: c.primary }}>{t.company.wordmark || "IMETS"}</div>
+          {t.company.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={t.company.logoUrl} alt="Logo" className="h-7 max-w-[130px] object-contain" />
+          ) : (
+            <div className="text-lg font-bold" style={{ color: c.primary }}>{t.company.wordmark || "IMETS"}</div>
+          )}
           <div className="text-base font-bold" style={{ color: c.primary }}>INV-2026-0143</div>
         </div>
       )}
@@ -145,24 +162,65 @@ function InvoicePreview({ t }: { t: InvoiceTemplate }) {
           <div><div className="font-semibold">{t.company.name}</div><div style={{ color: c.muted }}>{t.company.address}</div></div>
         )}
         <div className="h-px" style={{ background: c.border }} />
-        <div className="flex justify-between">
-          <div>
-            <div className="text-[8px] uppercase" style={{ color: c.muted }}>{t.labels.billTo}</div>
-            <div className="font-semibold" dir="auto">هبة محمد عبد الحميد اسماعيل</div>
+        <div className="flex justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[8px] uppercase tracking-wide" style={{ color: c.muted }}>{t.labels.billTo}</div>
+            <div className="mt-0.5 font-semibold" dir="auto">هبة محمد عبد الحميد اسماعيل</div>
+            <div className="mt-0.5 flex items-center gap-1 text-[9.5px]" style={{ color: c.muted }}>
+              <Mail className="size-2.5" />student@example.com
+            </div>
           </div>
-          {t.sections.showTerms && (
-            <div className="text-end"><div className="text-[8px] uppercase" style={{ color: c.muted }}>Terms</div><div>Net 14</div></div>
-          )}
+          <div className="shrink-0 space-y-1.5 text-end">
+            <div>
+              <div className="text-[8px] uppercase tracking-wide" style={{ color: c.muted }}>Issue date</div>
+              <div className="flex items-center justify-end gap-1"><CalendarDays className="size-2.5" style={{ color: c.muted }} />Jul 6, 2026</div>
+            </div>
+            <div>
+              <div className="text-[8px] uppercase tracking-wide" style={{ color: c.muted }}>Due date</div>
+              <div className="flex items-center justify-end gap-1"><Clock className="size-2.5" style={{ color: c.muted }} />Jul 4, 2026</div>
+            </div>
+            {t.sections.showTerms && (
+              <div><div className="text-[8px] uppercase tracking-wide" style={{ color: c.muted }}>Terms</div><div>Net 14</div></div>
+            )}
+          </div>
         </div>
         {/* Table header */}
         <div className="grid grid-cols-[1fr_auto] rounded px-2 py-1 text-[8px] font-semibold uppercase" style={{ background: c.tableHeaderBg, color: c.muted }}>
           <span>Description</span><span>Total</span>
         </div>
-        <div className="grid grid-cols-[1fr_auto] px-2 text-[10px]"><span>Installment 1 of 2</span><span>EGP 7,900</span></div>
-        {/* Total */}
-        <div className="flex items-center justify-between rounded px-2 py-1.5 text-[11px] font-bold" style={{ background: c.primary, color: c.headerText }}>
-          <span>Total due</span><span>EGP 7,900</span>
+        <div className="grid grid-cols-[1fr_auto] items-center px-2 py-1 text-[10px]">
+          <span className="flex items-center gap-1.5">
+            <span className="grid size-6 shrink-0 place-items-center rounded" style={{ background: `${c.primary}1a`, color: c.primary }}><GraduationCap className="size-3.5" /></span>
+            <span className="min-w-0">
+              <span className="block font-semibold leading-tight">CPHQ Preparation</span>
+              <span className="block text-[8.5px] leading-tight" style={{ color: c.muted }}>Installment 1 of 2</span>
+            </span>
+          </span>
+          <span>EGP 7,900</span>
         </div>
+        {/* Totals */}
+        <div className="ms-auto w-1/2 min-w-[9rem] space-y-1.5">
+          <div className="flex items-center justify-between px-2 text-[10px]">
+            <span style={{ color: c.muted }}>Subtotal</span><span>EGP 7,900</span>
+          </div>
+          <div className="flex items-center justify-between px-2 text-[10px]">
+            <span style={{ color: c.muted }}>Taxes</span><span>EGP 0.00</span>
+          </div>
+          <div className="flex items-center justify-between rounded px-2 py-1.5 text-[11px] font-bold" style={{ background: c.primary, color: c.headerText }}>
+            <span>Total due</span><span>EGP 7,900</span>
+          </div>
+        </div>
+
+        {/* Payment receipt */}
+        {t.sections.showReceipt && (
+          <div className="space-y-1 border-t pt-2" style={{ borderColor: c.border }}>
+            <div className="flex items-center gap-1 text-[8px] uppercase tracking-wide" style={{ color: c.muted }}>
+              <Paperclip className="size-2.5" />{t.labels.receipt}
+            </div>
+            <div className="grid h-16 w-24 place-items-center rounded border text-[8px]" style={{ borderColor: c.border, color: c.muted }}>Receipt image</div>
+          </div>
+        )}
+
         {t.sections.showFooter && t.labels.footer.trim() && (
           <div className="border-t pt-2 text-center text-[9px]" style={{ borderColor: c.border, color: c.muted }}>{t.labels.footer}</div>
         )}

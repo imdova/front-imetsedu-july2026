@@ -2971,6 +2971,7 @@
     "refundsTitle": "المستردات",
     "refundsSubtitle": "إدارة طلبات الاسترداد وسير عملها.",
     "newInvoice": "فاتورة جديدة",
+    "prepaidInvoice": "فاتورة مدفوعة مسبقًا",
     "kpiCollected": "المحصّل",
     "kpiOutstanding": "المستحق",
     "kpiOverdue": "متأخر",

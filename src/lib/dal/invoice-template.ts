@@ -17,6 +17,7 @@ export const DEFAULT_INVOICE_TEMPLATE: InvoiceTemplate = {
     border: "#E5E7EB",
   },
   company: {
+    logoUrl: "",
     wordmark: "IMETS",
     tagline: "SCHOOL OF BUSINESS",
     name: "IMETS School of Business",
