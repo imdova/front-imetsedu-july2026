@@ -6,17 +6,21 @@ import type { PipelineStage } from "@/lib/db/crm";
 
 const STAGES_SETTING_ID = "6a25bd99f90982c9b47c4d22";
 const EXCLUDED_STAGE_KEYS = new Set(["qualified", "payment"]);
+// Keys MUST match the backend PipelineStage enum + the rest of the UI maps
+// (map-lead STAGE_MAP, crm REVERSE_STAGE, features/crm/lib/maps). The stage is
+// keyed `waiting_payment`; its display label ("Invoice Sent", etc.) is driven
+// by the CRM Settings stage options / translations, not by this key.
 const STAGE_KEY_ORDER = [
   "new_inquiries",
   "contacted",
-  "invoice_sent",
+  "waiting_payment",
   "enrolled",
   "lost",
 ] as const;
 const STAGE_COLORS: Record<string, string> = {
   new_inquiries: "#94A3B8",
   contacted: "#3B82F6",
-  invoice_sent: "#0EA5E9",
+  waiting_payment: "#0EA5E9",
   enrolled: "#10B981",
   lost: "#6B7280",
   dead: "#EF4444",
