@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type { PaymentMethod } from "@/lib/dal/payment-methods";
-import { useAuth } from "@/store";
+import { usePermission } from "@/hooks/use-permission";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,8 +34,10 @@ function brand(title: string): { Icon: LucideIcon; chip: string; accent: string 
 }
 
 export function PaymentMethodsTab() {
-  const { user } = useAuth();
-  const canManage = !user?.staffRole; // super-admin only
+  const canCreate = usePermission("crm.office.create");
+  const canEdit = usePermission("crm.office.edit");
+  const canDelete = usePermission("crm.office.delete");
+  const canManage = canCreate || canEdit || canDelete;
   const { confirm, Confirmation } = useConfirm();
 
   const [methods, setMethods] = React.useState<PaymentMethod[]>([]);
@@ -112,7 +114,7 @@ export function PaymentMethodsTab() {
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…" className="ps-9" />
           </div>
-          {canManage && <Button className="shrink-0 gap-1.5" onClick={openCreate}><Plus className="size-4" /> <span className="hidden sm:inline">Add method</span></Button>}
+          {canCreate && <Button className="shrink-0 gap-1.5" onClick={openCreate}><Plus className="size-4" /> <span className="hidden sm:inline">Add method</span></Button>}
         </div>
       </div>
 
@@ -120,7 +122,7 @@ export function PaymentMethodsTab() {
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-gradient-to-b from-muted/30 to-transparent py-20 text-center">
           <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><Wallet className="size-7" /></span>
           <p className="font-medium text-foreground">No payment methods yet</p>
-          {canManage && <Button variant="outline" className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> Add method</Button>}
+          {canCreate && <Button variant="outline" className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> Add method</Button>}
         </div>
       ) : visible.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 py-16 text-center">

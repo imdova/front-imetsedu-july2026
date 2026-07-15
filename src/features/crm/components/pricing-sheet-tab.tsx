@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type { PriceRow } from "@/lib/dal/pricing";
-import { useAuth } from "@/store";
+import { usePermission } from "@/hooks/use-permission";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,8 +47,10 @@ const has = (v: string) => Boolean(v && v.trim() && !/^-+$/.test(v.trim()));
 const cellText = (v: string) => (has(v) ? v : "—");
 
 export function PricingSheetTab() {
-  const { user } = useAuth();
-  const canManage = !user?.staffRole; // super-admin only
+  const canCreate = usePermission("crm.office.create");
+  const canEdit = usePermission("crm.office.edit");
+  const canDelete = usePermission("crm.office.delete");
+  const canManage = canCreate || canEdit || canDelete;
   const { confirm, Confirmation } = useConfirm();
 
   const [rows, setRows] = React.useState<PriceRow[]>([]);
@@ -119,7 +121,7 @@ export function PricingSheetTab() {
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search program…" className="ps-9" />
           </div>
-          {canManage && <Button className="shrink-0 gap-1.5" onClick={openCreate}><Plus className="size-4" /> <span className="hidden sm:inline">Add program</span></Button>}
+          {canCreate && <Button className="shrink-0 gap-1.5" onClick={openCreate}><Plus className="size-4" /> <span className="hidden sm:inline">Add program</span></Button>}
         </div>
       </div>
 
@@ -136,7 +138,7 @@ export function PricingSheetTab() {
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-gradient-to-b from-muted/30 to-transparent py-20 text-center">
           <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><Coins className="size-7" /></span>
           <p className="font-medium text-foreground">No pricing yet</p>
-          {canManage && <Button variant="outline" className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> Add program</Button>}
+          {canCreate && <Button variant="outline" className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> Add program</Button>}
         </div>
       ) : visible.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 py-16 text-center">

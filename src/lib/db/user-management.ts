@@ -178,6 +178,18 @@ export const PERMISSION_REGISTRY: UmCategory[] = [
         ],
       },
       {
+        key: "office", en: "Office", ar: "المكتب",
+        descEn: "Message templates, important links, registration sheets, pricing sheet, payment methods.",
+        descAr: "قوالب الرسائل والروابط المهمة وشيتات التسجيل وشيت الأسعار وطرق الدفع.",
+        icon: "Briefcase", accent: "#14b8a6",
+        permissions: [
+          p("crm.office.view", "View", "عرض"),
+          p("crm.office.create", "Create", "إنشاء"),
+          p("crm.office.edit", "Edit", "تعديل"),
+          p("crm.office.delete", "Delete", "حذف"),
+        ],
+      },
+      {
         key: "paymentLinks", en: "Payment Links", ar: "روابط الدفع",
         descEn: "PayPal payment links per course & installment.",
         descAr: "روابط دفع PayPal لكل كورس وقسط.",

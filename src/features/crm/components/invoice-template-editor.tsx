@@ -211,7 +211,7 @@ function InvoicePreview({ t }: { t: InvoiceTemplate }) {
           <div className="flex items-center justify-between px-2 text-[10px]">
             <span style={{ color: c.muted }}>Taxes</span><span>EGP 00.000</span>
           </div>
-          <div className="flex items-center justify-between rounded px-2 py-1.5 text-[11px] font-bold" style={{ background: c.primary, color: c.headerText }}>
+          <div className="flex items-center justify-between px-2 py-1.5 text-[11px] font-bold" style={{ color: c.text }}>
             <span>Total due</span><span>EGP 7,900</span>
           </div>
         </div>

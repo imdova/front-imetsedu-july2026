@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type { MessageTemplate } from "@/lib/dal/message-templates";
-import { useAuth } from "@/store";
+import { usePermission } from "@/hooks/use-permission";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
@@ -18,8 +18,10 @@ interface CourseOpt { id: string; title: string }
 const GENERAL = { id: "", title: "General" };
 
 export function MessageTemplatesTab() {
-  const { user } = useAuth();
-  const canManage = !user?.staffRole; // super-admin only
+  const canCreate = usePermission("crm.office.create");
+  const canEdit = usePermission("crm.office.edit");
+  const canDelete = usePermission("crm.office.delete");
+  const canManage = canCreate || canEdit || canDelete;
   const { confirm, Confirmation } = useConfirm();
 
   const [courses, setCourses] = React.useState<CourseOpt[]>([]);

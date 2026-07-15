@@ -13,7 +13,7 @@ export default async function OfficePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  await requirePermission("crm.dashboard.view");
+  await requirePermission("crm.office.view");
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6">

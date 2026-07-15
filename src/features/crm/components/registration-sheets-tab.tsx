@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type { RegColumn, RegCard } from "@/lib/dal/registration-sheets";
-import { useAuth } from "@/store";
+import { usePermission } from "@/hooks/use-permission";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,8 +38,10 @@ const PALETTE = [
 ];
 
 export function RegistrationSheetsTab() {
-  const { user } = useAuth();
-  const canManage = !user?.staffRole; // super-admin only
+  const canCreate = usePermission("crm.office.create");
+  const canEdit = usePermission("crm.office.edit");
+  const canDelete = usePermission("crm.office.delete");
+  const canManage = canCreate || canEdit || canDelete;
   const { confirm, Confirmation } = useConfirm();
 
   const [columns, setColumns] = React.useState<RegColumn[]>([]);
@@ -143,7 +145,7 @@ export function RegistrationSheetsTab() {
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search sheets…" className="ps-9" />
           </div>
-          {canManage && <Button variant="outline" className="shrink-0 gap-1.5" onClick={openCreateCol}><Plus className="size-4" /> <span className="hidden sm:inline">Add column</span></Button>}
+          {canCreate && <Button variant="outline" className="shrink-0 gap-1.5" onClick={openCreateCol}><Plus className="size-4" /> <span className="hidden sm:inline">Add column</span></Button>}
         </div>
       </div>
 
@@ -159,7 +161,7 @@ export function RegistrationSheetsTab() {
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-card py-16 text-center">
           <span className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary"><ClipboardList className="size-6" /></span>
           <p className="text-sm text-muted-foreground">No columns yet.{canManage ? " Add the first one." : ""}</p>
-          {canManage && <Button variant="outline" className="gap-1.5" onClick={openCreateCol}><Plus className="size-4" /> Add column</Button>}
+          {canCreate && <Button variant="outline" className="gap-1.5" onClick={openCreateCol}><Plus className="size-4" /> Add column</Button>}
         </div>
       ) : q && totalMatches === 0 ? null : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
