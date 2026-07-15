@@ -14,8 +14,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Marketing" });
-  const title = t("catalogTitle");
-  const description = t("catalogSubtitle");
+  // Meta title/description are deliberately separate from the on-page H1:
+  // a ~60-char SERP title and a ~155-char description have different jobs to
+  // the headline a visitor reads.
+  const title = t("catalogMetaTitle");
+  const description = t("catalogMetaDescription");
   return mergeSeo("/courses", {
     title,
     description,

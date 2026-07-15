@@ -67,9 +67,11 @@ export function effectivePrice(c: CourseRow): number {
 export function courseSpecialties(c: CourseRow): string[] {
   const b = blob(c);
   const out: string[] = [];
-  if (/quality|cphq|naqh|nahq|accreditation|clinical governance/.test(b)) out.push("healthcare_quality");
+  if (/quality|cphq|naqh|nahq|accreditation|clinical governance/.test(b))
+    out.push("healthcare_quality");
   if (/infection|cic\b|ipc\b|steriliz/.test(b)) out.push("infection_control");
-  if (/leadership|leader|management|hospital mgmt|executive/.test(b)) out.push("leadership");
+  if (/leadership|leader|management|hospital mgmt|executive/.test(b))
+    out.push("leadership");
   if (/patient safety|cpps|safety/.test(b)) out.push("patient_safety");
   return out;
 }
@@ -98,7 +100,8 @@ export function courseDeliveries(c: CourseRow): string[] {
   }
   if (/hybrid|blended/.test(b)) out.add("hybrid");
   if (/live|zoom|instructor-led|instructor led/.test(b)) out.add("live");
-  if (/recorded|on-demand|self[- ]paced|asynchronous/.test(b)) out.add("recorded");
+  if (/recorded|on-demand|self[- ]paced|asynchronous/.test(b))
+    out.add("recorded");
   if (/online|remote|virtual/.test(b)) out.add("online");
   // Public cards currently advertise live online by default
   if (out.size === 0) {
@@ -119,8 +122,7 @@ export function courseDurationBuckets(c: CourseRow): string[] {
     text.match(/(\d+)\s*(?:weeks?|أسابيع|اسبوع)/i) ??
     text.match(/(\d+)\s*w\b/i);
   const months =
-    text.match(/(\d+)\s*(?:months?|أشهر|شهر)/i) ??
-    text.match(/(\d+)\s*m\b/i);
+    text.match(/(\d+)\s*(?:months?|أشهر|شهر)/i) ?? text.match(/(\d+)\s*m\b/i);
 
   if (weeks) {
     const n = Number(weeks[1]);
@@ -216,7 +218,10 @@ export function catalogCategories(
     .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
 }
 
-export function catalogFiltersActive(f: CatalogFilterState, priceCeiling: number): boolean {
+export function catalogFiltersActive(
+  f: CatalogFilterState,
+  priceCeiling: number,
+): boolean {
   return (
     f.category !== "" ||
     f.specialties.length > 0 ||
@@ -242,12 +247,18 @@ export type FacetKey =
 /** The values a course exposes for a given facet. */
 export function courseFacetValues(c: CourseRow, key: FacetKey): string[] {
   switch (key) {
-    case "specialties": return courseSpecialties(c);
-    case "certifications": return courseCertifications(c);
-    case "deliveries": return courseDeliveries(c);
-    case "durations": return courseDurationBuckets(c);
-    case "languages": return courseLanguages(c);
-    case "levels": return [c.difficulty];
+    case "specialties":
+      return courseSpecialties(c);
+    case "certifications":
+      return courseCertifications(c);
+    case "deliveries":
+      return courseDeliveries(c);
+    case "durations":
+      return courseDurationBuckets(c);
+    case "languages":
+      return courseLanguages(c);
+    case "levels":
+      return [c.difficulty];
   }
 }
 
@@ -274,7 +285,10 @@ export function facetCounts(
   return out;
 }
 
-export function courseMatchesCatalogFilters(c: CourseRow, f: CatalogFilterState): boolean {
+export function courseMatchesCatalogFilters(
+  c: CourseRow,
+  f: CatalogFilterState,
+): boolean {
   if (f.category && (c.category ?? "").trim() !== f.category) return false;
   if (!anyMatch(f.specialties, courseSpecialties(c))) return false;
   if (!anyMatch(f.certifications, courseCertifications(c))) return false;

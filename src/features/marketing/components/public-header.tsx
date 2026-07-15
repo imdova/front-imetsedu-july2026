@@ -7,6 +7,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { BRAND, PUBLIC_NAV } from "@/constants/navigation";
 import { Button } from "@/components/ui/button";
+import { CoursesMegaMenu, type MegaCategory, type MegaCourse } from "@/features/marketing/components/courses-mega-menu";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { BrandImage } from "@/components/shared/brand-image";
@@ -17,7 +18,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-export function PublicHeader({ logoLight }: { logoLight?: string }) {
+export function PublicHeader({
+  logoLight,
+  locale = "en",
+  megaCategories = [],
+  megaCourses = [],
+}: {
+  logoLight?: string;
+  locale?: string;
+  megaCategories?: MegaCategory[];
+  megaCourses?: MegaCourse[];
+}) {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const tn = useTranslations("Nav");
@@ -80,7 +91,18 @@ export function PublicHeader({ logoLight }: { logoLight?: string }) {
         </Link>
 
         <nav className="ms-6 hidden items-center gap-1 lg:flex">
-          {links.map((l) => (
+          {links.map((l) =>
+            l.href === "/courses" ? (
+              <CoursesMegaMenu
+                key={l.href}
+                locale={locale}
+                label={l.label}
+                categories={megaCategories}
+                courses={megaCourses}
+                active={l.active}
+                onDark={isHome}
+              />
+            ) : (
             <Link
               key={l.href}
               href={l.href}
@@ -97,7 +119,8 @@ export function PublicHeader({ logoLight }: { logoLight?: string }) {
             >
               {l.label}
             </Link>
-          ))}
+            ),
+          )}
         </nav>
 
         <div className="ms-auto flex items-center gap-1.5">

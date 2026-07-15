@@ -40,7 +40,7 @@ export async function ExploreCampusSection() {
               <div className="relative aspect-[16/10] overflow-hidden bg-[radial-gradient(120%_120%_at_20%_0%,#e8f0ff_0%,#dbe7ff_55%,#c7d8ff_100%)]">
                 {p.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.image} alt={t(p.key)} className="size-full object-cover" />
+                  <img src={p.image} alt={t(p.key)} loading="lazy" decoding="async" className="size-full object-cover" />
                 ) : (
                   <span className="grid size-full place-items-center">
                     <span className="grid size-14 place-items-center rounded-2xl bg-white/70 text-[#0b3fa8] shadow-sm ring-1 ring-[#0b3fa8]/15">

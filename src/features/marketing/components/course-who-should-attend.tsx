@@ -1,4 +1,16 @@
-import { Check } from "lucide-react";
+import {
+  Check,
+  Briefcase,
+  Building2,
+  ClipboardList,
+  Compass,
+  Rocket,
+  GraduationCap,
+  Stethoscope,
+  ShieldCheck,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -32,20 +44,19 @@ export function parseAudienceItems(content: string): string[] {
   return splitAudienceLines(plain);
 }
 
-function GoldenCheckbox({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "mt-0.5 grid size-5 shrink-0 place-items-center rounded-[6px]",
-        "bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600",
-        "shadow-[0_1px_3px_rgba(180,83,9,0.35)] ring-1 ring-amber-500/50",
-        className,
-      )}
-      aria-hidden
-    >
-      <Check className="size-3 stroke-[3] text-white drop-shadow-sm" />
-    </span>
-  );
+function audienceIcon(item: string): LucideIcon {
+  const t = item.toLowerCase();
+  const has = (...w: string[]) => w.some((x) => t.includes(x));
+  if (has("director", "executive", "chief", "ceo", "مدير تنفيذي", "مديري")) return Briefcase;
+  if (has("administrator", "administration", "hospital manager", "إداري", "إدارة")) return Building2;
+  if (has("clinic", "department manager", "supervisor", "عيادة", "مشرف")) return ClipboardList;
+  if (has("consultant", "advisor", "استشاري", "مستشار")) return Compass;
+  if (has("entrepreneur", "founder", "owner", "رائد", "مالك", "صاحب")) return Rocket;
+  if (has("graduate", "student", "fresh", "خريج", "طالب")) return GraduationCap;
+  if (has("nurse", "physician", "doctor", "clinical", "طبيب", "ممرض", "إكلينيكي")) return Stethoscope;
+  if (has("quality", "safety", "accreditation", "جودة", "سلامة", "اعتماد")) return ShieldCheck;
+  if (has("team", "hr", "staff", "فريق", "موارد بشرية")) return Users;
+  return Check;
 }
 
 interface CourseWhoShouldAttendProps {
@@ -55,6 +66,9 @@ interface CourseWhoShouldAttendProps {
   className?: string;
 }
 
+/**
+ * Audience as a flowing chip/rail — not another title + equal card grid.
+ */
 export function CourseWhoShouldAttend({
   title,
   content,
@@ -65,24 +79,34 @@ export function CourseWhoShouldAttend({
   if (!items.length) return null;
 
   return (
-    <section
-      className={cn(
-        "scroll-mt-32 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/90 via-background to-background p-6 sm:p-7",
-        "dark:border-amber-900/40 dark:from-amber-950/25 dark:via-background dark:to-background",
-        className,
-      )}
-    >
-      <h2 className="font-heading text-xl font-semibold">{title}</h2>
+    <section className={cn("scroll-mt-32", className)}>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <h2 className="max-w-md font-heading text-2xl font-bold tracking-tight sm:text-3xl">
+          {title}
+        </h2>
+        <p className="max-w-sm text-sm text-muted-foreground lg:text-end">
+          {locale === "ar"
+            ? "إذا وجدت نفسك هنا — فأنت في المكان الصحيح."
+            : "If you see yourself here, you're in the right place."}
+        </p>
+      </div>
+
       <ul
         dir={locale === "ar" ? "rtl" : "ltr"}
-        className="mt-5 grid gap-3.5 sm:grid-cols-2"
+        className="mt-8 flex flex-wrap gap-2.5"
       >
-        {items.map((item) => (
-          <li key={item} className="flex items-start gap-3 text-sm leading-relaxed text-foreground/85">
-            <GoldenCheckbox />
-            <span>{item}</span>
-          </li>
-        ))}
+        {items.map((item) => {
+          const Icon = audienceIcon(item);
+          return (
+            <li
+              key={item}
+              className="inline-flex max-w-full items-center gap-2 rounded-full border border-border/70 bg-background px-3.5 py-2 text-sm font-medium text-foreground shadow-sm"
+            >
+              <Icon className="size-3.5 shrink-0 text-primary" />
+              <span className="truncate">{item}</span>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

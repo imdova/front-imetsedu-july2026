@@ -17,6 +17,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { CourseCard } from "./course-card";
+import { CourseCardSkeletonGrid } from "./course-card-skeleton";
 import { SmartSearchBox } from "./smart-search-box";
 import { CourseCatalogFilters } from "./course-catalog-filters";
 import { LearningPathsSection } from "./learning-paths-section";
@@ -56,6 +57,7 @@ export function CourseCatalog({
 }) {
   const t = useTranslations("Marketing");
   const locale = useLocale();
+  const [isPending, startTransition] = React.useTransition();
   const [search, setSearch] = React.useState("");
   const [pickedCourseIds, setPickedCourseIds] = React.useState<string[] | null>(
     null,
@@ -68,9 +70,24 @@ export function CourseCatalog({
     return Math.max(5000, Math.ceil(max / 1000) * 1000);
   }, [courses]);
 
-  const [raw, setFilters] = React.useState<CatalogFilterState>(() =>
+  const [raw, setFiltersRaw] = React.useState<CatalogFilterState>(() =>
     emptyCatalogFilters(priceCeiling),
   );
+
+  const setFilters = React.useCallback(
+    (next: CatalogFilterState | ((prev: CatalogFilterState) => CatalogFilterState)) => {
+      startTransition(() => setFiltersRaw(next));
+    },
+    [],
+  );
+
+  const setSearchDeferred = React.useCallback((value: string) => {
+    startTransition(() => setSearch(value));
+  }, []);
+
+  const setPickedDeferred = React.useCallback((ids: string[] | null) => {
+    startTransition(() => setPickedCourseIds(ids));
+  }, []);
 
   // Clamp priceMax to the ceiling by deriving it rather than syncing it back
   // through an effect — the old effect setState'd on every ceiling change,
@@ -78,7 +95,10 @@ export function CourseCatalog({
   const filters = React.useMemo<CatalogFilterState>(
     () => ({
       ...raw,
-      priceMax: raw.priceMax === 0 || raw.priceMax > priceCeiling ? priceCeiling : raw.priceMax,
+      priceMax:
+        raw.priceMax === 0 || raw.priceMax > priceCeiling
+          ? priceCeiling
+          : raw.priceMax,
     }),
     [raw, priceCeiling],
   );
@@ -125,13 +145,13 @@ export function CourseCatalog({
     chips.push({
       id: "search",
       label: `“${search.trim()}”`,
-      onRemove: () => setSearch(""),
+      onRemove: () => setSearchDeferred(""),
     });
   if (pickedCourseIds?.length)
     chips.push({
       id: "picked",
       label: t("catalogSmartSelection"),
-      onRemove: () => setPickedCourseIds(null),
+      onRemove: () => setPickedDeferred(null),
     });
   for (const g of CHIP_GROUPS) {
     const selected = filters[g.key] as string[];
@@ -161,9 +181,11 @@ export function CourseCatalog({
     });
   }
   const clearAll = () => {
-    setSearch("");
-    setPickedCourseIds(null);
-    setFilters(emptyCatalogFilters(priceCeiling));
+    startTransition(() => {
+      setSearch("");
+      setPickedCourseIds(null);
+      setFiltersRaw(emptyCatalogFilters(priceCeiling));
+    });
   };
 
   const hideGuides =
@@ -179,8 +201,8 @@ export function CourseCatalog({
           </h2>
           <SmartSearchBox
             value={search}
-            onChange={setSearch}
-            onPickCourses={setPickedCourseIds}
+            onChange={setSearchDeferred}
+            onPickCourses={setPickedDeferred}
             courses={courses}
             instructors={instructors}
             articles={articles}
@@ -196,15 +218,23 @@ export function CourseCatalog({
             onChange={setFilters}
             priceCeiling={priceCeiling}
             courses={courses}
-            className="hidden lg:sticky lg:top-24 lg:block"
+            className="hidden lg:sticky lg:top-24 lg:z-20 lg:block lg:self-start"
           />
 
           <div className="min-w-0 space-y-4">
             {/* Mobile filters only — desktop uses the left rail. */}
             <div className="lg:hidden">
-              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+              <Sheet
+                open={mobileFiltersOpen}
+                onOpenChange={setMobileFiltersOpen}
+              >
                 <SheetTrigger asChild>
-                  <Button type="button" variant="outline" size="sm" className="gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                  >
                     <SlidersHorizontal className="size-4" />
                     {t("catalogFiltersTitle")}
                     {chips.length > 0 && (
@@ -232,12 +262,17 @@ export function CourseCatalog({
                       <Button
                         variant="outline"
                         className="flex-1"
-                        onClick={() => setFilters(emptyCatalogFilters(priceCeiling))}
+                        onClick={() =>
+                          setFilters(emptyCatalogFilters(priceCeiling))
+                        }
                       >
                         {t("catalogFiltersClear")}
                       </Button>
                     )}
-                    <Button className="flex-1" onClick={() => setMobileFiltersOpen(false)}>
+                    <Button
+                      className="flex-1"
+                      onClick={() => setMobileFiltersOpen(false)}
+                    >
                       {t("catalogShowResults", { n: sorted.length })}
                     </Button>
                   </SheetFooter>
@@ -262,7 +297,9 @@ export function CourseCatalog({
                       type="button"
                       role="tab"
                       aria-selected={on}
-                      onClick={() => setFilters((p) => ({ ...p, category: tab.value }))}
+                      onClick={() =>
+                        setFilters((p) => ({ ...p, category: tab.value }))
+                      }
                       className={cn(
                         "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
                         on
@@ -274,7 +311,9 @@ export function CourseCatalog({
                       <span
                         className={cn(
                           "tabular-nums",
-                          on ? "text-primary-foreground/70" : "text-muted-foreground/70",
+                          on
+                            ? "text-primary-foreground/70"
+                            : "text-muted-foreground/70",
                         )}
                       >
                         {tab.count}
@@ -309,26 +348,56 @@ export function CourseCatalog({
               </div>
             )}
 
-            {sorted.length > 0 ? (
+            {isPending ? (
+              <CourseCardSkeletonGrid count={6} />
+            ) : sorted.length > 0 ? (
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {sorted.map((c) => (
-                  <CourseCard key={c.id} course={c} />
+                  <CourseCard key={c.id} course={c} instructors={instructors} />
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
-                <SearchX className="size-10 text-muted-foreground/40" />
-                <p className="font-medium">{t("noCoursesFound")}</p>
-                {chips.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={clearAll}
-                  >
-                    <X className="size-4" />
-                    {t("catalogFiltersClear")}
-                  </Button>
+              <div className="space-y-6 rounded-2xl border border-dashed border-border px-4 py-10 sm:px-6">
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <SearchX className="size-10 text-muted-foreground/40" />
+                  <div>
+                    <p className="font-heading text-lg font-semibold">
+                      {t("catalogEmptyTitle")}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {t("catalogEmptySubtitle")}
+                    </p>
+                  </div>
+                  {chips.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={clearAll}
+                    >
+                      <X className="size-4" />
+                      {t("catalogFiltersClear")}
+                    </Button>
+                  )}
+                </div>
+                {courses.length > 0 && (
+                  <div>
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("catalogEmptySuggested")}
+                    </p>
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      {[...courses]
+                        .sort((a, b) => b.students - a.students)
+                        .slice(0, 3)
+                        .map((c) => (
+                          <CourseCard
+                            key={`suggest-${c.id}`}
+                            course={c}
+                            instructors={instructors}
+                          />
+                        ))}
+                    </div>
+                  </div>
                 )}
               </div>
             )}

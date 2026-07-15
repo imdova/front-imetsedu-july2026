@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
   ArrowRight,
-  BookOpen,
   CalendarDays,
   Monitor,
   Star,
@@ -17,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
-import type { CourseRow } from "@/types";
+import type { CourseRow, InstructorLookup } from "@/types";
 import { cn, deriveDiscount, formatCompact } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { courseSocialProof } from "@/features/marketing/lib/course-social-proof";
@@ -26,7 +25,33 @@ function formatEgp(amount: number) {
   return `${amount.toLocaleString("en-US")} EGP`;
 }
 
-export function CourseCard({ course }: { course: CourseRow }) {
+function resolveFaculty(
+  course: CourseRow,
+  instructors: InstructorLookup[],
+): { name: string; title?: string; image?: string } | null {
+  const profile = course.instructorProfile;
+  if (profile?.name) {
+    return { name: profile.name, title: profile.title, image: profile.image };
+  }
+  const named = course.instructorNames?.[0];
+  if (!named) return null;
+  const hit = instructors.find(
+    (i) => i.label.trim().toLowerCase() === named.trim().toLowerCase(),
+  );
+  return {
+    name: named,
+    title: hit?.title,
+    image: hit?.avatarUrl,
+  };
+}
+
+export function CourseCard({
+  course,
+  instructors = [],
+}: {
+  course: CourseRow;
+  instructors?: InstructorLookup[];
+}) {
   const t = useTranslations("Marketing");
   const onSale =
     course.salePriceEGP > 0 && course.salePriceEGP < course.priceEGP;
@@ -35,6 +60,7 @@ export function CourseCard({ course }: { course: CourseRow }) {
   const { rating, reviews } = courseSocialProof(course);
   const isBestSeller = course.isBestseller || course.students >= 800;
   const isMostPopular = course.isTopRated || rating >= 4.7;
+  const faculty = resolveFaculty(course, instructors);
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition-shadow hover:shadow-md">
@@ -58,7 +84,8 @@ export function CourseCard({ course }: { course: CourseRow }) {
           )}
           {isMostPopular && (
             <span className="inline-flex items-center gap-1 rounded-full bg-[#0b3fa8] px-2.5 py-1 text-[11px] font-bold leading-none text-white shadow">
-              <Star className="size-3 fill-current" /> {t("cardBadgeMostPopular")}
+              <Star className="size-3 fill-current" />{" "}
+              {t("cardBadgeMostPopular")}
             </span>
           )}
         </div>
@@ -107,9 +134,10 @@ export function CourseCard({ course }: { course: CourseRow }) {
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-xs text-muted-foreground">
           <MetaItem
-            icon={BookOpen}
-            iconClassName="text-sky-600 bg-sky-50 dark:bg-sky-950/40"
+            icon={Radio}
+            iconClassName="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
             label={t("cardLectures", { count: course.lectures })}
+            live
           />
           <MetaItem
             icon={CalendarDays}
@@ -127,6 +155,35 @@ export function CourseCard({ course }: { course: CourseRow }) {
             label={t("cardOnlineZoom")}
           />
         </div>
+
+        {faculty && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/30 px-2.5 py-2">
+            {faculty.image ? (
+              <span className="relative size-9 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={faculty.image} alt="" className="size-full object-cover" />
+              </span>
+            ) : (
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                {faculty.name
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join("")
+                  .toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("cardLedBy")}
+              </p>
+              <p className="truncate text-sm font-semibold text-foreground">{faculty.name}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {faculty.title || t("cardFacultyFallbackTitle")}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="mt-auto flex flex-wrap items-baseline gap-2 pt-1">
           {onSale && (
@@ -171,9 +228,22 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function CardBadge({ icon: Icon, label, tone }: { icon: ElementType; label: string; tone: string }) {
+function CardBadge({
+  icon: Icon,
+  label,
+  tone,
+}: {
+  icon: ElementType;
+  label: string;
+  tone: string;
+}) {
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", tone)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+        tone,
+      )}
+    >
       <Icon className="size-3" strokeWidth={2.25} />
       {label}
     </span>
@@ -184,10 +254,12 @@ function MetaItem({
   icon: Icon,
   iconClassName,
   label,
+  live,
 }: {
   icon: ElementType;
   iconClassName: string;
   label: string;
+  live?: boolean;
 }) {
   return (
     <span className="inline-flex items-center gap-2">
@@ -199,7 +271,15 @@ function MetaItem({
       >
         <Icon className="size-3.5" />
       </span>
-      <span className="leading-tight">{label}</span>
+      <span className="inline-flex items-center gap-1.5 leading-tight">
+        {live ? (
+          <span
+            className="size-1.5 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.22)]"
+            aria-hidden
+          />
+        ) : null}
+        {label}
+      </span>
     </span>
   );
 }

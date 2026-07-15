@@ -1,7 +1,13 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ArrowDown, ArrowRight, Route, ShieldCheck, BadgeCheck } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowRight,
+  Route,
+  ShieldCheck,
+  BadgeCheck,
+} from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import type { CourseRow } from "@/types";
@@ -30,11 +36,24 @@ const PATHS: LearningPath[] = [
     icon: "quality",
     accent: "from-[#0b3fa8]/10 to-sky-50 border-[#0b3fa8]/25",
     steps: [
-      { labelKey: "pathStepHqStart", match: ["healthcare quality", "quality management", "quality diploma"] },
-      { labelKey: "pathStepHqDiploma", match: ["healthcare quality diploma", "quality management diploma", "quality diploma"] },
+      {
+        labelKey: "pathStepHqStart",
+        match: ["healthcare quality", "quality management", "quality diploma"],
+      },
+      {
+        labelKey: "pathStepHqDiploma",
+        match: [
+          "healthcare quality diploma",
+          "quality management diploma",
+          "quality diploma",
+        ],
+      },
       { labelKey: "pathStepCphq", match: ["cphq"] },
       { labelKey: "pathStepPatientSafety", match: ["patient safety", "cpps"] },
-      { labelKey: "pathStepLeadership", match: ["leadership", "healthcare leadership"] },
+      {
+        labelKey: "pathStepLeadership",
+        match: ["leadership", "healthcare leadership"],
+      },
     ],
   },
   {
@@ -44,15 +63,24 @@ const PATHS: LearningPath[] = [
     icon: "infection",
     accent: "from-emerald-50 to-teal-50 border-emerald-200/80",
     steps: [
-      { labelKey: "pathStepIcStart", match: ["infection control", "infection prevention"] },
-      { labelKey: "pathStepIcDiploma", match: ["infection control diploma", "infection diploma"] },
+      {
+        labelKey: "pathStepIcStart",
+        match: ["infection control", "infection prevention"],
+      },
+      {
+        labelKey: "pathStepIcDiploma",
+        match: ["infection control diploma", "infection diploma"],
+      },
       { labelKey: "pathStepCic", match: ["cic"] },
       { labelKey: "pathStepAdvanced", match: ["advanced", "infection", "ipc"] },
     ],
   },
 ];
 
-function resolveCourse(courses: CourseRow[], match: string[]): CourseRow | undefined {
+function resolveCourse(
+  courses: CourseRow[],
+  match: string[],
+): CourseRow | undefined {
   const scored = courses
     .map((c) => {
       const hay = `${c.titleEn} ${c.slug} ${c.category}`.toLowerCase();
@@ -85,21 +113,31 @@ export function LearningPathsSection({ courses }: { courses: CourseRow[] }) {
       <div className="grid gap-5 lg:grid-cols-2">
         {PATHS.map((path) => {
           const Icon = path.icon === "quality" ? BadgeCheck : ShieldCheck;
-          return (
-            <article
-              key={path.id}
-              className={cn(
-                "flex flex-col rounded-2xl border bg-gradient-to-br p-5 shadow-sm sm:p-6",
-                path.accent,
-              )}
-            >
+          // Whole card opens the first resolvable program in the path.
+          const entryCourse = path.steps
+            .map((s) => resolveCourse(courses, s.match))
+            .find(Boolean);
+
+          const cardClass = cn(
+            "flex flex-col rounded-2xl border bg-gradient-to-br p-5 shadow-sm sm:p-6",
+            entryCourse &&
+              "cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+            path.accent,
+          );
+
+          const body = (
+            <>
               <div className="mb-5 flex items-start gap-3">
                 <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-[#0b3fa8] shadow-sm ring-1 ring-black/5">
                   <Icon className="size-5" />
                 </span>
                 <div>
-                  <h3 className="font-heading text-lg font-bold text-[#0a2f7a]">{t(path.titleKey)}</h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{t(path.subtitleKey)}</p>
+                  <h3 className="font-heading text-lg font-bold text-[#0a2f7a]">
+                    {t(path.titleKey)}
+                  </h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {t(path.subtitleKey)}
+                  </p>
                 </div>
               </div>
 
@@ -110,34 +148,41 @@ export function LearningPathsSection({ courses }: { courses: CourseRow[] }) {
                   const label = t(step.labelKey);
 
                   return (
-                    <li key={step.labelKey} className="flex flex-col items-stretch">
+                    <li
+                      key={step.labelKey}
+                      className="flex flex-col items-stretch"
+                    >
                       {course ? (
-                        <Link
-                          href={`/courses/${course.slug}`}
-                          className="group flex items-center gap-3 rounded-xl border border-white/80 bg-white/90 px-3.5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-[#0b3fa8]/35 hover:shadow-md"
-                        >
+                        <span className="flex items-center gap-3 rounded-xl border border-white/80 bg-white/90 px-3.5 py-3 shadow-sm">
                           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#0b3fa8] text-xs font-bold text-white">
                             {i + 1}
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block font-heading text-sm font-bold text-[#0a2f7a] group-hover:text-[#0b3fa8]">
+                            <span className="block font-heading text-sm font-bold text-[#0a2f7a]">
                               {label}
                             </span>
-                            <span className="block truncate text-xs text-muted-foreground">{course.titleEn}</span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {course.titleEn}
+                            </span>
                           </span>
-                          <ArrowRight className="size-4 shrink-0 text-[#0b3fa8]/50 transition group-hover:translate-x-0.5 rtl:rotate-180" />
-                        </Link>
+                          <ArrowRight className="size-4 shrink-0 text-[#0b3fa8]/50 rtl:rotate-180" />
+                        </span>
                       ) : (
                         <div className="flex items-center gap-3 rounded-xl border border-dashed border-[#0b3fa8]/25 bg-white/70 px-3.5 py-3">
                           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#0b3fa8]/15 text-xs font-bold text-[#0b3fa8]">
                             {i + 1}
                           </span>
-                          <span className="font-heading text-sm font-bold text-[#0a2f7a]">{label}</span>
+                          <span className="font-heading text-sm font-bold text-[#0a2f7a]">
+                            {label}
+                          </span>
                         </div>
                       )}
 
                       {!isLast && (
-                        <div className="flex justify-center py-1.5 text-[#0b3fa8]/55" aria-hidden>
+                        <div
+                          className="flex justify-center py-1.5 text-[#0b3fa8]/55"
+                          aria-hidden
+                        >
                           <ArrowDown className="size-4" />
                         </div>
                       )}
@@ -150,6 +195,21 @@ export function LearningPathsSection({ courses }: { courses: CourseRow[] }) {
                 <Route className="size-3.5" />
                 {t("pathsFollowHint", { n: path.steps.length })}
               </p>
+            </>
+          );
+
+          return entryCourse ? (
+            <Link
+              key={path.id}
+              href={`/courses/${entryCourse.slug}`}
+              className={cardClass}
+              aria-label={t(path.titleKey)}
+            >
+              {body}
+            </Link>
+          ) : (
+            <article key={path.id} className={cardClass}>
+              {body}
             </article>
           );
         })}

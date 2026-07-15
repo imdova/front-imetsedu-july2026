@@ -48,7 +48,7 @@ export async function PublicFooter({ logoLight }: { logoLight?: string }) {
               className="h-9 max-w-40 object-contain"
               fallback={
                 logoLight ? (
-                  <img src={logoLight} alt={BRAND.fullName} className="h-9 max-w-40 object-contain" />
+                  <img src={logoLight} alt={BRAND.fullName} loading="lazy" decoding="async" className="h-9 max-w-40 object-contain" />
                 ) : (
                   <>
                     <span className="grid size-9 place-items-center rounded-xl bg-linear-to-br from-primary to-[oklch(0.62_0.19_286)] text-white">

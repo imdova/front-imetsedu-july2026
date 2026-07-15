@@ -21,7 +21,9 @@ import {
 } from "@/features/marketing/lib/catalog-filters";
 
 function toggleValue(list: string[], value: string): string[] {
-  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+  return list.includes(value)
+    ? list.filter((v) => v !== value)
+    : [...list, value];
 }
 
 type Option = { value: string; label: string; hint?: string; count: number };
@@ -47,7 +49,8 @@ function FacetGroup({
   const [open, setOpen] = React.useState(defaultOpen);
   const groupId = React.useId();
   // A facet nobody can act on is noise — drop it rather than render dead chips.
-  if (!options.some((o) => o.count > 0 || selected.includes(o.value))) return null;
+  if (!options.some((o) => o.count > 0 || selected.includes(o.value)))
+    return null;
 
   return (
     <div className="border-b border-border/60 pb-4 last:border-0 last:pb-0">
@@ -68,7 +71,10 @@ function FacetGroup({
             </span>
           )}
           <ChevronDown
-            className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")}
+            className={cn(
+              "size-4 text-muted-foreground transition-transform",
+              open && "rotate-180",
+            )}
           />
         </span>
       </button>
@@ -98,7 +104,14 @@ function FacetGroup({
                 )}
               >
                 {o.label}
-                <span className={cn("tabular-nums", on ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
+                <span
+                  className={cn(
+                    "tabular-nums",
+                    on
+                      ? "text-primary-foreground/70"
+                      : "text-muted-foreground/70",
+                  )}
+                >
                   {o.count}
                 </span>
               </button>
@@ -119,19 +132,32 @@ interface Props {
   className?: string;
 }
 
-export function CourseCatalogFilters({ value, onChange, priceCeiling, courses, className }: Props) {
+export function CourseCatalogFilters({
+  value,
+  onChange,
+  priceCeiling,
+  courses,
+  className,
+}: Props) {
   const t = useTranslations("Marketing");
   const active = catalogFiltersActive(value, priceCeiling);
 
-  const patch = (partial: Partial<CatalogFilterState>) => onChange({ ...value, ...partial });
+  const patch = (partial: Partial<CatalogFilterState>) =>
+    onChange({ ...value, ...partial });
   const fmt = (n: number) => `${n.toLocaleString("en-US")} EGP`;
 
   const counts = React.useMemo(() => {
-    const keys: FacetKey[] = ["specialties", "certifications", "deliveries", "durations", "languages", "levels"];
-    return Object.fromEntries(keys.map((k) => [k, facetCounts(courses, value, k)])) as Record<
-      FacetKey,
-      Record<string, number>
-    >;
+    const keys: FacetKey[] = [
+      "specialties",
+      "certifications",
+      "deliveries",
+      "durations",
+      "languages",
+      "levels",
+    ];
+    return Object.fromEntries(
+      keys.map((k) => [k, facetCounts(courses, value, k)]),
+    ) as Record<FacetKey, Record<string, number>>;
   }, [courses, value]);
 
   const opts = (
@@ -158,7 +184,9 @@ export function CourseCatalogFilters({ value, onChange, priceCeiling, courses, c
       )}
     >
       <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/60 bg-card/95 px-4 py-3 backdrop-blur">
-        <h3 className="font-heading text-sm font-bold">{t("catalogFiltersTitle")}</h3>
+        <h3 className="font-heading text-sm font-bold">
+          {t("catalogFiltersTitle")}
+        </h3>
         {active && (
           <Button
             type="button"
@@ -178,25 +206,33 @@ export function CourseCatalogFilters({ value, onChange, priceCeiling, courses, c
           label={t("filterCertification")}
           options={opts("certifications", CERT_OPTIONS)}
           selected={value.certifications}
-          onToggle={(v) => patch({ certifications: toggleValue(value.certifications, v) })}
+          onToggle={(v) =>
+            patch({ certifications: toggleValue(value.certifications, v) })
+          }
         />
         <FacetGroup
           label={t("filterDelivery")}
           options={opts("deliveries", DELIVERY_OPTIONS)}
           selected={value.deliveries}
-          onToggle={(v) => patch({ deliveries: toggleValue(value.deliveries, v) })}
+          onToggle={(v) =>
+            patch({ deliveries: toggleValue(value.deliveries, v) })
+          }
         />
         <FacetGroup
           label={t("filterDuration")}
           options={opts("durations", DURATION_OPTIONS)}
           selected={value.durations}
-          onToggle={(v) => patch({ durations: toggleValue(value.durations, v) })}
+          onToggle={(v) =>
+            patch({ durations: toggleValue(value.durations, v) })
+          }
         />
         <FacetGroup
           label={t("filterLanguage")}
           options={opts("languages", LANGUAGE_FILTER_OPTIONS)}
           selected={value.languages}
-          onToggle={(v) => patch({ languages: toggleValue(value.languages, v) })}
+          onToggle={(v) =>
+            patch({ languages: toggleValue(value.languages, v) })
+          }
           defaultOpen={false}
         />
         <FacetGroup
@@ -223,7 +259,9 @@ export function CourseCatalogFilters({ value, onChange, priceCeiling, courses, c
             )}
           </div>
           <p className="text-sm font-semibold tabular-nums">
-            {priceTouched ? `${fmt(value.priceMin)} – ${fmt(value.priceMax)}` : t("filterPriceAny")}
+            {priceTouched
+              ? `${fmt(value.priceMin)} – ${fmt(value.priceMax)}`
+              : t("filterPriceAny")}
           </p>
 
           <div className="relative h-8">
@@ -234,7 +272,10 @@ export function CourseCatalogFilters({ value, onChange, priceCeiling, courses, c
               step={100}
               value={value.priceMin}
               onChange={(e) => {
-                const next = Math.min(Number(e.target.value), value.priceMax - 100);
+                const next = Math.min(
+                  Number(e.target.value),
+                  value.priceMax - 100,
+                );
                 patch({ priceMin: Math.max(0, next) });
               }}
               className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-2 w-full -translate-y-1/2 appearance-none bg-transparent accent-primary [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:relative [&::-webkit-slider-thumb]:z-30 [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"
@@ -247,7 +288,10 @@ export function CourseCatalogFilters({ value, onChange, priceCeiling, courses, c
               step={100}
               value={value.priceMax}
               onChange={(e) => {
-                const next = Math.max(Number(e.target.value), value.priceMin + 100);
+                const next = Math.max(
+                  Number(e.target.value),
+                  value.priceMin + 100,
+                );
                 patch({ priceMax: Math.min(priceCeiling, next) });
               }}
               className="pointer-events-none absolute inset-x-0 top-1/2 z-20 h-2 w-full -translate-y-1/2 appearance-none bg-transparent accent-primary [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:relative [&::-webkit-slider-thumb]:z-30 [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary"

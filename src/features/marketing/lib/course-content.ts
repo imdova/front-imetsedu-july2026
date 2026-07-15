@@ -8,6 +8,16 @@
  */
 
 export type CareerRole = { title: string };
+export type CareerOpportunity = {
+  title: string;
+  /** One-line role description — keeps the card scannable but richer. */
+  description: string;
+  /** e.g. "Mid–Senior Level" */
+  level: string;
+  emoji: string;
+};
+export type FaqItem = { q: string; a: string };
+export type FaqGroup = { title: string; items: FaqItem[] };
 export type SeoSection = { heading: string; body: string };
 export type CourseReview = {
   name: string;
@@ -18,65 +28,272 @@ export type CourseReview = {
 };
 
 export type CourseContent = {
-  /** Emotional story block rendered right under the hero. `null` ⇒ the page
-   *  opens straight on "Why Professionals Choose …" instead. */
+  /** Emotional story block rendered right under the hero. `null` ⇒ skip. */
   story: { title: string; body: string } | null;
   /**
-   * Course-specific "What You'll Learn" outcomes. Each line answers
-   * "this is what I'll be able to DO after the course" — never generic
-   * business filler. Empty ⇒ the page falls back to the course record.
+   * Short "About this diploma" — one paragraph only. `null` ⇒ fall back to
+   * the course DB description.
+   */
+  about: { summary: string; more: string[] } | null;
+  /**
+   * Grouped FAQ (Before Enrollment / During Learning / Certification).
+   * When set, replaces the flat default list on the detail page.
+   */
+  faqs: FaqGroup[] | null;
+  /**
+   * Course-specific "What You'll Learn" outcomes. Empty ⇒ course record.
    */
   outcomes: string[];
-  /** Ordered career ladder the program can lead to (rendered as a roadmap). */
+  /** Ordered career ladder (roadmap). */
   careerRoles: CareerRole[];
-  /** One-line, specific answer to "why this program is in demand". */
+  /** Role cards under Career Growth. */
+  careerOpportunities: CareerOpportunity[];
+  /** One-line demand statement under Career Growth. */
   demandLine: string;
-  /** 5 reasons shown right under the hero — answers "why IMETS?" up front. */
+  /**
+   * "Why This Diploma?" — six cards that absorb Why Choose + Benefits + Why Study.
+   * Prefer this over stacking separate "why" sections.
+   */
+  whyThisDiploma: { title: string; body: string }[];
+  /** @deprecated Prefer whyThisDiploma — kept for admin-mapped Why Choose fallback. */
   whyChoose: { title: string; body: string }[];
-  /** SEO long-form sections (What is X / Why become Y). May be empty. */
+  /** Extra SEO prose — leave empty when FAQ + About cover the intent. */
   seoSections: SeoSection[];
-  /** Course reviews (distinct from home-page testimonials). */
   reviews: CourseReview[];
+  /**
+   * Page meta overrides (bespoke courses). When set, wins over CMS SEO and
+   * course title fallbacks. Use a full branded title — layout template is skipped
+   * via `absolute`.
+   */
+  pageSeo?: {
+    metaTitleEn: string;
+    metaTitleAr: string;
+    metaDescriptionEn: string;
+    metaDescriptionAr: string;
+  };
 };
 
-/** The five reasons professionals pick IMETS — shared across courses. */
-function whyChooseReasons(locale: string): { title: string; body: string }[] {
+const isAr = (locale: string) => locale === "ar";
+
+/**
+ * Module-level “by the end you’ll be able to” outcomes for the curriculum accordion.
+ * Matched by module title keywords so CMS title wording can vary slightly.
+ */
+export function resolveModuleOutcomes(
+  slug: string,
+  moduleTitle: string,
+  locale: string,
+): string[] {
+  if (slug !== "hospital-management-diploma") return [];
+  const ar = isAr(locale);
+  const t = moduleTitle.toLowerCase();
+  const has = (...keys: string[]) => keys.some((k) => t.includes(k.toLowerCase()));
+
+  if (has("quality", "accreditation", "جودة", "اعتماد")) {
+    return ar
+      ? [
+          "تصميم مبادرات تحسين الجودة داخل المنشأة",
+          "تطبيق مبادئ سلامة المرضى في العمل اليومي",
+          "قياس أداء الرعاية الصحية ومؤشراته",
+        ]
+      : [
+          "Design quality improvement initiatives",
+          "Apply patient safety principles",
+          "Measure healthcare performance",
+        ];
+  }
+  if (has("leadership", "management", "قيادة", "إدارة") && !has("hospital", "operations", "مستشف", "تشغيل")) {
+    return ar
+      ? [
+          "قيادة فرق الرعاية الصحية بثقة",
+          "اتخاذ قرارات إدارية مبنية على البيانات",
+          "بناء ثقافة مساءلة داخل القسم",
+        ]
+      : [
+          "Lead healthcare teams with confidence",
+          "Make data-informed management decisions",
+          "Build accountability inside your department",
+        ];
+  }
+  if (has("operation", "hospital", "تشغيل", "مستشف")) {
+    return ar
+      ? [
+          "تنظيم تدفقات العمل والموارد في المستشفى",
+          "تحسين كفاءة الأقسام والوحدات",
+          "ربط التشغيل بمعايير الجودة والسلامة",
+        ]
+      : [
+          "Organize hospital workflows and resources",
+          "Improve unit and department efficiency",
+          "Connect operations to quality and safety standards",
+        ];
+  }
+  if (has("finance", "budget", "cost", "تمويل", "موازنة", "تكلف")) {
+    return ar
+      ? [
+          "قراءة وتفسير الميزانيات الصحية",
+          "ربط التكلفة بجودة الخدمة",
+          "المساهمة في قرارات تمويل القسم",
+        ]
+      : [
+          "Read and interpret healthcare budgets",
+          "Link cost decisions to service quality",
+          "Contribute to department financial decisions",
+        ];
+  }
+  if (has("hr", "human", "staff", "resource", "موارد", "بشري", "موظفين")) {
+    return ar
+      ? [
+          "تخطيط احتياجات الكوادر الصحية",
+          "إدارة أداء الفريق بإنصاف ووضوح",
+          "بناء بيئة عمل تدعم الاستبقاء",
+        ]
+      : [
+          "Plan staffing needs for healthcare teams",
+          "Manage team performance fairly and clearly",
+          "Build a retention-friendly work environment",
+        ];
+  }
+  if (has("safety", "patient", "سلامة", "مرضى")) {
+    return ar
+      ? [
+          "تطبيق أطر سلامة المرضى الدولية",
+          "تحليل الحوادث والمخاطر بأسلوب منهجي",
+          "قيادة تحسينات تقلّل الضرر على المرضى",
+        ]
+      : [
+          "Apply international patient-safety frameworks",
+          "Analyze incidents and risks systematically",
+          "Lead improvements that reduce patient harm",
+        ];
+  }
+  if (has("strategy", "planning", "استراتيج", "تخطيط")) {
+    return ar
+      ? [
+          "صياغة أهداف تشغيلية مرتبطة باستراتيجية المنشأة",
+          "ترجمة الخطط إلى مؤشرات قابلة للمتابعة",
+          "المواءمة بين الأقسام على أولويات مشتركة",
+        ]
+      : [
+          "Set operational goals tied to facility strategy",
+          "Translate plans into trackable KPIs",
+          "Align departments around shared priorities",
+        ];
+  }
+
+  // Sensible default for unmatched hospital modules
+  return ar
+    ? [
+        "تطبيق مفاهيم الإدارة الصحية في بيئة عملك",
+        "تحسين التنسيق بين الفرق والأقسام",
+        "المساهمة في أداء تشغيلي أفضل",
+      ]
+    : [
+        "Apply healthcare management concepts on the job",
+        "Improve coordination across teams and departments",
+        "Contribute to stronger operational performance",
+      ];
+}
+
+/** Short topic tags shown under each module title on the live curriculum roadmap. */
+export function resolveModuleTopics(
+  slug: string,
+  moduleTitle: string,
+  locale: string,
+): string[] {
+  if (slug !== "hospital-management-diploma") return [];
+  const ar = isAr(locale);
+  const t = moduleTitle.toLowerCase();
+  const has = (...keys: string[]) => keys.some((k) => t.includes(k.toLowerCase()));
+
+  if (has("quality", "accreditation", "جودة", "اعتماد")) {
+    return ar
+      ? ["تحسين الجودة", "سلامة المرضى", "مؤشرات الأداء"]
+      : ["Quality Improvement", "Patient Safety", "Performance"];
+  }
+  if (has("leadership", "management", "قيادة", "إدارة") && !has("hospital", "operations", "مستشف", "تشغيل")) {
+    return ar
+      ? ["القيادة", "الفرق", "الثقافة المؤسسية"]
+      : ["Leadership", "Teams", "Culture"];
+  }
+  if (has("operation", "hospital", "تشغيل", "مستشف")) {
+    return ar
+      ? ["التشغيل", "سير العمل", "الكفاءة"]
+      : ["Operations", "Workflow", "Efficiency"];
+  }
+  if (has("finance", "budget", "cost", "تمويل", "موازنة", "تكلف")) {
+    return ar
+      ? ["التمويل", "الميزانية", "التكلفة"]
+      : ["Finance", "Budget", "Cost"];
+  }
+  if (has("hr", "human", "staff", "resource", "موارد", "بشري", "موظفين")) {
+    return ar
+      ? ["الموارد البشرية", "الكوادر", "الأداء"]
+      : ["HR", "Staffing", "Performance"];
+  }
+  if (has("safety", "patient", "سلامة", "مرضى")) {
+    return ar
+      ? ["سلامة المرضى", "المخاطر", "التحسين"]
+      : ["Patient Safety", "Risk", "Improvement"];
+  }
+  if (has("strategy", "planning", "استراتيج", "تخطيط")) {
+    return ar
+      ? ["الاستراتيجية", "التخطيط", "مؤشرات"]
+      : ["Strategy", "Planning", "KPIs"];
+  }
+
+  return ar
+    ? ["الإدارة الصحية", "التشغيل", "الجودة"]
+    : ["Leadership", "Operations", "Healthcare System"];
+}
+
+/** Six cards: Why Choose + Benefits + Why Study — no duplicate "what is" essay. */
+function whyThisDiplomaCards(locale: string): { title: string; body: string }[] {
   const ar = isAr(locale);
   return [
     {
-      title: ar ? "منهج متوافق مع المعايير الدولية" : "Internationally Aligned Curriculum",
+      title: ar ? "دبلومة معترف بها دوليًا" : "Internationally Recognized Diploma",
       body: ar
-        ? "محتوى مبني على أفضل الممارسات العالمية المعتمدة في المستشفيات، وليس مادة نظرية عامة."
-        : "Content built on the global best practices hospitals actually run on — not generic theory.",
+        ? "منهج مبني على أطر وممارسات المستشفيات العالمية — شهادة موثّقة يقدّرها أصحاب العمل."
+        : "Curriculum built on global hospital frameworks — a verifiable credential employers recognize.",
     },
     {
-      title: ar ? "تتعلّم من قيادات الرعاية الصحية" : "Learn from Healthcare Leaders",
+      title: ar ? "تتعلّم من قادة رعاية صحية" : "Learn from Healthcare Leaders",
       body: ar
-        ? "تدرس مع خبراء مارسوا المجال فعليًا داخل المستشفيات، ويشرحون لك ما ينجح وما لا ينجح."
-        : "Study with practitioners who have done the job inside hospitals, and will tell you what actually works.",
+        ? "مدربون مارسوا الإدارة فعليًا داخل المستشفيات ويشرحون ما ينجح على أرض الواقع."
+        : "Instructors who have managed real hospital operations and teach what actually works on the floor.",
     },
     {
-      title: ar ? "تعلّم موجَّه لسوق العمل" : "Career-Focused Learning",
+      title: ar ? "مهارات تشغيل وتمويل وجودة" : "Operations, Finance & Quality Skills",
       body: ar
-        ? "كل وحدة مرتبطة بمهارة يطلبها أصحاب العمل في إعلانات الوظائف الحقيقية."
-        : "Every module maps to a skill employers are actually asking for in real job postings.",
+        ? "تخطيط تشغيلي، موازنات، مؤشرات أداء، وتحسين جودة — أدوات تستخدمها فورًا في عملك."
+        : "Operations planning, budgets, KPIs, and quality improvement — tools you can apply at work immediately.",
     },
     {
-      title: ar ? "مشاريع وحالات عملية" : "Practical Projects & Case Studies",
+      title: ar ? "حالات مستشفيات حقيقية" : "Real Hospital Case Studies",
       body: ar
-        ? "تطبّق ما تتعلّمه على حالات واقعية من داخل المستشفيات، فتخرج بخبرة قابلة للعرض."
-        : "Apply what you learn to real hospital scenarios, so you finish with work you can actually show.",
+        ? "تطبّق ما تتعلّمه على سيناريوهات تشغيلية واقعية، لا على نظريات عامة."
+        : "Practice on real operational scenarios — not generic business theory.",
     },
     {
-      title: ar ? "شهادة معترف بها ودعم مستمر" : "Recognized Certificate & Ongoing Support",
+      title: ar ? "ادرس وأنت تعمل" : "Study While You Work",
       body: ar
-        ? "تحصل على شهادة موثّقة، ويستمر الدعم معك بعد انتهاء البرنامج وليس قبله فقط."
-        : "You get a verifiable certificate — and support that continues after the program ends, not just before you pay.",
+        ? "جلسات مباشرة أونلاين مع تسجيلات — تناسب الورديات والدوام الكامل."
+        : "Live online sessions plus recordings — built for full-time roles and shift work.",
+    },
+    {
+      title: ar ? "مسار نحو أدوار إدارية" : "A Path Toward Management Roles",
+      body: ar
+        ? "تهيّئك للترقية والتنسيق والإشراف وإدارة الأقسام داخل المنشآت الصحية."
+        : "Prepares you for promotion into coordinator, supervisor, and department management roles.",
     },
   ];
 }
 
-const isAr = (locale: string) => locale === "ar";
+/** The five reasons professionals pick IMETS — shared fallback for non-flagship. */
+function whyChooseReasons(locale: string): { title: string; body: string }[] {
+  return whyThisDiplomaCards(locale).slice(0, 5);
+}
 
 /** Shared, believable healthcare reviews used as the review wall for any course. */
 function defaultReviews(locale: string): CourseReview[] {
@@ -143,6 +360,7 @@ function defaultReviews(locale: string): CourseReview[] {
 function cphqContent(locale: string): CourseContent {
   const ar = isAr(locale);
   return {
+    about: null,
     story: {
       title: ar
         ? "تخيّل نفسك تقود تحسين الجودة في مستشفاك."
@@ -151,6 +369,7 @@ function cphqContent(locale: string): CourseContent {
         ? "المؤسسات الصحية في الشرق الأوسط تبحث عن متخصصين قادرين على تحسين سلامة المرضى، ورفع مستوى الجودة، وقيادة مبادرات الاعتماد. هذا البرنامج مُصمَّم ليجعلك واحدًا منهم."
         : "Healthcare organizations across the Middle East are looking for professionals who can improve patient safety, enhance quality, and lead accreditation initiatives. This program is designed to help you become one of them.",
     },
+    faqs: null,
     outcomes: ar
       ? [
           "قياس وتحسين جودة الرعاية داخل مستشفاك",
@@ -172,6 +391,7 @@ function cphqContent(locale: string): CourseContent {
       ? "مع توسّع برامج الاعتماد مثل JCI وCBAHI وGAHAR، تستمر الحاجة لمتخصصي الجودة في مستشفيات الخليج والشرق الأوسط."
       : "As accreditation programs like JCI, CBAHI and GAHAR expand, hospitals across the GCC and wider Middle East keep hiring for healthcare quality roles.",
     whyChoose: whyChooseReasons(locale),
+    whyThisDiploma: whyThisDiplomaCards(locale),
     careerRoles: [
       { title: ar ? "أخصائي جودة رعاية صحية" : "Healthcare Quality Specialist" },
       { title: ar ? "منسّق جودة" : "Quality Coordinator" },
@@ -179,6 +399,7 @@ function cphqContent(locale: string): CourseContent {
       { title: ar ? "مدير جودة" : "Quality Manager" },
       { title: ar ? "منسّق اعتماد المستشفيات" : "Hospital Accreditation Coordinator" },
     ],
+    careerOpportunities: [],
     seoSections: [
       {
         heading: ar ? "ما هي شهادة CPHQ؟" : "What Is CPHQ Certification?",
@@ -202,6 +423,123 @@ function hospitalManagementContent(locale: string): CourseContent {
   const ar = isAr(locale);
   return {
     story: null,
+    about: {
+      summary: ar
+        ? "دبلومة إدارة المستشفيات تؤهّلك لقيادة تشغيل المنشآت الصحية: الفرق، والجودة، والتمويل، والسلامة. منهج بمعايير دولية قابلة للتطبيق فورًا — لمن يسعى للترقية أو الانتقال إلى الإدارة."
+        : "The Hospital Management Diploma prepares you to lead healthcare operations — teams, quality, finance, and safety. You learn international practices you can apply on the job. Built for professionals seeking promotion or a move into management.",
+      more: ar
+        ? [
+            "إدارة المستشفى اليوم تتطلّب أكثر من الخبرة الإكلينيكية. المؤسسات الصحية تحتاج إلى مهنيين يفهمون التشغيل، والتمويل، وتحسين الجودة، والقيادة، وسلامة المرضى، واللوائح، والتخطيط الاستراتيجي.",
+            "تمنحك هذه الدبلومة إطارًا عمليًا لقيادة الفرق الصحية بثقة، وتحسين الأداء التشغيلي، وبناء خدمات عالية الجودة وفق أفضل الممارسات الدولية المستخدمة في المستشفيات حول العالم.",
+            "سواء كنت تسعى للترقية داخل قسمك أو تنتقل إلى مسار إداري، ستخرج بمعرفة قابلة للتطبيق فورًا في بيئة العمل — وليس بنظريات عامة بعيدة عن الواقع.",
+          ]
+        : [
+            "Managing a hospital today requires more than clinical expertise. Healthcare organizations need professionals who understand operations, finance, quality improvement, leadership, patient safety, regulations, and strategic planning.",
+            "This diploma gives you a practical framework to lead healthcare teams with confidence, improve operational performance, and build high-quality services using international best practices used in hospitals worldwide.",
+            "Whether you're seeking a promotion in your department or moving into a management track, you finish with knowledge you can apply on the job immediately — not generic theory.",
+          ],
+    },
+    faqs: [
+      {
+        title: ar ? "قبل التسجيل" : "Before Enrollment",
+        items: [
+          {
+            q: ar ? "لمن هذه الدورة؟" : "Who is this course for?",
+            a: ar
+              ? "للأطباء والممرضين والإداريين الصحيين الراغبين في الترقية أو الانتقال إلى أدوار تنسيق أو إشراف أو إدارة أقسام وعمليات."
+              : "Doctors, nurses, and healthcare administrators seeking promotion or a move into coordinator, supervisor, department, or operations roles.",
+          },
+          {
+            q: ar ? "هل الخبرة مطلوبة؟" : "Is experience required?",
+            a: ar
+              ? "لا — يبدأ البرنامج من الأساسيات ويتدرّج مع دعم المرشدين. الخبرة الإكلينيكية أو الإدارية مفيدة لكنها ليست شرطًا."
+              : "No — the program starts from the fundamentals with mentor support. Clinical or admin experience helps, but it is not required.",
+          },
+          {
+            q: ar ? "هل يمكن الدفع بالتقسيط؟" : "Can I pay in installments?",
+            a: ar
+              ? "نعم. معظم البرامج تدعم خطط تقسيط مرنة. تواصل مع القبول لتأكيد الخطة المتاحة."
+              : "Yes. Most programs support flexible installment plans. Speak with admissions to confirm the plan for this diploma.",
+          },
+          {
+            q: ar ? "كم يستغرق إنهاء البرنامج؟" : "How long does it take to finish?",
+            a: ar
+              ? "معظم الدفعات تمتد عدة أشهر مع جلسات أسبوعية مباشرة. المدة الدقيقة تظهر حسب الدفعة على الصفحة."
+              : "Most cohorts run for several months with weekly live sessions. Exact duration is shown per intake on the program page.",
+          },
+          {
+            q: ar ? "كيف أسجّل؟" : "How do I enroll?",
+            a: ar
+              ? "اضغط قدّم الآن، واملأ النموذج القصير، وسيتواصل معك مستشار لتأكيد مقعدك."
+              : "Tap Apply Now, fill the short form, and an advisor will contact you to confirm your seat.",
+          },
+        ],
+      },
+      {
+        title: ar ? "أثناء التعلّم" : "During Learning",
+        items: [
+          {
+            q: ar ? "هل توجد جلسات مباشرة؟" : "Are there live sessions?",
+            a: ar
+              ? "نعم — جلسات مباشرة تفاعلية عبر الإنترنت، بالإضافة إلى مواد يمكنك مراجعتها بوتيرتك."
+              : "Yes — interactive live online sessions, plus materials you can revisit at your own pace.",
+          },
+          {
+            q: ar ? "هل سأحصل على تسجيلات؟" : "Will I receive recordings?",
+            a: ar
+              ? "نعم — تُسجَّل كل جلسة وتُضاف إلى حسابك لإعادة المشاهدة في أي وقت."
+              : "Yes — every live session is recorded and added to your account so you can rewatch anytime.",
+          },
+          {
+            q: ar ? "هل توجد منصة تعلّم (LMS)؟" : "Is there an LMS?",
+            a: ar
+              ? "نعم. تصل إلى المواد والتسجيلات والواجبات عبر بوابتك الطلابية طوال البرنامج وبعده للمراجعة."
+              : "Yes. You access materials, recordings, and assignments through your student portal throughout the program — and afterward for review.",
+          },
+          {
+            q: ar ? "هل يمكنني الدراسة وأنا أعمل بدوام كامل؟" : "Can I study while working full-time?",
+            a: ar
+              ? "نعم. الجلسات تناسب المهنيين العاملين، والتسجيلات متاحة متى فاتك شيء."
+              : "Yes. Sessions are scheduled for working professionals, and recordings cover anything you miss.",
+          },
+          {
+            q: ar ? "هل يوجد تدريب عملي؟" : "Is there practical training?",
+            a: ar
+              ? "نعم — حالات مستشفيات واقعية وواجبات تطبيقية ومناقشات تشغيلية، لا نظريات عامة فقط."
+              : "Yes — real hospital case studies, applied assignments, and operations discussions, not theory alone.",
+          },
+        ],
+      },
+      {
+        title: ar ? "الشهادة والاعتماد" : "Certification",
+        items: [
+          {
+            q: ar ? "هل سأحصل على شهادة؟" : "Will I receive a certificate?",
+            a: ar
+              ? "نعم — شهادة إتمام موثّقة تضيفها لسيرتك الذاتية وLinkedIn بعد اجتياز المتطلبات."
+              : "Yes — a verifiable certificate of completion for your CV and LinkedIn after you meet the requirements.",
+          },
+          {
+            q: ar ? "هل يعترف أصحاب العمل بهذه الدبلومة؟" : "Do employers recognize this diploma?",
+            a: ar
+              ? "نعم. المنهج مبني على أطر مستشفيات عالمية، والشهادة موثّقة ويقدّرها أصحاب العمل في القطاع الصحي."
+              : "Yes. The curriculum follows international hospital frameworks, and employers value this verifiable management credential.",
+          },
+          {
+            q: ar ? "كيف يتم التقييم؟" : "How is assessment done?",
+            a: ar
+              ? "عبر واجبات تطبيقية وتقييم نهائي — للتأكد أنك تستطيع تطبيق ما تعلّمته في سياق تشغيلي حقيقي."
+              : "Through applied assignments and a final assessment — so you prove you can apply what you learned in a real operational context.",
+          },
+          {
+            q: ar ? "هل سيساعدني هذا في الترقية؟" : "Will this help me get promoted?",
+            a: ar
+              ? "نعم. تبني مهارات القيادة والتشغيل والجودة التي تبحث عنها لجان التوظيف للأدوار الإشرافية والإدارية."
+              : "Yes. It builds the leadership, operations, and quality skills hiring managers look for in supervisor and management roles.",
+          },
+        ],
+      },
+    ],
     outcomes: ar
       ? [
           "قيادة أقسام المستشفى بفعالية",
@@ -223,6 +561,7 @@ function hospitalManagementContent(locale: string): CourseContent {
       ? "المستشفيات ومجموعات الرعاية الصحية في الخليج تواصل التوسّع، وتحتاج إلى مديرين يفهمون التشغيل والجودة معًا."
       : "Hospitals and healthcare groups across the GCC keep expanding, and they need managers who understand operations and quality together.",
     whyChoose: whyChooseReasons(locale),
+    whyThisDiploma: whyThisDiplomaCards(locale),
     careerRoles: [
       { title: ar ? "منسّق / إداري قسم" : "Department Coordinator" },
       { title: ar ? "مشرف وحدة" : "Unit Supervisor" },
@@ -230,21 +569,59 @@ function hospitalManagementContent(locale: string): CourseContent {
       { title: ar ? "مدير عمليات المستشفى" : "Hospital Operations Manager" },
       { title: ar ? "مدير / استشاري رعاية صحية" : "Healthcare Director / Consultant" },
     ],
-    seoSections: [
+    careerOpportunities: [
       {
-        heading: ar ? "ما هي دبلومة إدارة المستشفيات؟" : "What Is a Hospital Management Diploma?",
-        body: ar
-          ? "دبلومة إدارة المستشفيات برنامج مهني يجهّزك لإدارة العمليات اليومية داخل المنشآت الصحية: تشغيل الأقسام، وإدارة الموارد والفرق، وضبط الجودة، والاستعداد للاعتماد. وهي مسار مناسب للأطباء والممرضين والإداريين الذين يريدون الانتقال من التنفيذ إلى القيادة."
-          : "A Hospital Management Diploma is a professional program that prepares you to run day-to-day operations inside a healthcare facility: departmental operations, resources and teams, quality control, and accreditation readiness. It suits clinicians, nurses and administrators who want to move from doing the work to leading it.",
+        title: ar ? "مدير عمليات المستشفى" : "Hospital Operations Manager",
+        description: ar
+          ? "قد أقسام المستشفى وحسّن الكفاءة التشغيلية يومًا بيوم."
+          : "Lead hospital departments and improve operational efficiency.",
+        level: ar ? "مستوى متوسط–أولى" : "Mid–Senior Level",
+        emoji: "🏥",
       },
       {
-        heading: ar ? "لماذا تتخصص في إدارة المستشفيات؟" : "Why Specialise in Hospital Management?",
-        body: ar
-          ? "كل مستشفى يحتاج إلى من يوازن بين جودة الرعاية والتكلفة والكفاءة. الانتقال من دور إكلينيكي أو إداري إلى دور قيادي يفتح مسارًا مهنيًا أوسع وأكثر استقرارًا وتأثيرًا داخل المؤسسة الصحية."
-          : "Every hospital needs someone who can balance care quality against cost and efficiency. Moving from a clinical or administrative role into leadership opens a broader, more stable and more influential career path inside the organisation.",
+        title: ar ? "مدير رعاية صحية" : "Healthcare Manager",
+        description: ar
+          ? "أشرف على الفرق والخدمات والنتائج عبر وحدات الرعاية."
+          : "Oversee teams, services, and outcomes across care units.",
+        level: ar ? "مستوى متوسط–أولى" : "Mid–Senior Level",
+        emoji: "👨‍⚕️",
+      },
+      {
+        title: ar ? "مدير عمليات" : "Operations Manager",
+        description: ar
+          ? "نظّم سير العمل والموارد والجودة في العمليات اليومية."
+          : "Coordinate workflows, resources, and quality in day-to-day operations.",
+        level: ar ? "مستوى متوسط–أولى" : "Mid–Senior Level",
+        emoji: "⚙️",
+      },
+      {
+        title: ar ? "مدير عيادة" : "Clinic Manager",
+        description: ar
+          ? "أدِر العيادة: الخدمة، الفريق، تجربة المرضى، والأداء."
+          : "Run the clinic — service, staff, patient experience, and performance.",
+        level: ar ? "مستوى متوسط" : "Mid Level",
+        emoji: "🏥",
+      },
+      {
+        title: ar ? "استشاري رعاية صحية" : "Healthcare Consultant",
+        description: ar
+          ? "قدّم حلولًا للمنشآت في التشغيل والجودة والتخطيط."
+          : "Advise organizations on operations, quality, and strategic improvement.",
+        level: ar ? "مستوى أولى" : "Senior Level",
+        emoji: "💼",
       },
     ],
+    // SEO intent is covered by FAQ + About — avoid stacking more essay blocks.
+    seoSections: [],
     reviews: defaultReviews(locale),
+    pageSeo: {
+      metaTitleEn: "Hospital Management Diploma Online | IMETS Medical School",
+      metaTitleAr: "دبلومة إدارة المستشفيات أونلاين | مدرسة IMETS الطبية",
+      metaDescriptionEn:
+        "Advance your healthcare career with IMETS Hospital Management Diploma. Learn leadership, hospital operations, quality management, finance, HR, and patient safety through live online learning.",
+      metaDescriptionAr:
+        "طوّر مسيرتك في الرعاية الصحية مع دبلومة إدارة المستشفيات من IMETS. تعلّم القيادة وتشغيل المستشفيات وإدارة الجودة والتمويل والموارد البشرية وسلامة المرضى عبر التعلّم المباشر أونلاين.",
+    },
   };
 }
 
@@ -253,6 +630,7 @@ function genericContent(titleEn: string, titleAr: string, locale: string): Cours
   const ar = isAr(locale);
   const title = ar ? titleAr : titleEn;
   return {
+    about: null,
     story: {
       title: ar
         ? "تخيّل مسيرتك المهنية بعد إتقان هذا المجال."
@@ -261,6 +639,7 @@ function genericContent(titleEn: string, titleAr: string, locale: string): Cours
         ? `المؤسسات الصحية في الشرق الأوسط تبحث عن متخصصين مؤهّلين ومعتمدين. برنامج «${title}» مُصمَّم ليمنحك المهارات والشهادة التي تجعلك الخيار الأول لأصحاب العمل.`
         : `Healthcare organizations across the Middle East are looking for qualified, certified professionals. "${title}" is designed to give you the skills and the credential that make you the first choice for employers.`,
     },
+    faqs: null,
     // Left empty on purpose: generic "learn professional models" filler helps
     // nobody. The page falls back to the course's own whatYouWillLearn, and if
     // that's empty too the section is skipped rather than faked.
@@ -269,6 +648,7 @@ function genericContent(titleEn: string, titleAr: string, locale: string): Cours
       ? `تواصل المؤسسات الصحية في المنطقة توظيف المتخصصين المؤهّلين في مجال «${title}».`
       : `Healthcare organizations across the region continue hiring qualified professionals in ${title}.`,
     whyChoose: whyChooseReasons(locale),
+    whyThisDiploma: whyThisDiplomaCards(locale),
     careerRoles: [
       { title: ar ? "أخصائي" : "Specialist" },
       { title: ar ? "أخصائي أول" : "Senior Specialist" },
@@ -276,6 +656,7 @@ function genericContent(titleEn: string, titleAr: string, locale: string): Cours
       { title: ar ? "مدير قسم" : "Department Manager" },
       { title: ar ? "مدير / استشاري" : "Director / Consultant" },
     ],
+    careerOpportunities: [],
     seoSections: [],
     reviews: defaultReviews(locale),
   };

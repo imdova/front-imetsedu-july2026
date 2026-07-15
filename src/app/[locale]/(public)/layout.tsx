@@ -43,11 +43,46 @@ export default async function PublicLayout({
     );
   }
 
+  // Mega-menu data, fetched here (server) so the panel is populated on first
+  // paint rather than flashing in from a client fetch. Categories are derived
+  // from the live catalogue, so the menu can never list an empty category.
+  const megaRes = await dal.courses.fetchCourses();
+  const megaAll = (megaRes.ok ? megaRes.data : []).filter((c) => c.status === "published");
+  const megaCourses = [...megaAll]
+    .sort((a, b) => Number(b.isBestseller) - Number(a.isBestseller) || b.students - a.students)
+    .slice(0, 12)
+    .map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      title: (locale === "ar" ? c.titleAr : c.titleEn) || c.titleEn,
+      category: c.category,
+      thumbnailUrl: c.thumbnailUrl,
+      price: c.priceEGP,
+      salePrice: c.salePriceEGP,
+      rating: c.rating,
+      students: c.students,
+      isBestseller: c.isBestseller,
+    }));
+  const megaCategories = Object.entries(
+    megaAll.reduce<Record<string, number>>((acc, c) => {
+      if (c.category && c.category !== "—") acc[c.category] = (acc[c.category] ?? 0) + 1;
+      return acc;
+    }, {}),
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, count]) => ({
+      id: name,
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+      name,
+      count,
+    }));
+
   return (
     <div className="flex min-h-svh flex-col">
       <JsonLd data={[organizationLd(), websiteLd()]} />
       <PublicBannerBar />
-      <PublicHeader logoLight={logoLight} />
+      <PublicHeader logoLight={logoLight} locale={locale} megaCategories={megaCategories} megaCourses={megaCourses} />
       <main className="flex-1">{children}</main>
       <PublicFooter logoLight={logoLight} />
     </div>
