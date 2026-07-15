@@ -41,6 +41,7 @@ import {
   CoursePullQuote,
 } from "@/features/marketing/components/course-detail-sections";
 import { CourseAbout } from "@/features/marketing/components/course-about";
+import { buildCourseAbout } from "@/features/marketing/lib/course-about";
 import { getCourseContent, ratingDistribution, resolveModuleOutcomes, resolveModuleTopics } from "@/features/marketing/lib/course-content";
 import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
 import { WhatsAppFab } from "@/features/marketing/components/whatsapp-fab";
@@ -175,23 +176,27 @@ export default async function CourseDetailPage({
     (locale === "ar" ? ar || en : en || ar)?.trim() ?? "";
   const description = pick(course.descriptionEn, course.descriptionAr);
   const whoShouldAttend = pick(course.whoCanAttendEn, course.whoCanAttendAr);
+  const aboutBlock = buildCourseAbout(description, content.about);
+  const aboutHeading = /diploma|دبلوم/i.test(`${course.titleEn} ${course.titleAr}`)
+    ? tr("About This Diploma", "عن هذه الدبلومة")
+    : tr("About This Program", "عن هذا البرنامج");
   const isHtml = (s: string) => /<[a-z][\s\S]*>/i.test(s);
-  const richBlock = (title: string, content: string) =>
-    content ? (
+  const richBlock = (title: string, contentHtml: string) =>
+    contentHtml ? (
       <div>
         <p className="font-heading text-xl font-semibold">{title}</p>
-        {isHtml(content) ? (
+        {isHtml(contentHtml) ? (
           <div
             dir={locale === "ar" ? "rtl" : "ltr"}
             className="prose prose-sm mt-4 max-w-none text-muted-foreground dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: contentHtml }}
           />
         ) : (
           <p
             dir={locale === "ar" ? "rtl" : "ltr"}
             className="mt-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground"
           >
-            {content}
+            {contentHtml}
           </p>
         )}
       </div>
@@ -486,18 +491,19 @@ export default async function CourseDetailPage({
                   ) : null}
 
                   <CourseSectionBand tone="muted" spacing="lg">
-                    {content.about ? (
+                    {aboutBlock ? (
                       <CourseAbout
                         locale={locale}
-                        about={content.about}
+                        about={aboutBlock}
+                        heading={aboutHeading}
                         imageUrl={course.thumbnailUrl}
                         imageAlt={courseTitle}
                       />
-                    ) : (
+                    ) : description ? (
                       <section id="overview" className="scroll-mt-32">
                         {richBlock(t("courseDescription"), description)}
                       </section>
-                    )}
+                    ) : null}
                   </CourseSectionBand>
                 </div>
               </div>

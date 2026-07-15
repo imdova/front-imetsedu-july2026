@@ -124,11 +124,14 @@ export default async function LocaleLayout({
       style={brandingVars}
       className={`${geistSans.variable} ${geistMono.variable} ${jakarta.variable} ${cairo.variable} h-full antialiased`}
     >
+      <head>
+        {/* Must run before first paint to avoid a light→dark flash. */}
+        <ThemeNoFlashScript />
+      </head>
       <body
         suppressHydrationWarning
         className="min-h-full bg-background text-foreground"
       >
-        <ThemeNoFlashScript />
         <MetaPixel pixelId={publicSettings?.integrations?.metaPixelId} />
         <NextIntlClientProvider>
           <ApiBootstrap />

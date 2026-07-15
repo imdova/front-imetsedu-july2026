@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { CourseAboutData } from "@/features/marketing/lib/course-about";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,11 +24,14 @@ export function CourseAbout({
   about,
   imageUrl,
   imageAlt,
+  heading,
 }: {
   locale: string;
-  about: { summary: string; more: string[] };
+  about: CourseAboutData;
   imageUrl?: string;
   imageAlt?: string;
+  /** Override the section title (defaults by diploma vs program). */
+  heading?: string;
 }) {
   return (
     <section id="overview" className="scroll-mt-32" dir={locale === "ar" ? "rtl" : "ltr"}>
@@ -47,9 +51,11 @@ export function CourseAbout({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
             {tr(locale, "The program", "البرنامج")}
           </p>
-          <p className="mt-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl">
-            {tr(locale, "About This Diploma", "عن هذه الدبلومة")}
-          </p>
+          {/* h2: this is the section title, and the page relies on the heading
+              order for SEO. `heading` lets the page say "Program" vs "Diploma". */}
+          <h2 className="mt-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl">
+            {heading ?? tr(locale, "About This Diploma", "عن هذه الدبلومة")}
+          </h2>
           <p className="mt-5 text-base leading-relaxed text-muted-foreground sm:text-lg sm:leading-relaxed">
             {about.summary}
           </p>
