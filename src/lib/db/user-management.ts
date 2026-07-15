@@ -178,6 +178,18 @@ export const PERMISSION_REGISTRY: UmCategory[] = [
         ],
       },
       {
+        key: "shipment", en: "Shipment", ar: "الشحن",
+        descEn: "Certificate shipment requests and delivery status.",
+        descAr: "طلبات شحن الشهادات وحالة التسليم.",
+        icon: "Truck", accent: "#f97316",
+        permissions: [
+          p("crm.shipment.view", "View", "عرض"),
+          p("crm.shipment.create", "Create", "إنشاء"),
+          p("crm.shipment.edit", "Edit", "تعديل"),
+          p("crm.shipment.delete", "Delete", "حذف"),
+        ],
+      },
+      {
         key: "office", en: "Office", ar: "المكتب",
         descEn: "Message templates, important links, registration sheets, pricing sheet, payment methods.",
         descAr: "قوالب الرسائل والروابط المهمة وشيتات التسجيل وشيت الأسعار وطرق الدفع.",

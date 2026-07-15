@@ -20,13 +20,60 @@ export type CourseReview = {
 export type CourseContent = {
   /** Emotional story block rendered right under the hero. */
   story: { title: string; body: string };
-  /** Ordered career ladder the program can lead to. */
+  /**
+   * Course-specific "What You'll Learn" outcomes. Each line answers
+   * "this is what I'll be able to DO after the course" — never generic
+   * business filler. Empty ⇒ the page falls back to the course record.
+   */
+  outcomes: string[];
+  /** Ordered career ladder the program can lead to (rendered as a roadmap). */
   careerRoles: CareerRole[];
+  /** One-line, specific answer to "why this program is in demand". */
+  demandLine: string;
+  /** 5 reasons shown right under the hero — answers "why IMETS?" up front. */
+  whyChoose: { title: string; body: string }[];
   /** SEO long-form sections (What is X / Why become Y). May be empty. */
   seoSections: SeoSection[];
   /** Course reviews (distinct from home-page testimonials). */
   reviews: CourseReview[];
 };
+
+/** The five reasons professionals pick IMETS — shared across courses. */
+function whyChooseReasons(locale: string): { title: string; body: string }[] {
+  const ar = isAr(locale);
+  return [
+    {
+      title: ar ? "منهج متوافق مع المعايير الدولية" : "Internationally Aligned Curriculum",
+      body: ar
+        ? "محتوى مبني على أفضل الممارسات العالمية المعتمدة في المستشفيات، وليس مادة نظرية عامة."
+        : "Content built on the global best practices hospitals actually run on — not generic theory.",
+    },
+    {
+      title: ar ? "تتعلّم من قيادات الرعاية الصحية" : "Learn from Healthcare Leaders",
+      body: ar
+        ? "تدرس مع خبراء مارسوا المجال فعليًا داخل المستشفيات، ويشرحون لك ما ينجح وما لا ينجح."
+        : "Study with practitioners who have done the job inside hospitals, and will tell you what actually works.",
+    },
+    {
+      title: ar ? "تعلّم موجَّه لسوق العمل" : "Career-Focused Learning",
+      body: ar
+        ? "كل وحدة مرتبطة بمهارة يطلبها أصحاب العمل في إعلانات الوظائف الحقيقية."
+        : "Every module maps to a skill employers are actually asking for in real job postings.",
+    },
+    {
+      title: ar ? "مشاريع وحالات عملية" : "Practical Projects & Case Studies",
+      body: ar
+        ? "تطبّق ما تتعلّمه على حالات واقعية من داخل المستشفيات، فتخرج بخبرة قابلة للعرض."
+        : "Apply what you learn to real hospital scenarios, so you finish with work you can actually show.",
+    },
+    {
+      title: ar ? "شهادة معترف بها ودعم مستمر" : "Recognized Certificate & Ongoing Support",
+      body: ar
+        ? "تحصل على شهادة موثّقة، ويستمر الدعم معك بعد انتهاء البرنامج وليس قبله فقط."
+        : "You get a verifiable certificate — and support that continues after the program ends, not just before you pay.",
+    },
+  ];
+}
 
 const isAr = (locale: string) => locale === "ar";
 
@@ -103,6 +150,27 @@ function cphqContent(locale: string): CourseContent {
         ? "المؤسسات الصحية في الشرق الأوسط تبحث عن متخصصين قادرين على تحسين سلامة المرضى، ورفع مستوى الجودة، وقيادة مبادرات الاعتماد. هذا البرنامج مُصمَّم ليجعلك واحدًا منهم."
         : "Healthcare organizations across the Middle East are looking for professionals who can improve patient safety, enhance quality, and lead accreditation initiatives. This program is designed to help you become one of them.",
     },
+    outcomes: ar
+      ? [
+          "قياس وتحسين جودة الرعاية داخل مستشفاك",
+          "قيادة مبادرات سلامة المرضى وتقليل الأخطاء",
+          "بناء وتحليل مؤشرات الأداء الصحية (KPIs)",
+          "إدارة البيانات واستخدامها في اتخاذ القرار",
+          "تجهيز مؤسستك لمتطلبات الاعتماد",
+          "اجتياز امتحان CPHQ بثقة من أول محاولة",
+        ]
+      : [
+          "Measure and improve care quality inside your hospital",
+          "Lead patient-safety initiatives and reduce errors",
+          "Build and interpret healthcare KPIs",
+          "Use data management to drive real decisions",
+          "Prepare your organisation for accreditation",
+          "Sit the CPHQ exam with confidence on your first attempt",
+        ],
+    demandLine: ar
+      ? "مع توسّع برامج الاعتماد مثل JCI وCBAHI وGAHAR، تستمر الحاجة لمتخصصي الجودة في مستشفيات الخليج والشرق الأوسط."
+      : "As accreditation programs like JCI, CBAHI and GAHAR expand, hospitals across the GCC and wider Middle East keep hiring for healthcare quality roles.",
+    whyChoose: whyChooseReasons(locale),
     careerRoles: [
       { title: ar ? "أخصائي جودة رعاية صحية" : "Healthcare Quality Specialist" },
       { title: ar ? "منسّق جودة" : "Quality Coordinator" },
@@ -128,6 +196,64 @@ function cphqContent(locale: string): CourseContent {
   };
 }
 
+/** Bespoke Hospital Management Diploma content. */
+function hospitalManagementContent(locale: string): CourseContent {
+  const ar = isAr(locale);
+  return {
+    story: {
+      title: ar
+        ? "تخيّل نفسك تدير قسمًا في مستشفى — بثقة."
+        : "Imagine Running a Hospital Department — With Confidence.",
+      body: ar
+        ? "إدارة المستشفيات ليست إدارة عامة. إنها موازنة بين جودة الرعاية، والتكلفة، والفريق، ومتطلبات الاعتماد — كل يوم. هذا البرنامج مصمَّم ليمنحك الأدوات التي يستخدمها المديرون فعليًا داخل المستشفيات."
+        : "Running a hospital isn't generic management. It's balancing care quality, cost, your team, and accreditation demands — every single day. This program gives you the tools hospital managers actually use on the floor.",
+    },
+    outcomes: ar
+      ? [
+          "قيادة أقسام المستشفى بفعالية",
+          "تحسين الكفاءة التشغيلية وتقليل الهدر",
+          "بناء وقراءة مؤشرات الأداء الصحية (KPIs)",
+          "إدارة وتطوير فرق الرعاية الصحية",
+          "فهم متطلبات اعتماد المستشفيات",
+          "تطبيق التخطيط الاستراتيجي في القطاع الصحي",
+        ]
+      : [
+          "Lead hospital departments effectively",
+          "Improve operational efficiency and cut waste",
+          "Build and interpret healthcare KPIs",
+          "Manage and develop healthcare teams",
+          "Understand hospital accreditation requirements",
+          "Apply strategic planning in a healthcare setting",
+        ],
+    demandLine: ar
+      ? "المستشفيات ومجموعات الرعاية الصحية في الخليج تواصل التوسّع، وتحتاج إلى مديرين يفهمون التشغيل والجودة معًا."
+      : "Hospitals and healthcare groups across the GCC keep expanding, and they need managers who understand operations and quality together.",
+    whyChoose: whyChooseReasons(locale),
+    careerRoles: [
+      { title: ar ? "منسّق / إداري قسم" : "Department Coordinator" },
+      { title: ar ? "مشرف وحدة" : "Unit Supervisor" },
+      { title: ar ? "مدير قسم" : "Department Manager" },
+      { title: ar ? "مدير عمليات المستشفى" : "Hospital Operations Manager" },
+      { title: ar ? "مدير / استشاري رعاية صحية" : "Healthcare Director / Consultant" },
+    ],
+    seoSections: [
+      {
+        heading: ar ? "ما هي دبلومة إدارة المستشفيات؟" : "What Is a Hospital Management Diploma?",
+        body: ar
+          ? "دبلومة إدارة المستشفيات برنامج مهني يجهّزك لإدارة العمليات اليومية داخل المنشآت الصحية: تشغيل الأقسام، وإدارة الموارد والفرق، وضبط الجودة، والاستعداد للاعتماد. وهي مسار مناسب للأطباء والممرضين والإداريين الذين يريدون الانتقال من التنفيذ إلى القيادة."
+          : "A Hospital Management Diploma is a professional program that prepares you to run day-to-day operations inside a healthcare facility: departmental operations, resources and teams, quality control, and accreditation readiness. It suits clinicians, nurses and administrators who want to move from doing the work to leading it.",
+      },
+      {
+        heading: ar ? "لماذا تتخصص في إدارة المستشفيات؟" : "Why Specialise in Hospital Management?",
+        body: ar
+          ? "كل مستشفى يحتاج إلى من يوازن بين جودة الرعاية والتكلفة والكفاءة. الانتقال من دور إكلينيكي أو إداري إلى دور قيادي يفتح مسارًا مهنيًا أوسع وأكثر استقرارًا وتأثيرًا داخل المؤسسة الصحية."
+          : "Every hospital needs someone who can balance care quality against cost and efficiency. Moving from a clinical or administrative role into leadership opens a broader, more stable and more influential career path inside the organisation.",
+      },
+    ],
+    reviews: defaultReviews(locale),
+  };
+}
+
 /** Generic, healthcare-flavoured content for any non-flagship course. */
 function genericContent(titleEn: string, titleAr: string, locale: string): CourseContent {
   const ar = isAr(locale);
@@ -141,6 +267,14 @@ function genericContent(titleEn: string, titleAr: string, locale: string): Cours
         ? `المؤسسات الصحية في الشرق الأوسط تبحث عن متخصصين مؤهّلين ومعتمدين. برنامج «${title}» مُصمَّم ليمنحك المهارات والشهادة التي تجعلك الخيار الأول لأصحاب العمل.`
         : `Healthcare organizations across the Middle East are looking for qualified, certified professionals. "${title}" is designed to give you the skills and the credential that make you the first choice for employers.`,
     },
+    // Left empty on purpose: generic "learn professional models" filler helps
+    // nobody. The page falls back to the course's own whatYouWillLearn, and if
+    // that's empty too the section is skipped rather than faked.
+    outcomes: [],
+    demandLine: ar
+      ? `تواصل المؤسسات الصحية في المنطقة توظيف المتخصصين المؤهّلين في مجال «${title}».`
+      : `Healthcare organizations across the region continue hiring qualified professionals in ${title}.`,
+    whyChoose: whyChooseReasons(locale),
     careerRoles: [
       { title: ar ? "أخصائي" : "Specialist" },
       { title: ar ? "أخصائي أول" : "Senior Specialist" },
@@ -160,6 +294,7 @@ export function getCourseContent(opts: {
   locale: string;
 }): CourseContent {
   if (opts.slug === "cphq-preparation") return cphqContent(opts.locale);
+  if (opts.slug === "hospital-management-diploma") return hospitalManagementContent(opts.locale);
   return genericContent(opts.titleEn, opts.titleAr, opts.locale);
 }
 

@@ -92,6 +92,31 @@ export interface CourseRow {
   headlineAr?: string;
   subHeadlineEn?: string;
   subHeadlineAr?: string;
+  /** Public-page instructor profile (all optional — page renders what exists). */
+  instructorProfile?: {
+    name?: string;
+    title?: string;
+    image?: string;
+    bio?: string;
+    yearsExperience?: number;
+    hospitals?: string[];
+    certifications?: string[];
+    linkedIn?: string;
+    studentsTaught?: number;
+    rating?: number;
+  };
+  /** Downloadable PDFs — empty string ⇒ the button is hidden. */
+  brochureUrl?: string;
+  curriculumUrl?: string;
+  programGuideUrl?: string;
+  /** Next cohort start (ISO) — drives "Starts in N days". */
+  nextStartDate?: string;
+  /** REAL remaining seats. Undefined ⇒ nothing shown (never fabricated). */
+  seatsLeft?: number;
+  seatsTotal?: number;
+  /** Admin-managed "What you will learn" outcomes, per locale. */
+  whatYouWillLearnEn?: string[];
+  whatYouWillLearnAr?: string[];
   /** Long-form content for the public course page (HTML rich text or plain). */
   descriptionEn?: string;
   descriptionAr?: string;

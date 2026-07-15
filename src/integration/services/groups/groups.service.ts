@@ -31,6 +31,23 @@ export function getGroupById(id: string): Promise<Result<Group>> {
   return api.get<Group>(apiGroupById(id));
 }
 
+/** A group's roster resolved to CRM leads + each student's certificate. */
+export interface GroupRosterStudentDto {
+  userId: string;
+  leadId: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  image: string;
+  isApproved: boolean;
+  progress: number;
+  certificate: { id: string; code: string; link: string; status: string } | null;
+}
+
+export function listGroupStudents(id: string): Promise<Result<GroupRosterStudentDto[]>> {
+  return api.get<GroupRosterStudentDto[]>(`${apiGroupById(id)}/students`, { revalidate: false });
+}
+
 export function updateGroup(
   id: string,
   input: UpdateGroupInput

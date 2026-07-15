@@ -18,8 +18,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import { formatCurrency, getInitials } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { CourseHeroMeta } from "@/features/marketing/components/course-hero-meta";
@@ -31,7 +30,10 @@ import { CourseSectionNav } from "@/features/marketing/components/course-section
 import {
   CourseStory,
   CourseCareerOutcomes,
-  CourseDemand,
+  CourseWhyChoose,
+  CourseFinalCta,
+  CourseInstructor,
+  CourseDownloads,
   CourseLearningJourney,
   CourseComparison,
   CourseReviews,
@@ -47,18 +49,6 @@ import {
   courseLd, breadcrumbLd,
 } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
-
-
-/** Registration deadline — always two weeks from today. */
-function registrationEndDate(locale: string): string {
-  const start = new Date();
-  start.setDate(start.getDate() + 14);
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(start);
-}
 
 export const revalidate = 86400;
 
@@ -94,16 +84,16 @@ export default async function CourseDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations("Marketing");
 
-  const [coursesRes, instructorsRes] = await Promise.all([
-    dal.courses.fetchCourses(),
-    dal.lookups.fetchInstructors(),
-  ]);
+  const coursesRes = await dal.courses.fetchCourses();
   const courses = coursesRes.ok ? coursesRes.data : [];
   const course = courses.find((c) => c.slug === slug);
   if (!course) notFound();
 
-  const instructors = instructorsRes.ok ? instructorsRes.data : [];
-  const instructor = instructors[course.titleEn.length % instructors.length];
+  // The course's REAL instructor. Previously this picked an arbitrary person via
+  // `instructors[titleEn.length % instructors.length]` — a random staff member
+  // presented as this course's instructor. Use the course's own data instead.
+  const instructorName =
+    course.instructorProfile?.name ?? course.instructorNames?.[0] ?? undefined;
   const onSale = course.salePriceEGP > 0 && course.salePriceEGP < course.priceEGP;
   const price = onSale ? course.salePriceEGP : course.priceEGP;
   const previewVideoId = extractYouTubeVideoId(course.previewVideoUrl);
@@ -120,25 +110,35 @@ export default async function CourseDetailPage({
   });
   const distribution = ratingDistribution(rating);
 
-  const outcomes = [
-    "Build and interpret professional models from scratch",
-    "Apply industry frameworks to real business scenarios",
-    "Make data-driven decisions with confidence",
-    "Communicate insights to senior stakeholders",
-    "Earn a verifiable, employer-recognized certificate",
-    "Access lifetime updates and a peer community",
-  ];
+  // Course-specific outcomes ("this is what I'll be able to DO"), never generic
+  // business filler. Falls back to the course record, then renders nothing.
+  const courseOutcomes = (locale === "ar" ? course.whatYouWillLearnAr : course.whatYouWillLearnEn) ?? [];
+  const outcomes = courseOutcomes.length > 0 ? courseOutcomes : content.outcomes;
 
   const related = courses
     .filter((c) => c.id !== course.id && c.category === course.category)
     .slice(0, 4);
 
+  const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
+
+  // Facts only, from the course record. Rows with no data are omitted rather
+  // than filled with a hardcoded guess (duration/language used to be literals,
+  // and "Registration Ends" was always today+14 — a deadline that never lands).
+  const startsOn = course.nextStartDate
+    ? new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }).format(new Date(course.nextStartDate))
+    : "";
   const meta = [
     { icon: BarChart3, label: t("level"), value: course.difficulty },
-    { icon: Clock, label: t("duration"), value: "12 weeks" },
-    { icon: CalendarDays, label: t("startDate"), value: registrationEndDate(locale) },
-    { icon: PlayCircle, label: t("lessons"), value: `${course.lectures}` },
-    { icon: Globe, label: t("language"), value: "EN · AR" },
+    ...(course.duration ? [{ icon: Clock, label: t("duration"), value: course.duration }] : []),
+    ...(startsOn ? [{ icon: CalendarDays, label: tr("Starts", "يبدأ"), value: startsOn }] : []),
+    ...(course.lectures > 0 ? [{ icon: PlayCircle, label: t("lessons"), value: `${course.lectures}` }] : []),
+    ...(course.languages?.length
+      ? [{ icon: Globe, label: t("language"), value: course.languages.join(" · ") }]
+      : []),
   ];
 
   // Long-form content for the new sections — prefer the active locale, fall back.
@@ -174,7 +174,6 @@ export default async function CourseDetailPage({
   const heroHeadline = pick(course.headlineEn, course.headlineAr) || courseTitle;
   const heroSubheadline = pick(course.subHeadlineEn, course.subHeadlineAr);
 
-  const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
   const applyWebhook = course.slug === "cphq-preparation" ? "https://aut.jobova.net/webhook/cphq" : undefined;
 
   const includes = [
@@ -227,11 +226,14 @@ export default async function CourseDetailPage({
         </div>
       )}
       <div className="space-y-4 p-5">
-        {/* Urgency — next cohort */}
-        <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-100 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-900/40">
-          <Flame className="size-4 shrink-0" />
-          <span>{tr(`Next cohort starts ${registrationEndDate(locale)}`, `الدفعة القادمة تبدأ ${registrationEndDate(locale)}`)}</span>
-        </div>
+        {/* Urgency — only from a REAL cohort date. Was `today + 14 days`, i.e. a
+            deadline that reset every day and never actually arrived. */}
+        {startsOn && (
+          <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-100 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-900/40">
+            <Flame className="size-4 shrink-0" />
+            <span>{tr(`Next cohort starts ${startsOn}`, `الدفعة القادمة تبدأ ${startsOn}`)}</span>
+          </div>
+        )}
 
         {/* Social proof */}
         <div className="space-y-2.5 rounded-xl border border-amber-200/70 bg-amber-50/60 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
@@ -253,6 +255,9 @@ export default async function CourseDetailPage({
             <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:text-emerald-300 dark:ring-emerald-900/40">
               🎓 {tr("92% First-Attempt Pass Rate", "٩٢٪ نجاح من أول محاولة")}
             </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground ring-1 ring-border/60">
+              🌍 {tr("Students from 15+ Countries", "طلاب من +15 دولة")}
+            </span>
           </div>
         </div>
 
@@ -272,23 +277,6 @@ export default async function CourseDetailPage({
             💳 {tr("Pay online with PayPal", "ادفع أونلاين عبر PayPal")}
           </Link>
         </Button>
-
-        {/* Trust badges */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          {[
-            `🎓 ${tr("Certificate Included", "شهادة معتمدة")}`,
-            `🌍 ${tr("Students from 15+ Countries", "طلاب من +15 دولة")}`,
-            `👨‍⚕️ ${tr("Trusted by Professionals", "موثوق من المتخصصين")}`,
-            `⭐ ${tr(`${rating.toFixed(1)} Rating`, `تقييم ${rating.toFixed(1)}`)}`,
-          ].map((b) => (
-            <span
-              key={b}
-              className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1.5 font-medium text-muted-foreground"
-            >
-              {b}
-            </span>
-          ))}
-        </div>
 
         <ul className="space-y-2 pt-1 text-sm">
           {meta.map((m) => (
@@ -388,6 +376,9 @@ export default async function CourseDetailPage({
                   {/* Emotional story hook */}
                   <CourseStory locale={locale} title={content.story.title} body={content.story.body} />
 
+                  {/* Answers "why IMETS?" before the visitor starts comparing */}
+                  <CourseWhyChoose locale={locale} reasons={content.whyChoose} />
+
                   <section id="overview" className="scroll-mt-32">
                     {richBlock(t("courseDescription"), description)}
                   </section>
@@ -419,11 +410,10 @@ export default async function CourseDetailPage({
                     />
                   ) : null}
 
-                  {/* Career outcomes ladder */}
-                  <CourseCareerOutcomes locale={locale} roles={content.careerRoles} />
-
-                  {/* Demand & career growth */}
-                  <CourseDemand locale={locale} />
+                  {/* Career roadmap (absorbs the old "Demand & Career Growth"
+                      section — three career-themed blocks in a row read as
+                      duplication). */}
+                  <CourseCareerOutcomes locale={locale} roles={content.careerRoles} demandLine={content.demandLine} />
 
                   {/* What happens after enrollment */}
                   <CourseLearningJourney locale={locale} />
@@ -431,24 +421,20 @@ export default async function CourseDetailPage({
                   {/* Why IMETS vs Others */}
                   <CourseComparison locale={locale} />
 
-                  <section id="instructor" className="scroll-mt-32">
-                    <h2 className="font-heading text-xl font-semibold">{t("aboutInstructor")}</h2>
-                    <div className="mt-4 flex items-start gap-4 rounded-xl border border-border/70 bg-card p-5">
-                      <Avatar className="size-14 border">
-                        <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
-                          {getInitials(instructor?.label ?? "IM")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{instructor?.label}</p>
-                        <p className="text-sm text-muted-foreground">{instructor?.title}</p>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          An experienced practitioner and educator with a track record of
-                          helping professionals advance their careers across the MENA region.
-                        </p>
-                      </div>
-                    </div>
-                  </section>
+                  <CourseInstructor
+                    locale={locale}
+                    title={t("aboutInstructor")}
+                    profile={course.instructorProfile}
+                    fallbackName={instructorName}
+                  />
+
+                  {/* Downloads — only for files that actually exist */}
+                  <CourseDownloads
+                    locale={locale}
+                    brochureUrl={course.brochureUrl}
+                    curriculumUrl={course.curriculumUrl}
+                    programGuideUrl={course.programGuideUrl}
+                  />
 
                   {/* Course reviews (distinct from testimonials) */}
                   <CourseReviews
@@ -473,6 +459,11 @@ export default async function CourseDetailPage({
                       ))}
                     </div>
                   </section>
+
+                  {/* Strong close instead of trailing off after the FAQ */}
+                  <CourseFinalCta locale={locale}>
+                    <CourseApplyDialog courseId={course.id} courseTitle={course.titleEn} webhookUrl={applyWebhook} />
+                  </CourseFinalCta>
                 </div>
               </div>
 
@@ -488,7 +479,7 @@ export default async function CourseDetailPage({
         <section className="mx-auto w-full max-w-[100rem] px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl py-14">
           <h2 className="font-heading text-2xl font-bold tracking-tight">
-            {tr("People Also Enrolled In", "طلاب سجّلوا أيضًا في")}
+            {tr("Recommended Next Steps", "خطوتك التالية المقترحة")}
           </h2>
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {related.map((c) => (

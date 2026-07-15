@@ -9,6 +9,47 @@ import { mapGroupRow, mapGroupDetail, computeGroupStats } from "@/lib/groups/map
 
 const arr = <T>(x: unknown): T[] => (Array.isArray(x) ? (x as T[]) : ((x as { data?: T[] })?.data ?? []));
 
+/** A group's enrolled student, resolved to a CRM lead + their certificate. */
+export interface GroupRosterStudent {
+  userId: string;
+  /** null when no CRM lead could be matched (can't issue a certificate). */
+  leadId: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  image: string;
+  isApproved: boolean;
+  progress: number;
+  certificate: { id: string; code: string; link: string; status: string } | null;
+}
+
+/** LIVE: GET /groups/:id/students — roster joined to leads + certificates. */
+export async function fetchGroupStudents(groupId: string): Promise<Result<GroupRosterStudent[]>> {
+  const res = await groupsSvc.listGroupStudents(groupId);
+  if (!res.ok) return res;
+  const rows = arr<groupsSvc.GroupRosterStudentDto>(res.data);
+  return ok(
+    rows.map((r) => ({
+      userId: r.userId,
+      leadId: r.leadId ?? null,
+      name: r.name || "—",
+      email: r.email || "",
+      phone: r.phone || "",
+      image: r.image || "",
+      isApproved: r.isApproved !== false,
+      progress: r.progress ?? 0,
+      certificate: r.certificate
+        ? {
+            id: r.certificate.id,
+            code: r.certificate.code || "",
+            link: r.certificate.link || "",
+            status: r.certificate.status || "issued",
+          }
+        : null,
+    })),
+  );
+}
+
 const fmtDate = (iso?: string) => {
   if (!iso) return "—";
   const d = new Date(iso);

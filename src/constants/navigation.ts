@@ -52,6 +52,7 @@ export const ADMIN_NAV: NavSection[] = [
       { titleKey: "commission", href: "/admin/crm/commission", icon: "Coins", requiredPermissions: ["crm.commission.view"] },
       { titleKey: "office", href: "/admin/crm/office", icon: "Briefcase", requiredPermissions: ["crm.office.view"] },
       { titleKey: "paymentLinks", href: "/admin/crm/payment-links", icon: "Link2", requiredPermissions: ["crm.payment_links.view"] },
+      { titleKey: "crmCertificates", href: "/admin/crm/certificates", icon: "Award", requiredPermissions: ["lms.certificates.view"] },
       { titleKey: "rulesRegulations", href: "/admin/crm/rules", icon: "ScrollText", requiredPermissions: ["crm.rules.view"] },
       { titleKey: "crmSettings", href: "/admin/crm/settings", icon: "SlidersHorizontal", adminOnly: true },
     ],

@@ -58,6 +58,36 @@ export function mapCourse(raw: any): CourseRow {
     headlineAr: raw?.headlineAr || undefined,
     subHeadlineEn: raw?.subHeadlineEn || undefined,
     subHeadlineAr: raw?.subHeadlineAr || undefined,
+    instructorProfile: raw?.instructorProfile && typeof raw.instructorProfile === "object"
+      ? {
+          name: raw.instructorProfile.name || undefined,
+          title: raw.instructorProfile.title || undefined,
+          image: raw.instructorProfile.image || undefined,
+          bio: raw.instructorProfile.bio || undefined,
+          yearsExperience: raw.instructorProfile.yearsExperience || undefined,
+          hospitals: Array.isArray(raw.instructorProfile.hospitals)
+            ? raw.instructorProfile.hospitals.map(String).filter(Boolean)
+            : undefined,
+          certifications: Array.isArray(raw.instructorProfile.certifications)
+            ? raw.instructorProfile.certifications.map(String).filter(Boolean)
+            : undefined,
+          linkedIn: raw.instructorProfile.linkedIn || undefined,
+          studentsTaught: raw.instructorProfile.studentsTaught || undefined,
+          rating: raw.instructorProfile.rating || undefined,
+        }
+      : undefined,
+    brochureUrl: raw?.brochureUrl || undefined,
+    curriculumUrl: raw?.curriculumUrl || undefined,
+    programGuideUrl: raw?.programGuideUrl || undefined,
+    nextStartDate: raw?.nextStartDate || undefined,
+    seatsLeft: typeof raw?.seatsLeft === "number" ? raw.seatsLeft : undefined,
+    seatsTotal: typeof raw?.seatsTotal === "number" ? raw.seatsTotal : undefined,
+    whatYouWillLearnEn: Array.isArray(raw?.whatYouWillLearnEn)
+      ? raw.whatYouWillLearnEn.map(String).filter(Boolean)
+      : undefined,
+    whatYouWillLearnAr: Array.isArray(raw?.whatYouWillLearnAr)
+      ? raw.whatYouWillLearnAr.map(String).filter(Boolean)
+      : undefined,
     descriptionEn: raw?.descriptionEn || undefined,
     descriptionAr: raw?.descriptionAr || undefined,
     whoCanAttendEn: raw?.whoCanAttendEn || undefined,
