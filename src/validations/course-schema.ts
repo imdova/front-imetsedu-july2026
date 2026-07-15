@@ -59,6 +59,22 @@ export const moduleSchema = z.object({
   lessons: z.array(lessonSchema),
 });
 
+/** One "Why Professionals Choose <course>" reason card on the public page. */
+export const whyChooseItemSchema = z.object({
+  titleEn: z.string().trim(),
+  titleAr: z.string().trim(),
+  bodyEn: z.string().trim(),
+  bodyAr: z.string().trim(),
+});
+
+/** One question/answer pair in the public page's FAQ accordion. */
+export const courseFaqSchema = z.object({
+  questionEn: z.string().trim(),
+  questionAr: z.string().trim(),
+  answerEn: z.string().trim(),
+  answerAr: z.string().trim(),
+});
+
 export const courseFormSchema = z.object({
   /* --- Identification --- */
   titleEn: z.string().trim(),
@@ -67,7 +83,6 @@ export const courseFormSchema = z.object({
 
   /* --- Classification --- */
   category: z.string(),
-  subcategory: z.string(),
   difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]),
   programType: z.string(),
   attendanceMode: z.enum(["online-zoom", "offline"]),
@@ -128,6 +143,9 @@ export const courseFormSchema = z.object({
   whatYouWillLearnAr: z.array(z.string().trim()),
   whoCanAttendEn: z.string().trim(),
   whoCanAttendAr: z.string().trim(),
+  /** Both empty ⇒ the public page renders its shared defaults instead. */
+  whyChoose: z.array(whyChooseItemSchema),
+  faqs: z.array(courseFaqSchema),
   modules: z.array(moduleSchema),
 
   /* --- Step 3: Media & Reviews (optional) --- */
@@ -141,6 +159,8 @@ export const courseFormSchema = z.object({
 });
 
 export type CourseFormValues = z.infer<typeof courseFormSchema>;
+export type WhyChooseItemValues = z.infer<typeof whyChooseItemSchema>;
+export type CourseFaqValues = z.infer<typeof courseFaqSchema>;
 export type LessonValues = z.infer<typeof lessonSchema>;
 export type ModuleValues = z.infer<typeof moduleSchema>;
 export type TextReviewValues = z.infer<typeof textReviewSchema>;
@@ -154,7 +174,6 @@ export const STEP_FIELDS: Record<number, (keyof CourseFormValues)[]> = {
     "titleAr",
     "slug",
     "category",
-    "subcategory",
     "difficulty",
     "programType",
     "attendanceMode",

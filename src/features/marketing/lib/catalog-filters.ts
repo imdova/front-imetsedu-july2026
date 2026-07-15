@@ -166,6 +166,9 @@ function anyMatch(selected: string[], actual: string[]): boolean {
 }
 
 export interface CatalogFilterState {
+  /** Course category, driven by the tab row. "" ⇒ All. Single-select by
+   *  design: it's the top-level cut of the catalog, not a facet. */
+  category: string;
   specialties: string[];
   certifications: string[];
   deliveries: string[];
@@ -178,6 +181,7 @@ export interface CatalogFilterState {
 
 export function emptyCatalogFilters(priceCeiling: number): CatalogFilterState {
   return {
+    category: "",
     specialties: [],
     certifications: [],
     deliveries: [],
@@ -189,8 +193,32 @@ export function emptyCatalogFilters(priceCeiling: number): CatalogFilterState {
   };
 }
 
+/**
+ * Categories present in the catalog, with counts, ordered biggest first.
+ * `value` is the English name — the stable key filters match on — while
+ * `nameAr` carries the Arabic label for display.
+ */
+export function catalogCategories(
+  courses: CourseRow[],
+): { value: string; nameAr?: string; count: number }[] {
+  const counts = new Map<string, { count: number; nameAr?: string }>();
+  for (const c of courses) {
+    const name = (c.category ?? "").trim();
+    if (!name || name === "—") continue;
+    const prev = counts.get(name);
+    counts.set(name, {
+      count: (prev?.count ?? 0) + 1,
+      nameAr: prev?.nameAr ?? c.categoryAr,
+    });
+  }
+  return [...counts.entries()]
+    .map(([value, { count, nameAr }]) => ({ value, nameAr, count }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+}
+
 export function catalogFiltersActive(f: CatalogFilterState, priceCeiling: number): boolean {
   return (
+    f.category !== "" ||
     f.specialties.length > 0 ||
     f.certifications.length > 0 ||
     f.deliveries.length > 0 ||
@@ -202,7 +230,52 @@ export function catalogFiltersActive(f: CatalogFilterState, priceCeiling: number
   );
 }
 
+/** Filter groups that behave as OR-facets (price and level are special-cased). */
+export type FacetKey =
+  | "specialties"
+  | "certifications"
+  | "deliveries"
+  | "durations"
+  | "languages"
+  | "levels";
+
+/** The values a course exposes for a given facet. */
+export function courseFacetValues(c: CourseRow, key: FacetKey): string[] {
+  switch (key) {
+    case "specialties": return courseSpecialties(c);
+    case "certifications": return courseCertifications(c);
+    case "deliveries": return courseDeliveries(c);
+    case "durations": return courseDurationBuckets(c);
+    case "languages": return courseLanguages(c);
+    case "levels": return [c.difficulty];
+  }
+}
+
+/**
+ * How many courses each option in `key` would return, given every OTHER active
+ * filter. The group's own selection is deliberately ignored: options inside a
+ * group are OR-ed, so counting with them applied would show "0" next to every
+ * unpicked sibling the moment you pick one.
+ *
+ * Lets the UI show counts and disable dead ends instead of letting people click
+ * their way into an empty result set.
+ */
+export function facetCounts(
+  courses: CourseRow[],
+  filters: CatalogFilterState,
+  key: FacetKey,
+): Record<string, number> {
+  const base: CatalogFilterState = { ...filters, [key]: [] };
+  const out: Record<string, number> = {};
+  for (const c of courses) {
+    if (!courseMatchesCatalogFilters(c, base)) continue;
+    for (const v of courseFacetValues(c, key)) out[v] = (out[v] ?? 0) + 1;
+  }
+  return out;
+}
+
 export function courseMatchesCatalogFilters(c: CourseRow, f: CatalogFilterState): boolean {
+  if (f.category && (c.category ?? "").trim() !== f.category) return false;
   if (!anyMatch(f.specialties, courseSpecialties(c))) return false;
   if (!anyMatch(f.certifications, courseCertifications(c))) return false;
   if (!anyMatch(f.deliveries, courseDeliveries(c))) return false;

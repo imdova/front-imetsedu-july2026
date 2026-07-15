@@ -3,11 +3,17 @@ import { ok, type Result } from "@integration/lib/api-client";
 import * as svc from "@integration/services/shipments";
 
 export type ShipmentStatus = "requested" | "shipped" | "delivered" | "cancelled";
+export type ShipmentCourier = "aramex" | "dhl" | "egypt-post";
 
 export interface Shipment {
   id: string;
   recipient: string;
   address: string;
+  courier: ShipmentCourier;
+  /** ISO 3166-1 alpha-2 country code (Arab League states). */
+  country: string;
+  /** Governorate / emirate / wilaya. May be blank on older records. */
+  state: string;
   note: string;
   status: ShipmentStatus;
   deliveredAt: string;
@@ -17,6 +23,9 @@ export interface Shipment {
 export type ShipmentInput = {
   recipient: string;
   address: string;
+  courier?: ShipmentCourier;
+  country?: string;
+  state?: string;
   note?: string;
   status?: ShipmentStatus;
 };
@@ -25,6 +34,11 @@ const map = (d: svc.ShipmentDto): Shipment => ({
   id: d._id,
   recipient: d.recipient,
   address: d.address,
+  // Records created before couriers/countries existed have neither; default
+  // them the same way the backend schema does rather than render blanks.
+  courier: (d.courier as ShipmentCourier) || "aramex",
+  country: d.country || "EG",
+  state: d.state ?? "",
   note: d.note ?? "",
   status: (d.status as ShipmentStatus) ?? "requested",
   deliveredAt: d.deliveredAt ?? "",

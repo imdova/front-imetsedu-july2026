@@ -40,7 +40,6 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
     titleAr: raw.titleAr ?? "",
     slug: raw.slug ?? "",
     category: idOf(raw.category),
-    subcategory: idOf(raw.subcategory),
     descriptionEn: raw.descriptionEn ?? "",
     descriptionAr: raw.descriptionAr ?? "",
     headlineEn: raw.headlineEn ?? "",
@@ -49,6 +48,22 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
     subHeadlineAr: raw.subHeadlineAr ?? "",
     whoCanAttendEn: raw.whoCanAttendEn ?? "",
     whoCanAttendAr: raw.whoCanAttendAr ?? "",
+    whyChoose: Array.isArray(raw.whyChoose)
+      ? raw.whyChoose.map((r: any) => ({
+          titleEn: r?.titleEn ?? "",
+          titleAr: r?.titleAr ?? "",
+          bodyEn: r?.bodyEn ?? "",
+          bodyAr: r?.bodyAr ?? "",
+        }))
+      : [],
+    faqs: Array.isArray(raw.faqs)
+      ? raw.faqs.map((f: any) => ({
+          questionEn: f?.questionEn ?? "",
+          questionAr: f?.questionAr ?? "",
+          answerEn: f?.answerEn ?? "",
+          answerAr: f?.answerAr ?? "",
+        }))
+      : [],
     pricing: {
       egp: pricingBlock(raw.pricing?.egp),
       sar: pricingBlock(raw.pricing?.sar),

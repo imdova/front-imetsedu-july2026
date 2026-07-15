@@ -61,17 +61,26 @@ export async function generateMetadata({
   const res = await dal.courses.fetchCourses();
   const course = (res.ok ? res.data : []).find((c) => c.slug === slug);
   if (!course) return {};
-  const title = locale === "ar" ? course.titleAr : course.titleEn;
-  const description = metaDescription(
-    locale === "ar" ? course.descriptionAr : course.descriptionEn,
-    `${title} — ${SITE_NAME}`,
-  );
+  const ar = locale === "ar";
+  const courseName = ar ? course.titleAr : course.titleEn;
+  // Admin-authored SEO (course form → SEO panel) wins. Each field falls back
+  // independently: a course with a meta title but no meta description still
+  // gets a description derived from its own long-form copy.
+  const seo = course.seo;
+  const title = (ar ? seo?.metaTitleAr : seo?.metaTitleEn) || courseName;
+  const description =
+    (ar ? seo?.metaDescriptionAr : seo?.metaDescriptionEn) ||
+    metaDescription(ar ? course.descriptionAr : course.descriptionEn, `${courseName} — ${SITE_NAME}`);
+  const keywords = (ar ? seo?.metaKeywordsAr : seo?.metaKeywordsEn) ?? [];
   const path = `/courses/${slug}`;
   return mergeSeo(path, {
     title,
     description,
+    ...(keywords.length ? { keywords } : {}),
     alternates: seoAlternates(path, locale),
-    ...socialMeta({ title, description, path, locale, image: course.thumbnailUrl }),
+    // Social cards keep the course's own name — a SERP-tuned meta title reads
+    // oddly as a shared link headline.
+    ...socialMeta({ title: courseName, description, path, locale, image: course.thumbnailUrl }),
   });
 }
 
@@ -120,6 +129,12 @@ export default async function CourseDetailPage({
     .slice(0, 4);
 
   const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
+
+  // The 92% pass rate is an exam-prep claim — it only means anything for the two
+  // courses that prepare for an external certification exam. Diplomas have no
+  // exam to pass, so the badge is omitted there rather than shown as a fiction.
+  const EXAM_PREP_SLUGS = ["cphq-preparation", "cic-preparation"];
+  const showPassRate = EXAM_PREP_SLUGS.includes(course.slug);
 
   // Facts only, from the course record. Rows with no data are omitted rather
   // than filled with a hardcoded guess (duration/language used to be literals,
@@ -185,7 +200,9 @@ export default async function CourseDetailPage({
     tr("Certificate", "شهادة معتمدة"),
   ];
 
-  const faqs = [
+  // Admin-authored FAQ (course form → Structure step) wins; the shared list
+  // below is the fallback for courses that haven't authored their own.
+  const defaultFaqs = [
     { q: tr("Do I need prior experience?", "هل أحتاج خبرة سابقة؟"), a: tr("No — the program starts from the fundamentals and builds up, with mentor support throughout.", "لا — يبدأ البرنامج من الأساسيات ويتدرّج، مع دعم المرشدين طوال الوقت.") },
     { q: tr("Is the course online or in person?", "هل الدورة أونلاين أم حضوريًا؟"), a: tr("100% online — live sessions over Zoom plus self-paced lessons you can revisit anytime.", "أونلاين 100% — جلسات مباشرة عبر Zoom ودروس بوتيرتك يمكنك مراجعتها في أي وقت.") },
     { q: tr("Will I get a certificate?", "هل سأحصل على شهادة؟"), a: tr("Yes — you earn a verifiable certificate of completion to add to your CV and LinkedIn.", "نعم — تحصل على شهادة إتمام موثّقة تضيفها لسيرتك الذاتية وLinkedIn.") },
@@ -195,6 +212,21 @@ export default async function CourseDetailPage({
     { q: tr("Will I get lifetime access to the materials?", "هل سأحصل على وصول مدى الحياة للمواد؟"), a: tr("You keep access to the course materials and recordings so you can revise for your exam and refresh your knowledge whenever you need.", "تحتفظ بالوصول إلى مواد الدورة والتسجيلات لتراجع قبل امتحانك وتنعش معلوماتك متى احتجت.") },
     { q: tr("How do I enroll?", "كيف أسجّل؟"), a: tr("Tap Start Learning Today, fill the short form, and an advisor will contact you to confirm your seat and answer any questions.", "اضغط ابدأ التعلّم اليوم، واملأ النموذج القصير، وسيتواصل معك مستشار لتأكيد مقعدك والإجابة عن أسئلتك.") },
   ];
+  // A row missing the current locale's text falls back to the other locale
+  // rather than rendering an empty question.
+  const faqs = course.faqs?.length
+    ? course.faqs.map((f) => ({
+        q: pick(f.questionEn, f.questionAr),
+        a: pick(f.answerEn, f.answerAr),
+      }))
+    : defaultFaqs;
+
+  const whyChooseReasons = course.whyChoose?.length
+    ? course.whyChoose.map((r) => ({
+        title: pick(r.titleEn, r.titleAr),
+        body: pick(r.bodyEn, r.bodyAr),
+      }))
+    : content.whyChoose;
 
   const navItems = [
     { id: "overview", label: tr("Overview", "نظرة عامة") },
@@ -252,9 +284,11 @@ export default async function CourseDetailPage({
             <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-[#0b3fa8] ring-1 ring-blue-100 dark:ring-blue-900/40">
               👨‍⚕️ {course.students.toLocaleString()} {tr("Healthcare Professionals", "متخصص رعاية صحية")}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:text-emerald-300 dark:ring-emerald-900/40">
-              🎓 {tr("92% First-Attempt Pass Rate", "٩٢٪ نجاح من أول محاولة")}
-            </span>
+            {showPassRate && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:text-emerald-300 dark:ring-emerald-900/40">
+                🎓 {tr("92% First-Attempt Pass Rate", "٩٢٪ نجاح من أول محاولة")}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground ring-1 ring-border/60">
               🌍 {tr("Students from 15+ Countries", "طلاب من +15 دولة")}
             </span>
@@ -373,11 +407,21 @@ export default async function CourseDetailPage({
                 />
 
                 <div className="space-y-12 py-8 sm:py-10 lg:pt-8 lg:pb-12">
-                  {/* Emotional story hook */}
-                  <CourseStory locale={locale} title={content.story.title} body={content.story.body} />
+                  {/* Emotional story hook — omitted for courses that open on "Why choose" */}
+                  {content.story && (
+                    <CourseStory locale={locale} title={content.story.title} body={content.story.body} />
+                  )}
 
                   {/* Answers "why IMETS?" before the visitor starts comparing */}
-                  <CourseWhyChoose locale={locale} reasons={content.whyChoose} />
+                  <CourseWhyChoose locale={locale} reasons={whyChooseReasons} courseTitle={courseTitle} />
+
+                  {whoShouldAttend ? (
+                    <CourseWhoShouldAttend
+                      title={t("whoShouldAttend")}
+                      content={whoShouldAttend}
+                      locale={locale}
+                    />
+                  ) : null}
 
                   <section id="overview" className="scroll-mt-32">
                     {richBlock(t("courseDescription"), description)}
@@ -400,14 +444,6 @@ export default async function CourseDetailPage({
                         <CourseCurriculum modules={course.modules} locale={locale} />
                       </div>
                     </section>
-                  ) : null}
-
-                  {whoShouldAttend ? (
-                    <CourseWhoShouldAttend
-                      title={t("whoShouldAttend")}
-                      content={whoShouldAttend}
-                      locale={locale}
-                    />
                   ) : null}
 
                   {/* Career roadmap (absorbs the old "Demand & Career Growth"

@@ -44,6 +44,22 @@ export interface ImageReview {
   url: string;
 }
 
+/** One "Why Professionals Choose <course>" reason card on the public page. */
+export interface WhyChooseItem {
+  titleAr: string;
+  titleEn: string;
+  bodyAr: string;
+  bodyEn: string;
+}
+
+/** One question/answer pair in the public page's FAQ accordion. */
+export interface CourseFaq {
+  questionAr: string;
+  questionEn: string;
+  answerAr: string;
+  answerEn: string;
+}
+
 export interface PricingDetails {
   price: number;
   salePrice: number;
@@ -55,7 +71,9 @@ export interface CourseFormData {
   titleEn: string;
   slug: string;
   category: string;
-  subcategory: string;
+  /** Backend column kept for other consumers; the admin course form no longer
+   *  collects or sends it. */
+  subcategory?: string;
   descriptionAr: string;
   descriptionEn: string;
   headlineAr?: string;
@@ -68,6 +86,8 @@ export interface CourseFormData {
   whatYouWillLearnEn: string[];
   whatYouWillLearnArText?: string;
   whatYouWillLearnEnText?: string;
+  whyChoose: WhyChooseItem[];
+  faqs: CourseFaq[];
   pricing: {
     egp: PricingDetails;
     sar: PricingDetails;

@@ -10,7 +10,6 @@ export function makeDefaultCourseValues(): CourseFormValues {
     titleAr: "",
     slug: "",
     category: "",
-    subcategory: "",
     difficulty: "Beginner",
     programType: "",
     attendanceMode: "online-zoom",
@@ -51,6 +50,8 @@ export function makeDefaultCourseValues(): CourseFormValues {
     whatYouWillLearnAr: [],
     whoCanAttendEn: "",
     whoCanAttendAr: "",
+    whyChoose: [],
+    faqs: [],
     modules: [
       {
         id: createId("mod"),

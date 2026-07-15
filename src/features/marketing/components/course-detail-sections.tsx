@@ -152,15 +152,21 @@ export function CourseCareerOutcomes({
 export function CourseWhyChoose({
   locale,
   reasons,
+  courseTitle,
 }: {
   locale: string;
   reasons: { title: string; body: string }[];
+  courseTitle: string;
 }) {
   if (!reasons.length) return null;
   return (
     <section id="why-choose" className="scroll-mt-32">
       <h2 className="font-heading text-xl font-semibold">
-        {tr(locale, "Why Professionals Choose This Program", "لماذا يختار المتخصصون هذا البرنامج")}
+        {tr(
+          locale,
+          `Why Professionals Choose ${courseTitle}`,
+          `لماذا يختار المتخصصون ${courseTitle}`,
+        )}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {tr(

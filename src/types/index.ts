@@ -69,7 +69,10 @@ export interface CourseRow {
   slug: string;
   titleEn: string;
   titleAr: string;
+  /** Category name in English — also the stable key catalog filters match on. */
   category: string;
+  /** Arabic category name, for display only. Absent on older/mock rows. */
+  categoryAr?: string;
   difficulty: Difficulty;
   priceEGP: number;
   salePriceEGP: number;
@@ -122,6 +125,21 @@ export interface CourseRow {
   descriptionAr?: string;
   whoCanAttendEn?: string;
   whoCanAttendAr?: string;
+  /** Admin-authored "Why Professionals Choose …" cards. Empty/absent ⇒ the
+   *  public page falls back to the shared IMETS reasons. */
+  whyChoose?: { titleEn: string; titleAr: string; bodyEn: string; bodyAr: string }[];
+  /** Admin-authored FAQ. Empty/absent ⇒ the shared default questions. */
+  faqs?: { questionEn: string; questionAr: string; answerEn: string; answerAr: string }[];
+  /** Admin-authored search metadata (course form → SEO panel). Any blank field
+   *  falls back to copy derived from the course itself in `generateMetadata`. */
+  seo?: {
+    metaTitleEn?: string;
+    metaTitleAr?: string;
+    metaDescriptionEn?: string;
+    metaDescriptionAr?: string;
+    metaKeywordsEn?: string[];
+    metaKeywordsAr?: string[];
+  };
   /** Curriculum modules with their lessons (for the collapsible curriculum). */
   modules?: CurriculumModule[];
   /** Instructor display names (for smart catalog search). */

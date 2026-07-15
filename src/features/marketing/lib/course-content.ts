@@ -18,8 +18,9 @@ export type CourseReview = {
 };
 
 export type CourseContent = {
-  /** Emotional story block rendered right under the hero. */
-  story: { title: string; body: string };
+  /** Emotional story block rendered right under the hero. `null` ⇒ the page
+   *  opens straight on "Why Professionals Choose …" instead. */
+  story: { title: string; body: string } | null;
   /**
    * Course-specific "What You'll Learn" outcomes. Each line answers
    * "this is what I'll be able to DO after the course" — never generic
@@ -200,14 +201,7 @@ function cphqContent(locale: string): CourseContent {
 function hospitalManagementContent(locale: string): CourseContent {
   const ar = isAr(locale);
   return {
-    story: {
-      title: ar
-        ? "تخيّل نفسك تدير قسمًا في مستشفى — بثقة."
-        : "Imagine Running a Hospital Department — With Confidence.",
-      body: ar
-        ? "إدارة المستشفيات ليست إدارة عامة. إنها موازنة بين جودة الرعاية، والتكلفة، والفريق، ومتطلبات الاعتماد — كل يوم. هذا البرنامج مصمَّم ليمنحك الأدوات التي يستخدمها المديرون فعليًا داخل المستشفيات."
-        : "Running a hospital isn't generic management. It's balancing care quality, cost, your team, and accreditation demands — every single day. This program gives you the tools hospital managers actually use on the floor.",
-    },
+    story: null,
     outcomes: ar
       ? [
           "قيادة أقسام المستشفى بفعالية",

@@ -139,12 +139,8 @@ export function SmartSearchBox({
         )}
       </div>
 
-      <p className="mt-1.5 text-[11px] text-muted-foreground">
-        {t("smartSearchHint")}
-      </p>
-
       {open && value.trim().length >= 2 && (
-        <div className="absolute inset-x-0 top-[calc(100%-0.25rem)] z-40 mt-1 max-h-[min(28rem,70vh)] overflow-y-auto rounded-xl border bg-popover shadow-lg">
+        <div className="absolute inset-x-0 top-full z-40 mt-1 max-h-[min(28rem,70vh)] overflow-y-auto rounded-xl border bg-popover shadow-lg">
           {grouped.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-muted-foreground">
               {t("smartSearchEmpty")}

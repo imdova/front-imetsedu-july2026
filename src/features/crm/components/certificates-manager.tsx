@@ -4,14 +4,18 @@ import * as React from "react";
 import Image from "next/image";
 import {
   Award, Truck, Loader2, Search, SearchX, Users, ExternalLink, CheckCircle2,
-  Plus, Trash2, Package, MapPin, AlertTriangle, GraduationCap,
+  Plus, Trash2, Package, MapPin, AlertTriangle, GraduationCap, Plane, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type { GroupRow } from "@/lib/db/groups";
 import type { GroupRosterStudent } from "@/lib/dal/groups";
-import type { Shipment, ShipmentStatus } from "@/lib/dal/shipments";
+import type { Shipment, ShipmentStatus, ShipmentCourier } from "@/lib/dal/shipments";
+import {
+  ARAB_COUNTRIES, COURIERS, DEFAULT_COURIER, DEFAULT_COUNTRY,
+  countryName, courierLabel, statesFor,
+} from "@/constants/shipping-regions";
 import { usePermission } from "@/hooks/use-permission";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
@@ -24,6 +28,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { FileUpload } from "@/components/shared/file-upload";
+
+const COURIER_ICONS: Record<string, React.ElementType> = {
+  aramex: Truck,
+  dhl: Plane,
+  "egypt-post": Mail,
+};
 
 export function CertificatesManager() {
   return (
@@ -243,7 +253,14 @@ const STATUSES: { value: ShipmentStatus; label: string; tone: string }[] = [
 ];
 const statusMeta = (s: ShipmentStatus) => STATUSES.find((x) => x.value === s) ?? STATUSES[0];
 
-const EMPTY_SHIPMENT = { recipient: "", address: "", note: "" };
+const EMPTY_SHIPMENT = {
+  recipient: "",
+  courier: DEFAULT_COURIER,
+  country: DEFAULT_COUNTRY,
+  state: "",
+  address: "",
+  note: "",
+};
 
 function ShipmentTab() {
   const canCreate = usePermission("crm.shipment.create");
@@ -275,6 +292,9 @@ function ShipmentTab() {
     setSaving(true);
     const res = await dal.shipments.createShipment({
       recipient: form.recipient.trim(),
+      courier: form.courier as ShipmentCourier,
+      country: form.country,
+      state: form.state.trim(),
       address: form.address.trim(),
       note: form.note.trim(),
     });
@@ -301,7 +321,12 @@ function ShipmentTab() {
   };
 
   const q = query.trim().toLowerCase();
-  const visible = q ? rows.filter((r) => r.recipient.toLowerCase().includes(q) || r.address.toLowerCase().includes(q)) : rows;
+  const visible = q
+    ? rows.filter((r) =>
+        [r.recipient, r.address, r.state, countryName(r.country), courierLabel(r.courier)]
+          .some((v) => v.toLowerCase().includes(q)),
+      )
+    : rows;
   const pending = rows.filter((r) => r.status !== "delivered" && r.status !== "cancelled").length;
 
   if (loading) {
@@ -348,7 +373,16 @@ function ShipmentTab() {
                 </div>
                 <p className="mt-2 font-semibold leading-snug">{s.recipient}</p>
                 <p className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
-                  <MapPin className="mt-0.5 size-3.5 shrink-0" /> <span className="whitespace-pre-wrap">{s.address}</span>
+                  <MapPin className="mt-0.5 size-3.5 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="whitespace-pre-wrap">{s.address}</span>
+                    <span className="mt-0.5 block font-medium text-foreground/80">
+                      {[s.state, countryName(s.country)].filter(Boolean).join(", ")}
+                    </span>
+                  </span>
+                </p>
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Package className="size-3.5 shrink-0" /> {courierLabel(s.courier)}
                 </p>
                 {s.note && <p className="mt-2 rounded-lg bg-muted/40 p-2 text-xs text-muted-foreground">{s.note}</p>}
                 {s.status === "delivered" && s.deliveredAt && (
@@ -379,8 +413,69 @@ function ShipmentTab() {
               <Input value={form.recipient} onChange={(e) => setForm((f) => ({ ...f, recipient: e.target.value }))} placeholder="Student / recipient name" />
             </div>
             <div className="space-y-1.5">
+              <Label>Courier <span className="text-destructive">*</span></Label>
+              <div
+                role="radiogroup"
+                aria-label="Courier"
+                className="grid grid-cols-3 gap-2"
+              >
+                {COURIERS.map((c) => {
+                  const Icon = COURIER_ICONS[c.value] ?? Package;
+                  const selected = form.courier === c.value;
+                  return (
+                    <button
+                      key={c.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setForm((f) => ({ ...f, courier: c.value }))}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center transition-all",
+                        selected
+                          ? "border-primary bg-primary/10 text-primary shadow-sm ring-1 ring-primary/30"
+                          : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                      )}
+                    >
+                      <Icon className="size-5" strokeWidth={1.75} />
+                      <span className="text-xs font-semibold leading-tight">{c.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Country <span className="text-destructive">*</span></Label>
+                {/* Changing country clears the state — governorates don't carry across borders. */}
+                <Select
+                  value={form.country}
+                  onValueChange={(v) => setForm((f) => ({ ...f, country: v, state: "" }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ARAB_COUNTRIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>{c.flag} {c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>State</Label>
+                <Select
+                  value={form.state}
+                  onValueChange={(v) => setForm((f) => ({ ...f, state: v }))}
+                  disabled={!statesFor(form.country).length}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                  <SelectContent>
+                    {statesFor(form.country).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
               <Label>Address <span className="text-destructive">*</span></Label>
-              <Textarea rows={3} value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="Full delivery address" />
+              <Textarea rows={3} value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="Street, building, apartment, postal code" />
             </div>
             <div className="space-y-1.5">
               <Label>Note</Label>

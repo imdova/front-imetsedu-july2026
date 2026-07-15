@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormContext, useWatch } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Wand2 } from "lucide-react";
 
@@ -80,9 +80,6 @@ function BasicInfoMain({
 }) {
   const { control, setValue, getValues } = useFormContext<CourseFormValues>();
   const t = useTranslations("CourseForm");
-  const selectedCategory = useWatch({ control, name: "category" });
-  const subcategories =
-    categories.find((c) => c.id === selectedCategory)?.subcategories ?? [];
   // Prefer live program types; keep the static list as a fallback.
   const programOptions = programTypes?.length ? programTypes : PROGRAM_TYPE_OPTIONS;
 
@@ -189,13 +186,7 @@ function BasicInfoMain({
                 <FormLabel>
                   {t("fCategory")} <Required />
                 </FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={(v) => {
-                    field.onChange(v);
-                    setValue("subcategory", "");
-                  }}
-                >
+                <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder={t("selectCategory")} />
@@ -205,42 +196,6 @@ function BasicInfoMain({
                     {categories.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="subcategory"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t("fSubcategory")} <Required />
-                </FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={!selectedCategory}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          selectedCategory
-                            ? t("selectSubcategory")
-                            : t("selectCategoryFirst")
-                        }
-                      />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {subcategories.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

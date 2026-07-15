@@ -30,6 +30,10 @@ export function mapCourse(raw: any): CourseRow {
         : 0;
   const category =
     typeof raw?.category === "string" ? raw.category : raw?.category?.nameEn ?? raw?.category?.nameAr ?? "—";
+  // Keep the Arabic category name too — `category` alone is English-only, which
+  // left Arabic pages labelling categories in English.
+  const categoryAr =
+    typeof raw?.category === "string" ? undefined : raw?.category?.nameAr || undefined;
   const difficulty: Difficulty =
     (["Beginner", "Intermediate", "Advanced"] as const).find((d) => d.toLowerCase() === String(raw?.level ?? "").toLowerCase()) ?? "Beginner";
 
@@ -39,6 +43,7 @@ export function mapCourse(raw: any): CourseRow {
     titleEn: raw?.titleEn ?? raw?.titleAr ?? "—",
     titleAr: raw?.titleAr ?? raw?.titleEn ?? "—",
     category,
+    categoryAr,
     difficulty,
     priceEGP: egp.price ?? 0,
     salePriceEGP: egp.salePrice ?? 0,
@@ -92,6 +97,44 @@ export function mapCourse(raw: any): CourseRow {
     descriptionAr: raw?.descriptionAr || undefined,
     whoCanAttendEn: raw?.whoCanAttendEn || undefined,
     whoCanAttendAr: raw?.whoCanAttendAr || undefined,
+    // Admin-managed search metadata. Blank strings are normalized to undefined
+    // so `generateMetadata` can fall back rather than emit an empty tag.
+    seo: raw?.seo && typeof raw.seo === "object"
+      ? {
+          metaTitleEn: raw.seo.metaTitleEn || undefined,
+          metaTitleAr: raw.seo.metaTitleAr || undefined,
+          metaDescriptionEn: raw.seo.metaDescriptionEn || undefined,
+          metaDescriptionAr: raw.seo.metaDescriptionAr || undefined,
+          metaKeywordsEn: Array.isArray(raw.seo.metaKeywordsEn)
+            ? raw.seo.metaKeywordsEn.map(String).filter(Boolean)
+            : undefined,
+          metaKeywordsAr: Array.isArray(raw.seo.metaKeywordsAr)
+            ? raw.seo.metaKeywordsAr.map(String).filter(Boolean)
+            : undefined,
+        }
+      : undefined,
+    // Per-course overrides for the "Why choose" cards and the FAQ. Rows with no
+    // question/title are dropped so a half-filled admin row can't render blank.
+    whyChoose: Array.isArray(raw?.whyChoose)
+      ? raw.whyChoose
+          .map((r: Record<string, string>) => ({
+            titleEn: r?.titleEn ?? "",
+            titleAr: r?.titleAr ?? "",
+            bodyEn: r?.bodyEn ?? "",
+            bodyAr: r?.bodyAr ?? "",
+          }))
+          .filter((r: { titleEn: string; titleAr: string }) => r.titleEn || r.titleAr)
+      : undefined,
+    faqs: Array.isArray(raw?.faqs)
+      ? raw.faqs
+          .map((f: Record<string, string>) => ({
+            questionEn: f?.questionEn ?? "",
+            questionAr: f?.questionAr ?? "",
+            answerEn: f?.answerEn ?? "",
+            answerAr: f?.answerAr ?? "",
+          }))
+          .filter((f: { questionEn: string; questionAr: string }) => f.questionEn || f.questionAr)
+      : undefined,
     instructorNames: Array.isArray(raw?.instructors)
       ? raw.instructors
           .map((i: any) =>
