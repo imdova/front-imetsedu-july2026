@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 const STATUS: Record<GroupStatus, { key: string; dot: string; badge: string }> = {
   pending: { key: "grpStPending", dot: "bg-warning", badge: "bg-warning/15 text-warning" },
@@ -240,7 +241,7 @@ function GroupFormModal({
   const [saving, setSaving] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  useResetOnChange([open, group], () => {
     if (!open) return;
     setTitle(group?.title ?? "");
     setImages(group?.groupImages ?? []);
@@ -253,7 +254,7 @@ function GroupFormModal({
     setStartTime(group?.startTime ?? "");
     setEndTime(group?.endTime ?? "");
     setWhatsapp(group?.whatsappGroupLink ?? "");
-  }, [open, group]);
+  });
 
   const subOptions = subcategories.filter((s) => !categoryId || s.parentId === categoryId);
 

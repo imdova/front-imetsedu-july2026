@@ -9,6 +9,7 @@ import type { Certificate } from "@/lib/db/student";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 const ORG = "IMETS Academy";
 
@@ -29,9 +30,9 @@ export function CertificateShareModal({
   }, [cert]);
 
   const [message, setMessage] = React.useState("");
-  React.useEffect(() => {
+  useResetOnChange([cert, t], () => {
     if (cert) setMessage(t("certSharePostDefault", { name: cert.course }));
-  }, [cert, t]);
+  });
 
   if (!cert) return null;
 

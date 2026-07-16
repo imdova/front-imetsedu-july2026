@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 type Tab = "overview" | "materials" | "assignments" | "certificate" | "feedback";
 
@@ -373,7 +374,7 @@ function SubmitModal({ assignment, onClose, t }: { assignment: StudentAssignment
   const [uploading, setUploading] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  React.useEffect(() => { if (assignment) { setUrl(""); setFileName(""); setNotes(""); setConfirm(false); } }, [assignment]);
+  useResetOnChange([assignment], () => { if (assignment) { setUrl(""); setFileName(""); setNotes(""); setConfirm(false); } });
   if (!assignment) return null;
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

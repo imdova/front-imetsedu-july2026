@@ -23,6 +23,7 @@ import {
   ExternalLink,
   Download,
   ChevronRight,
+  Check,
 } from "lucide-react";
 
 import { cn, getInitials } from "@/lib/utils";
@@ -38,7 +39,8 @@ import type {
 import { CareerRoadmapTimeline } from "@/features/marketing/components/career-roadmap-timeline";
 import { CountUp } from "@/features/marketing/components/count-up";
 
-const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
+const tr = (locale: string, en: string, ar: string) =>
+  locale === "ar" ? ar : en;
 
 /** Alternating page bands — white / muted / emphasis for visual rhythm. */
 export function CourseSectionBand({
@@ -67,7 +69,14 @@ export function CourseSectionBand({
           ? "py-20 sm:py-24"
           : "py-12 sm:py-16";
   return (
-    <div className={cn("-mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-3xl lg:px-8", toneClass, spaceClass, className)}>
+    <div
+      className={cn(
+        "-mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-3xl lg:px-8",
+        toneClass,
+        spaceClass,
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -76,30 +85,6 @@ export function CourseSectionBand({
 /* ------------------------------------------------------------------ */
 /* Story — emotional hook right under the hero                          */
 /* ------------------------------------------------------------------ */
-export function CourseStory({
-  locale,
-  title,
-  body,
-}: {
-  locale: string;
-  title: string;
-  body: string;
-}) {
-  return (
-    <section
-      dir={locale === "ar" ? "rtl" : "ltr"}
-      className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-amber-50/50 p-6 sm:p-8 dark:border-blue-900/40 dark:from-blue-950/40 dark:via-card dark:to-amber-950/10"
-    >
-      <Quote className="absolute -top-3 start-4 size-16 text-primary/10" aria-hidden />
-      <div className="relative">
-        <p className="font-heading text-2xl font-bold tracking-tight text-foreground text-balance sm:text-[1.75rem]">
-          {title}
-        </p>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">{body}</p>
-      </div>
-    </section>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /* Career Growth — role cards + roadmap in one section                 */
@@ -119,13 +104,13 @@ export function CourseCareerGrowth({
   return (
     <section id="careers" className="scroll-mt-32">
       <h2 className="font-heading text-2xl font-bold tracking-tight">
-        {tr(locale, "Career Growth", "النمو المهني")}
+        {tr(locale, "Career Outcomes", "المخرجات المهنية")}
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         {tr(
           locale,
-          "Roles you can grow into — and the typical path that gets you there.",
-          "أدوار يمكنك النمو نحوها — والمسار النموذجي الذي يوصلك إليها.",
+          "After completing this program, you may qualify for roles such as:",
+          "بعد إتمام هذا البرنامج، قد تكون مؤهلًا لأدوار مثل:",
         )}
       </p>
 
@@ -156,9 +141,15 @@ export function CourseCareerGrowth({
               </p>
               <p className="mt-4 border-t border-border/60 pt-3 text-[11px] font-medium tracking-wide text-muted-foreground">
                 <span className="text-foreground/55">
-                  {tr(locale, "Average career stage", "المرحلة المهنية المتوسطة")}
+                  {tr(
+                    locale,
+                    "Average career stage",
+                    "المرحلة المهنية المتوسطة",
+                  )}
                 </span>
-                <span className="mt-0.5 block font-semibold text-primary">{r.level}</span>
+                <span className="mt-0.5 block font-semibold text-primary">
+                  {r.level}
+                </span>
               </p>
             </article>
           ))}
@@ -257,7 +248,9 @@ export function CourseWhyThisDiploma({
               </span>
               <div className="min-w-0">
                 <p className="font-semibold text-foreground">{r.title}</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{r.body}</p>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  {r.body}
+                </p>
               </div>
             </div>
           </div>
@@ -288,10 +281,22 @@ export function CourseLearningExperience({ locale }: { locale: string }) {
     { icon: Compass, label: tr(locale, "Orientation", "جلسة تعريفية") },
     { icon: Video, label: tr(locale, "Live Classes", "جلسات مباشرة") },
     { icon: PencilLine, label: tr(locale, "Assignments", "واجبات") },
-    { icon: ClipboardCheck, label: tr(locale, "Practice Exams", "اختبارات تدريبية") },
-    { icon: MessageSquare, label: tr(locale, "Instructor Feedback", "ملاحظات المدرّب") },
-    { icon: FileCheck2, label: tr(locale, "Final Assessment", "التقييم النهائي") },
-    { icon: Award, label: tr(locale, "Receive Your Diploma", "احصل على دبلومتك") },
+    {
+      icon: ClipboardCheck,
+      label: tr(locale, "Practice Exams", "اختبارات تدريبية"),
+    },
+    {
+      icon: MessageSquare,
+      label: tr(locale, "Instructor Feedback", "ملاحظات المدرّب"),
+    },
+    {
+      icon: FileCheck2,
+      label: tr(locale, "Final Assessment", "التقييم النهائي"),
+    },
+    {
+      icon: Award,
+      label: tr(locale, "Receive Your Diploma", "احصل على دبلومتك"),
+    },
   ];
   const doneLabel = tr(locale, "Graduate", "تخرّج");
 
@@ -377,7 +382,10 @@ export function CourseLearningExperience({ locale }: { locale: string }) {
           {steps.map((s, i) => {
             const last = i === steps.length - 1;
             return (
-              <li key={s.label} className="relative z-10 flex min-w-0 flex-col items-center text-center">
+              <li
+                key={s.label}
+                className="relative z-10 flex min-w-0 flex-col items-center text-center"
+              >
                 <span
                   className={cn(
                     "grid size-9 place-items-center rounded-full shadow-md ring-[5px] ring-background sm:size-11",
@@ -391,7 +399,9 @@ export function CourseLearningExperience({ locale }: { locale: string }) {
                 <span
                   className={cn(
                     "mt-2.5 font-heading text-[10px] font-bold tabular-nums sm:text-sm",
-                    last ? "text-amber-600 dark:text-amber-400" : "text-primary",
+                    last
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-primary",
                   )}
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -418,8 +428,12 @@ export function CourseLearningExperience({ locale }: { locale: string }) {
               <it.icon className="size-4" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-foreground">{it.title}</p>
-              <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{it.body}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {it.title}
+              </p>
+              <p className="mt-0.5 text-sm leading-snug text-muted-foreground">
+                {it.body}
+              </p>
             </div>
           </li>
         ))}
@@ -452,7 +466,11 @@ export function CourseFinalCta({
   return (
     <section className="marketing-gradient-bg overflow-hidden rounded-[2rem] px-6 py-14 text-center shadow-2xl shadow-blue-950/30 ring-1 ring-inset ring-white/10 sm:px-12 sm:py-16 lg:py-[4.5rem]">
       <p className="mx-auto max-w-3xl font-heading text-3xl font-bold tracking-tight text-white text-balance sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15]">
-        {tr(locale, "Ready to Take the Next Step in Your Healthcare Career?", "هل أنت مستعد لاتخاذ خطوتك التالية في مسيرتك الصحية؟")}
+        {tr(
+          locale,
+          "Ready to Take the Next Step in Your Healthcare Career?",
+          "هل أنت مستعد لاتخاذ خطوتك التالية في مسيرتك الصحية؟",
+        )}
       </p>
       <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/75 sm:text-lg">
         {tr(
@@ -488,19 +506,27 @@ export function CourseReviews({
 }) {
   return (
     <section id="reviews" className="scroll-mt-32">
-      <h2 className="font-heading text-2xl font-bold tracking-tight">{tr(locale, "Student Reviews", "آراء الطلاب")}</h2>
+      <h2 className="font-heading text-2xl font-bold tracking-tight">
+        {tr(locale, "Success Stories", "قصص نجاح")}
+      </h2>
 
       <div className="mt-4 grid gap-6 rounded-2xl border border-border/70 bg-card p-6 sm:grid-cols-[auto_1fr] sm:gap-8">
         {/* Score */}
         <div className="flex flex-col items-center justify-center text-center sm:border-e sm:border-border/60 sm:pe-8 rtl:sm:border-e-0 rtl:sm:border-s rtl:sm:pe-0 rtl:sm:ps-8">
-          <span className="font-heading text-5xl font-bold text-foreground tabular-nums">{rating.toFixed(1)}</span>
+          <span className="font-heading text-5xl font-bold text-foreground tabular-nums">
+            {rating.toFixed(1)}
+          </span>
           <span className="mt-1 flex text-amber-400">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star key={i} className="size-4 fill-current" />
             ))}
           </span>
           <span className="mt-1 text-xs text-muted-foreground">
-            {tr(locale, `${reviewCount.toLocaleString()} reviews`, `${reviewCount.toLocaleString()} تقييم`)}
+            {tr(
+              locale,
+              `${reviewCount.toLocaleString()} reviews`,
+              `${reviewCount.toLocaleString()} تقييم`,
+            )}
           </span>
         </div>
         {/* Distribution */}
@@ -508,12 +534,18 @@ export function CourseReviews({
           {distribution.map((d) => (
             <div key={d.star} className="flex items-center gap-3 text-xs">
               <span className="inline-flex w-8 items-center gap-0.5 text-muted-foreground tabular-nums">
-                {d.star} <Star className="size-3 fill-amber-400 text-amber-400" />
+                {d.star}{" "}
+                <Star className="size-3 fill-amber-400 text-amber-400" />
               </span>
               <span className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                <span className="block h-full rounded-full bg-amber-400" style={{ width: `${d.pct}%` }} />
+                <span
+                  className="block h-full rounded-full bg-amber-400"
+                  style={{ width: `${d.pct}%` }}
+                />
               </span>
-              <span className="w-9 text-end text-muted-foreground tabular-nums">{d.pct}%</span>
+              <span className="w-9 text-end text-muted-foreground tabular-nums">
+                {d.pct}%
+              </span>
             </div>
           ))}
         </div>
@@ -522,7 +554,10 @@ export function CourseReviews({
       {/* Review wall */}
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {reviews.map((r) => (
-          <figure key={r.name} className="rounded-xl border border-border/70 bg-card p-5">
+          <figure
+            key={r.name}
+            className="rounded-xl border border-border/70 bg-card p-5"
+          >
             <div className="flex items-center gap-3">
               <Avatar className="size-10 border">
                 <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
@@ -530,7 +565,9 @@ export function CourseReviews({
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <figcaption className="truncate font-medium text-foreground">{r.name}</figcaption>
+                <figcaption className="truncate font-medium text-foreground">
+                  {r.name}
+                </figcaption>
                 <p className="truncate text-xs text-muted-foreground">
                   {r.role} · {r.country}
                 </p>
@@ -541,7 +578,9 @@ export function CourseReviews({
                 ))}
               </span>
             </div>
-            <blockquote className="mt-3 text-sm leading-relaxed text-muted-foreground">“{r.text}”</blockquote>
+            <blockquote className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              “{r.text}”
+            </blockquote>
           </figure>
         ))}
       </div>
@@ -561,7 +600,10 @@ export function CoursePullQuote({
 }) {
   if (!quote.trim()) return null;
   return (
-    <section className="scroll-mt-32 py-4 text-center" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <section
+      className="scroll-mt-32 py-4 text-center"
+      dir={locale === "ar" ? "rtl" : "ltr"}
+    >
       <Quote className="mx-auto size-10 text-primary/25" aria-hidden />
       <blockquote className="mx-auto mt-4 max-w-3xl font-heading text-2xl font-semibold leading-snug tracking-tight text-foreground text-balance sm:text-3xl sm:leading-snug">
         “{quote}”
@@ -584,7 +626,7 @@ export function CourseFaq({
   return (
     <section id="faq" className="scroll-mt-32">
       <h2 className="font-heading text-2xl font-bold tracking-tight">
-        {tr(locale, "Frequently Asked Questions", "الأسئلة الشائعة")}
+        {tr(locale, "Admissions FAQ", "أسئلة القبول")}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {tr(
@@ -609,7 +651,9 @@ export function CourseFaq({
                     {f.q}
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 rtl:rotate-180 rtl:group-open:-rotate-90" />
                   </summary>
-                  <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+                  <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                    {f.a}
+                  </p>
                 </details>
               ))}
             </div>
@@ -624,6 +668,11 @@ export function CourseFaq({
 /* Trust bar — social proof strip before FAQ                           */
 /* ------------------------------------------------------------------ */
 export function CourseTrustBar({ locale }: { locale: string }) {
+  const strengths = [
+    tr(locale, "Live Weekly Learning", "تعلّم مباشر أسبوعيًا"),
+    tr(locale, "Arabic + English", "عربي + إنجليزي"),
+    tr(locale, "International Standards", "معايير دولية"),
+  ];
   const stats = [
     { value: "3000+", label: tr(locale, "Graduates", "خريج") },
     { value: "20+", label: tr(locale, "Countries", "دولة") },
@@ -635,10 +684,18 @@ export function CourseTrustBar({ locale }: { locale: string }) {
     <section className="scroll-mt-32 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.07] via-card to-amber-50/40 px-5 py-8 sm:px-8 dark:via-card dark:to-amber-950/20">
       <div className="text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-          {tr(locale, "Trusted By Healthcare Professionals", "موثوق من متخصصي الرعاية الصحية")}
+          {tr(
+            locale,
+            "Results, not features",
+            "نتائج وليست مزايا",
+          )}
         </p>
         <p className="mt-2 font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          {tr(locale, "Numbers that speak for the program", "أرقام تعبّر عن البرنامج")}
+          {tr(
+            locale,
+            "Why Professionals Choose IMETS",
+            "لماذا يختار المتخصصون IMETS",
+          )}
         </p>
       </div>
       <div className="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
@@ -648,10 +705,24 @@ export function CourseTrustBar({ locale }: { locale: string }) {
               value={s.value}
               className="font-heading text-3xl font-bold tabular-nums text-primary sm:text-4xl"
             />
-            <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">{s.label}</p>
+            <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
+              {s.label}
+            </p>
           </div>
         ))}
       </div>
+
+      <ul className="mt-7 flex flex-wrap justify-center gap-2 border-t border-primary/10 pt-6">
+        {strengths.map((x) => (
+          <li
+            key={x}
+            className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-foreground/80 ring-1 ring-border/60"
+          >
+            <Check className="size-3.5 text-primary" aria-hidden />
+            {x}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -668,11 +739,16 @@ export function CourseSeoContent({
 }) {
   if (!sections.length) return null;
   return (
-    <section className="scroll-mt-32 space-y-8" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <section
+      className="scroll-mt-32 space-y-8"
+      dir={locale === "ar" ? "rtl" : "ltr"}
+    >
       {sections.map((s) => (
         <div key={s.heading}>
           <p className="font-heading text-xl font-semibold">{s.heading}</p>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {s.body}
+          </p>
         </div>
       ))}
     </section>
@@ -699,7 +775,13 @@ export function CourseInstructor({
 
   const chips = [
     ...(profile?.yearsExperience
-      ? [tr(locale, `${profile.yearsExperience}+ Years Experience`, `${profile.yearsExperience}+ سنة خبرة`)]
+      ? [
+          tr(
+            locale,
+            `${profile.yearsExperience}+ Years Experience`,
+            `${profile.yearsExperience}+ سنة خبرة`,
+          ),
+        ]
       : []),
     ...(profile?.certifications ?? []),
   ];
@@ -734,13 +816,22 @@ export function CourseInstructor({
           )}
 
           <div className="min-w-0 flex-1">
-            <p className="font-heading text-lg font-bold text-foreground">{name}</p>
-            {profile?.title && <p className="text-sm font-medium text-primary">{profile.title}</p>}
+            <p className="font-heading text-lg font-bold text-foreground">
+              {name}
+            </p>
+            {profile?.title && (
+              <p className="text-sm font-medium text-primary">
+                {profile.title}
+              </p>
+            )}
 
             {chips.length > 0 && (
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {chips.map((c) => (
-                  <span key={c} className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  <span
+                    key={c}
+                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                  >
                     <Award className="size-3" /> {c}
                   </span>
                 ))}
@@ -748,17 +839,23 @@ export function CourseInstructor({
             )}
 
             {profile?.bio && (
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{profile.bio}</p>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                {profile.bio}
+              </p>
             )}
 
             {profile?.hospitals?.length ? (
               <p className="mt-3 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{tr(locale, "Experience at: ", "خبرة في: ")}</span>
+                <span className="font-medium text-foreground">
+                  {tr(locale, "Experience at: ", "خبرة في: ")}
+                </span>
                 {profile.hospitals.join(" · ")}
               </p>
             ) : null}
 
-            {(profile?.studentsTaught || profile?.rating || profile?.linkedIn) && (
+            {(profile?.studentsTaught ||
+              profile?.rating ||
+              profile?.linkedIn) && (
               <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-border/60 pt-3 text-sm">
                 {profile?.studentsTaught ? (
                   <span className="inline-flex items-center gap-1.5 text-muted-foreground">
@@ -772,7 +869,9 @@ export function CourseInstructor({
                 {profile?.rating ? (
                   <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                     <Star className="size-4 fill-amber-400 text-amber-400" />
-                    <span className="font-semibold tabular-nums text-foreground">{profile.rating.toFixed(1)}</span>
+                    <span className="font-semibold tabular-nums text-foreground">
+                      {profile.rating.toFixed(1)}
+                    </span>
                     {tr(locale, "instructor rating", "تقييم المحاضر")}
                   </span>
                 ) : null}
@@ -810,9 +909,18 @@ export function CourseDownloads({
   programGuideUrl?: string;
 }) {
   const files = [
-    { url: brochureUrl, label: tr(locale, "Download Brochure", "تحميل البروشور") },
-    { url: curriculumUrl, label: tr(locale, "Download Curriculum", "تحميل المنهج") },
-    { url: programGuideUrl, label: tr(locale, "Program Guide", "دليل البرنامج") },
+    {
+      url: brochureUrl,
+      label: tr(locale, "Download Brochure", "تحميل البروشور"),
+    },
+    {
+      url: curriculumUrl,
+      label: tr(locale, "Download Curriculum", "تحميل المنهج"),
+    },
+    {
+      url: programGuideUrl,
+      label: tr(locale, "Program Guide", "دليل البرنامج"),
+    },
   ].filter((f) => !!f.url);
   if (!files.length) return null;
 
@@ -841,7 +949,9 @@ export function CourseDownloads({
               <FileCheck2 className="size-5" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-foreground">{f.label}</span>
+              <span className="block truncate text-sm font-semibold text-foreground">
+                {f.label}
+              </span>
               <span className="text-xs text-muted-foreground">PDF</span>
             </span>
             <Download className="ms-auto size-4 shrink-0 text-muted-foreground" />

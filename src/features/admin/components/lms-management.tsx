@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/shared/image-upload";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 export function LmsManagement({
   initial,
@@ -277,13 +278,13 @@ function EditLmsModal({
   const [thumbnail, setThumbnail] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
+  useResetOnChange([open, course], () => {
     if (!open || !course) return;
     setTitle(course.name);
     setCategory(course.categoryId);
     setSubcategory(course.subcategoryId);
     setThumbnail(course.image);
-  }, [open, course]);
+  });
 
   const subOptions = subcategoryOptions.filter((s) => !category || s.parentId === category);
 

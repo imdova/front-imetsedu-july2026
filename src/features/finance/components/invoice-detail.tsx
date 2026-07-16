@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceStatusBadge } from "./finance-badges";
 import { ReceiptPreview, type Receipt, formatBytes } from "./mark-as-paid-modal";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { invoice?: Invoice; id?: string; logoLight?: string; logoDark?: string }) {
   const t = useTranslations("Finance");
@@ -61,7 +62,7 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
     router.back();
   };
 
-  React.useEffect(() => {
+  useResetOnChange([invoice], () => {
     if (invoice && invoice.paymentReceipt) {
       setReceipt({
         name: invoice.paymentReceipt.filename,
@@ -72,7 +73,7 @@ export function InvoiceDetail({ invoice: initial, id, logoLight, logoDark }: { i
     } else {
       setReceipt(null);
     }
-  }, [invoice]);
+  });
 
   // Course name/thumbnail enrichment only — status and paymentReceipt come
   // straight from getInvoiceById/mapInvoice, same as InvoicesTable. Marking

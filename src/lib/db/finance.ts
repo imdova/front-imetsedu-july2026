@@ -130,9 +130,9 @@ function buildInvoice(i: number): Invoice {
   };
 }
 
-let invoices: Invoice[] = Array.from({ length: 14 }, (_, i) => buildInvoice(i));
+const invoices: Invoice[] = Array.from({ length: 14 }, (_, i) => buildInvoice(i));
 
-let payments: Payment[] = Array.from({ length: 14 }, (_, i) => {
+const payments: Payment[] = Array.from({ length: 14 }, (_, i) => {
   const name = NAMES[(i + 2) % NAMES.length];
   return {
     id: `pay_${i}`,
@@ -147,7 +147,7 @@ let payments: Payment[] = Array.from({ length: 14 }, (_, i) => {
   };
 });
 
-let refunds: Refund[] = Array.from({ length: 8 }, (_, i) => {
+const refunds: Refund[] = Array.from({ length: 8 }, (_, i) => {
   const name = NAMES[(i + 5) % NAMES.length];
   const statusPool: RefundStatus[] = ["requested", "approved", "processed", "rejected"];
   return {

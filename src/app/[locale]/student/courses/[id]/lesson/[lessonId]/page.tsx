@@ -11,6 +11,7 @@ import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { dal } from "@/lib/dal";
 import { ROUTES } from "@integration/constants";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 import {
   getStudentCourseRaw,
   buildLessonPageData,
@@ -72,10 +73,15 @@ function VdoCipherPlayer({ videoId, title }: { videoId: string; title: string })
   const [creds, setCreds] = React.useState<{ otp: string; playbackInfo: string } | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    let cancelled = false;
+  // Clearing the previous video's credentials is a reset — do it in render so a
+  // new videoId never paints against the old OTP.
+  useResetOnChange([videoId], () => {
     setCreds(null);
     setErr(null);
+  });
+
+  React.useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/vdocipher/otp", {

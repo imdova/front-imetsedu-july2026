@@ -74,7 +74,7 @@ export function CategoryLanding({
         data={[
           breadcrumbLd([
             { name: tr("Home", "الرئيسية"), url: localeUrl("/", locale) },
-            { name: tr("Courses", "الدورات"), url: localeUrl("/courses", locale) },
+            { name: tr("Programs", "البرامج"), url: localeUrl("/courses", locale) },
             { name, url: catUrl },
           ]),
           {
@@ -91,7 +91,7 @@ export function CategoryLanding({
           <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
             <Link href="/" className="hover:text-foreground">{tr("Home", "الرئيسية")}</Link>
             <ChevronRight className="size-3.5 rtl:rotate-180" />
-            <Link href="/courses" className="hover:text-foreground">{tr("Courses", "الدورات")}</Link>
+            <Link href="/courses" className="hover:text-foreground">{tr("Programs", "البرامج")}</Link>
             <ChevronRight className="size-3.5 rtl:rotate-180" />
             <span className="line-clamp-1 text-foreground">{name}</span>
           </nav>

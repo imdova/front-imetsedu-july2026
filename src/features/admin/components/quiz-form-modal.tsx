@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -42,7 +43,7 @@ export function QuizFormModal({
   const [saving, setSaving] = React.useState(false);
 
   // Seed form whenever the dialog opens (create = blank, edit = existing).
-  React.useEffect(() => {
+  useResetOnChange([open, editing], () => {
     if (!open) return;
     setTitle(editing?.titleEn ?? "");
     setCategory(editing?.categoryId ?? "none");
@@ -52,7 +53,7 @@ export function QuizFormModal({
     setAttempts(editing ? (editing.numberOfAttempts === 0 ? "unlimited" : String(editing.numberOfAttempts || 1)) : "1");
     setDifficulty(editing?.difficultyLevel ?? "intermediate");
     setAntiCheat(editing?.antiCheat ?? false);
-  }, [open, editing]);
+  });
 
   const save = async () => {
     const safeTitle = title.trim();

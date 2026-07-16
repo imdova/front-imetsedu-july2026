@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 const COUNTRY_CODES = [
   { code: "+20", iso: "eg", name: "Egypt" },
@@ -27,6 +28,24 @@ const COUNTRY_CODES = [
   { code: "+44", iso: "gb", name: "United Kingdom" },
   { code: "+91", iso: "in", name: "India" },
 ];
+
+/** The visitor's locale never changes mid-session, so there is nothing to watch. */
+const subscribeNever = () => () => {};
+const noDialCode = () => null;
+/** Dial code implied by the browser's locale region, or null. Returns the same
+ *  string every call, which `useSyncExternalStore` requires of a snapshot. */
+const detectDialCode = (): string | null => {
+  try {
+    const region = (navigator.languages || [navigator.language])
+      .map((l) => l.split("-")[1])
+      .find(Boolean)
+      ?.toUpperCase();
+    const match = region && COUNTRY_CODES.find((c) => c.iso.toUpperCase() === region);
+    return match ? match.code : null;
+  } catch {
+    return null;
+  }
+};
 
 const SPECIALITIES = ["Doctors", "Dentist", "Pharmacist", "Nurse", "Others"];
 
@@ -69,15 +88,14 @@ export function SimpleLeadForm({ path, courseName, webhookUrl }: { path: string;
   // Track the landing view + auto-detect the visitor's country code (smart default).
   React.useEffect(() => {
     dal.landing.trackLanding(path, "view").catch(() => {});
-    try {
-      const region =
-        (navigator.languages || [navigator.language])
-          .map((l) => l.split("-")[1])
-          .find(Boolean)?.toUpperCase();
-      const match = region && COUNTRY_CODES.find((c) => c.iso.toUpperCase() === region);
-      if (match) setForm((f) => ({ ...f, code: match.code }));
-    } catch { /* keep default */ }
   }, [path]);
+
+  // null on the server and the first client render, so the markup still matches;
+  // the browser's own locale is only readable after that.
+  const detectedCode = React.useSyncExternalStore(subscribeNever, detectDialCode, noDialCode);
+  useResetOnChange([detectedCode], () => {
+    if (detectedCode) setForm((f) => ({ ...f, code: detectedCode }));
+  });
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const blur = (k: FieldKey) => setTouched((t) => ({ ...t, [k]: true }));

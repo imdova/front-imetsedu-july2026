@@ -5,12 +5,26 @@ import { localeUrl } from "@/lib/seo";
 
 // Public, indexable static routes (locale-agnostic paths).
 const STATIC_PATHS = [
-  "/", "/courses", "/free-courses", "/instructors", "/about", "/become-instructor",
-  "/contact", "/help", "/blog", "/careers", "/privacy", "/terms",
+  "/",
+  "/courses",
+  "/free-courses",
+  "/instructors",
+  "/about",
+  "/become-instructor",
+  "/contact",
+  "/help",
+  "/blog",
+  "/careers",
+  "/privacy",
+  "/terms",
+  "/success-stories",
 ];
 
 /** One sitemap entry per path, with en as canonical + ar hreflang alternate. */
-function entry(path: string, lastModified?: Date): MetadataRoute.Sitemap[number] {
+function entry(
+  path: string,
+  lastModified?: Date,
+): MetadataRoute.Sitemap[number] {
   return {
     url: localeUrl(path, "en"),
     ...(lastModified ? { lastModified } : {}),
@@ -32,18 +46,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const c of coursesRes.data) {
       if (c.status !== "published" || !c.slug) continue;
       const lm = new Date(c.updatedAt);
-      entries.push(entry(`/courses/${c.slug}`, Number.isNaN(lm.getTime()) ? undefined : lm));
+      entries.push(
+        entry(
+          `/courses/${c.slug}`,
+          Number.isNaN(lm.getTime()) ? undefined : lm,
+        ),
+      );
     }
   }
   if (catsRes?.ok) {
-    for (const c of catsRes.data) entries.push(entry(`/category/${c.slug || c.id}`));
+    for (const c of catsRes.data)
+      entries.push(entry(`/category/${c.slug || c.id}`));
   }
   if (instRes?.ok) {
-    for (const i of instRes.data) entries.push(entry(`/instructors/${i.slug || i.id}`));
+    for (const i of instRes.data)
+      entries.push(entry(`/instructors/${i.slug || i.id}`));
   }
   // Only published programs come back from the public endpoint.
   if (freeRes?.ok) {
-    for (const p of freeRes.data) entries.push(entry(`/free-courses/${p.slug}`));
+    for (const p of freeRes.data)
+      entries.push(entry(`/free-courses/${p.slug}`));
   }
 
   return entries;

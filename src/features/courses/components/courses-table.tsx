@@ -44,6 +44,7 @@ import {
   BulkActionsBar,
 } from "@/components/shared/data-table/bulk-actions-bar";
 import { getCourseColumns } from "./columns";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 interface CoursesTableProps {
   initialData?: CourseRow[];
@@ -103,21 +104,24 @@ export function CoursesTable({ initialData }: CoursesTableProps) {
     setLoading(false);
   }, [search, status, category, level, hasStudents, tab]);
 
+  const noFilters =
+    tab === "all" &&
+    !search &&
+    status === "all" &&
+    category === "all" &&
+    level === "all" &&
+    !hasStudents;
+
+  // Two jobs that were one effect: fall back to the server rows when no filter
+  // is on (a reset, so it belongs in render), and debounce the fetch when one is.
+  useResetOnChange([initialData, noFilters], () => {
+    if (initialData && noFilters) setRows(initialData);
+  });
   React.useEffect(() => {
-    const noFilters =
-      tab === "all" &&
-      !search &&
-      status === "all" &&
-      category === "all" &&
-      level === "all" &&
-      !hasStudents;
-    if (initialData && noFilters) {
-      setRows(initialData);
-      return;
-    }
+    if (initialData && noFilters) return;
     const id = setTimeout(load, 250);
     return () => clearTimeout(id);
-  }, [load, initialData, tab, search, status, category, level, hasStudents]);
+  }, [load, initialData, noFilters]);
 
   const handleDelete = React.useCallback(
     async (course: CourseRow) => {

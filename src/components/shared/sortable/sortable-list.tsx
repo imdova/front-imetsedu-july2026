@@ -19,6 +19,7 @@ import {
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 import { SortableItem, type DragHandleProps } from "./sortable-item";
+import { useMounted } from "@/hooks/use-mounted";
 
 interface SortableListProps<T extends { id: string }> {
   items: T[];
@@ -49,8 +50,7 @@ export function SortableList<T extends { id: string }>({
   renderItem,
   className,
 }: SortableListProps<T>) {
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

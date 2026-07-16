@@ -211,7 +211,8 @@ export function ArticleBuilder({
     setSections((prev) => {
       const copy = prev.map((sec) => ({ ...sec, cols: sec.cols.map((col) => ({ ...col, blocks: [...col.blocks] })) }));
       const [block] = copy[src.s].cols[src.c].blocks.splice(src.b, 1);
-      let { s, c, index } = dest;
+      const { s, c } = dest;
+      let { index } = dest;
       if (s === src.s && c === src.c && index > src.b) index -= 1;
       copy[s].cols[c].blocks.splice(index, 0, block);
       return copy;
@@ -584,6 +585,11 @@ function BlockCard({
   return (
     <div className="rounded-lg border border-border/70 bg-card">
       <div className="flex items-center gap-1.5 border-b border-border/50 px-2 py-1.5">
+        {/* `drag.ref` is dnd-kit's setActivatorNodeRef — a callback ref, not a ref
+            object, so nothing is read during render. The rule flags the whole
+            `drag` object (it also flags `drag.props`, which is not a ref at all),
+            and the identical call in SortableSection above is not flagged. */}
+        {/* eslint-disable-next-line react-hooks/refs */}
         <button ref={drag.ref} {...drag.props} className="cursor-grab touch-none text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"><GripVertical className="size-4" /></button>
         <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{LABEL[block.type] ?? block.type}</span>
         {showWords && <span className="text-[11px] text-muted-foreground/70">· {wordCount(block)}w</span>}

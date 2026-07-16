@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { PipelineSummary } from "@/lib/db/crm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 import {
   Dialog,
   DialogContent,
@@ -43,9 +44,9 @@ export function AssignPipelineTrigger({
   const [open, setOpen] = React.useState(false);
   const [draft, setDraft] = React.useState<string[]>(assignedIds);
 
-  React.useEffect(() => {
+  useResetOnChange([open, assignedIds], () => {
     if (open) setDraft(assignedIds);
-  }, [open, assignedIds]);
+  });
 
   const primary = pipelines.find((p) => assignedIds.includes(p.id));
   const triggerLabel = primary?.title ?? t("noPipeline");

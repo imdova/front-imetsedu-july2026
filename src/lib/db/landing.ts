@@ -137,7 +137,7 @@ const leads: ExamLead[] = [
 ];
 
 let pageSeq = pages.length;
-let leadSeq = leads.length;
+const leadSeq = leads.length;
 
 const withCtr = (r: Row): MarketingLandingPage => ({
   ...r,

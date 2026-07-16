@@ -64,9 +64,10 @@ export function LandingPageDetails({
     [regs],
   );
 
+  // Read once at mount, not per render: Date.now() inside the memo is impure.
+  const [now] = React.useState(() => Date.now());
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
-    const now = Date.now();
     return regs.filter((r) => {
       if (q && ![r.name, r.email, r.whatsapp, r.profession, r.interest, r.region]
         .some((v) => v?.toLowerCase().includes(q))) return false;
@@ -75,7 +76,7 @@ export function LandingPageDetails({
       if (range !== "all" && now - new Date(r.createdAt).getTime() > RANGE_MS[range]) return false;
       return true;
     });
-  }, [regs, search, profession, region, range]);
+  }, [regs, search, profession, region, range, now]);
 
   const activeFilters =
     (search ? 1 : 0) + (profession !== "all" ? 1 : 0) + (region !== "all" ? 1 : 0) + (range !== "all" ? 1 : 0);

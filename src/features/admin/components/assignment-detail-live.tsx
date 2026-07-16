@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -211,12 +212,12 @@ function GradeWorkspace({
   const [status, setStatus] = React.useState("pending");
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
+  useResetOnChange([row], () => {
     if (!row) return;
     setScore(row.score ?? "");
     setPlagiarism(row.plagiarismScore ?? "");
     setStatus(row.status === "graded" ? "approved" : "pending");
-  }, [row]);
+  });
 
   if (!row) return null;
 

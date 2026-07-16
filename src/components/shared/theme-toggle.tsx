@@ -5,13 +5,13 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/providers/theme-provider";
 
 import { Button } from "@/components/ui/button";
+import { useMounted } from "@/hooks/use-mounted";
 
 /** Light/dark toggle. Renders a stable placeholder until mounted to avoid a
  * hydration mismatch (theme is only known on the client). */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
 
   return (
     <Button

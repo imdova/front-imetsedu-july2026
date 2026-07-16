@@ -27,9 +27,15 @@ export type CourseReview = {
   text: string;
 };
 
+/** A persona card under "Who This Program Is For" — `why` expands on click. */
+export type AudiencePersona = { emoji: string; label: string; why: string };
+
 export type CourseContent = {
-  /** Emotional story block rendered right under the hero. `null` ⇒ skip. */
-  story: { title: string; body: string } | null;
+  /**
+   * Curated persona cards. `null` ⇒ fall back to the chip rail parsed from the
+   * course record's `whoCanAttend` copy.
+   */
+  audience: AudiencePersona[] | null;
   /**
    * Short "About this diploma" — one paragraph only. `null` ⇒ fall back to
    * the course DB description.
@@ -360,15 +366,58 @@ function defaultReviews(locale: string): CourseReview[] {
 function cphqContent(locale: string): CourseContent {
   const ar = isAr(locale);
   return {
-    about: null,
-    story: {
-      title: ar
-        ? "تخيّل نفسك تقود تحسين الجودة في مستشفاك."
-        : "Imagine Leading Quality Improvement in Your Hospital.",
-      body: ar
-        ? "المؤسسات الصحية في الشرق الأوسط تبحث عن متخصصين قادرين على تحسين سلامة المرضى، ورفع مستوى الجودة، وقيادة مبادرات الاعتماد. هذا البرنامج مُصمَّم ليجعلك واحدًا منهم."
-        : "Healthcare organizations across the Middle East are looking for professionals who can improve patient safety, enhance quality, and lead accreditation initiatives. This program is designed to help you become one of them.",
+    about: {
+      summary: ar
+        ? "المؤسسات الصحية في السعودية والإمارات وقطر وعُمان ومصر تبحث بشكل متزايد عن متخصصين مدرَّبين في جودة الرعاية الصحية وسلامة المرضى."
+        : "Healthcare organizations across Saudi Arabia, UAE, Qatar, Oman and Egypt increasingly seek professionals trained in healthcare quality and patient safety.",
+      more: ar
+        ? ["برنامج IMETS للتحضير لشهادة CPHQ يساعدك على بناء معرفة عملية، والاستعداد بثقة لامتحان CPHQ الدولي، وتطوير مهارات تقدّرها المستشفيات في جميع أنحاء الشرق الأوسط."]
+        : ["The IMETS CPHQ Preparation Program helps you build practical knowledge, prepare confidently for the international CPHQ certification, and develop skills valued by hospitals across the Middle East."],
     },
+    audience: [
+      {
+        emoji: "👨‍⚕️",
+        label: ar ? "الأطباء" : "Physicians",
+        why: ar
+          ? "تقود قرارات إكلينيكية يوميًا. البرنامج يمنحك لغة الجودة والبيانات لتحويل تلك القرارات إلى تحسين قابل للقياس على مستوى القسم."
+          : "You already lead clinical decisions. This program gives you the quality and data language to turn them into measurable improvement at department level.",
+      },
+      {
+        emoji: "👩‍⚕️",
+        label: ar ? "التمريض" : "Nurses",
+        why: ar
+          ? "التمريض أقرب فريق لسلامة المرضى. الشهادة تفتح لك التحوّل من الرعاية المباشرة إلى أدوار الجودة وسلامة المرضى."
+          : "Nursing sits closest to patient safety. The credential opens the move from bedside care into quality and patient-safety roles.",
+      },
+      {
+        emoji: "💊",
+        label: ar ? "الصيادلة" : "Pharmacists",
+        why: ar
+          ? "سلامة الدواء أحد أهم مؤشرات الجودة. ستتعلّم كيف تبني مؤشرات الأداء وتقود مبادرات تقليل أخطاء الدواء."
+          : "Medication safety is one of the biggest quality indicators. You'll learn to build KPIs and lead initiatives that reduce medication error.",
+      },
+      {
+        emoji: "🦷",
+        label: ar ? "أطباء الأسنان" : "Dentists",
+        why: ar
+          ? "عيادات ومراكز الأسنان تخضع لنفس متطلبات الاعتماد. البرنامج يؤهّلك لتجهيز منشأتك ومطابقة معايير الجودة."
+          : "Dental clinics and centres face the same accreditation requirements. The program prepares you to ready your facility and meet quality standards.",
+      },
+      {
+        emoji: "🏥",
+        label: ar ? "إداريو المستشفيات" : "Hospital Administrators",
+        why: ar
+          ? "أنت المسؤول عن نتائج الاعتماد. ستتعلّم إدارة البيانات وقيادة التحسين المستمر عبر الأقسام."
+          : "You own the accreditation outcome. You'll learn data management and how to lead continuous improvement across departments.",
+      },
+      {
+        emoji: "🎓",
+        label: ar ? "حديثو التخرج" : "Fresh Graduates",
+        why: ar
+          ? "الجودة مسار يبدأ من المعرفة لا من سنوات الخبرة. البرنامج يبدأ من الأساسيات ويؤهّلك لأول دور في الجودة."
+          : "Quality is a path you enter through knowledge, not years served. The program starts from fundamentals and prepares you for a first quality role.",
+      },
+    ],
     faqs: null,
     outcomes: ar
       ? [
@@ -394,10 +443,10 @@ function cphqContent(locale: string): CourseContent {
     whyThisDiploma: whyThisDiplomaCards(locale),
     careerRoles: [
       { title: ar ? "أخصائي جودة رعاية صحية" : "Healthcare Quality Specialist" },
-      { title: ar ? "منسّق جودة" : "Quality Coordinator" },
-      { title: ar ? "مسؤول سلامة المرضى" : "Patient Safety Officer" },
-      { title: ar ? "مدير جودة" : "Quality Manager" },
-      { title: ar ? "منسّق اعتماد المستشفيات" : "Hospital Accreditation Coordinator" },
+      { title: ar ? "أخصائي جودة أول" : "Senior Quality Specialist" },
+      { title: ar ? "مشرف جودة" : "Quality Supervisor" },
+      { title: ar ? "مدير جودة الرعاية الصحية" : "Healthcare Quality Manager" },
+      { title: ar ? "مسؤول اعتماد المستشفى" : "Hospital Accreditation Lead" },
     ],
     careerOpportunities: [],
     seoSections: [
@@ -422,7 +471,7 @@ function cphqContent(locale: string): CourseContent {
 function hospitalManagementContent(locale: string): CourseContent {
   const ar = isAr(locale);
   return {
-    story: null,
+    audience: null,
     about: {
       summary: ar
         ? "دبلومة إدارة المستشفيات تؤهّلك لقيادة تشغيل المنشآت الصحية: الفرق، والجودة، والتمويل، والسلامة. منهج بمعايير دولية قابلة للتطبيق فورًا — لمن يسعى للترقية أو الانتقال إلى الإدارة."
@@ -630,15 +679,8 @@ function genericContent(titleEn: string, titleAr: string, locale: string): Cours
   const ar = isAr(locale);
   const title = ar ? titleAr : titleEn;
   return {
+    audience: null,
     about: null,
-    story: {
-      title: ar
-        ? "تخيّل مسيرتك المهنية بعد إتقان هذا المجال."
-        : "Imagine Advancing Your Career with Real Confidence.",
-      body: ar
-        ? `المؤسسات الصحية في الشرق الأوسط تبحث عن متخصصين مؤهّلين ومعتمدين. برنامج «${title}» مُصمَّم ليمنحك المهارات والشهادة التي تجعلك الخيار الأول لأصحاب العمل.`
-        : `Healthcare organizations across the Middle East are looking for qualified, certified professionals. "${title}" is designed to give you the skills and the credential that make you the first choice for employers.`,
-    },
     faqs: null,
     // Left empty on purpose: generic "learn professional models" filler helps
     // nobody. The page falls back to the course's own whatYouWillLearn, and if

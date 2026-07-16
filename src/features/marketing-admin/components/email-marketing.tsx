@@ -148,7 +148,7 @@ export function EmailMarketing({
       toast.success(tplEditing ? "Template updated" : "Template created"); setTplOpen(false);
     } else toast.error(res.ok ? "Not found" : res.error);
   };
-  const useTemplate = async (t: EmailTemplate) => {
+  const applyTpl = async (t: EmailTemplate) => {
     const res = await dal.emailMarketing.createCampaign({ ...emptyCampaign, subject: t.subject, previewText: t.previewText });
     if (res.ok) { upsertCampaign(res.data); toast.success(`Campaign seeded from “${t.name}”`); refreshStats(); }
   };
@@ -242,7 +242,7 @@ export function EmailMarketing({
       id: "actions", header: "",
       cell: ({ row }) => (
         <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => useTemplate(row.original)}>Use</Button>
+          <Button variant="outline" size="sm" onClick={() => applyTpl(row.original)}>Use</Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="ghost" size="sm"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">

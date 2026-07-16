@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { VariantProps } from "class-variance-authority";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 interface AddStudentDialogProps extends VariantProps<typeof buttonVariants> {
   groupId: string;
@@ -50,13 +51,13 @@ export function AddStudentDialog({ groupId, className, variant, size, children, 
     return () => clearTimeout(id);
   }, [open, search]);
 
-  React.useEffect(() => {
+  useResetOnChange([open], () => {
     if (!open) {
       setSearch("");
       setResults([]);
       setSelected(new Set());
     }
-  }, [open]);
+  });
 
   const toggle = (id: string) =>
     setSelected((prev) => {

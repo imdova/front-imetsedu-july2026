@@ -22,7 +22,14 @@ export function MyCourses({ courses }: { courses: EnrolledCourse[] }) {
   const [tab, setTab] = React.useState<Tab>("all");
   const [search, setSearch] = React.useState("");
 
-  React.useEffect(() => setItems(courses), [courses]);
+  // Re-seed from the prop when it changes, keeping local edits (favourites) in
+  // between. Adjusting during render rather than in an effect: React re-runs
+  // this render immediately instead of committing the stale list first.
+  const [prevCourses, setPrevCourses] = React.useState(courses);
+  if (courses !== prevCourses) {
+    setPrevCourses(courses);
+    setItems(courses);
+  }
 
   const toggleFav = (id: string) => {
     setItems((prev) => prev.map((c) => {

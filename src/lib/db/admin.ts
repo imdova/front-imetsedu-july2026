@@ -69,7 +69,7 @@ let tags: Tag[] = ["In-demand", "Career Switch", "Executive", "Beginner Friendly
   id: `tag_${i}`, name, slug: name.toLowerCase().replace(/\s+/g, "-"), courseCount: 4 + i * 2, active: i !== 5,
 }));
 
-let groups: Group[] = Array.from({ length: 8 }, (_, i) => ({
+const groups: Group[] = Array.from({ length: 8 }, (_, i) => ({
   id: `grp_${i}`,
   title: `${["Finance", "Marketing", "PMP", "Leadership", "HR", "Analytics", "Strategy", "Operations"][i]} Cohort ${2026}-${i + 1}`,
   category: CAT_DATA[i % CAT_DATA.length][0] as string,
@@ -79,7 +79,7 @@ let groups: Group[] = Array.from({ length: 8 }, (_, i) => ({
 }));
 
 const STUDENT_NAMES = ["Ahmed Al-Otaibi", "Layla Habib", "Omar Mansour", "Fatima Saleh", "Yousef Rashad", "Mariam Awad", "Khalid Hassan", "Nour Fathy", "Hassan Adel", "Sara Salim"];
-let registrations: Registration[] = Array.from({ length: 12 }, (_, i) => {
+const registrations: Registration[] = Array.from({ length: 12 }, (_, i) => {
   const fee = [9900, 8400, 6200, 12000][i % 4];
   const status = (["active", "completed", "dropped"] as const)[i % 3];
   return {
@@ -107,7 +107,7 @@ const STAFF = [
   ["Tarek Mansour", "tarek@imetsedu.com", "Instructor", "Faculty", "active"],
   ["Nour Fathy", "nour@imetsedu.com", "Counselor", "Sales", "suspended"],
 ];
-let users: AdminUser[] = STAFF.map(([name, email, role, department, status], i) => ({
+const users: AdminUser[] = STAFF.map(([name, email, role, department, status], i) => ({
   id: `usr_${i}`, name: name as string, email: email as string, role: role as string,
   department: department as string, status: status as AdminUser["status"],
   lastActive: ["1h ago", "yesterday", "3 days ago", "1 week ago"][i % 4],
@@ -120,7 +120,7 @@ let invitations: Invitation[] = [
   { id: "inv_2", email: "bilal@imetsedu.com", role: "Finance Officer", status: "accepted", sentAt: "1 week ago" },
 ];
 
-let roles: Role[] = [
+const roles: Role[] = [
   { id: "rol_0", title: "Administrator", department: "Management", description: "Full platform access", members: 1, permissions: 42 },
   { id: "rol_1", title: "Sales Manager", department: "Sales", description: "Pipeline oversight & team KPIs", members: 1, permissions: 24 },
   { id: "rol_2", title: "Counselor", department: "Sales", description: "Works assigned leads to enrolment", members: 2, permissions: 14 },
@@ -128,18 +128,18 @@ let roles: Role[] = [
   { id: "rol_4", title: "Instructor", department: "Faculty", description: "Course delivery & grading", members: 1, permissions: 10 },
 ];
 
-let departments: Department[] = [
+const departments: Department[] = [
   { id: "dep_0", name: "Management", members: 1 }, { id: "dep_1", name: "Sales", members: 3 },
   { id: "dep_2", name: "Finance", members: 1 }, { id: "dep_3", name: "Faculty", members: 1 },
 ];
 
-let quizzes: AdminQuiz[] = Array.from({ length: 8 }, (_, i) => ({
+const quizzes: AdminQuiz[] = Array.from({ length: 8 }, (_, i) => ({
   id: `qz_${i}`, title: `${["Finance", "Marketing", "PMP", "HR"][i % 4]} — Quiz ${i + 1}`,
   category: ["Finance", "Marketing", "Project Management", "HR"][i % 4],
   questions: 5 + (i % 6), attempts: 12 + i * 7, status: i % 4 === 3 ? "draft" : "published",
 }));
 
-let assignments: Assignment[] = Array.from({ length: 7 }, (_, i) => {
+const assignments: Assignment[] = Array.from({ length: 7 }, (_, i) => {
   const subs = 8 + i * 3;
   return {
     id: `asg_${i}`, title: `Assignment ${i + 1}: ${["Valuation Model", "Campaign Plan", "Project Charter", "OD Proposal"][i % 4]}`,

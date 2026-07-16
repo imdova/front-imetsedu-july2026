@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -46,7 +47,7 @@ export function QuizQuestionModal({
 
   const reset = () => { setType("single"); setPoints(1); setPrompt(""); setExplanation(""); setChoices(BLANK_CHOICES.map((c) => ({ ...c }))); };
 
-  React.useEffect(() => {
+  useResetOnChange([open, editing], () => {
     if (!open) return;
     if (editing) {
       const isTF = editing.type === "single" && editing.choices.length === 2
@@ -59,7 +60,7 @@ export function QuizQuestionModal({
     } else {
       reset();
     }
-  }, [open, editing]);
+  });
 
   const updateChoice = (i: number, field: keyof QuizChoiceUI, value: string | boolean) => {
     setChoices((prev) => {

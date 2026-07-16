@@ -50,6 +50,7 @@ import {
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { getLeadColumns } from "./lead-columns";
 import { ImportLeadsDialog } from "./import-leads-dialog";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 type Option = { value: string; label: string };
 
@@ -263,14 +264,17 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
     setCustomTo("");
   };
 
+  // Two jobs that were one effect: fall back to the server rows when no filter
+  // is on (a reset, so it belongs in render — no stale page first), and debounce
+  // the fetch when one is.
+  useResetOnChange([initialData, active], () => {
+    if (!active) setRows(initialData);
+  });
   React.useEffect(() => {
-    if (!active) {
-      setRows(initialData);
-      return;
-    }
+    if (!active) return;
     const id = setTimeout(load, 250);
     return () => clearTimeout(id);
-  }, [load, initialData, active]);
+  }, [load, active]);
 
   const canExport = usePermission("crm.leads.export");
 

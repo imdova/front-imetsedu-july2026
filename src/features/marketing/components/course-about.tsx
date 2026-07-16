@@ -14,7 +14,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
+const tr = (locale: string, en: string, ar: string) =>
+  locale === "ar" ? ar : en;
 
 /**
  * About — short on-page summary + Learn More modal for the longer story.
@@ -34,7 +35,11 @@ export function CourseAbout({
   heading?: string;
 }) {
   return (
-    <section id="overview" className="scroll-mt-32" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <section
+      id="overview"
+      className="scroll-mt-32"
+      dir={locale === "ar" ? "rtl" : "ltr"}
+    >
       <div
         className={cn(
           "grid items-center gap-8 lg:gap-12",
@@ -44,7 +49,13 @@ export function CourseAbout({
         {imageUrl ? (
           <div className="relative aspect-[5/4] overflow-hidden rounded-[1.75rem] bg-muted shadow-lg ring-1 ring-border/50 lg:order-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt={imageAlt ?? ""} loading="lazy" decoding="async" className="size-full object-cover" />
+            <img
+              src={imageUrl}
+              alt={imageAlt ?? ""}
+              loading="lazy"
+              decoding="async"
+              className="size-full object-cover"
+            />
           </div>
         ) : null}
         <div className={cn(imageUrl && "lg:order-2")}>
@@ -78,12 +89,19 @@ export function CourseAbout({
                     {tr(locale, "About This Diploma", "عن هذه الدبلومة")}
                   </DialogTitle>
                   <DialogDescription className="sr-only">
-                    {tr(locale, "More detail about the program", "المزيد عن البرنامج")}
+                    {tr(
+                      locale,
+                      "More detail about the program",
+                      "المزيد عن البرنامج",
+                    )}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 overflow-y-auto px-6 py-5">
                   {about.more.map((p) => (
-                    <p key={p.slice(0, 40)} className="text-sm leading-relaxed text-muted-foreground sm:text-[0.9375rem]">
+                    <p
+                      key={p.slice(0, 40)}
+                      className="text-sm leading-relaxed text-muted-foreground sm:text-[0.9375rem]"
+                    >
                       {p}
                     </p>
                   ))}

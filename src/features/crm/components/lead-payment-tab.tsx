@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -532,7 +533,7 @@ function PaymentPlanModal({
   const [saving, setSaving] = React.useState(false);
 
   // Seed the form each time the modal opens (edit = prefill from existing plan).
-  React.useEffect(() => {
+  useResetOnChange([open, existing], () => {
     if (!open) return;
     if (existing) {
       setCourseName(existing.courseName ?? "");
@@ -546,7 +547,7 @@ function PaymentPlanModal({
       setCourseName(""); setCurrency("EGP"); setMethod(PAYMENT_METHODS[0]);
       setTotal(""); setRows([{ amount: "", dueDate: defaultDueDates(1)[0] }]);
     }
-  }, [open, existing]);
+  });
 
   // Re-split the total evenly across the chosen installment count.
   const setCount = (n: number) => {

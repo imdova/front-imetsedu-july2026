@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthCard } from "@/features/auth/components/auth-card";
+import { useMounted } from "@/hooks/use-mounted";
+import { useQueryParam } from "@/hooks/use-query-param";
 
 const ORG = "IMETS Medical School";
 
@@ -18,16 +20,11 @@ export default function AcceptInvitationPage() {
   const t = useTranslations("Auth");
   const router = useRouter();
   // The token is in the emailed link's ?token=… — read it client-side.
-  const [token, setToken] = React.useState<string | null>(null);
-  const [ready, setReady] = React.useState(false);
+  const token = useQueryParam("token");
+  const ready = useMounted();
   const [password, setPassword] = React.useState("");
   const [confirm, setConfirm] = React.useState("");
   const [busy, setBusy] = React.useState(false);
-
-  React.useEffect(() => {
-    setToken(new URLSearchParams(window.location.search).get("token"));
-    setReady(true);
-  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

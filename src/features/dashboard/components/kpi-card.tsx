@@ -45,6 +45,10 @@ export function KpiCard({ kpi, label, sub, vsLabel, index = 0 }: KpiCardProps) {
             TONES[kpi.tone],
           )}
         >
+          {/* getIcon is a lookup in a module-level record: an existing component
+              with a stable identity, not one created per render, so it cannot
+              remount. The rule can't see through the lookup. */}
+          {/* eslint-disable-next-line react-hooks/static-components */}
           <Icon className="size-[18px]" />
         </span>
       </div>

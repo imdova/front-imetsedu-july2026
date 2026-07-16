@@ -32,6 +32,7 @@ import { useCrmVariables } from "@/hooks/use-crm-variables";
 import { usePipelineStages } from "@/hooks/use-pipeline-stages";
 import { usePermission } from "@/hooks/use-permission";
 import { STAGE_ACCENT, STAGE_LABEL_KEY } from "../lib/maps";
+import { useMounted } from "@/hooks/use-mounted";
 
 type Board = Record<string, Lead[]>;
 type GatedStage = "contacted" | "enrolled" | "lost";
@@ -82,9 +83,8 @@ export function PipelineBoard({
 
   const [board, setBoard] = React.useState<Board>(() => groupByStage(leads, stages));
   const [activeId, setActiveId] = React.useState<string | null>(null);
-  const [mounted, setMounted] = React.useState(false);
+  const mounted = useMounted();
   const [pending, setPending] = React.useState<{ lead: Lead; from: string; to: GatedStage } | null>(null);
-  React.useEffect(() => setMounted(true), []);
 
   const courses = React.useMemo(() => {
     const map = new Map<string, string>();

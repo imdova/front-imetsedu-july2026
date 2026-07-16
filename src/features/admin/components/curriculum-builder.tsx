@@ -12,6 +12,7 @@ import { cn, createId } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -50,10 +51,12 @@ export function CurriculumBuilder({
   const dragMod = React.useRef<number | null>(null);
   const dragModOver = React.useRef<number | null>(null);
 
-  React.useEffect(() => {
+  // Re-seed from the prop when it changes; adjusting during render avoids
+  // committing the previous course's modules first.
+  useResetOnChange([initial], () => {
     setModules(cloneModules(initial));
     setHasChanges(false);
-  }, [initial]);
+  });
 
   React.useEffect(() => {
     (async () => {

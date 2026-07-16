@@ -42,7 +42,9 @@ export function ExamLeadsPanel({ initialLeads }: { initialLeads: ExamLead[] }) {
     );
   }, [leads, search]);
 
-  const now = Date.now();
+  // Read once at mount, not per render: Date.now() during render is impure and
+  // makes the counts below drift between renders.
+  const [now] = React.useState(() => Date.now());
   const within = (ms: number) => leads.filter((l) => now - new Date(l.createdAt).getTime() <= ms).length;
   const withWhatsapp = leads.filter((l) => !!l.whatsapp?.trim()).length;
 

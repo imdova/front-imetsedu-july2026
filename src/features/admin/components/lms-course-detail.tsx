@@ -22,6 +22,7 @@ import { ImageUpload } from "@/components/shared/image-upload";
 import { CurriculumBuilder } from "./curriculum-builder";
 import { StudyMaterialsTab, AssignmentsTab, StudentsTab } from "./lms-extra-tabs";
 import { PickerDialog } from "./lms-picker-dialog";
+import { useResetOnChange } from "@/hooks/use-reset-on-change";
 
 type Tab = "overview" | "groups" | "curriculum" | "materials" | "assignments" | "students";
 const VALID_TABS: Tab[] = ["overview", "groups", "curriculum", "materials", "assignments", "students"];
@@ -152,13 +153,13 @@ function EditLmsModal({
   const [thumbnail, setThumbnail] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
+  useResetOnChange([open, course], () => {
     if (!open) return;
     setTitle(course.name);
     setCategory(course.categoryId);
     setSubcategory(course.subcategoryId);
     setThumbnail(course.image);
-  }, [open, course]);
+  });
 
   const subOptions = subcategoryOptions.filter((s) => !category || s.parentId === category);
 

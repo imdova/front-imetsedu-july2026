@@ -431,7 +431,12 @@ export function LandingPagesPanel({
 function WhatsAppCell({ value, onSave }: { value: string; onSave: (v: string) => void }) {
   const [editing, setEditing] = React.useState(false);
   const [v, setV] = React.useState(value);
-  React.useEffect(() => { setV(value); }, [value]);
+  // Re-seed the draft when the saved value changes underneath us.
+  const [prevValue, setPrevValue] = React.useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setV(value);
+  }
 
   const commit = () => {
     setEditing(false);
