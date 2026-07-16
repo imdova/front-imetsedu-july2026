@@ -146,3 +146,17 @@ export const courierLabel = (value: string): string =>
 
 /** Divisions for a country code; empty when we have no list for it. */
 export const statesFor = (code: string): string[] => STATES_BY_COUNTRY[code] ?? [];
+
+/** Partner hospitals staff often ship certificates to — pre-fills country & state. */
+export interface ShipmentPartnerPreset {
+  recipient: string;
+  country: ArabCountryCode;
+  state: string;
+}
+
+export const SHIPMENT_PARTNER_PRESETS: ShipmentPartnerPreset[] = [
+  { recipient: "King Faisal Specialist Hospital", country: "SA", state: "Riyadh" },
+  { recipient: "Cleveland Clinic Abu Dhabi", country: "AE", state: "Abu Dhabi" },
+  { recipient: "Jordan University Hospital", country: "JO", state: "Amman" },
+  { recipient: "Mediclinic Middle East", country: "AE", state: "Dubai" },
+];

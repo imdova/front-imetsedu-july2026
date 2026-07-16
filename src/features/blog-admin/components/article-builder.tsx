@@ -4,7 +4,7 @@ import * as React from "react";
 import {
   ArrowLeft, Eye, Pencil, Plus, Trash2, ChevronUp, ChevronDown, Copy, GripVertical,
   ChevronLeft, ChevronRight, BookmarkPlus, History, CheckCircle2, Circle, Send,
-  Sparkles, Loader2, Undo2, Redo2,
+  Sparkles, Loader2, Undo2, Redo2, Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -41,6 +41,7 @@ export interface BuilderMeta {
   title: string; slug: string; excerpt: string; coverImageUrl: string; category: string;
   tags: string[]; authorId: string; authorName: string; language: string; status: BlogStatus; featured: boolean;
   seoTitle: string; seoDescription: string; publishedAt?: string;
+  relatedCourseSlugs: string[];
 }
 export interface BuilderInitial { meta: Partial<BuilderMeta>; sections: ArticleSection[] }
 
@@ -72,19 +73,24 @@ function seedSections(initial: ArticleSection[]): ArticleSection[] {
   return [s];
 }
 
+export interface BuilderCourse { slug: string; title: string; category: string }
+
 export function ArticleBuilder({
-  mode, articleId, initial, authors, categories,
+  mode, articleId, initial, authors, categories, courses = [],
 }: {
   mode: "new" | "edit";
   articleId?: string;
   initial: BuilderInitial;
   authors: BlogAuthor[];
   categories: BlogCategory[];
+  /** Published courses this article can link to ("Related courses"). */
+  courses?: BuilderCourse[];
 }) {
   const router = useRouter();
   const [meta, setMeta] = React.useState<BuilderMeta>({
     title: "", slug: "", excerpt: "", coverImageUrl: "", category: "", tags: [],
     authorId: "", authorName: "", language: "en", status: "DRAFT", featured: false, seoTitle: "", seoDescription: "",
+    relatedCourseSlugs: [],
     ...initial.meta,
   });
   const [sections, setSections] = React.useState<ArticleSection[]>(() => seedSections(initial.sections));
@@ -281,7 +287,7 @@ export function ArticleBuilder({
     title: meta.title, slug: meta.slug || undefined, excerpt: meta.excerpt, coverImageUrl: meta.coverImageUrl,
     category: meta.category, tags: meta.tags, authorId: meta.authorId, authorName: meta.authorName,
     language: meta.language, status: meta.status, featured: meta.featured, seoTitle: meta.seoTitle, seoDescription: meta.seoDescription,
-    publishedAt: meta.publishedAt, sections,
+    publishedAt: meta.publishedAt, sections, relatedCourseSlugs: meta.relatedCourseSlugs,
   });
   const save = async (statusOverride?: BlogStatus) => {
     if (!meta.title.trim()) { toast.error("Title is required"); return; }
@@ -457,7 +463,7 @@ export function ArticleBuilder({
 
               {rightTab === "seo" ? (
                 <Card><CardContent className="py-4">
-                  <SeoPanel focusKeyword={focusKeyword} setFocusKeyword={setFocusKeyword} analysis={analysis} read={read} meta={meta} setM={setM} onAuto={aiKeyword} autoBusy={aiBusy === "keyword"} />
+                  <SeoPanel focusKeyword={focusKeyword} setFocusKeyword={setFocusKeyword} analysis={analysis} read={read} meta={meta} setM={setM} onAuto={aiKeyword} autoBusy={aiBusy === "keyword"} courses={courses} />
                 </CardContent></Card>
               ) : (
                 <>
@@ -683,7 +689,7 @@ function BlockFields({ block: x, dir, onChange }: { block: ArticleBlock; dir: "l
 
 /* ── SEO + readability ── */
 function SeoPanel({
-  focusKeyword, setFocusKeyword, analysis, read, meta, setM, onAuto, autoBusy,
+  focusKeyword, setFocusKeyword, analysis, read, meta, setM, onAuto, autoBusy, courses,
 }: {
   focusKeyword: string;
   setFocusKeyword: (v: string) => void;
@@ -693,6 +699,7 @@ function SeoPanel({
   setM: <K extends keyof BuilderMeta>(k: K, v: BuilderMeta[K]) => void;
   onAuto: () => void;
   autoBusy: boolean;
+  courses: BuilderCourse[];
 }) {
   const scoreLabel = analysis.score >= 70 ? "Good" : analysis.score >= 40 ? "Fair" : "Needs work";
   const scoreColor = analysis.score >= 70 ? "text-success" : analysis.score >= 40 ? "text-warning" : "text-destructive";
@@ -735,6 +742,56 @@ function SeoPanel({
           <Textarea rows={3} value={meta.seoDescription} onChange={(e) => setM("seoDescription", e.target.value)} placeholder="Defaults to excerpt" />
           <p className="text-end text-[11px] text-muted-foreground">{metaDesc.length}/160</p>
         </div>
+
+        {/* Related courses — curated internal links. The course title becomes the
+            anchor text, which is what makes the link worth anything for SEO. */}
+        {courses.length > 0 && (
+          <div className="space-y-1.5 border-t border-border/60 pt-4">
+            <Label className="text-xs font-medium text-muted-foreground">Related courses</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Linked at the end of the article. Pick only courses this article is genuinely about.
+            </p>
+            <div className="mt-1.5 max-h-56 space-y-0.5 overflow-y-auto rounded-xl border border-border/60 p-1.5">
+              {courses.map((c) => {
+                const on = meta.relatedCourseSlugs.includes(c.slug);
+                return (
+                  <button
+                    key={c.slug}
+                    type="button"
+                    onClick={() =>
+                      setM(
+                        "relatedCourseSlugs",
+                        on
+                          ? meta.relatedCourseSlugs.filter((x) => x !== c.slug)
+                          : [...meta.relatedCourseSlugs, c.slug],
+                      )
+                    }
+                    className={cn(
+                      "flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-start text-xs transition-colors",
+                      on ? "bg-primary/10 text-foreground ring-1 ring-primary/20" : "text-muted-foreground hover:bg-muted/60",
+                    )}
+                  >
+                    <span className={cn(
+                      "mt-0.5 grid size-4 shrink-0 place-items-center rounded border",
+                      on ? "border-primary bg-primary text-primary-foreground" : "border-border",
+                    )}>
+                      {on && <Check className="size-3" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium leading-snug">{c.title}</span>
+                      {c.category && c.category !== "—" && (
+                        <span className="text-[10px] text-muted-foreground">{c.category}</span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {meta.relatedCourseSlugs.length > 0 && (
+              <p className="text-[11px] text-primary">{meta.relatedCourseSlugs.length} selected</p>
+            )}
+          </div>
+        )}
       </div>
       <div className="space-y-1 border-t border-border/60 pt-4">
         <div className="flex items-center justify-between">

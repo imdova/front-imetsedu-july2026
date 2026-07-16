@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
 import { ArticleBuilder, type BuilderMeta } from "@/features/blog-admin/components/article-builder";
+import { blogBuilderCourses } from "@/features/blog-admin/lib/builder-courses";
 import type { ArticleSection } from "@/types/blog";
 
 export const metadata = { robots: { index: false } };
@@ -17,10 +18,11 @@ export default async function NewArticlePage({
   setRequestLocale(locale);
   const { templateId } = await searchParams;
 
-  const [authorsRes, categoriesRes, templateRes] = await Promise.all([
+  const [authorsRes, categoriesRes, templateRes, courses] = await Promise.all([
     dal.blog.fetchAuthors(),
     dal.blog.fetchCategories(),
     templateId ? dal.blog.fetchTemplate(templateId) : Promise.resolve(null),
+    blogBuilderCourses(),
   ]);
 
   const doc = templateRes && templateRes.ok ? (templateRes.data.doc as { meta?: Partial<BuilderMeta>; sections?: ArticleSection[] }) : null;
@@ -33,6 +35,7 @@ export default async function NewArticlePage({
         initial={initial}
         authors={authorsRes.ok ? authorsRes.data : []}
         categories={categoriesRes.ok ? categoriesRes.data : []}
+        courses={courses}
       />
     </div>
   );

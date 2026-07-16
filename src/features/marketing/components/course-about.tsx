@@ -30,7 +30,7 @@ export function CourseAbout({
   about: CourseAboutData;
   imageUrl?: string;
   imageAlt?: string;
-  /** Override the section title (defaults by diploma vs program). */
+  /** Override the section title (the page picks "Diploma" vs "Program"). */
   heading?: string;
 }) {
   return (
@@ -51,8 +51,8 @@ export function CourseAbout({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
             {tr(locale, "The program", "البرنامج")}
           </p>
-          {/* h2: this is the section title, and the page relies on the heading
-              order for SEO. `heading` lets the page say "Program" vs "Diploma". */}
+          {/* h2: this is a section title and the page's heading order is
+              load-bearing for SEO. */}
           <h2 className="mt-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl">
             {heading ?? tr(locale, "About This Diploma", "عن هذه الدبلومة")}
           </h2>

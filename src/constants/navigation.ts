@@ -125,6 +125,7 @@ export const ADMIN_NAV: NavSection[] = [
     items: [
       { titleKey: "landingPages", href: "/admin/marketing/landing", icon: "LayoutTemplate", adminOnly: true },
       { titleKey: "examLeads", href: "/admin/marketing/leads", icon: "UserPlus", adminOnly: true },
+      { titleKey: "freeCourses", href: "/admin/marketing/free-courses", icon: "PlayCircle", adminOnly: true },
       { titleKey: "emailMarketing", href: "/admin/marketing/email", icon: "Mail", adminOnly: true },
       { titleKey: "seoManager", href: "/admin/marketing/seo", icon: "FileSearch", adminOnly: true },
       { titleKey: "studentReviews", href: "/admin/marketing/reviews", icon: "MessageSquareQuote", adminOnly: true },
@@ -238,12 +239,27 @@ export const INSTRUCTOR_NAV: NavSection[] = [
 ];
 
 /** Public marketing header links. */
+/** Sentinel href marking the nav item the header renders as a dropdown. */
+export const RESOURCES_HREF = "#resources";
+
 export const PUBLIC_NAV: NavItem[] = [
   { titleKey: "navHome", href: "/", icon: "Home" },
   { titleKey: "navCourses", href: "/courses", icon: "GraduationCap" },
+  { titleKey: "navFreeLectures", href: "/free-courses", icon: "PlayCircle" },
+  // Rendered as a dropdown, not a link — RESOURCES_HREF is a sentinel, there is
+  // no /resources page. The header swaps it for the Resources menu.
+  { titleKey: "navResources", href: RESOURCES_HREF, icon: "BookOpen" },
   { titleKey: "navInstructors", href: "/instructors", icon: "Users" },
-  { titleKey: "navBlog", href: "/blog", icon: "Newspaper" },
   { titleKey: "navContact", href: "/contact", icon: "Mail" },
+];
+
+/** What lives under the public "Resources" menu. Blog moved here from top level. */
+export const PUBLIC_RESOURCES: NavItem[] = [
+  { titleKey: "navBlog", href: "/blog", icon: "Newspaper" },
+  { titleKey: "navFreeExam", href: "/free-exam", icon: "ClipboardList" },
+  { titleKey: "navReviews", href: "/reviews", icon: "MessageSquareQuote" },
+  { titleKey: "navVerify", href: "/verify-certificate", icon: "ShieldCheck" },
+  { titleKey: "navHelp", href: "/help", icon: "CircleCheckBig" },
 ];
 
 export const BRAND = {

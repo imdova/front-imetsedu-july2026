@@ -57,6 +57,8 @@ export interface BlogPost {
   views: number;
   publishedAt?: string;
   sections?: ArticleSection[];
+  /** Curated course slugs rendered as the "Related courses" block. */
+  relatedCourseSlugs?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

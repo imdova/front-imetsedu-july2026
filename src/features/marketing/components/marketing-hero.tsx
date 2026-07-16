@@ -54,7 +54,11 @@ export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: Marketin
               {t("heroSubtitle")}
             </p>
 
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-start">
+            <p className="mx-auto mt-5 max-w-xl text-center text-sm font-semibold leading-relaxed text-white/90 sm:text-base lg:mx-0 lg:text-start">
+              {t("heroTrustedByLine")}
+            </p>
+
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-start">
               <Link
                 href="/courses"
                 className={cn(

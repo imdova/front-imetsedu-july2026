@@ -14,7 +14,7 @@ import type { GroupRosterStudent } from "@/lib/dal/groups";
 import type { Shipment, ShipmentStatus, ShipmentCourier } from "@/lib/dal/shipments";
 import {
   ARAB_COUNTRIES, COURIERS, DEFAULT_COURIER, DEFAULT_COUNTRY,
-  countryName, courierLabel, statesFor,
+  countryName, courierLabel, statesFor, SHIPMENT_PARTNER_PRESETS,
 } from "@/constants/shipping-regions";
 import { usePermission } from "@/hooks/use-permission";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -411,6 +411,23 @@ function ShipmentTab() {
             <div className="space-y-1.5">
               <Label>Recipient <span className="text-destructive">*</span></Label>
               <Input value={form.recipient} onChange={(e) => setForm((f) => ({ ...f, recipient: e.target.value }))} placeholder="Student / recipient name" />
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {SHIPMENT_PARTNER_PRESETS.map((p) => (
+                  <button
+                    key={p.recipient}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, recipient: p.recipient, country: p.country, state: p.state }))}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                      form.recipient === p.recipient
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                    )}
+                  >
+                    {p.recipient}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Courier <span className="text-destructive">*</span></Label>

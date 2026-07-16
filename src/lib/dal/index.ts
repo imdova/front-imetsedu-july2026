@@ -34,12 +34,13 @@ import * as importantLinks from "./important-links";
 import * as crmRules from "./crm-rules";
 import * as paymentLinks from "./payment-links";
 import * as shipments from "./shipments";
+import * as freeCourses from "./free-courses";
 import * as registrationSheets from "./registration-sheets";
 import * as commission from "./commission";
 import * as studentReviews from "./student-reviews";
 import * as invoiceTemplate from "./invoice-template";
 import * as transactionalEmail from "./transactional-email";
 
-export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog, messageTemplates, pricing, paymentMethods, importantLinks, crmRules, paymentLinks, shipments, registrationSheets, commission, studentReviews, invoiceTemplate, transactionalEmail };
+export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog, messageTemplates, pricing, paymentMethods, importantLinks, crmRules, paymentLinks, shipments, freeCourses, registrationSheets, commission, studentReviews, invoiceTemplate, transactionalEmail };
 
 export type { Result } from "@integration/lib/api-client";

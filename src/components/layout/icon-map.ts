@@ -44,6 +44,8 @@ import {
   PenTool,
   ScrollText,
   Link2,
+  PlayCircle,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -97,6 +99,8 @@ export const ICONS: Record<string, LucideIcon> = {
   PenTool,
   ScrollText,
   Link2,
+  PlayCircle,
+  BookOpen,
 };
 
 export function getIcon(name: string): LucideIcon {

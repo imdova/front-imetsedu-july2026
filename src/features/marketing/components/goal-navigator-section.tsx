@@ -1,58 +1,32 @@
 import { getTranslations } from "next-intl/server";
-import {
-  BadgeCheck,
-  ShieldCheck,
-  Building2,
-  HeartPulse,
-  UsersRound,
-  ArrowRight,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowDown, BadgeCheck, Building2, ShieldAlert, type LucideIcon } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 
-/** Career-path cards — larger tiles with outcome, program count, and Explore CTA. */
+/** Career-goal ladders — show the professional destination, not just the course. */
 const PATHS: {
   icon: LucideIcon;
   titleKey: string;
-  outcomeKey: string;
-  descKey: string;
-  count: number;
+  steps: [string, string, string];
+  roleKey: string;
 }[] = [
   {
     icon: BadgeCheck,
-    titleKey: "pathQualityTitle",
-    outcomeKey: "pathQualityOutcome",
-    descKey: "pathQualityBody",
-    count: 4,
+    titleKey: "careerQualityTitle",
+    steps: ["careerQualityStep1", "careerQualityStep2", "careerQualityStep3"],
+    roleKey: "careerQualityRole",
   },
   {
-    icon: ShieldCheck,
-    titleKey: "pathInfectionTitle",
-    outcomeKey: "pathInfectionOutcome",
-    descKey: "pathInfectionBody",
-    count: 3,
+    icon: ShieldAlert,
+    titleKey: "careerInfectionTitle",
+    steps: ["careerInfectionStep1", "careerInfectionStep2", "careerInfectionStep3"],
+    roleKey: "careerInfectionRole",
   },
   {
     icon: Building2,
-    titleKey: "pathHospitalTitle",
-    outcomeKey: "pathHospitalOutcome",
-    descKey: "pathHospitalBody",
-    count: 3,
-  },
-  {
-    icon: HeartPulse,
-    titleKey: "pathSafetyTitle",
-    outcomeKey: "pathSafetyOutcome",
-    descKey: "pathSafetyBody",
-    count: 2,
-  },
-  {
-    icon: UsersRound,
-    titleKey: "pathLeadershipTitle",
-    outcomeKey: "pathLeadershipOutcome",
-    descKey: "pathLeadershipBody",
-    count: 3,
+    titleKey: "careerHospitalTitle",
+    steps: ["careerHospitalStep1", "careerHospitalStep2", "careerHospitalStep3"],
+    roleKey: "careerHospitalRole",
   },
 ];
 
@@ -71,37 +45,41 @@ export async function GoalNavigatorSection() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-6 lg:grid-cols-3">
           {PATHS.map((path) => (
             <Link
               key={path.titleKey}
               href="/courses"
-              className="group flex min-h-[280px] flex-col rounded-3xl border border-blue-100 bg-white p-7 shadow-sm transition-all hover:-translate-y-1 hover:border-[#0b3fa8]/40 hover:shadow-lg sm:p-8"
+              className="group flex min-h-[420px] flex-col rounded-3xl border border-blue-100 bg-white p-7 shadow-sm transition-all hover:-translate-y-1 hover:border-[#0b3fa8]/40 hover:shadow-lg sm:p-8"
             >
-              <span className="grid size-14 place-items-center rounded-2xl bg-[#0b3fa8]/10 text-[#0b3fa8] ring-1 ring-[#0b3fa8]/15 transition-colors group-hover:bg-[#0b3fa8] group-hover:text-white">
-                <path.icon className="size-7" />
+              <span className="grid size-16 place-items-center rounded-2xl bg-[#0b3fa8]/10 text-[#0b3fa8] ring-1 ring-[#0b3fa8]/15 transition-colors group-hover:bg-[#0b3fa8] group-hover:text-white">
+                <path.icon className="size-8" />
               </span>
 
               <h3 className="mt-6 font-heading text-xl font-bold tracking-tight text-[#0a2f7a] sm:text-2xl">
                 {t(path.titleKey)}
               </h3>
 
-              <p className="mt-2 text-base font-semibold leading-snug text-[#0b3fa8]">
-                {t(path.outcomeKey)}
-              </p>
+              <div className="mt-6 flex-1 space-y-3">
+                {path.steps.map((stepKey, index) => (
+                  <div key={stepKey} className="flex flex-col items-center text-center">
+                    <div className="w-full rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+                      <p className="text-sm font-bold text-[#0a2f7a] sm:text-base">{t(stepKey)}</p>
+                    </div>
+                    {index < path.steps.length - 1 ? (
+                      <ArrowDown className="my-2 size-5 text-[#0b3fa8]/45" />
+                    ) : null}
+                  </div>
+                ))}
+              </div>
 
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-slate-600">
-                {t(path.descKey)}
-              </p>
-
-              <div className="mt-6 flex items-center justify-between gap-3 border-t border-blue-50 pt-5">
-                <span className="rounded-full bg-[#0b3fa8]/8 px-3 py-1 text-xs font-bold text-[#0b3fa8]">
-                  {t("pathProgramsCount", { count: path.count })}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#0b3fa8]">
-                  {t("pathExplore")}
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
-                </span>
+              <div className="mt-6 border-t border-blue-50 pt-5 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0b3fa8]">
+                  {t("careerDestinationLabel")}
+                </p>
+                <p className="mt-2 font-heading text-lg font-extrabold text-[#0a2f7a] sm:text-xl">
+                  {t(path.roleKey)}
+                </p>
               </div>
             </Link>
           ))}

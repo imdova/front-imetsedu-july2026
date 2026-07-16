@@ -27,6 +27,7 @@ import { AlumniSection } from "@/features/marketing/components/alumni-section";
 import { EducationalPhilosophySection } from "@/features/marketing/components/educational-philosophy-section";
 import { AcademicDirectorSection } from "@/features/marketing/components/academic-director-section";
 import { HomeFaqSection } from "@/features/marketing/components/home-faq-section";
+import { SuccessMetricsSection } from "@/features/marketing/components/success-metrics-section";
 import {
   CareerCtaSection,
   PartnersSection,
@@ -66,7 +67,8 @@ export default async function HomePage({
   const t = await getTranslations("Marketing");
 
   const coursesRes = await dal.courses.fetchCourses();
-  const courses = (coursesRes.ok ? coursesRes.data : []).slice(0, 4);
+  // Home "Featured Healthcare Programs" should show more options.
+  const courses = (coursesRes.ok ? coursesRes.data : []).slice(0, 8);
 
   const stats = [
     { value: "18,000+", label: t("heroStat1"), icon: Users },
@@ -81,9 +83,6 @@ export default async function HomePage({
       <MarketingHero stats={stats} videoId="SSlmmUH2Ado" />
 
       <TrustedBySection />
-
-      {/* Goal-based navigation — "I want to…" → the right program */}
-      <GoalNavigatorSection />
 
       {/* Featured courses */}
       <Section title={t("featuredTitle")} subtitle={t("featuredSubtitle")}
@@ -100,6 +99,9 @@ export default async function HomePage({
 
       <HealthcareSpecialtiesSection />
 
+      {/* Career-first guidance — buy the outcome, not just the course */}
+      <GoalNavigatorSection />
+
       {/* Learning experience — "what happens after I enroll?" */}
       <LearningJourneySection />
 
@@ -113,6 +115,9 @@ export default async function HomePage({
 
       {/* Why healthcare organizations choose IMETS (B2B trust) */}
       <WhyOrganizationsSection />
+
+      {/* Strong proof points before alumni / review-style sections */}
+      <SuccessMetricsSection />
 
       {/* Meet Our Alumni — real outcomes (replaces testimonials) */}
       <AlumniSection />

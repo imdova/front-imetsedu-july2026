@@ -5,9 +5,10 @@ import { GraduationCap, Menu } from "lucide-react";
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { BRAND, PUBLIC_NAV } from "@/constants/navigation";
+import { BRAND, PUBLIC_NAV, PUBLIC_RESOURCES, RESOURCES_HREF } from "@/constants/navigation";
 import { Button } from "@/components/ui/button";
 import { CoursesMegaMenu, type MegaCategory, type MegaCourse } from "@/features/marketing/components/courses-mega-menu";
+import { ResourcesMenu } from "@/features/marketing/components/resources-menu";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { BrandImage } from "@/components/shared/brand-image";
@@ -38,10 +39,22 @@ export function PublicHeader({
   const links = PUBLIC_NAV.map((item) => ({
     href: item.href,
     label: tn(item.titleKey),
+    icon: item.icon,
     active:
-      item.href === "/"
-        ? pathname === "/"
-        : pathname === item.href || pathname.startsWith(`${item.href}/`),
+      item.href === RESOURCES_HREF
+        // The dropdown has no page of its own — light it up when the visitor is
+        // on any of its children.
+        ? PUBLIC_RESOURCES.some((r) => pathname === r.href || pathname.startsWith(`${r.href}/`))
+        : item.href === "/"
+          ? pathname === "/"
+          : pathname === item.href || pathname.startsWith(`${item.href}/`),
+  }));
+
+  const resourceLinks = PUBLIC_RESOURCES.map((item) => ({
+    href: item.href,
+    label: tn(item.titleKey),
+    desc: tn(`${item.titleKey}Desc`),
+    icon: item.icon,
   }));
 
   return (
@@ -92,7 +105,16 @@ export function PublicHeader({
 
         <nav className="ms-6 hidden items-center gap-1 lg:flex">
           {links.map((l) =>
-            l.href === "/courses" ? (
+            l.href === RESOURCES_HREF ? (
+              <ResourcesMenu
+                key={l.href}
+                label={l.label}
+                lead={tn("navResourcesLead")}
+                links={resourceLinks}
+                active={l.active}
+                onDark={isHome}
+              />
+            ) : l.href === "/courses" ? (
               <CoursesMegaMenu
                 key={l.href}
                 locale={locale}
@@ -171,20 +193,44 @@ export function PublicHeader({
             <SheetContent side="right" className="w-72">
               <SheetTitle className="px-4 pt-2">{BRAND.fullName}</SheetTitle>
               <nav className="mt-4 flex flex-col gap-1 px-2">
-                {links.map((l) => (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className={cn(
-                      "rounded-lg px-3 py-2.5 text-sm font-medium",
-                      l.active
-                        ? "bg-primary/10 text-primary"
-                        : "text-foreground hover:bg-muted",
-                    )}
-                  >
-                    {l.label}
-                  </Link>
-                ))}
+                {links.map((l) =>
+                  // There's no /resources page — expand the group inline rather
+                  // than render a link that goes nowhere.
+                  l.href === RESOURCES_HREF ? (
+                    <div key={l.href} className="mt-2">
+                      <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {l.label}
+                      </p>
+                      {resourceLinks.map((r) => (
+                        <Link
+                          key={r.href}
+                          href={r.href}
+                          className={cn(
+                            "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium",
+                            pathname === r.href || pathname.startsWith(`${r.href}/`)
+                              ? "bg-primary/10 text-primary"
+                              : "text-foreground hover:bg-muted",
+                          )}
+                        >
+                          {r.label}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      className={cn(
+                        "rounded-lg px-3 py-2.5 text-sm font-medium",
+                        l.active
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground hover:bg-muted",
+                      )}
+                    >
+                      {l.label}
+                    </Link>
+                  ),
+                )}
                 <div className="mt-3 flex flex-col gap-2 px-1">
                   <Button asChild variant="outline">
                     <Link href="/login">{tc("signIn")}</Link>

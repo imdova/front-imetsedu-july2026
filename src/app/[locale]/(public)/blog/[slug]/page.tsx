@@ -2,7 +2,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { CalendarDays, Clock, ChevronRight } from "lucide-react";
+import { CalendarDays, Clock, ChevronRight, ArrowRight } from "lucide-react";
 import { setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
@@ -96,6 +96,14 @@ export default async function ArticleDetailPage({
     { name: post.title, url: localeUrl(`/blog/${post.slug}`, locale) },
   ]);
 
+  // Curated (editor-picked) course links. One list fetch, then filtered — the
+  // list call is already public + ISR'd, so this costs no extra round-trip per slug.
+  const picked = post.relatedCourseSlugs ?? [];
+  const coursesRes = picked.length ? await dal.courses.fetchCourses({ status: "published" }) : null;
+  const related = picked
+    .map((slug) => coursesRes?.ok ? coursesRes.data.find((c) => c.slug === slug) : undefined)
+    .filter((c): c is NonNullable<typeof c> => Boolean(c));
+
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <JsonLd data={[articleLd, ...(faqLd ? [faqLd] : []), crumb]} />
@@ -143,6 +151,39 @@ export default async function ArticleDetailPage({
         <div className="mt-10 flex flex-wrap gap-2 border-t border-border/60 pt-6">
           {post.tags.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
         </div>
+      )}
+
+      {/* Related courses — the course title IS the anchor text, which is the
+          only reason an internal link like this carries any weight. */}
+      {related.length > 0 && (
+        <section className="mt-10 border-t border-border/60 pt-8">
+          <h2 className="font-heading text-xl font-semibold">
+            {locale === "ar" ? "برامج ذات صلة" : "Related courses"}
+          </h2>
+          <ul className="mt-4 space-y-2.5">
+            {related.map((c) => {
+              const title = locale === "ar" ? c.titleAr || c.titleEn : c.titleEn;
+              return (
+                <li key={c.slug}>
+                  <Link
+                    href={`/courses/${c.slug}`}
+                    className="group flex items-start gap-3 rounded-xl border border-border/70 bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/40"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold leading-snug text-foreground group-hover:text-primary">
+                        {title}
+                      </span>
+                      {c.category && (
+                        <span className="mt-0.5 block text-xs text-muted-foreground">{c.category}</span>
+                      )}
+                    </span>
+                    <ArrowRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary rtl:rotate-180" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
     </article>
   );
