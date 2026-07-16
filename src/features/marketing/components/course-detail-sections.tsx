@@ -94,17 +94,21 @@ export function CourseCareerGrowth({
   opportunities,
   roles,
   demandLine,
+  title,
 }: {
   locale: string;
   opportunities: CareerOpportunity[];
   roles: CareerRole[];
   demandLine?: string;
+  /** Keyword-bearing H2 (e.g. "Career Opportunities After an Infection Control
+   *  Diploma"). Falls back to the generic "Career Outcomes". */
+  title?: string;
 }) {
   if (!opportunities.length && !roles.length) return null;
   return (
     <section id="careers" className="scroll-mt-32">
       <h2 className="font-heading text-2xl font-bold tracking-tight">
-        {tr(locale, "Career Outcomes", "المخرجات المهنية")}
+        {title ?? tr(locale, "Career Outcomes", "المخرجات المهنية")}
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         {tr(
@@ -215,19 +219,23 @@ export function CourseCareerOutcomes({
 export function CourseWhyThisDiploma({
   locale,
   cards,
+  title,
 }: {
   locale: string;
   cards: { title: string; body: string }[];
+  /** Keyword-bearing H2. Falls back to the generic brand line. */
+  title?: string;
 }) {
   if (!cards.length) return null;
   return (
     <section id="why-choose" className="scroll-mt-32">
       <h2 className="font-heading text-2xl font-bold tracking-tight">
-        {tr(
-          locale,
-          "Why Healthcare Professionals Choose IMETS",
-          "لماذا يختار متخصصو الرعاية الصحية IMETS",
-        )}
+        {title ??
+          tr(
+            locale,
+            "Why Healthcare Professionals Choose IMETS",
+            "لماذا يختار متخصصو الرعاية الصحية IMETS",
+          )}
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         {tr(
@@ -457,27 +465,37 @@ export function CourseComparison({ locale }: { locale: string }) {
 /* ------------------------------------------------------------------ */
 export function CourseFinalCta({
   locale,
+  heading,
+  body,
   children,
 }: {
   locale: string;
+  /** Course-specific closing line. Falls back to the generic healthcare one.
+   *  The default body used to read "prepare for management roles in hospitals"
+   *  on every course — hospital-management copy closing an infection-control
+   *  page. Pass this per course. */
+  heading?: string;
+  body?: string;
   /** Apply + Download Brochure (or other secondary). Keep both for choice. */
   children?: ReactNode;
 }) {
   return (
     <section className="marketing-gradient-bg overflow-hidden rounded-[2rem] px-6 py-14 text-center shadow-2xl shadow-blue-950/30 ring-1 ring-inset ring-white/10 sm:px-12 sm:py-16 lg:py-[4.5rem]">
       <p className="mx-auto max-w-3xl font-heading text-3xl font-bold tracking-tight text-white text-balance sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15]">
-        {tr(
-          locale,
-          "Ready to Take the Next Step in Your Healthcare Career?",
-          "هل أنت مستعد لاتخاذ خطوتك التالية في مسيرتك الصحية؟",
-        )}
+        {heading ??
+          tr(
+            locale,
+            "Ready to Take the Next Step in Your Healthcare Career?",
+            "هل أنت مستعد لاتخاذ خطوتك التالية في مسيرتك الصحية؟",
+          )}
       </p>
       <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/75 sm:text-lg">
-        {tr(
-          locale,
-          "Build leadership skills and prepare for management roles in hospitals.",
-          "ابنِ مهارات القيادة واستعد لأدوار إدارية في المستشفيات.",
-        )}
+        {body ??
+          tr(
+            locale,
+            "Join a cohort of healthcare professionals and build the skills your next role asks for.",
+            "انضم إلى دفعة من متخصصي الرعاية الصحية وابنِ المهارات التي يتطلبها دورك القادم.",
+          )}
       </p>
       {children && (
         <div className="mx-auto mt-9 flex w-full max-w-lg flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">

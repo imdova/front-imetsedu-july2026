@@ -148,6 +148,17 @@ export function mapCourse(raw: any): CourseRow {
     relatedCourseSlugs: Array.isArray(raw?.relatedCourseSlugs)
       ? raw.relatedCourseSlugs.filter((x: unknown): x is string => typeof x === "string" && !!x)
       : undefined,
+    // Only when a heading was actually typed — an all-blank record must fall
+    // through to the bundled line, not render an empty CTA.
+    finalCta:
+      raw?.finalCta && (raw.finalCta.headingEn || raw.finalCta.headingAr)
+        ? {
+            headingEn: raw.finalCta.headingEn ?? "",
+            headingAr: raw.finalCta.headingAr ?? "",
+            bodyEn: raw.finalCta.bodyEn ?? "",
+            bodyAr: raw.finalCta.bodyAr ?? "",
+          }
+        : undefined,
     instructorNames: Array.isArray(raw?.instructors)
       ? raw.instructors
           .map((i: any) =>

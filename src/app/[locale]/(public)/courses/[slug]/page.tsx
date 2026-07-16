@@ -60,6 +60,7 @@ import {
   socialMeta,
   metaDescription,
   courseLd,
+  courseVideoLd,
   breadcrumbLd,
 } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
@@ -164,7 +165,9 @@ export default async function CourseDetailPage({
   // "Continue Your Professional Journey": the slugs picked in the course form
   // win, in the order they were picked. Nothing picked ⇒ same-category, which is
   // what every course showed before this became editable.
-  const curated = (course.relatedCourseSlugs ?? [])
+  const curated = (course.relatedCourseSlugs?.length
+    ? course.relatedCourseSlugs
+    : content.relatedSlugs)
     .map((slug) => courses.find((c) => c.slug === slug && c.id !== course.id))
     .filter((c): c is NonNullable<typeof c> => Boolean(c));
 
@@ -220,11 +223,11 @@ export default async function CourseDetailPage({
   const description = pick(course.descriptionEn, course.descriptionAr);
   const whoShouldAttend = pick(course.whoCanAttendEn, course.whoCanAttendAr);
   const aboutBlock = buildCourseAbout(description, content.about);
-  const aboutHeading = /diploma|دبلوم/i.test(
+  const aboutHeading = content.headings?.about ?? (/diploma|دبلوم/i.test(
     `${course.titleEn} ${course.titleAr}`,
   )
     ? tr("Why This Diploma Matters", "لماذا تهمّك هذه الدبلومة")
-    : tr("Why This Program Matters", "لماذا يهمّك هذا البرنامج");
+    : tr("Why This Program Matters", "لماذا يهمّك هذا البرنامج"));
   const isHtml = (s: string) => /<[a-z][\s\S]*>/i.test(s);
   const richBlock = (title: string, contentHtml: string) =>
     contentHtml ? (
@@ -246,6 +249,14 @@ export default async function CourseDetailPage({
         )}
       </div>
     ) : null;
+
+  // Closing CTA precedence: what was typed on the course record wins, then the
+  // bundled per-course line, then the shared default inside CourseFinalCta.
+  const dbCtaHeading = pick(course.finalCta?.headingEn, course.finalCta?.headingAr);
+  const ctaHeading = dbCtaHeading || content.finalCta?.heading;
+  const ctaBody =
+    (dbCtaHeading ? pick(course.finalCta?.bodyEn, course.finalCta?.bodyAr) : "") ||
+    (dbCtaHeading ? undefined : content.finalCta?.body);
 
   const courseUrl = localeUrl(`/courses/${slug}`, locale);
   const courseTitle = locale === "ar" ? course.titleAr : course.titleEn;
@@ -566,8 +577,8 @@ export default async function CourseDetailPage({
             locale,
             price,
             currency: "EGP",
-            rating,
-            reviewCount: reviews,
+            rating: course.rating > 0 ? course.rating : undefined,
+            reviewCount: course.rating > 0 ? reviews : undefined,
           }),
           breadcrumbLd([
             {
@@ -589,6 +600,17 @@ export default async function CourseDetailPage({
               acceptedAnswer: { "@type": "Answer", text: f.a },
             })),
           },
+          // Only for a course that actually has a preview video — most do not.
+          ...(previewVideoId
+            ? [
+                courseVideoLd({
+                  name: courseTitle,
+                  description: metaDescription(description, courseTitle),
+                  videoId: previewVideoId,
+                  contentUrl: course.previewVideoUrl ?? "",
+                }),
+              ]
+            : []),
         ]}
       />
       {/* Hero + floating enroll card */}
@@ -645,13 +667,17 @@ export default async function CourseDetailPage({
                 {/* Flow: Interest → Trust → Content → Career → Experience → Proof → FAQ → Buy */}
                 <div className="py-6 lg:pt-4">
                   <CourseSectionBand tone="white" spacing="lg">
-                    <CourseWhyThisDiploma locale={locale} cards={whyCards} />
+                    <CourseWhyThisDiploma
+                      locale={locale}
+                      cards={whyCards}
+                      title={content.headings?.whyChoose}
+                    />
                   </CourseSectionBand>
 
                   {content.audience?.length ? (
                     <CourseSectionBand tone="muted" spacing="md">
                       <CourseAudienceCards
-                        title={tr("Who This Program Is For", "لمن هذا البرنامج")}
+                        title={content.headings?.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
                         personas={content.audience}
                         locale={locale}
                       />
@@ -659,28 +685,13 @@ export default async function CourseDetailPage({
                   ) : whoShouldAttend ? (
                     <CourseSectionBand tone="muted" spacing="md">
                       <CourseWhoShouldAttend
-                        title={tr("Who This Program Is For", "لمن هذا البرنامج")}
+                        title={content.headings?.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
                         content={whoShouldAttend}
                         locale={locale}
                       />
                     </CourseSectionBand>
                   ) : null}
 
-                  <CourseSectionBand tone="muted" spacing="lg">
-                    {aboutBlock ? (
-                      <CourseAbout
-                        locale={locale}
-                        about={aboutBlock}
-                        heading={aboutHeading}
-                        imageUrl={course.thumbnailUrl}
-                        imageAlt={courseTitle}
-                      />
-                    ) : description ? (
-                      <section id="overview" className="scroll-mt-32">
-                        {richBlock(t("courseDescription"), description)}
-                      </section>
-                    ) : null}
-                  </CourseSectionBand>
                 </div>
               </div>
 
@@ -691,11 +702,29 @@ export default async function CourseDetailPage({
               </aside>
             </div>
 
-            {/* Full-width from outcomes onward */}
+            {/* Full-width from About onward — the enroll card's 380px column
+                squeezed this copy (and its image, which goes 2-up on lg) into
+                roughly half the page. Long-form prose needs the room. */}
             <div className="pb-24 lg:pb-8">
+              <CourseSectionBand tone="muted" spacing="lg" className="lg:mt-2">
+                {aboutBlock ? (
+                  <CourseAbout
+                    locale={locale}
+                    about={aboutBlock}
+                    heading={aboutHeading}
+                    imageUrl={course.thumbnailUrl}
+                    imageAlt={courseTitle}
+                  />
+                ) : description ? (
+                  <section id="overview" className="scroll-mt-32">
+                    {richBlock(t("courseDescription"), description)}
+                  </section>
+                ) : null}
+              </CourseSectionBand>
+
               <CourseSectionBand tone="white" spacing="lg" className="lg:mt-2">
                 <CourseWhatYouLearn
-                  title={tr("What You'll Learn", "ماذا ستتعلّم")}
+                  title={content.headings?.learn ?? tr("What You'll Learn", "ماذا ستتعلّم")}
                   subtitle={t("whatYouLearnLead")}
                   items={outcomes}
                   locale={locale}
@@ -758,6 +787,7 @@ export default async function CourseDetailPage({
                   locale={locale}
                   opportunities={content.careerOpportunities}
                   roles={careerRoles}
+                  title={content.headings?.careers}
                   demandLine={undefined}
                 />
               </CourseSectionBand>
@@ -805,7 +835,11 @@ export default async function CourseDetailPage({
                 spacing="xl"
                 className="!bg-transparent !px-0"
               >
-                <CourseFinalCta locale={locale}>
+                <CourseFinalCta
+                  locale={locale}
+                  heading={ctaHeading}
+                  body={ctaBody}
+                >
                   <CourseApplyDialog
                     courseId={course.id}
                     courseTitle={course.titleEn}

@@ -82,6 +82,14 @@ export const careerRoleSchema = z.object({
   titleAr: z.string().trim(),
 });
 
+/** Closing CTA on the public course page. All blank ⇒ the shared line. */
+export const courseFinalCtaSchema = z.object({
+  headingEn: z.string().trim(),
+  headingAr: z.string().trim(),
+  bodyEn: z.string().trim(),
+  bodyAr: z.string().trim(),
+});
+
 export const courseFormSchema = z.object({
   /* --- Identification --- */
   titleEn: z.string().trim(),
@@ -155,6 +163,8 @@ export const courseFormSchema = z.object({
   faqs: z.array(courseFaqSchema),
   /** Empty ⇒ the public page renders its bundled per-course ladder. */
   careerRoles: z.array(careerRoleSchema),
+  /** All-blank ⇒ the bundled/shared closing line. */
+  finalCta: courseFinalCtaSchema,
   /** Curated "Continue Your Professional Journey" links, by slug.
    *  Empty ⇒ the page falls back to same-category courses. */
   relatedCourseSlugs: z.array(z.string()),
@@ -174,6 +184,7 @@ export type CourseFormValues = z.infer<typeof courseFormSchema>;
 export type WhyChooseItemValues = z.infer<typeof whyChooseItemSchema>;
 export type CourseFaqValues = z.infer<typeof courseFaqSchema>;
 export type CareerRoleValues = z.infer<typeof careerRoleSchema>;
+export type CourseFinalCtaValues = z.infer<typeof courseFinalCtaSchema>;
 export type LessonValues = z.infer<typeof lessonSchema>;
 export type ModuleValues = z.infer<typeof moduleSchema>;
 export type TextReviewValues = z.infer<typeof textReviewSchema>;

@@ -67,6 +67,13 @@ export interface CareerRole {
   titleEn: string;
 }
 
+export interface CourseFinalCta {
+  headingEn: string;
+  headingAr: string;
+  bodyEn: string;
+  bodyAr: string;
+}
+
 export interface PricingDetails {
   price: number;
   salePrice: number;
@@ -98,6 +105,8 @@ export interface CourseFormData {
   careerRoles: CareerRole[];
   /** Curated related-course slugs; empty ⇒ same-category fallback. */
   relatedCourseSlugs: string[];
+  /** Closing CTA; all-blank ⇒ the shared line. */
+  finalCta: CourseFinalCta;
   pricing: {
     egp: PricingDetails;
     sar: PricingDetails;

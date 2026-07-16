@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { dal } from "@/lib/dal";
 import type {
   CareerRoleValues,
+  CourseFinalCtaValues,
   CourseFormValues,
   CourseFaqValues,
   WhyChooseItemValues,
@@ -169,6 +170,7 @@ function StructureMain() {
       <WhyChooseSection />
       <FaqsSection />
       <CareerRolesSection />
+      <FinalCtaSection />
       <RelatedCoursesSection />
     </>
   );
@@ -467,6 +469,62 @@ function CareerRolesSection() {
             </div>
           ))}
         </div>
+      )}
+    </FormSection>
+  );
+}
+
+/**
+ * The closing CTA. Leave the heading blank and the page uses its bundled line —
+ * that fallback is why the heading, not the body, is what decides whether this
+ * counts as "set".
+ */
+function FinalCtaSection() {
+  const { watch, setValue } = useFormContext<CourseFormValues>();
+  const t = useTranslations("CourseForm");
+  const cta = watch("finalCta") ?? { headingEn: "", headingAr: "", bodyEn: "", bodyAr: "" };
+
+  const set = (patch: Partial<CourseFinalCtaValues>) =>
+    setValue("finalCta", { ...cta, ...patch }, { shouldDirty: true });
+
+  return (
+    <FormSection title={t("secFinalCta")} description={t("secFinalCtaDesc")}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={t("ctaHeadingEn")}>
+          <Input
+            value={cta.headingEn}
+            onChange={(e) => set({ headingEn: e.target.value })}
+            placeholder={t("ctaHeadingEnPlaceholder")}
+          />
+        </Field>
+        <Field label={t("ctaHeadingAr")}>
+          <Input
+            dir="rtl"
+            value={cta.headingAr}
+            onChange={(e) => set({ headingAr: e.target.value })}
+            placeholder={t("ctaHeadingArPlaceholder")}
+          />
+        </Field>
+        <Field label={t("ctaBodyEn")}>
+          <Textarea
+            rows={2}
+            value={cta.bodyEn}
+            onChange={(e) => set({ bodyEn: e.target.value })}
+            placeholder={t("ctaBodyEnPlaceholder")}
+          />
+        </Field>
+        <Field label={t("ctaBodyAr")}>
+          <Textarea
+            dir="rtl"
+            rows={2}
+            value={cta.bodyAr}
+            onChange={(e) => set({ bodyAr: e.target.value })}
+            placeholder={t("ctaBodyArPlaceholder")}
+          />
+        </Field>
+      </div>
+      {!cta.headingEn && !cta.headingAr && (
+        <p className="mt-3 text-[11px] text-muted-foreground">{t("ctaFallbackNote")}</p>
       )}
     </FormSection>
   );

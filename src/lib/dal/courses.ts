@@ -173,6 +173,7 @@ function toFullUpdatePayload(d: CourseFormData): Record<string, unknown> {
     faqs: d.faqs ?? [],
     careerRoles: d.careerRoles ?? [],
     relatedCourseSlugs: d.relatedCourseSlugs ?? [],
+    finalCta: d.finalCta,
     pricing: d.pricing,
     image: d.image,
     gallery: d.gallery,

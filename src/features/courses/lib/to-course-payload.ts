@@ -28,6 +28,7 @@ export function toCoursePayload(v: CourseFormValues): CourseFormData {
     faqs: v.faqs,
     careerRoles: v.careerRoles,
     relatedCourseSlugs: v.relatedCourseSlugs,
+    finalCta: v.finalCta,
     pricing: v.pricing,
     image: v.image,
     gallery: v.gallery,

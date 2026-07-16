@@ -163,6 +163,32 @@ export function courseLd(opts: {
   };
 }
 
+/**
+ * A real, watchable video. Only call this when the course actually has one —
+ * a VideoObject describing a video that does not exist on the page is a
+ * structured-data violation, not a missing nice-to-have.
+ */
+export function courseVideoLd(opts: {
+  name: string;
+  description: string;
+  videoId: string;
+  contentUrl: string;
+  uploadDate?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: opts.name,
+    description: opts.description,
+    thumbnailUrl: `https://i.ytimg.com/vi/${opts.videoId}/hqdefault.jpg`,
+    embedUrl: `https://www.youtube.com/embed/${opts.videoId}`,
+    contentUrl: opts.contentUrl,
+    ...(opts.uploadDate ? { uploadDate: opts.uploadDate } : {}),
+    isFamilyFriendly: true,
+    publisher: { "@type": "Organization", name: SITE_NAME },
+  };
+}
+
 export function breadcrumbLd(items: { name: string; url: string }[]) {
   return {
     "@context": "https://schema.org",

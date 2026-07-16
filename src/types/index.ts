@@ -136,6 +136,8 @@ export interface CourseRow {
   /** Admin-curated "Continue Your Professional Journey" slugs. Empty/absent ⇒
    *  same-category courses. */
   relatedCourseSlugs?: string[];
+  /** Admin-authored closing CTA. Absent/blank ⇒ the bundled or shared line. */
+  finalCta?: { headingEn?: string; headingAr?: string; bodyEn?: string; bodyAr?: string };
   /** Admin-authored search metadata (course form → SEO panel). Any blank field
    *  falls back to copy derived from the course itself in `generateMetadata`. */
   seo?: {
