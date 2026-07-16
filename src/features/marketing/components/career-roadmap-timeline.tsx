@@ -1,14 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { Award, Briefcase, Compass } from "lucide-react";
+import { ArrowDown, Award, Briefcase, Compass } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { CareerRole } from "@/features/marketing/lib/course-content";
 
 /**
- * Career-ladder timeline with scroll-driven progress: the rail fills and each
- * step reveals (opacity + seniority bar) as it enters the viewport.
+ * Career ladder: the roles a graduate may progress through, in order, each rung
+ * pointing at the next. The rail fills as the section scrolls into view.
+ *
+ * Each rung deliberately carries no progress bar. There used to be one per role,
+ * filled to `(index + 1) / roles.length` — the array position rendered as a
+ * percentage. It measured nothing, but read as if it did (a "60%" against a job
+ * title invites the reader to think it means something about them). The ladder
+ * says what is true: these are the steps, in this order.
  */
 export function CareerRoadmapTimeline({
   locale,
@@ -67,19 +73,21 @@ export function CareerRoadmapTimeline({
 
   return (
     <div ref={rootRef} className="relative mt-6">
-      <ol className="relative">
-        {/* Track */}
-        <span
-          className="absolute start-[1.0625rem] top-3 bottom-6 w-0.5 rounded-full bg-border/80"
-          aria-hidden
-        />
-        {/* Fill that grows on scroll */}
-        <span
-          className="absolute start-[1.0625rem] top-3 w-0.5 origin-top rounded-full bg-gradient-to-b from-primary via-primary to-amber-500 transition-[height] duration-150 ease-out"
-          style={{ height: `calc((100% - 1.5rem) * ${progress})` }}
-          aria-hidden
-        />
+      {/* Rail track + scroll fill. They live on this wrapper, not inside the
+          <ol>: only <li> is a valid child of a list, and a stray <span> there is
+          the same markup error the faculty <dl> had. The wrapper is `relative`
+          and the <ol> is its only child, so the geometry is unchanged. */}
+      <span
+        className="absolute start-[1.0625rem] top-3 bottom-6 w-0.5 rounded-full bg-border/80"
+        aria-hidden
+      />
+      <span
+        className="absolute start-[1.0625rem] top-3 w-0.5 origin-top rounded-full bg-gradient-to-b from-primary via-primary to-amber-500 transition-[height] duration-150 ease-out"
+        style={{ height: `calc((100% - 1.5rem) * ${progress})` }}
+        aria-hidden
+      />
 
+      <ol className="relative">
         <li className="relative flex items-center gap-4 pb-5" data-career-step={-1}>
           <span className="z-10 grid size-9 shrink-0 place-items-center rounded-full border-2 border-dashed border-border bg-background text-muted-foreground ring-4 ring-background">
             <Compass className="size-4" />
@@ -91,14 +99,13 @@ export function CareerRoadmapTimeline({
 
         {roles.map((r, i) => {
           const last = i === roles.length - 1;
-          const pct = Math.round(((i + 1) / roles.length) * 100);
           const on = visible[i];
           return (
+            <React.Fragment key={r.title}>
             <li
-              key={r.title}
               data-career-step={i}
               className={cn(
-                "relative flex items-start gap-4 pb-5 last:pb-0 transition-all duration-700 ease-out",
+                "relative flex items-start gap-4 transition-all duration-700 ease-out",
                 on ? "translate-y-0 opacity-100" : "translate-y-3 opacity-40",
               )}
             >
@@ -124,17 +131,9 @@ export function CareerRoadmapTimeline({
                 )}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p
-                      className={cn(
-                        "text-[10px] font-bold uppercase tracking-wider",
-                        last ? "text-amber-700 dark:text-amber-400" : "text-primary/70",
-                      )}
-                    >
-                      {tr(`Level ${i + 1}`, `المستوى ${i + 1}`)}
-                    </p>
-                    <p className="truncate font-semibold text-foreground">{r.title}</p>
-                  </div>
+                  <p className="min-w-0 flex-1 font-semibold leading-snug text-foreground">
+                    {r.title}
+                  </p>
                   {last ? (
                     <span className="shrink-0 rounded-full bg-amber-500 px-2.5 py-0.5 text-[11px] font-bold text-white">
                       {tr("Goal", "الهدف")}
@@ -143,21 +142,25 @@ export function CareerRoadmapTimeline({
                     <Briefcase className="size-4 shrink-0 text-muted-foreground/50" />
                   )}
                 </div>
-
-                <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={cn(
-                      "h-full rounded-full bg-gradient-to-r transition-[width] duration-700 ease-out rtl:bg-gradient-to-l",
-                      last ? "from-amber-400 to-amber-600" : "from-primary/40 to-primary",
-                    )}
-                    style={{ width: on ? `${pct}%` : "0%" }}
-                  />
-                </div>
               </div>
             </li>
+            {!last && <LadderArrow />}
+            </React.Fragment>
           );
         })}
       </ol>
     </div>
+  );
+}
+
+/**
+ * One rung → the next. An <li>, not a <div>: only <li> is a valid child of <ol>.
+ * aria-hidden because the list order already conveys the progression.
+ */
+function LadderArrow() {
+  return (
+    <li className="flex py-1 ps-[1.0625rem]" aria-hidden>
+      <ArrowDown className="size-3.5 -translate-x-1/2 text-primary/40 rtl:translate-x-1/2" />
+    </li>
   );
 }

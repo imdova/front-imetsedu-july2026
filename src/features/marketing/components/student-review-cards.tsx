@@ -66,7 +66,7 @@ export const CPHQ_STUDENT_REVIEWS: StudentTextReview[] = [
 
 function StarRow({ rating = 5 }: { rating?: number }) {
   return (
-    <div className="flex justify-center gap-0.5 text-[#f4c430]" aria-label={`${rating} out of 5 stars`}>
+    <div className="flex justify-center gap-0.5 text-[#f4c430]" role="img" aria-label={`${rating} out of 5 stars`}>
       {Array.from({ length: 5 }).map((_, i) => (
         <Star key={i} className={cn("size-4", i < rating ? "fill-current" : "fill-none text-slate-200")} />
       ))}

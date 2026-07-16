@@ -745,7 +745,9 @@ export function CourseSeoContent({
     >
       {sections.map((s) => (
         <div key={s.heading}>
-          <p className="font-heading text-xl font-semibold">{s.heading}</p>
+          {/* h2, not a styled <p>: these are the page's long-form answers to
+              "what is X / why X", which is the whole reason they exist. */}
+          <h2 className="font-heading text-xl font-semibold">{s.heading}</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {s.body}
           </p>

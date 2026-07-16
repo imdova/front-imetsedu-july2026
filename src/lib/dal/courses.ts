@@ -171,6 +171,8 @@ function toFullUpdatePayload(d: CourseFormData): Record<string, unknown> {
     whatYouWillLearnEn: d.whatYouWillLearnEn,
     whyChoose: d.whyChoose ?? [],
     faqs: d.faqs ?? [],
+    careerRoles: d.careerRoles ?? [],
+    relatedCourseSlugs: d.relatedCourseSlugs ?? [],
     pricing: d.pricing,
     image: d.image,
     gallery: d.gallery,

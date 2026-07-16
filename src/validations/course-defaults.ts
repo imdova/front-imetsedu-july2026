@@ -52,6 +52,8 @@ export function makeDefaultCourseValues(): CourseFormValues {
     whoCanAttendAr: "",
     whyChoose: [],
     faqs: [],
+    careerRoles: [],
+    relatedCourseSlugs: [],
     modules: [
       {
         id: createId("mod"),

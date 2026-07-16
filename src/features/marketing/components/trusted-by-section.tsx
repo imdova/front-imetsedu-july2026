@@ -73,6 +73,7 @@ export async function TrustedBySection() {
         <div className="mx-auto max-w-3xl text-center">
           <div
             className="flex justify-center gap-0.5 text-[#f4c430]"
+            role="img"
             aria-label="5 out of 5 stars"
           >
             {Array.from({ length: 5 }).map((_, i) => (
@@ -126,9 +127,11 @@ export async function TrustedBySection() {
                     >
                       {image ? (
                         <div className="relative aspect-[16/10] w-full bg-slate-50">
+                          {/* Decorative: the name is already announced by the
+                              <p> below, so alt text here would repeat it. */}
                           <Image
                             src={image.src}
-                            alt={name}
+                            alt=""
                             fill
                             sizes="(max-width: 1024px) 50vw, 200px"
                             className={

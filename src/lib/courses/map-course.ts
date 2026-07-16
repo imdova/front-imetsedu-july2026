@@ -135,6 +135,19 @@ export function mapCourse(raw: any): CourseRow {
           }))
           .filter((f: { questionEn: string; questionAr: string }) => f.questionEn || f.questionAr)
       : undefined,
+    // Career Outcomes ladder. Array order is the progression, so it is kept as
+    // authored; untitled rows are dropped so a blank row can't render an empty rung.
+    careerRoles: Array.isArray(raw?.careerRoles)
+      ? raw.careerRoles
+          .map((r: Record<string, string>) => ({
+            titleEn: r?.titleEn ?? "",
+            titleAr: r?.titleAr ?? "",
+          }))
+          .filter((r: { titleEn: string; titleAr: string }) => r.titleEn || r.titleAr)
+      : undefined,
+    relatedCourseSlugs: Array.isArray(raw?.relatedCourseSlugs)
+      ? raw.relatedCourseSlugs.filter((x: unknown): x is string => typeof x === "string" && !!x)
+      : undefined,
     instructorNames: Array.isArray(raw?.instructors)
       ? raw.instructors
           .map((i: any) =>

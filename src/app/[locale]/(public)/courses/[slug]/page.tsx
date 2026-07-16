@@ -32,6 +32,7 @@ import {
   CourseCareerGrowth,
   CourseWhyThisDiploma,
   CourseFinalCta,
+  CourseSeoContent,
   CourseInstructor,
   CourseLearningExperience,
   CourseReviews,
@@ -160,9 +161,18 @@ export default async function CourseDetailPage({
   const outcomes =
     courseOutcomes.length > 0 ? courseOutcomes : content.outcomes;
 
-  const related = courses
-    .filter((c) => c.id !== course.id && c.category === course.category)
-    .slice(0, 4);
+  // "Continue Your Professional Journey": the slugs picked in the course form
+  // win, in the order they were picked. Nothing picked ⇒ same-category, which is
+  // what every course showed before this became editable.
+  const curated = (course.relatedCourseSlugs ?? [])
+    .map((slug) => courses.find((c) => c.slug === slug && c.id !== course.id))
+    .filter((c): c is NonNullable<typeof c> => Boolean(c));
+
+  const related = curated.length
+    ? curated.slice(0, 4)
+    : courses
+        .filter((c) => c.id !== course.id && c.category === course.category)
+        .slice(0, 4);
 
   const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
 
@@ -344,20 +354,30 @@ export default async function CourseDetailPage({
       ),
     },
   ];
-  const faqGroups = content.faqs?.length
-    ? content.faqs
-    : [
+  // Precedence, most specific first: FAQs typed into the course form win, then
+  // the bundled grouped copy, then the shared defaults.
+  const faqGroups = course.faqs?.length
+    ? [
         {
           title: tr("General", "عام"),
-          items: course.faqs?.length
-            ? course.faqs.map((f) => ({
-                q: pick(f.questionEn, f.questionAr),
-                a: pick(f.answerEn, f.answerAr),
-              }))
-            : defaultFaqItems,
+          items: course.faqs.map((f) => ({
+            q: pick(f.questionEn, f.questionAr),
+            a: pick(f.answerEn, f.answerAr),
+          })),
         },
-      ];
+      ]
+    : content.faqs?.length
+      ? content.faqs
+      : [{ title: tr("General", "عام"), items: defaultFaqItems }];
   const faqsFlat = faqGroups.flatMap((g) => g.items);
+
+  // Career Outcomes ladder: the course form's roles win over the bundled ladder.
+  // Array order IS the progression, so it is preserved as authored.
+  const careerRoles = course.careerRoles?.length
+    ? course.careerRoles
+        .map((r) => ({ title: pick(r.titleEn, r.titleAr) }))
+        .filter((r) => r.title)
+    : content.careerRoles;
 
   const whyCards =
     content.whyThisDiploma.length > 0
@@ -737,7 +757,7 @@ export default async function CourseDetailPage({
                 <CourseCareerGrowth
                   locale={locale}
                   opportunities={content.careerOpportunities}
-                  roles={content.careerRoles}
+                  roles={careerRoles}
                   demandLine={undefined}
                 />
               </CourseSectionBand>
@@ -773,6 +793,12 @@ export default async function CourseDetailPage({
               <CourseSectionBand tone="muted" spacing="md">
                 <CourseFaq locale={locale} groups={faqGroups} />
               </CourseSectionBand>
+
+              {content.seoSections.length > 0 && (
+                <CourseSectionBand tone="white" spacing="lg">
+                  <CourseSeoContent locale={locale} sections={content.seoSections} />
+                </CourseSectionBand>
+              )}
 
               <CourseSectionBand
                 tone="white"

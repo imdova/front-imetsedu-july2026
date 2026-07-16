@@ -134,49 +134,41 @@ export async function HealthcareFacultySection({
               </div>
 
               <dl className="mt-4 flex-1 space-y-2.5 text-sm">
-                <div className="flex items-start gap-2.5">
-                  <Briefcase className="mt-0.5 size-4 shrink-0 text-[#0b3fa8]" />
-                  <div>
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                      {t("facultyPosition")}
-                    </dt>
-                    <dd className="font-medium text-slate-700">
-                      {member.position}
-                    </dd>
-                  </div>
+                <div>
+                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <Briefcase className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
+                    {t("facultyPosition")}
+                  </dt>
+                  <dd className="ps-[22px] font-medium text-slate-700">
+                    {member.position}
+                  </dd>
                 </div>
-                <div className="flex items-start gap-2.5">
-                  <Building2 className="mt-0.5 size-4 shrink-0 text-[#0b3fa8]" />
-                  <div>
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                      {t("facultyHospital")}
-                    </dt>
-                    <dd className="font-medium text-slate-700">
-                      {member.hospital}
-                    </dd>
-                  </div>
+                <div>
+                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <Building2 className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
+                    {t("facultyHospital")}
+                  </dt>
+                  <dd className="ps-[22px] font-medium text-slate-700">
+                    {member.hospital}
+                  </dd>
                 </div>
-                <div className="flex items-start gap-2.5">
-                  <Clock3 className="mt-0.5 size-4 shrink-0 text-[#0b3fa8]" />
-                  <div>
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                      {t("facultyExperience")}
-                    </dt>
-                    <dd className="font-medium text-slate-700">
-                      {member.yearsExperience}+
-                    </dd>
-                  </div>
+                <div>
+                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <Clock3 className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
+                    {t("facultyExperience")}
+                  </dt>
+                  <dd className="ps-[22px] font-medium text-slate-700">
+                    {member.yearsExperience}+
+                  </dd>
                 </div>
-                <div className="flex items-start gap-2.5">
-                  <BookOpen className="mt-0.5 size-4 shrink-0 text-[#0b3fa8]" />
-                  <div>
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                      {t("facultyCourses")}
-                    </dt>
-                    <dd className="font-medium text-slate-700">
-                      {member.courses.join(" · ")}
-                    </dd>
-                  </div>
+                <div>
+                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <BookOpen className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
+                    {t("facultyCourses")}
+                  </dt>
+                  <dd className="ps-[22px] font-medium text-slate-700">
+                    {member.courses.join(" · ")}
+                  </dd>
                 </div>
               </dl>
 

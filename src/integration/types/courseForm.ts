@@ -60,6 +60,13 @@ export interface CourseFaq {
   answerEn: string;
 }
 
+/** One rung of the public page's "Career Outcomes" ladder. Array order IS the
+ *  progression (entry level first). */
+export interface CareerRole {
+  titleAr: string;
+  titleEn: string;
+}
+
 export interface PricingDetails {
   price: number;
   salePrice: number;
@@ -88,6 +95,9 @@ export interface CourseFormData {
   whatYouWillLearnEnText?: string;
   whyChoose: WhyChooseItem[];
   faqs: CourseFaq[];
+  careerRoles: CareerRole[];
+  /** Curated related-course slugs; empty ⇒ same-category fallback. */
+  relatedCourseSlugs: string[];
   pricing: {
     egp: PricingDetails;
     sar: PricingDetails;

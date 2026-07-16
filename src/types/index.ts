@@ -130,6 +130,12 @@ export interface CourseRow {
   whyChoose?: { titleEn: string; titleAr: string; bodyEn: string; bodyAr: string }[];
   /** Admin-authored FAQ. Empty/absent ⇒ the shared default questions. */
   faqs?: { questionEn: string; questionAr: string; answerEn: string; answerAr: string }[];
+  /** Admin-authored "Career Outcomes" ladder, entry level first. Empty/absent ⇒
+   *  the bundled per-course ladder. */
+  careerRoles?: { titleEn: string; titleAr: string }[];
+  /** Admin-curated "Continue Your Professional Journey" slugs. Empty/absent ⇒
+   *  same-category courses. */
+  relatedCourseSlugs?: string[];
   /** Admin-authored search metadata (course form → SEO panel). Any blank field
    *  falls back to copy derived from the course itself in `generateMetadata`. */
   seo?: {

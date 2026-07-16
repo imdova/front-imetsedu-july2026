@@ -75,6 +75,13 @@ export const courseFaqSchema = z.object({
   answerAr: z.string().trim(),
 });
 
+/** One rung of the public page's "Career Outcomes" ladder. Array order IS the
+ *  progression (entry level first), so no explicit rank is stored. */
+export const careerRoleSchema = z.object({
+  titleEn: z.string().trim(),
+  titleAr: z.string().trim(),
+});
+
 export const courseFormSchema = z.object({
   /* --- Identification --- */
   titleEn: z.string().trim(),
@@ -146,6 +153,11 @@ export const courseFormSchema = z.object({
   /** Both empty ⇒ the public page renders its shared defaults instead. */
   whyChoose: z.array(whyChooseItemSchema),
   faqs: z.array(courseFaqSchema),
+  /** Empty ⇒ the public page renders its bundled per-course ladder. */
+  careerRoles: z.array(careerRoleSchema),
+  /** Curated "Continue Your Professional Journey" links, by slug.
+   *  Empty ⇒ the page falls back to same-category courses. */
+  relatedCourseSlugs: z.array(z.string()),
   modules: z.array(moduleSchema),
 
   /* --- Step 3: Media & Reviews (optional) --- */
@@ -161,6 +173,7 @@ export const courseFormSchema = z.object({
 export type CourseFormValues = z.infer<typeof courseFormSchema>;
 export type WhyChooseItemValues = z.infer<typeof whyChooseItemSchema>;
 export type CourseFaqValues = z.infer<typeof courseFaqSchema>;
+export type CareerRoleValues = z.infer<typeof careerRoleSchema>;
 export type LessonValues = z.infer<typeof lessonSchema>;
 export type ModuleValues = z.infer<typeof moduleSchema>;
 export type TextReviewValues = z.infer<typeof textReviewSchema>;

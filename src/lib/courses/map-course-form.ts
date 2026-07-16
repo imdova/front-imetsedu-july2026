@@ -64,6 +64,15 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
           answerAr: f?.answerAr ?? "",
         }))
       : [],
+    careerRoles: Array.isArray(raw.careerRoles)
+      ? raw.careerRoles.map((r: any) => ({
+          titleEn: r?.titleEn ?? "",
+          titleAr: r?.titleAr ?? "",
+        }))
+      : [],
+    relatedCourseSlugs: Array.isArray(raw.relatedCourseSlugs)
+      ? raw.relatedCourseSlugs.filter((x: unknown): x is string => typeof x === "string")
+      : [],
     pricing: {
       egp: pricingBlock(raw.pricing?.egp),
       sar: pricingBlock(raw.pricing?.sar),

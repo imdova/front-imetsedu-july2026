@@ -674,6 +674,149 @@ function hospitalManagementContent(locale: string): CourseContent {
   };
 }
 
+
+/**
+ * Bespoke CIC content.
+ *
+ * Every CBIC figure here is quoted from cbic.org and dated. CBIC revises the
+ * exam — a new content outline is already published for 2027 — so treat these as
+ * perishable: re-check the source before trusting them, and prefer moving them
+ * into the course form (Structure → FAQ) where a human owns the update.
+ *
+ * Sources, fetched 2026-07-16:
+ *   - Exam format, timing, scoring:
+ *     https://www.cbic.org/CBIC/CIC-Certification/About-the-Examination.htm
+ *   - Eligibility:
+ *     https://www.cbic.org/CBIC/Candidate-Handbook/Eligibility-Guidelines.htm
+ *   - Content outline (current + 2027):
+ *     https://www.cbic.org/OffNav/Content-Outline1.htm
+ *
+ * Deliberately absent: any salary figure. There is no sourced number for
+ * CIC-holder pay in this region, and a made-up one on a page selling exam prep
+ * is a false earnings claim. Add it only with a citation.
+ */
+function cicContent(locale: string): CourseContent {
+  const ar = isAr(locale);
+  return {
+    about: {
+      summary: ar
+        ? "المستشفيات في الشرق الأوسط تُقيّم برامج مكافحة العدوى لديها وفق معايير اعتماد دولية، وتبحث عن متخصصين يستطيعون قيادة هذا العمل وإثبات كفاءتهم بشهادة معترف بها."
+        : "Hospitals across the Middle East are assessed against international accreditation standards for infection prevention, and are looking for professionals who can lead that work and prove it with a recognised credential.",
+      more: ar
+        ? ["برنامج IMETS للتحضير لشهادة CIC يساعدك على بناء معرفة عملية في الوقاية من العدوى ومكافحتها، والاستعداد بثقة لامتحان CIC الذي يصدره مجلس CBIC."]
+        : ["The IMETS CIC Preparation Program helps you build practical infection prevention and control knowledge, and prepare with confidence for the CIC examination awarded by CBIC."],
+    },
+    audience: null,
+    faqs: [
+      {
+        title: ar ? "القبول" : "Admissions",
+        items: [
+          {
+            q: ar ? "هل شهادة CIC معترف بها دوليًا؟" : "Is CIC recognized internationally?",
+            a: ar
+              ? "شهادة CIC يصدرها مجلس Certification Board of Infection Control and Epidemiology ‏(CBIC)، وهو المجلس المستقل المسؤول عن اعتماد متخصصي الوقاية من العدوى ومكافحتها. لا يضع CBIC أي قيد على جنسية المتقدّم أو بلده في شروط الأهلية المنشورة، والشهادة تُعرف على نطاق واسع في برامج اعتماد المستشفيات."
+              : "CIC is awarded by the Certification Board of Infection Control and Epidemiology (CBIC), the independent board that certifies infection prevention and control professionals. CBIC's published eligibility requirements set no nationality or country restriction, and the credential is widely referenced in hospital accreditation programs.",
+          },
+          {
+            q: ar ? "من المؤهل لدخول امتحان CIC؟" : "Who is eligible for the CIC exam?",
+            a: ar
+              ? "يشترط CBIC ثلاثة شروط معًا: أن تكون مسؤولًا مباشرة عن أنشطة الوقاية من العدوى ومكافحتها في وظيفتك الحالية؛ وأن تكون أنهيت تعليمًا جامعيًا في مجال صحي (طب، تمريض، مختبرات، صحة عامة، أحياء … وغيرها)؛ وأن تمتلك خبرة عمل: سنة واحدة بدوام كامل، أو سنتين بدوام جزئي، أو 3000 ساعة خلال السنوات الثلاث السابقة. الأهلية يحددها CBIC وحده — وليس IMETS. راجع cbic.org قبل التقديم."
+              : "CBIC requires all three: you are directly responsible for infection prevention and control activities in your current role; you have completed post-secondary education in a health-related field (medicine, nursing, laboratory technology, public health, biology, and others); and you have work experience of at least one year full-time, or two years part-time, or 3,000 hours earned during the previous three years. Eligibility is decided by CBIC, not by IMETS — check cbic.org before you apply.",
+          },
+          {
+            q: ar ? "هل أحتاج خبرة في مكافحة العدوى؟" : "Do I need infection control experience?",
+            a: ar
+              ? "للالتحاق ببرنامج IMETS: لا — يبدأ البرنامج من الأساسيات. لكن لدخول امتحان CIC نفسه: نعم — يشترط CBIC خبرة عملية (سنة بدوام كامل، أو سنتان بدوام جزئي، أو 3000 ساعة خلال ثلاث سنوات). البرنامج يجهّزك للامتحان، لكنه لا يمنحك الأهلية لدخوله."
+              : "To join the IMETS program: no — it starts from the fundamentals. To sit the CIC exam itself: yes — CBIC requires practical experience (one year full-time, two years part-time, or 3,000 hours across three years). The program prepares you for the exam; it does not make you eligible for it.",
+          },
+          {
+            q: ar ? "هل يمكنني الحضور من السعودية؟" : "Can I attend from Saudi Arabia?",
+            a: ar
+              ? "نعم. البرنامج أونلاين بالكامل، وطلابنا ينضمّون من السعودية والخليج والشرق الأوسط. كل ما تحتاجه هو اتصال بالإنترنت."
+              : "Yes. The program is fully online and our students join from Saudi Arabia, the GCC and the wider Middle East. All you need is an internet connection.",
+          },
+        ],
+      },
+      {
+        title: ar ? "الدراسة والامتحان" : "Studying & the exam",
+        items: [
+          {
+            q: ar ? "كيف تُقدَّم الجلسات المباشرة؟" : "How are live classes delivered?",
+            a: ar
+              ? "جلسات مباشرة أسبوعية عبر الإنترنت مع المدرّب، بالإضافة إلى مواد يمكنك مراجعتها بوتيرتك. تُسجَّل كل جلسة وتُضاف إلى حسابك، فإن فاتتك واحدة تجدها خلال ساعات."
+              : "Live weekly online sessions with the instructor, plus material you can revisit at your own pace. Every session is recorded and added to your account, so a missed class is available within hours.",
+          },
+          {
+            q: ar
+              ? "هل يساعدني هذا البرنامج على الاستعداد لامتحان CIC؟"
+              : "Will this program help me prepare for the CIC exam?",
+            a: ar
+              ? "نعم — هذا هو الغرض منه. يغطي البرنامج مجالات محتوى امتحان CIC ويدرّبك على أسلوب الأسئلة. لكن كن واضحًا: IMETS جهة تدريب مستقلة وليست تابعة لـ CBIC، ولا نُصدر الشهادة ولا نضمن النجاح — الامتحان يُدار بالكامل من CBIC."
+              : "Yes — that is what it is built for. The program covers the CIC exam's content domains and drills the question style. To be clear though: IMETS is an independent training provider, not affiliated with CBIC. We do not award the credential and cannot guarantee a pass — the examination is administered entirely by CBIC.",
+          },
+        ],
+      },
+    ],
+    outcomes: ar
+      ? [
+          "بناء برنامج وقاية من العدوى ومكافحتها داخل منشأتك",
+          "تصميم المراقبة الوبائية وتفسير بياناتها",
+          "قيادة تحقيقات الفاشيات والاستجابة لها",
+          "تطبيق سياسات التنظيف والتطهير والتعقيم",
+          "إدارة صحة العاملين والتعرّض المهني",
+          "الاستعداد لمجالات محتوى امتحان CIC بثقة",
+        ]
+      : [
+          "Build an infection prevention and control program inside your facility",
+          "Design surveillance and interpret its data",
+          "Lead outbreak investigation and response",
+          "Apply cleaning, disinfection and sterilisation policy",
+          "Manage occupational health and exposure",
+          "Prepare for the CIC exam's content domains with confidence",
+        ],
+    demandLine: ar
+      ? "مع توسّع برامج الاعتماد مثل JCI وCBAHI وGAHAR، تستمر الحاجة لمتخصصي الوقاية من العدوى في مستشفيات الخليج والشرق الأوسط."
+      : "As accreditation programs like JCI, CBAHI and GAHAR expand, hospitals across the GCC and wider Middle East keep hiring for infection prevention roles.",
+    whyChoose: whyChooseReasons(locale),
+    whyThisDiploma: whyThisDiplomaCards(locale),
+    careerRoles: [
+      { title: ar ? "ممرض مكافحة عدوى" : "Infection Control Nurse" },
+      { title: ar ? "أخصائي وقاية من العدوى أول" : "Senior Infection Preventionist" },
+      { title: ar ? "منسّق مكافحة العدوى" : "IPC Coordinator" },
+      { title: ar ? "مدير مكافحة العدوى" : "Infection Control Manager" },
+      { title: ar ? "استشاري إقليمي للوقاية من العدوى" : "Regional Infection Prevention Consultant" },
+    ],
+    careerOpportunities: [],
+    seoSections: [
+      {
+        heading: ar ? "ما هي شهادة CIC؟" : "What Is CIC Certification?",
+        body: ar
+          ? "CIC هي شهادة الاعتماد في الوقاية من العدوى ومكافحتها، ويصدرها مجلس Certification Board of Infection Control and Epidemiology ‏(CBIC) — وهو مجلس مستقل مهمّته اعتماد المتخصصين في هذا المجال، منفصل عن أي جهة تدريب. تُثبت الشهادة أن حاملها يمتلك المعرفة المطلوبة عبر مجالات الممارسة: تحديد الأمراض المعدية، والمراقبة الوبائية، ومنع انتقال العدوى، وصحة العاملين، وإدارة البرنامج، والتعليم والبحث، وبيئة الرعاية، والتنظيف والتطهير والتعقيم. وهي موجّهة لمن يتولّى مسؤولية مباشرة عن برنامج مكافحة العدوى في منشأة صحية."
+          : "CIC is the certification in infection prevention and control, awarded by the Certification Board of Infection Control and Epidemiology (CBIC) — an independent certifying board, separate from any training provider. It demonstrates knowledge across the practice domains: identifying infectious disease processes, surveillance and epidemiologic investigation, preventing transmission, occupational health, program management and communication, education and research, environment of care, and cleaning, disinfection and sterilisation. It is aimed at professionals who hold direct responsibility for an infection prevention program in a healthcare facility.",
+      },
+      {
+        heading: ar ? "لماذا تحصل على شهادة CIC؟" : "Why Become CIC Certified?",
+        body: ar
+          ? "الوقاية من العدوى مسار مهني قائم بذاته: يبدأ من ممرض مكافحة عدوى ويتدرّج إلى منسّق ثم مدير ثم استشاري. والشهادة يصدرها مجلس مستقل لا يرتبط بجهة التدريب، ما يجعلها مرجعًا يمكن للمستشفيات في أي دولة الاعتماد عليه — ولا يضع CBIC قيدًا على الجنسية في شروط الأهلية المنشورة. ولأن برامج الاعتماد تُقيّم مكافحة العدوى مباشرة، فإن حَمَلة الشهادة غالبًا ما يقودون هذا الملف داخل المنشأة."
+          : "Infection prevention is a career track in its own right: it starts at Infection Control Nurse and progresses through Coordinator, Manager and Consultant. The credential comes from an independent board with no tie to any training provider, which is what lets a hospital in any country rely on it — and CBIC's published eligibility sets no nationality restriction. Because accreditation programs assess infection prevention directly, certified professionals often lead that file inside the facility.",
+      },
+      {
+        heading: ar ? "نظرة على امتحان CIC" : "CIC Exam Overview",
+        body: ar
+          ? "وفق CBIC (يوليو 2026): الامتحان اختيار من متعدد ويتكوّن من 150 سؤالًا، يُحتسب منها 135 سؤالًا في الدرجة بينما 15 سؤالًا تجريبية لا تُحتسب. يُقسَّم إلى قسمين مدة كل منهما 90 دقيقة، تسبقهما مقدمة وشرح 10 دقائق، ويفصل بينهما استراحة 16 دقيقة، ويليهما استبيان 5 دقائق. النجاح يتطلب درجة موزونة لا تقل عن 700 على مقياس من 300 إلى 900 — وليست نسبة مئوية من الأسئلة الصحيحة. تتوزّع الأسئلة الـ135 على ثمانية مجالات محتوى. تفاصيل الامتحان يحددها CBIC وقد تتغيّر — وقد نشر CBIC بالفعل مخطط محتوى مُحدّثًا لعام 2027 — لذا تحقّق دائمًا من cbic.org."
+          : "Per CBIC (July 2026): the exam is multiple choice and consists of 150 questions, of which 135 count toward your score and 15 are unscored pretest items. It runs as two 90-minute sections, preceded by a 10-minute introduction and tutorial, separated by a 16-minute break, and followed by a 5-minute survey. Passing requires a scaled score of at least 700 on a 300–900 scale — not a percentage of questions answered correctly. The 135 scored questions are distributed across eight content domains. Exam details are set by CBIC and do change — CBIC has already published a revised content outline for 2027 — so always confirm at cbic.org.",
+      },
+      {
+        heading: ar ? "لماذا تختار IMETS للتحضير لشهادة CIC؟" : "Why Choose IMETS For CIC Preparation?",
+        body: ar
+          ? "التحضير هنا مبني حول مجالات محتوى امتحان CIC الثمانية كما ينشرها CBIC، لا حول منهج عام في مكافحة العدوى. الجلسات مباشرة أسبوعيًا مع مدرّبين يعملون داخل منشآت صحية، وتُسجَّل كلها فتبقى متاحة للمراجعة قبل الامتحان. الشرح بالعربية والإنجليزية معًا، وهو ما يهم عند دراسة مصطلحات امتحان يُقدَّم بالإنجليزية. ونكون صريحين في أمر واحد: IMETS جهة تدريب مستقلة وليست تابعة لـ CBIC — نحن نجهّزك للامتحان، والشهادة يمنحها CBIC وحده."
+          : "Preparation here is built around the eight CIC content domains as CBIC publishes them, not around a general infection control syllabus. Sessions are live and weekly with instructors who work inside healthcare facilities, and every one is recorded so it is there to revise before your exam date. Teaching runs in Arabic and English — which matters when you are learning the terminology of an exam sat in English. And we are straight about one thing: IMETS is an independent training provider, not affiliated with CBIC. We prepare you for the exam; only CBIC awards the credential.",
+      },
+    ],
+    reviews: defaultReviews(locale),
+  };
+}
+
 /** Generic, healthcare-flavoured content for any non-flagship course. */
 function genericContent(titleEn: string, titleAr: string, locale: string): CourseContent {
   const ar = isAr(locale);
@@ -712,6 +855,7 @@ export function getCourseContent(opts: {
 }): CourseContent {
   if (opts.slug === "cphq-preparation") return cphqContent(opts.locale);
   if (opts.slug === "hospital-management-diploma") return hospitalManagementContent(opts.locale);
+  if (opts.slug === "cic-preparation") return cicContent(opts.locale);
   return genericContent(opts.titleEn, opts.titleAr, opts.locale);
 }
 

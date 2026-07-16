@@ -39,7 +39,7 @@ export async function AlumniSection() {
               </div>
             </div>
             <div className="mt-4 border-t border-blue-50 pt-3">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t("alumniProgram")}</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("alumniProgram")}</span>
               <p className="mt-0.5 inline-flex rounded-full bg-[#0b3fa8]/10 px-3 py-1 text-xs font-bold text-[#0b3fa8]">{a.program}</p>
             </div>
           </div>

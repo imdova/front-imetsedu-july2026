@@ -106,7 +106,7 @@ export function CourseCard({
 
         <div className="flex flex-wrap items-center gap-1.5">
           <StarRating rating={rating} />
-          <span className="font-heading text-sm font-bold tabular-nums text-amber-600">
+          <span className="font-heading text-sm font-bold tabular-nums text-amber-700">
             {rating.toFixed(1)}
           </span>
           <span className="text-xs font-medium text-muted-foreground">

@@ -1,10 +1,25 @@
 "use client";
 
+import * as React from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslations } from "next-intl";
-import { CheckCircle2, HelpCircle, Lightbulb, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  GraduationCap,
+  HelpCircle,
+  Lightbulb,
+  Plus,
+  Route,
+  Trash2,
+} from "lucide-react";
 
+import { cn } from "@/lib/utils";
+import { dal } from "@/lib/dal";
 import type {
+  CareerRoleValues,
   CourseFormValues,
   CourseFaqValues,
   WhyChooseItemValues,
@@ -153,6 +168,8 @@ function StructureMain() {
 
       <WhyChooseSection />
       <FaqsSection />
+      <CareerRolesSection />
+      <RelatedCoursesSection />
     </>
   );
 }
@@ -336,6 +353,206 @@ function FaqsSection() {
             </div>
           ))}
         </div>
+      )}
+    </FormSection>
+  );
+}
+
+/**
+ * "Career Outcomes" ladder. Array order IS the progression rendered on the
+ * public page (entry level first), which is why entries move up/down rather
+ * than carrying a rank field. Empty ⇒ the page falls back to its bundled ladder.
+ */
+function CareerRolesSection() {
+  const { watch, setValue } = useFormContext<CourseFormValues>();
+  const t = useTranslations("CourseForm");
+  const roles = watch("careerRoles") ?? [];
+
+  const commit = (next: CareerRoleValues[]) =>
+    setValue("careerRoles", next, { shouldDirty: true });
+
+  const add = () => commit([...roles, { titleEn: "", titleAr: "" }]);
+
+  const update = (index: number, patch: Partial<CareerRoleValues>) =>
+    commit(roles.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+
+  const remove = (index: number) => commit(roles.filter((_, i) => i !== index));
+
+  const move = (index: number, dir: -1 | 1) => {
+    const to = index + dir;
+    if (to < 0 || to >= roles.length) return;
+    const next = [...roles];
+    [next[index], next[to]] = [next[to], next[index]];
+    commit(next);
+  };
+
+  return (
+    <FormSection
+      title={t("secCareerRoles")}
+      description={t("secCareerRolesDesc")}
+      action={
+        <Button type="button" size="sm" className="gap-1.5" onClick={add}>
+          <Plus className="size-4" />
+          {t("addCareerRole")}
+        </Button>
+      }
+    >
+      {roles.length === 0 ? (
+        <EmptyState icon={<Route className="size-8 opacity-50" />} text={t("noCareerRoles")} />
+      ) : (
+        <div className="space-y-2">
+          {roles.map((role, index) => (
+            <div key={index}>
+              <div className="flex items-start gap-3 rounded-xl border bg-card p-4">
+                <span className="mt-2 grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold tabular-nums text-primary">
+                  {index + 1}
+                </span>
+                <div className="grid flex-1 gap-4 sm:grid-cols-2">
+                  <Field label={t("careerRoleEn")}>
+                    <Input
+                      value={role.titleEn}
+                      onChange={(e) => update(index, { titleEn: e.target.value })}
+                      placeholder={t("careerRoleEnPlaceholder")}
+                    />
+                  </Field>
+                  <Field label={t("careerRoleAr")}>
+                    <Input
+                      dir="rtl"
+                      value={role.titleAr}
+                      onChange={(e) => update(index, { titleAr: e.target.value })}
+                      placeholder={t("careerRoleArPlaceholder")}
+                    />
+                  </Field>
+                </div>
+                <div className="flex shrink-0 flex-col gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    disabled={index === 0}
+                    aria-label={t("moveUp")}
+                    onClick={() => move(index, -1)}
+                  >
+                    <ChevronUp className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    disabled={index === roles.length - 1}
+                    aria-label={t("moveDown")}
+                    onClick={() => move(index, 1)}
+                  >
+                    <ChevronDown className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 text-destructive"
+                    aria-label={t("removeCareerRole")}
+                    onClick={() => remove(index)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              </div>
+              {index < roles.length - 1 && (
+                <div className="flex justify-center py-0.5">
+                  <ArrowDown className="size-3.5 text-muted-foreground/50" aria-hidden />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </FormSection>
+  );
+}
+
+/**
+ * "Continue Your Professional Journey" — curated by slug, because the slug is
+ * the link target. Empty ⇒ the public page falls back to same-category courses,
+ * which is the behaviour every existing course keeps until someone picks here.
+ */
+function RelatedCoursesSection() {
+  const { watch, setValue } = useFormContext<CourseFormValues>();
+  const t = useTranslations("CourseForm");
+  const selected = watch("relatedCourseSlugs") ?? [];
+  const ownSlug = watch("slug");
+  const [options, setOptions] = React.useState<{ slug: string; title: string }[]>([]);
+
+  // Published only: a draft has no public page to link to.
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await dal.courses.fetchCourses({ status: "published" });
+      if (!alive || !res.ok) return;
+      setOptions(
+        res.data
+          .filter((c) => c.slug)
+          .map((c) => ({ slug: c.slug, title: c.titleEn }))
+          .sort((a, b) => a.title.localeCompare(b.title)),
+      );
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const pickable = options.filter((o) => o.slug !== ownSlug);
+
+  const toggle = (slug: string) =>
+    setValue(
+      "relatedCourseSlugs",
+      selected.includes(slug) ? selected.filter((x) => x !== slug) : [...selected, slug],
+      { shouldDirty: true },
+    );
+
+  return (
+    <FormSection title={t("secRelatedCourses")} description={t("secRelatedCoursesDesc")}>
+      {pickable.length === 0 ? (
+        <EmptyState
+          icon={<GraduationCap className="size-8 opacity-50" />}
+          text={t("noRelatedOptions")}
+        />
+      ) : (
+        <div className="max-h-64 space-y-0.5 overflow-y-auto rounded-xl border p-1.5">
+          {pickable.map((o) => {
+            const on = selected.includes(o.slug);
+            return (
+              <button
+                key={o.slug}
+                type="button"
+                onClick={() => toggle(o.slug)}
+                className={cn(
+                  "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start text-sm transition-colors",
+                  on
+                    ? "bg-primary/10 text-foreground ring-1 ring-primary/20"
+                    : "text-muted-foreground hover:bg-muted/60",
+                )}
+              >
+                <span
+                  className={cn(
+                    "grid size-4 shrink-0 place-items-center rounded border",
+                    on ? "border-primary bg-primary text-primary-foreground" : "border-border",
+                  )}
+                >
+                  {on && <CheckCircle2 className="size-3" />}
+                </span>
+                <span className="min-w-0 flex-1 truncate font-medium">{o.title}</span>
+                <span className="shrink-0 text-[11px] text-muted-foreground/70">/{o.slug}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {selected.length > 0 && (
+        <p className="mt-2 text-[11px] text-primary">
+          {t("relatedSelected", { count: selected.length })}
+        </p>
       )}
     </FormSection>
   );
