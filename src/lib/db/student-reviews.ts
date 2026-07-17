@@ -1,6 +1,6 @@
 /** UI view-model for public student reviews (backed by the live API). */
 
-export type ReviewKind = "video" | "graduation" | "facebook" | "whatsapp";
+export type ReviewKind = "video" | "graduation" | "facebook" | "whatsapp" | "gallery";
 export type ReviewOrientation = "portrait" | "landscape";
 
 export interface StudentReview {
@@ -19,4 +19,5 @@ export interface StudentReview {
 
 export type StudentReviewInput = Omit<StudentReview, "id">;
 
-export const REVIEW_KINDS: ReviewKind[] = ["video", "graduation", "facebook", "whatsapp"];
+/** `graduation` is the capstone-project video; `gallery` is a ceremony photo. */
+export const REVIEW_KINDS: ReviewKind[] = ["video", "graduation", "facebook", "whatsapp", "gallery"];

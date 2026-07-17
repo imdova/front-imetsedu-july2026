@@ -26,7 +26,7 @@ export function CourseAudienceCards({
   const ar = locale === "ar";
 
   return (
-    <section className={cn("scroll-mt-32", className)}>
+    <section id="audience" className={cn("scroll-mt-32", className)}>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <h2 className="max-w-md font-heading text-2xl font-bold tracking-tight sm:text-3xl">
           {title}

@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   Plus, Pencil, Trash2, Video, GraduationCap, ThumbsUp, MessageCircle, Eye, EyeOff, ImageOff,
+  Images, ImagePlus, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,13 +33,18 @@ const KIND_META: Record<ReviewKind, { label: string; icon: React.ElementType }> 
   graduation: { label: "Graduation project", icon: GraduationCap },
   facebook: { label: "Facebook", icon: ThumbsUp },
   whatsapp: { label: "WhatsApp", icon: MessageCircle },
+  gallery: { label: "Graduation Gallery", icon: Images },
 };
+
+/** Kinds whose content is an uploaded image rather than a YouTube video. */
+const isPhoto = (k: ReviewKind) => !isVideo(k);
 
 const EMPTY: StudentReviewInput = {
   kind: "video", studentName: "", role: "", country: "", caption: "",
   videoUrl: "", orientation: "portrait", imageUrl: "", rank: 0, isPublished: true,
 };
 
+// `graduation` is the capstone-project video. Ceremony photos are `gallery`.
 const isVideo = (k: ReviewKind) => k === "video" || k === "graduation";
 const poster = (url: string) => {
   const id = extractYouTubeVideoId(url);
@@ -77,7 +83,10 @@ export function ReviewsManager() {
 
   const save = async () => {
     if (isVideo(form.kind) && !form.videoUrl.trim()) { toast.error("Add a YouTube URL"); return; }
-    if (!isVideo(form.kind) && !form.imageUrl.trim()) { toast.error("Upload a screenshot"); return; }
+    if (isPhoto(form.kind) && !form.imageUrl.trim()) {
+      toast.error(form.kind === "gallery" ? "Upload a photo" : "Upload a screenshot");
+      return;
+    }
     setSaving(true);
     const res = editingId
       ? await dal.studentReviews.updateReview(editingId, form)
@@ -143,11 +152,19 @@ export function ReviewsManager() {
         ))}
       </div>
 
+      {/* Gallery tab uploads straight in — the dialog is for the other kinds. */}
+      {tab === "gallery" && (
+        <GalleryUploader onAdded={(rows) => setList((p) => [...p, ...rows])} />
+      )}
+
       {/* Grid */}
       {loading ? (
         <p className="py-16 text-center text-sm text-muted-foreground">Loading…</p>
       ) : filtered.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border py-16 text-center text-muted-foreground">No reviews yet — add your first.</p>
+        // On the gallery tab the uploader above already is the empty state.
+        tab === "gallery" ? null : (
+          <p className="rounded-2xl border border-dashed border-border py-16 text-center text-muted-foreground">No reviews yet — add your first.</p>
+        )
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((r) => {
@@ -228,8 +245,14 @@ export function ReviewsManager() {
                 )}
               </>
             ) : (
-              <Field label="Screenshot">
-                <ImageUpload value={form.imageUrl} onChange={(url) => set("imageUrl", url)} hint="Upload the Facebook / WhatsApp review screenshot" />
+              <Field label={form.kind === "gallery" ? "Photo" : "Screenshot"}>
+                <ImageUpload
+                  value={form.imageUrl}
+                  onChange={(url) => set("imageUrl", url)}
+                  hint={form.kind === "gallery"
+                    ? "Upload a graduation ceremony photo"
+                    : "Upload the Facebook / WhatsApp review screenshot"}
+                />
               </Field>
             )}
 
@@ -251,6 +274,110 @@ export function ReviewsManager() {
         </DialogContent>
       </Dialog>
       {Confirmation}
+    </div>
+  );
+}
+
+/**
+ * Direct-to-gallery uploader: pick (or drop) photos and they are uploaded and
+ * published straight away — no dialog, no per-photo form. Captions and ordering
+ * stay editable afterwards via each card's edit button.
+ *
+ * Files upload one at a time rather than in a Promise.all: the S3 uploader is
+ * the same one the whole admin shares, and a 20-photo batch firing at once is
+ * how you get half of them failing on a slow connection. Sequential also lets a
+ * partial batch report exactly which files made it.
+ */
+function GalleryUploader({ onAdded }: { onAdded: (rows: StudentReview[]) => void }) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [progress, setProgress] = React.useState({ done: 0, total: 0 });
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files?.length || busy) return;
+    const images = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const skipped = files.length - images.length;
+    if (skipped > 0) toast.error(`${skipped} file${skipped > 1 ? "s" : ""} skipped — images only`);
+    if (!images.length) return;
+
+    setBusy(true);
+    setProgress({ done: 0, total: images.length });
+    const added: StudentReview[] = [];
+    const failed: string[] = [];
+
+    for (const file of images) {
+      const up = await dal.upload.uploadFile(file);
+      if (!up.ok) {
+        failed.push(file.name);
+      } else {
+        const res = await dal.studentReviews.createReview({
+          kind: "gallery",
+          studentName: "",
+          role: "",
+          country: "",
+          // Filename is a better default alt text than an empty string, and it
+          // is what the admin recognises in the grid. Editable afterwards.
+          caption: file.name.replace(/\.[^.]+$/, ""),
+          videoUrl: "",
+          orientation: "landscape",
+          imageUrl: up.data.url,
+          rank: 0,
+          isPublished: true,
+        });
+        if (res.ok) added.push(res.data);
+        else failed.push(file.name);
+      }
+      setProgress((p) => ({ ...p, done: p.done + 1 }));
+    }
+
+    setBusy(false);
+    setProgress({ done: 0, total: 0 });
+    if (inputRef.current) inputRef.current.value = "";
+    if (added.length) {
+      onAdded(added);
+      toast.success(`${added.length} photo${added.length > 1 ? "s" : ""} added to the gallery`);
+    }
+    // Never silently swallow a partial failure — say which files did not make it.
+    if (failed.length) toast.error(`Failed: ${failed.join(", ")}`);
+  };
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+      className={cn(
+        "rounded-2xl border-2 border-dashed p-6 text-center transition-colors",
+        dragOver ? "border-primary bg-primary/5" : "border-border bg-muted/20",
+      )}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="sr-only"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <span className="mx-auto grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
+        {busy ? <Loader2 className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
+      </span>
+      <p className="mt-3 text-sm font-semibold">
+        {busy ? `Uploading ${progress.done} of ${progress.total}…` : "Drop graduation photos here"}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        They go live on the success-stories gallery as soon as they upload — no form to fill in.
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-3 gap-1.5"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+      >
+        <ImagePlus className="size-4" /> Choose photos
+      </Button>
     </div>
   );
 }

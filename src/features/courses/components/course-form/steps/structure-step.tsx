@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  GraduationCap,
   HelpCircle,
   Lightbulb,
   Plus,
@@ -17,12 +16,9 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { dal } from "@/lib/dal";
 import type {
   CareerRoleValues,
-  CourseFinalCtaValues,
   CourseFormValues,
-  CourseHeadingsValues,
   CourseFaqValues,
   WhyChooseItemValues,
 } from "@/validations/course-schema";
@@ -131,9 +127,6 @@ function StructureMain() {
       <WhyChooseSection />
       <FaqsSection />
       <CareerRolesSection />
-      <FinalCtaSection />
-      <HeadingsSection />
-      <RelatedCoursesSection />
     </>
   );
 }
@@ -448,197 +441,6 @@ function CareerRolesSection() {
             </div>
           ))}
         </div>
-      )}
-    </FormSection>
-  );
-}
-
-/**
- * Section H2s. Each blank field falls back on its own to the page's generic
- * heading, so filling one in does not commit you to filling the rest.
- */
-function HeadingsSection() {
-  const { watch, setValue } = useFormContext<CourseFormValues>();
-  const t = useTranslations("CourseForm");
-  const h = watch("headings");
-  // Placeholders show the real course name, so the example heading is the one
-  // this course should actually use. Passed as an ICU param, never interpolated
-  // into the message — angle brackets there would parse as a rich-text tag.
-  const program = watch("titleEn") || t("whyChooseTitleFallback");
-
-  const set = (patch: Partial<CourseHeadingsValues>) =>
-    setValue("headings", { ...h, ...patch }, { shouldDirty: true });
-
-  const rows: { key: keyof CourseHeadingsValues; arKey: keyof CourseHeadingsValues; label: string; ph: string }[] = [
-    { key: "whyChooseEn", arKey: "whyChooseAr", label: t("hWhyChoose"), ph: t("hWhyChoosePh", { program }) },
-    { key: "audienceEn", arKey: "audienceAr", label: t("hAudience"), ph: t("hAudiencePh", { program }) },
-    { key: "aboutEn", arKey: "aboutAr", label: t("hAbout"), ph: t("hAboutPh") },
-    { key: "learnEn", arKey: "learnAr", label: t("hLearn"), ph: t("hLearnPh", { program }) },
-    { key: "careersEn", arKey: "careersAr", label: t("hCareers"), ph: t("hCareersPh", { program }) },
-    { key: "faqEn", arKey: "faqAr", label: t("hFaq"), ph: t("hFaqPh") },
-  ];
-
-  return (
-    <FormSection title={t("secHeadings")} description={t("secHeadingsDesc")}>
-      <div className="space-y-3">
-        {rows.map((r) => (
-          <div key={r.key} className="grid gap-3 sm:grid-cols-[10rem_1fr_1fr] sm:items-center">
-            <span className="text-xs font-medium text-muted-foreground">{r.label}</span>
-            <Input
-              value={h?.[r.key] ?? ""}
-              onChange={(e) => set({ [r.key]: e.target.value } as Partial<CourseHeadingsValues>)}
-              placeholder={r.ph}
-            />
-            <Input
-              dir="rtl"
-              value={h?.[r.arKey] ?? ""}
-              onChange={(e) => set({ [r.arKey]: e.target.value } as Partial<CourseHeadingsValues>)}
-              placeholder={t("hArabicPh")}
-            />
-          </div>
-        ))}
-      </div>
-    </FormSection>
-  );
-}
-
-/**
- * The closing CTA. Leave the heading blank and the page uses its bundled line —
- * that fallback is why the heading, not the body, is what decides whether this
- * counts as "set".
- */
-function FinalCtaSection() {
-  const { watch, setValue } = useFormContext<CourseFormValues>();
-  const t = useTranslations("CourseForm");
-  const cta = watch("finalCta") ?? { headingEn: "", headingAr: "", bodyEn: "", bodyAr: "" };
-
-  const set = (patch: Partial<CourseFinalCtaValues>) =>
-    setValue("finalCta", { ...cta, ...patch }, { shouldDirty: true });
-
-  return (
-    <FormSection title={t("secFinalCta")} description={t("secFinalCtaDesc")}>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t("ctaHeadingEn")}>
-          <Input
-            value={cta.headingEn}
-            onChange={(e) => set({ headingEn: e.target.value })}
-            placeholder={t("ctaHeadingEnPlaceholder")}
-          />
-        </Field>
-        <Field label={t("ctaHeadingAr")}>
-          <Input
-            dir="rtl"
-            value={cta.headingAr}
-            onChange={(e) => set({ headingAr: e.target.value })}
-            placeholder={t("ctaHeadingArPlaceholder")}
-          />
-        </Field>
-        <Field label={t("ctaBodyEn")}>
-          <Textarea
-            rows={2}
-            value={cta.bodyEn}
-            onChange={(e) => set({ bodyEn: e.target.value })}
-            placeholder={t("ctaBodyEnPlaceholder")}
-          />
-        </Field>
-        <Field label={t("ctaBodyAr")}>
-          <Textarea
-            dir="rtl"
-            rows={2}
-            value={cta.bodyAr}
-            onChange={(e) => set({ bodyAr: e.target.value })}
-            placeholder={t("ctaBodyArPlaceholder")}
-          />
-        </Field>
-      </div>
-      {!cta.headingEn && !cta.headingAr && (
-        <p className="mt-3 text-[11px] text-muted-foreground">{t("ctaFallbackNote")}</p>
-      )}
-    </FormSection>
-  );
-}
-
-/**
- * "Continue Your Professional Journey" — curated by slug, because the slug is
- * the link target. Empty ⇒ the public page falls back to same-category courses,
- * which is the behaviour every existing course keeps until someone picks here.
- */
-function RelatedCoursesSection() {
-  const { watch, setValue } = useFormContext<CourseFormValues>();
-  const t = useTranslations("CourseForm");
-  const selected = watch("relatedCourseSlugs") ?? [];
-  const ownSlug = watch("slug");
-  const [options, setOptions] = React.useState<{ slug: string; title: string }[]>([]);
-
-  // Published only: a draft has no public page to link to.
-  React.useEffect(() => {
-    let alive = true;
-    (async () => {
-      const res = await dal.courses.fetchCourses({ status: "published" });
-      if (!alive || !res.ok) return;
-      setOptions(
-        res.data
-          .filter((c) => c.slug)
-          .map((c) => ({ slug: c.slug, title: c.titleEn }))
-          .sort((a, b) => a.title.localeCompare(b.title)),
-      );
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const pickable = options.filter((o) => o.slug !== ownSlug);
-
-  const toggle = (slug: string) =>
-    setValue(
-      "relatedCourseSlugs",
-      selected.includes(slug) ? selected.filter((x) => x !== slug) : [...selected, slug],
-      { shouldDirty: true },
-    );
-
-  return (
-    <FormSection title={t("secRelatedCourses")} description={t("secRelatedCoursesDesc")}>
-      {pickable.length === 0 ? (
-        <EmptyState
-          icon={<GraduationCap className="size-8 opacity-50" />}
-          text={t("noRelatedOptions")}
-        />
-      ) : (
-        <div className="max-h-64 space-y-0.5 overflow-y-auto rounded-xl border p-1.5">
-          {pickable.map((o) => {
-            const on = selected.includes(o.slug);
-            return (
-              <button
-                key={o.slug}
-                type="button"
-                onClick={() => toggle(o.slug)}
-                className={cn(
-                  "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start text-sm transition-colors",
-                  on
-                    ? "bg-primary/10 text-foreground ring-1 ring-primary/20"
-                    : "text-muted-foreground hover:bg-muted/60",
-                )}
-              >
-                <span
-                  className={cn(
-                    "grid size-4 shrink-0 place-items-center rounded border",
-                    on ? "border-primary bg-primary text-primary-foreground" : "border-border",
-                  )}
-                >
-                  {on && <CheckCircle2 className="size-3" />}
-                </span>
-                <span className="min-w-0 flex-1 truncate font-medium">{o.title}</span>
-                <span className="shrink-0 text-[11px] text-muted-foreground/70">/{o.slug}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-      {selected.length > 0 && (
-        <p className="mt-2 text-[11px] text-primary">
-          {t("relatedSelected", { count: selected.length })}
-        </p>
       )}
     </FormSection>
   );

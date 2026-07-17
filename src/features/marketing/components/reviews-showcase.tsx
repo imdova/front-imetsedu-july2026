@@ -21,27 +21,6 @@ import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
 const poster = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 const FACEBOOK_CAROUSEL_LIMIT = 10;
 
-const GALLERY_PLACEHOLDERS = [
-  {
-    key: "ceremony",
-    en: "Graduation Ceremony",
-    ar: "حفل التخرج",
-    img: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=900&h=700&fit=crop&q=80",
-  },
-  {
-    key: "certificates",
-    en: "Certificates",
-    ar: "الشهادات",
-    img: "https://images.unsplash.com/photo-1589330694653-ded6df03f754?w=900&h=700&fit=crop&q=80",
-  },
-  {
-    key: "group",
-    en: "Group Photos",
-    ar: "صور جماعية",
-    img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&h=700&fit=crop&q=80",
-  },
-] as const;
-
 function SectionHead({
   icon: Icon,
   eyebrow,
@@ -193,7 +172,7 @@ function FacebookCarousel({
   );
 }
 
-function WhatsAppPrivacyGrid({
+function WhatsAppGrid({
   shots,
   onZoom,
   locale,
@@ -213,18 +192,15 @@ function WhatsAppPrivacyGrid({
           onClick={() => onZoom(s.imageUrl)}
           className="group relative block w-full break-inside-avoid overflow-hidden rounded-2xl border border-[#25D366]/25 bg-card text-start shadow-sm ring-1 ring-black/5 transition-transform hover:-translate-y-0.5"
         >
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden bg-muted">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={s.imageUrl}
               alt={s.caption || s.studentName || "WhatsApp conversation"}
               loading="lazy"
-              className="w-full blur-[6px] scale-105 transition duration-500 group-hover:blur-[4px]"
-            />
-            {/* Soften top strip (names / avatars) a bit more */}
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-white/40 to-transparent backdrop-blur-[2px]"
-              aria-hidden
+              decoding="async"
+              style={{ filter: "none" }}
+              className="block w-full object-cover object-top [filter:none!important]"
             />
             <span className="absolute start-2.5 top-2.5 inline-flex max-w-[calc(100%-1.25rem)] items-center gap-1.5 rounded-full bg-[#25D366] px-2.5 py-1 text-[0.65rem] font-bold leading-tight text-white shadow-md">
               <BadgeCheck className="size-3.5 shrink-0" />
@@ -238,18 +214,16 @@ function WhatsAppPrivacyGrid({
               <MessageCircle className="size-3" />
             </span>
             <div className="min-w-0">
-              <p className="text-[0.7rem] font-semibold text-[#128C7E]">
-                {ar ? "خصوصية الخريج محمية" : "Graduate privacy protected"}
-              </p>
+              {s.studentName ? (
+                <p className="truncate text-xs font-semibold">{s.studentName}</p>
+              ) : null}
               {s.caption ? (
                 <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                   {s.caption}
                 </p>
               ) : (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {ar
-                    ? "اضغط لعرض المحادثة"
-                    : "Tap to view conversation"}
+                  {ar ? "اضغط لعرض المحادثة" : "Tap to view conversation"}
                 </p>
               )}
             </div>
@@ -286,9 +260,18 @@ export function ReviewsShowcase({
   const whatsapp = reviews
     .filter((r) => r.kind === "whatsapp" && r.imageUrl)
     .sort(byRank);
+  // Ceremony photos, uploaded from admin → Marketing → Reviews → Graduation
+  // Gallery. `graduation` is the capstone-project video kind, not these.
+  const gallery = reviews
+    .filter((r) => r.kind === "gallery" && r.imageUrl)
+    .sort(byRank);
 
   const empty =
-    !videos.length && !grad.length && !facebook.length && !whatsapp.length;
+    !videos.length &&
+    !grad.length &&
+    !facebook.length &&
+    !whatsapp.length &&
+    !gallery.length;
 
   return (
     <div className="space-y-16">
@@ -379,70 +362,62 @@ export function ReviewsShowcase({
             eyebrow={tr("From WhatsApp", "من واتساب")}
             title={tr("Messages From Healthcare Professionals", "رسائل من متخصصي الرعاية الصحية")}
             subtitle={tr(
-              "Real graduate messages — names and faces are blurred to protect privacy.",
-              "رسائل حقيقية من الخريجين — الأسماء والصور مطموسة لحماية الخصوصية.",
+              "Real graduate messages shared after their programs.",
+              "رسائل حقيقية من الخريجين بعد برامجهم.",
             )}
           />
-          <WhatsAppPrivacyGrid shots={whatsapp} onZoom={setZoom} locale={locale} />
+          <WhatsAppGrid shots={whatsapp} onZoom={setZoom} locale={locale} />
         </section>
       )}
 
-      {/* Graduation Gallery — strongest social proof */}
-      <section>
-        <SectionHead
-          icon={GraduationCap}
-          eyebrow={tr("Capstone & ceremonies", "المشاريع والاحتفالات")}
-          title={tr("Graduation Gallery", "معرض التخرج")}
-          subtitle={tr(
-            "Ceremonies, certificates, and group moments — our strongest social proof.",
-            "احتفالات وشهادات ولحظات جماعية — أقوى دليل اجتماعي لدينا.",
-          )}
-        />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {GALLERY_PLACEHOLDERS.map((g) => {
-            const title = ar ? g.ar : g.en;
-            return (
-              <button
-                key={g.key}
-                type="button"
-                onClick={() => setZoom(g.img)}
-                className="group overflow-hidden rounded-2xl border border-blue-100 bg-white text-start shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={g.img}
-                    alt={title}
-                    fill
-                    sizes="(max-width:768px) 100vw, 33vw"
-                    className="object-cover transition duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#051a4a]/70 via-transparent to-transparent opacity-80" />
-                  <p className="absolute inset-x-0 bottom-0 px-4 py-3 font-heading text-base font-bold text-white">
-                    {title}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-          {grad
-            .filter((g) => g.imageUrl)
-            .map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => setZoom(g.imageUrl)}
-                className="group overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={g.imageUrl}
-                  alt={g.caption || g.studentName || "Graduation"}
-                  className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105"
-                />
-              </button>
-            ))}
-        </div>
-      </section>
+      {/* Graduation Gallery — real ceremony photos, gated like every other
+          section: an empty gallery shows nothing rather than stock imagery. */}
+      {gallery.length > 0 && (
+        <section>
+          <SectionHead
+            icon={GraduationCap}
+            eyebrow={tr("Capstone & ceremonies", "المشاريع والاحتفالات")}
+            title={tr("Graduation Gallery", "معرض التخرج")}
+            subtitle={tr(
+              "Ceremonies, certificates, and group moments — our strongest social proof.",
+              "احتفالات وشهادات ولحظات جماعية — أقوى دليل اجتماعي لدينا.",
+            )}
+          />
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {gallery.map((g) => {
+              const title = [g.studentName, g.role].filter(Boolean).join(" · ") || g.caption;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setZoom(g.imageUrl)}
+                  className="group overflow-hidden rounded-2xl border border-blue-100 bg-white text-start shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <Image
+                      src={g.imageUrl}
+                      alt={g.caption || g.studentName || tr("Graduation", "التخرج")}
+                      fill
+                      sizes="(max-width:768px) 100vw, 33vw"
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                    />
+                    {/* The caption overlay is only worth its contrast cost when
+                        there is something to say. */}
+                    {title && (
+                      <>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#051a4a]/70 via-transparent to-transparent opacity-80" />
+                        <p className="absolute inset-x-0 bottom-0 px-4 py-3 font-heading text-base font-bold text-white">
+                          {title}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Lightbox */}
       {zoom && (

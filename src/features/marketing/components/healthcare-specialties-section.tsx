@@ -38,38 +38,48 @@ export async function HealthcareSpecialtiesSection() {
   const t = await getTranslations("Marketing");
 
   return (
-    <section className="relative overflow-hidden border-y border-[#e8c14d]/30">
-      {/* Modern golden wash — warm cream → champagne → soft amber */}
+    <section className="relative overflow-hidden border-y border-[#8a6a12]/50">
+      {/* Darker premium gold — bronze → antique gold → deep champagne */}
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#fffdf7] via-[#fef6e4] to-[#f5e6c8]"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#3d2e0a] via-[#5c4512] to-[#2a1f08]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.45]"
+        className="pointer-events-none absolute inset-0 opacity-90"
         style={{
           backgroundImage:
-            "radial-gradient(ellipse 80% 50% at 20% 0%, rgba(244,196,48,0.35), transparent 55%), radial-gradient(ellipse 60% 40% at 90% 100%, rgba(212,160,18,0.2), transparent 50%)",
+            "radial-gradient(ellipse 70% 55% at 15% 10%, rgba(212,160,18,0.45), transparent 55%), radial-gradient(ellipse 55% 45% at 85% 90%, rgba(244,196,48,0.22), transparent 50%), radial-gradient(ellipse 40% 30% at 50% 50%, rgba(139,105,20,0.35), transparent 60%)",
         }}
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -left-24 top-8 size-72 rounded-full bg-[#f4c430]/25 blur-3xl"
+        className="pointer-events-none absolute -left-20 top-0 size-80 rounded-full bg-[#d4a012]/25 blur-3xl"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -right-16 bottom-4 size-64 rounded-full bg-amber-400/20 blur-3xl"
+        className="pointer-events-none absolute -right-16 bottom-0 size-72 rounded-full bg-[#f4c430]/15 blur-3xl"
+        aria-hidden
+      />
+      {/* Subtle premium grain */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.12]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, rgba(255,220,140,0.5) 1px, transparent 0)",
+          backgroundSize: "18px 18px",
+        }}
         aria-hidden
       />
 
       <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a7209]">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#f4c430]">
             {t("specialtiesLabel")}
           </p>
-          <h2 className="mt-2 text-balance font-heading text-2xl font-bold tracking-tight text-[#0a2f7a] sm:text-3xl lg:text-[2rem]">
+          <h2 className="mt-2 text-balance font-heading text-2xl font-bold tracking-tight text-[#fff8e7] sm:text-3xl lg:text-[2rem]">
             {t("specialtiesTitle")}
           </h2>
-          <p className="mt-3 text-pretty leading-relaxed text-[#3d4f6f]">
+          <p className="mt-3 text-pretty leading-relaxed text-[#e8d5a3]/90">
             {t("specialtiesSubtitle")}
           </p>
         </div>
@@ -79,15 +89,15 @@ export async function HealthcareSpecialtiesSection() {
             <Link
               key={item.key}
               href="/courses"
-              className="group flex min-h-[88px] items-center gap-3 rounded-2xl border border-[#f4c430]/25 bg-white/85 p-4 shadow-sm shadow-amber-900/5 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-[#d4a012]/55 hover:bg-white hover:shadow-lg hover:shadow-amber-900/10 sm:p-5"
+              className="group flex min-h-[88px] items-center gap-3 rounded-2xl border border-[#0b3fa8]/15 bg-gradient-to-br from-white via-white to-[#fef6e4]/90 p-4 shadow-md shadow-[#0a2f7a]/15 ring-1 ring-[#f4c430]/20 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-[#0b3fa8]/35 hover:from-white hover:to-[#fef3d4] hover:shadow-lg hover:shadow-[#0a2f7a]/20 hover:ring-[#f4c430]/45 sm:p-5"
             >
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#fef3d4] to-[#f4c430]/30 text-[#9a7209] ring-1 ring-[#f4c430]/35 transition-all group-hover:from-[#f4c430] group-hover:to-[#e0b020] group-hover:text-[#051a4a] group-hover:ring-[#d4a012]/50">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#0b3fa8] to-[#0a2f7a] text-[#f4c430] shadow-sm ring-1 ring-[#f4c430]/35 transition-all group-hover:from-[#0a2f7a] group-hover:to-[#051a4a] group-hover:text-[#ffe08a] group-hover:ring-[#f4c430]/60">
                 <item.icon className="size-5" />
               </span>
               <span className="min-w-0 flex-1 font-heading text-sm font-bold leading-snug text-[#0a2f7a] sm:text-[15px]">
                 {t(item.key)}
               </span>
-              <ArrowRight className="size-4 shrink-0 text-[#c9a227]/60 transition-transform group-hover:translate-x-0.5 group-hover:text-[#9a7209] rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
+              <ArrowRight className="size-4 shrink-0 text-[#0b3fa8]/45 transition-transform group-hover:translate-x-0.5 group-hover:text-[#d4a012] rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
             </Link>
           ))}
         </div>

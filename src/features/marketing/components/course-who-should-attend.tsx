@@ -102,6 +102,7 @@ export function CourseWhoShouldAttend({
 
   return (
     <section
+      id="audience"
       dir={ar ? "rtl" : "ltr"}
       className={cn(
         "scroll-mt-32 overflow-hidden rounded-[2rem] bg-[#073fa3] px-5 py-8 text-white shadow-2xl shadow-blue-950/20 sm:px-8 sm:py-10 lg:px-10",

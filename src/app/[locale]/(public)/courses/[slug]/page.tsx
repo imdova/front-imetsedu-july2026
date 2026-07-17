@@ -449,6 +449,7 @@ export default async function CourseDetailPage({
   const navItems = [
     { id: "why-choose", label: tr("Highlights", "المميزات") },
     { id: "overview", label: tr("Why It Matters", "لماذا يهم") },
+    { id: "audience", label: tr("Who Should Join", "لمن البرنامج") },
     { id: "careers", label: tr("Career Outcomes", "المخرجات المهنية") },
     { id: "learn", label: t("whatYouLearn") },
     ...(course.modules?.length
@@ -772,6 +773,24 @@ export default async function CourseDetailPage({
                 ) : null}
               </CourseSectionBand>
 
+              {personas?.length ? (
+                <CourseSectionBand tone="muted" spacing="md">
+                  <CourseAudienceCards
+                    title={heads.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
+                    personas={personas}
+                    locale={locale}
+                  />
+                </CourseSectionBand>
+              ) : whoShouldAttend ? (
+                <CourseSectionBand tone="muted" spacing="md">
+                  <CourseWhoShouldAttend
+                    title={heads.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
+                    content={whoShouldAttend}
+                    locale={locale}
+                  />
+                </CourseSectionBand>
+              ) : null}
+
               <CourseSectionBand tone="white" spacing="lg">
                 <CourseCareerGrowth
                   locale={locale}
@@ -839,24 +858,6 @@ export default async function CourseDetailPage({
               {content.demandLine ? (
                 <CourseSectionBand tone="emphasis" spacing="md">
                   <CoursePullQuote locale={locale} quote={content.demandLine} />
-                </CourseSectionBand>
-              ) : null}
-
-              {personas?.length ? (
-                <CourseSectionBand tone="muted" spacing="md">
-                  <CourseAudienceCards
-                    title={heads.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
-                    personas={personas}
-                    locale={locale}
-                  />
-                </CourseSectionBand>
-              ) : whoShouldAttend ? (
-                <CourseSectionBand tone="muted" spacing="md">
-                  <CourseWhoShouldAttend
-                    title={heads.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
-                    content={whoShouldAttend}
-                    locale={locale}
-                  />
                 </CourseSectionBand>
               ) : null}
 

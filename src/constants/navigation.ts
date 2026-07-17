@@ -242,6 +242,12 @@ export const ADMIN_NAV: NavSection[] = [
         icon: "Users",
         adminOnly: true,
       },
+      {
+        titleKey: "instructorApplications",
+        href: "/admin/instructor-applications",
+        icon: "UserPlus",
+        adminOnly: true,
+      },
     ],
   },
   {

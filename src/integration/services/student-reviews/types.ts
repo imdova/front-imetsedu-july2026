@@ -1,4 +1,4 @@
-export type ReviewKind = "video" | "graduation" | "facebook" | "whatsapp";
+export type ReviewKind = "video" | "graduation" | "facebook" | "whatsapp" | "gallery";
 export type ReviewOrientation = "portrait" | "landscape";
 
 export interface StudentReviewDto {

@@ -46,6 +46,11 @@ import { MultiSelect } from "@/components/shared/multi-select";
 import { FormSection } from "../form-section";
 import { PricingSection } from "../pricing-section";
 import { SeoPanel } from "../seo-panel";
+import {
+  FinalCtaSection,
+  HeadingsSection,
+  RelatedCoursesSection,
+} from "../seo-closing-sections";
 import { UPLOAD_LIMITS } from "@/constants/course-options";
 
 interface Props {
@@ -481,6 +486,10 @@ function BasicInfoMain({
           />
         </div>
       </FormSection>
+
+      <FinalCtaSection />
+      <HeadingsSection />
+      <RelatedCoursesSection />
     </>
   );
 }
