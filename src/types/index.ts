@@ -132,12 +132,30 @@ export interface CourseRow {
   faqs?: { questionEn: string; questionAr: string; answerEn: string; answerAr: string }[];
   /** Admin-authored "Career Outcomes" ladder, entry level first. Empty/absent ⇒
    *  the bundled per-course ladder. */
-  careerRoles?: { titleEn: string; titleAr: string }[];
+  careerRoles?: { titleEn: string; titleAr: string; descriptionEn?: string; descriptionAr?: string }[];
   /** Admin-curated "Continue Your Professional Journey" slugs. Empty/absent ⇒
    *  same-category courses. */
   relatedCourseSlugs?: string[];
   /** Admin-authored closing CTA. Absent/blank ⇒ the bundled or shared line. */
   finalCta?: { headingEn?: string; headingAr?: string; bodyEn?: string; bodyAr?: string };
+  /** Admin-authored keyword H2s. Blank fields ⇒ the generic headings. */
+  headings?: {
+    whyChooseEn?: string; whyChooseAr?: string;
+    audienceEn?: string; audienceAr?: string;
+    learnEn?: string; learnAr?: string;
+    careersEn?: string; careersAr?: string;
+    aboutEn?: string; aboutAr?: string;
+    faqEn?: string; faqAr?: string;
+  };
+  /** Real student reviews typed into the course form (Media & Reviews).
+   *  Empty/absent ⇒ the page falls back to its bundled sample wall. */
+  textReviews?: {
+    reviewerName: string;
+    title: string;
+    reviewerImage: string;
+    rating: number;
+    comment: string;
+  }[];
   /** Admin-authored search metadata (course form → SEO panel). Any blank field
    *  falls back to copy derived from the course itself in `generateMetadata`. */
   seo?: {

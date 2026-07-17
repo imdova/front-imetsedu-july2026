@@ -136,6 +136,9 @@ export function courseLd(opts: {
   currency?: string;
   rating?: number;
   reviewCount?: number;
+  /** Real, admin-entered reviews only. Never sample or generated ones —
+   *  marking up invented reviews is a review-snippet policy violation. */
+  reviews?: { author: string; rating: number; body: string }[];
 }) {
   return {
     "@context": "https://schema.org",
@@ -155,6 +158,21 @@ export function courseLd(opts: {
             bestRating: 5,
             worstRating: 1,
           },
+        }
+      : {}),
+    ...(opts.reviews?.length
+      ? {
+          review: opts.reviews.map((r) => ({
+            "@type": "Review",
+            author: { "@type": "Person", name: r.author },
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: r.rating,
+              bestRating: 5,
+              worstRating: 1,
+            },
+            reviewBody: r.body,
+          })),
         }
       : {}),
     ...(opts.price && opts.price > 0

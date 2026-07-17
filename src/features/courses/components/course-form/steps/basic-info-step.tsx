@@ -1,8 +1,9 @@
 "use client";
 
+import * as React from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslations } from "next-intl";
-import { Wand2 } from "lucide-react";
+import { Wand2, ChevronDown } from "lucide-react";
 
 import type { CourseFormValues } from "@/validations/course-schema";
 import { slugify, cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -78,10 +80,16 @@ function BasicInfoMain({
   categories: CategoryLookup[];
   programTypes?: { value: string; label: string }[];
 }) {
-  const { control, setValue, getValues } = useFormContext<CourseFormValues>();
+  const { control, setValue, getValues, watch } = useFormContext<CourseFormValues>();
   const t = useTranslations("CourseForm");
   // Prefer live program types; keep the static list as a fallback.
   const programOptions = programTypes?.length ? programTypes : PROGRAM_TYPE_OPTIONS;
+  const [contentOpen, setContentOpen] = React.useState(true);
+  const [showDescriptionAr, setShowDescriptionAr] = React.useState(false);
+  const descriptionAr = watch("descriptionAr");
+  const hasDescriptionAr = Boolean(
+    typeof descriptionAr === "string" && descriptionAr.replace(/<[^>]*>/g, "").trim(),
+  );
 
   const regenerateSlug = () =>
     setValue("slug", slugify(getValues("titleEn")), { shouldValidate: true });
@@ -92,7 +100,7 @@ function BasicInfoMain({
         title={t("secIdentification")}
         description={t("secIdentificationDesc")}
       >
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <FormField
             control={control}
             name="titleEn"
@@ -174,6 +182,15 @@ function BasicInfoMain({
       </FormSection>
 
       <FormSection
+        title={t("secPricing")}
+        description={t("secPricingDesc")}
+        collapsible
+        defaultOpen
+      >
+        <PricingSection />
+      </FormSection>
+
+      <FormSection
         title={t("secClassification")}
         description={t("secClassificationDesc")}
       >
@@ -206,32 +223,6 @@ function BasicInfoMain({
           />
           <FormField
             control={control}
-            name="difficulty"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t("fDifficulty")} <Required />
-                </FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {DIFFICULTY_OPTIONS.map((d) => (
-                      <SelectItem key={d.value} value={d.value}>
-                        {d.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
             name="programType"
             render={({ field }) => (
               <FormItem>
@@ -248,6 +239,32 @@ function BasicInfoMain({
                     {programOptions.map((p) => (
                       <SelectItem key={p.value} value={p.value}>
                         {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="difficulty"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {t("fDifficulty")} <Required />
+                </FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {DIFFICULTY_OPTIONS.map((d) => (
+                      <SelectItem key={d.value} value={d.value}>
+                        {d.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -352,7 +369,13 @@ function BasicInfoMain({
         <FormDescription>{t("fHeroHint")}</FormDescription>
       </FormSection>
 
-      <FormSection title={t("secContent")} description={t("secContentDesc")}>
+      <FormSection
+        title={t("secContent")}
+        description={t("secContentDesc")}
+        collapsible
+        open={contentOpen}
+        onOpenChange={setContentOpen}
+      >
         <FormField
           control={control}
           name="descriptionEn"
@@ -372,28 +395,129 @@ function BasicInfoMain({
             </FormItem>
           )}
         />
+
+        <div className="rounded-lg border border-border/60 bg-muted/20">
+          <button
+            type="button"
+            onClick={() => setShowDescriptionAr((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-start text-sm font-medium text-foreground transition-colors hover:bg-muted/40"
+            aria-expanded={showDescriptionAr}
+          >
+            <span className="flex items-center gap-2">
+              {t("fDescriptionAr")}
+              {hasDescriptionAr && !showDescriptionAr ? (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                  {t("filled")}
+                </span>
+              ) : null}
+            </span>
+            <ChevronDown
+              className={cn(
+                "size-4 shrink-0 text-muted-foreground transition-transform",
+                showDescriptionAr && "rotate-180",
+              )}
+            />
+          </button>
+          {showDescriptionAr ? (
+            <div className="border-t border-border/60 px-3.5 pb-3.5 pt-3">
+              <FormField
+                control={control}
+                name="descriptionAr"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <RichTextEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        dir="rtl"
+                        placeholder={t("descPlaceholderAr")}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          ) : null}
+        </div>
+      </FormSection>
+
+      <FormSection title={t("secAudience")} description={t("secAudienceDesc")}>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <FormField
+            control={control}
+            name="whoCanAttendEn"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fAudienceEn")}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    rows={4}
+                    placeholder={t("audiencePlaceholderEn")}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="whoCanAttendAr"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("fAudienceAr")}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    dir="rtl"
+                    rows={4}
+                    placeholder={t("audiencePlaceholderAr")}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </FormSection>
+    </>
+  );
+}
+
+function BasicInfoSidebar({
+  instructors,
+  tags,
+}: {
+  instructors: InstructorLookup[];
+  tags: LookupItem[];
+}) {
+  const { control } = useFormContext<CourseFormValues>();
+  const t = useTranslations("CourseForm");
+
+  return (
+    <>
+      <FormSection title={t("secCoverPreview")}>
         <FormField
           control={control}
-          name="descriptionAr"
+          name="image"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("fDescriptionAr")}</FormLabel>
+              <FormLabel>
+                {t("fImage")} <Required />
+              </FormLabel>
               <FormControl>
-                <RichTextEditor
+                <ImageUpload
                   value={field.value}
                   onChange={field.onChange}
-                  dir="rtl"
-                  placeholder={t("descPlaceholderAr")}
+                  label={t("dropOrBrowse")}
+                  hint={t("imageHint")}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-      </FormSection>
-
-      <FormSection title={t("secPricing")} description={t("secPricingDesc")}>
-        <PricingSection />
       </FormSection>
 
       <FormSection title={t("secMediaExtras")}>
@@ -428,44 +552,6 @@ function BasicInfoMain({
                   hint={t("overviewPdfHint", {
                     size: UPLOAD_LIMITS.overviewPdfMb,
                   })}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </FormSection>
-    </>
-  );
-}
-
-function BasicInfoSidebar({
-  instructors,
-  tags,
-}: {
-  instructors: InstructorLookup[];
-  tags: LookupItem[];
-}) {
-  const { control } = useFormContext<CourseFormValues>();
-  const t = useTranslations("CourseForm");
-
-  return (
-    <>
-      <FormSection title={t("secCoverPreview")}>
-        <FormField
-          control={control}
-          name="image"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t("fImage")} <Required />
-              </FormLabel>
-              <FormControl>
-                <ImageUpload
-                  value={field.value}
-                  onChange={field.onChange}
-                  label={t("dropOrBrowse")}
-                  hint={t("imageHint")}
                 />
               </FormControl>
               <FormMessage />

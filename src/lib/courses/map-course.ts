@@ -142,8 +142,42 @@ export function mapCourse(raw: any): CourseRow {
           .map((r: Record<string, string>) => ({
             titleEn: r?.titleEn ?? "",
             titleAr: r?.titleAr ?? "",
+            descriptionEn: r?.descriptionEn ?? "",
+            descriptionAr: r?.descriptionAr ?? "",
           }))
           .filter((r: { titleEn: string; titleAr: string }) => r.titleEn || r.titleAr)
+      : undefined,
+    // Blank strings -> undefined so the page falls back per-heading rather than
+    // rendering an empty H2.
+    headings: raw?.headings && typeof raw.headings === "object"
+      ? {
+          whyChooseEn: raw.headings.whyChooseEn || undefined,
+          whyChooseAr: raw.headings.whyChooseAr || undefined,
+          audienceEn: raw.headings.audienceEn || undefined,
+          audienceAr: raw.headings.audienceAr || undefined,
+          learnEn: raw.headings.learnEn || undefined,
+          learnAr: raw.headings.learnAr || undefined,
+          careersEn: raw.headings.careersEn || undefined,
+          careersAr: raw.headings.careersAr || undefined,
+          aboutEn: raw.headings.aboutEn || undefined,
+          aboutAr: raw.headings.aboutAr || undefined,
+          faqEn: raw.headings.faqEn || undefined,
+          faqAr: raw.headings.faqAr || undefined,
+        }
+      : undefined,
+    // The form has saved these all along; nothing ever read them back out, so
+    // the public wall showed the bundled sample reviews instead. Rows with no
+    // name or no comment are dropped rather than rendered blank.
+    textReviews: Array.isArray(raw?.textReviews)
+      ? raw.textReviews
+          .map((r: Record<string, unknown>) => ({
+            reviewerName: String(r?.reviewerName ?? ""),
+            title: String(r?.title ?? ""),
+            reviewerImage: String(r?.reviewerImage ?? ""),
+            rating: typeof r?.rating === "number" ? r.rating : 0,
+            comment: String(r?.comment ?? ""),
+          }))
+          .filter((r: { reviewerName: string; comment: string }) => r.reviewerName && r.comment)
       : undefined,
     relatedCourseSlugs: Array.isArray(raw?.relatedCourseSlugs)
       ? raw.relatedCourseSlugs.filter((x: unknown): x is string => typeof x === "string" && !!x)

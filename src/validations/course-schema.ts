@@ -80,6 +80,8 @@ export const courseFaqSchema = z.object({
 export const careerRoleSchema = z.object({
   titleEn: z.string().trim(),
   titleAr: z.string().trim(),
+  descriptionEn: z.string().trim(),
+  descriptionAr: z.string().trim(),
 });
 
 /** Closing CTA on the public course page. All blank ⇒ the shared line. */
@@ -88,6 +90,22 @@ export const courseFinalCtaSchema = z.object({
   headingAr: z.string().trim(),
   bodyEn: z.string().trim(),
   bodyAr: z.string().trim(),
+});
+
+/** Keyword-bearing H2s. Blank ⇒ the page's generic heading for that section. */
+export const courseHeadingsSchema = z.object({
+  whyChooseEn: z.string().trim(),
+  whyChooseAr: z.string().trim(),
+  audienceEn: z.string().trim(),
+  audienceAr: z.string().trim(),
+  learnEn: z.string().trim(),
+  learnAr: z.string().trim(),
+  careersEn: z.string().trim(),
+  careersAr: z.string().trim(),
+  aboutEn: z.string().trim(),
+  aboutAr: z.string().trim(),
+  faqEn: z.string().trim(),
+  faqAr: z.string().trim(),
 });
 
 export const courseFormSchema = z.object({
@@ -165,6 +183,8 @@ export const courseFormSchema = z.object({
   careerRoles: z.array(careerRoleSchema),
   /** All-blank ⇒ the bundled/shared closing line. */
   finalCta: courseFinalCtaSchema,
+  /** Blank fields fall back to the page's generic headings. */
+  headings: courseHeadingsSchema,
   /** Curated "Continue Your Professional Journey" links, by slug.
    *  Empty ⇒ the page falls back to same-category courses. */
   relatedCourseSlugs: z.array(z.string()),
@@ -185,6 +205,7 @@ export type WhyChooseItemValues = z.infer<typeof whyChooseItemSchema>;
 export type CourseFaqValues = z.infer<typeof courseFaqSchema>;
 export type CareerRoleValues = z.infer<typeof careerRoleSchema>;
 export type CourseFinalCtaValues = z.infer<typeof courseFinalCtaSchema>;
+export type CourseHeadingsValues = z.infer<typeof courseHeadingsSchema>;
 export type LessonValues = z.infer<typeof lessonSchema>;
 export type ModuleValues = z.infer<typeof moduleSchema>;
 export type TextReviewValues = z.infer<typeof textReviewSchema>;

@@ -84,15 +84,17 @@ export async function generateMetadata({
     titleAr: course.titleAr,
     locale,
   }).pageSeo;
-  // Bespoke pageSeo wins; else admin SEO panel; else course name / description.
+  // Precedence: the admin SEO panel wins, then the bundled pageSeo, then the
+  // course name/description. It used to be the other way round, which made the
+  // SEO panel silently dead on exactly the courses that had bundled copy — an
+  // admin could edit the meta title and see no change, with nothing to explain it.
   const seo = course.seo;
-  const title =
-    (ar ? pageSeo?.metaTitleAr : pageSeo?.metaTitleEn) ||
-    (ar ? seo?.metaTitleAr : seo?.metaTitleEn) ||
-    courseName;
+  const adminTitle = ar ? seo?.metaTitleAr : seo?.metaTitleEn;
+  const bundledTitle = ar ? pageSeo?.metaTitleAr : pageSeo?.metaTitleEn;
+  const title = adminTitle || bundledTitle || courseName;
   const description =
-    (ar ? pageSeo?.metaDescriptionAr : pageSeo?.metaDescriptionEn) ||
     (ar ? seo?.metaDescriptionAr : seo?.metaDescriptionEn) ||
+    (ar ? pageSeo?.metaDescriptionAr : pageSeo?.metaDescriptionEn) ||
     metaDescription(
       ar ? course.descriptionAr : course.descriptionEn,
       `${courseName} — ${SITE_NAME}`,
@@ -100,9 +102,10 @@ export async function generateMetadata({
   const keywords = (ar ? seo?.metaKeywordsAr : seo?.metaKeywordsEn) ?? [];
   const path = `/courses/${slug}`;
   return mergeSeo(path, {
-    // Absolute when branded title already includes the school name (avoids
-    // layout template doubling: `… | IMETS · IMETS Medical School`).
-    title: pageSeo ? { absolute: title } : title,
+    // Absolute only when the winning title already carries the school name, so
+    // the layout template can't double it (`… | IMETS · IMETS Medical School`).
+    // Keyed to the title that won, not merely to pageSeo existing.
+    title: !adminTitle && bundledTitle ? { absolute: title } : title,
     description,
     ...(keywords.length ? { keywords } : {}),
     alternates: seoAlternates(path, locale),
@@ -141,9 +144,19 @@ export default async function CourseDetailPage({
     course.salePriceEGP > 0 && course.salePriceEGP < course.priceEGP;
   const price = onSale ? course.salePriceEGP : course.priceEGP;
   const previewVideoId = extractYouTubeVideoId(course.previewVideoUrl);
-  // Social proof for the price box (rating + students are real; reviews derived).
+  // Real reviews typed into the course form (Media & Reviews) are the source of
+  // truth for the wall, the rating and the review count. `mapCourse` already
+  // averages them into `course.rating`, so a real rating implies real reviews.
+  const realReviews = course.textReviews ?? [];
+  const hasRealReviews = realReviews.length > 0;
+
+  // Display-only fallbacks when a course has no reviews yet. These are NOT fed
+  // to structured data — see the JSON-LD below, which passes the real values so
+  // the markup stays silent rather than claiming a rating nobody left.
   const rating = course.rating > 0 ? course.rating : 4.9;
-  const reviews = Math.max(20, Math.round(course.students * 0.15));
+  const reviews = hasRealReviews
+    ? realReviews.length
+    : Math.max(20, Math.round(course.students * 0.15));
 
   // Long-form conversion + SEO content (bespoke for CPHQ, generic otherwise).
   const content = getCourseContent({
@@ -178,6 +191,18 @@ export default async function CourseDetailPage({
         .slice(0, 4);
 
   const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
+
+  // The wall: real reviews win. `country` has no field in the course form, so it
+  // stays blank rather than being guessed at.
+  const reviewWall = hasRealReviews
+    ? realReviews.map((r) => ({
+        name: r.reviewerName,
+        role: r.title,
+        country: "",
+        rating: r.rating,
+        text: r.comment,
+      }))
+    : content.reviews;
 
   // The 92% pass rate is an exam-prep claim — it only means anything for the two
   // courses that prepare for an external certification exam. Diplomas have no
@@ -223,11 +248,6 @@ export default async function CourseDetailPage({
   const description = pick(course.descriptionEn, course.descriptionAr);
   const whoShouldAttend = pick(course.whoCanAttendEn, course.whoCanAttendAr);
   const aboutBlock = buildCourseAbout(description, content.about);
-  const aboutHeading = content.headings?.about ?? (/diploma|دبلوم/i.test(
-    `${course.titleEn} ${course.titleAr}`,
-  )
-    ? tr("Why This Diploma Matters", "لماذا تهمّك هذه الدبلومة")
-    : tr("Why This Program Matters", "لماذا يهمّك هذا البرنامج"));
   const isHtml = (s: string) => /<[a-z][\s\S]*>/i.test(s);
   const richBlock = (title: string, contentHtml: string) =>
     contentHtml ? (
@@ -257,6 +277,29 @@ export default async function CourseDetailPage({
   const ctaBody =
     (dbCtaHeading ? pick(course.finalCta?.bodyEn, course.finalCta?.bodyAr) : "") ||
     (dbCtaHeading ? undefined : content.finalCta?.body);
+
+  // Headings precedence, per heading: what was typed on the course wins, then
+  // the bundled keyword heading, then the component's generic default (undefined).
+  const h = course.headings;
+  const heads = {
+    whyChoose: pick(h?.whyChooseEn, h?.whyChooseAr) || content.headings?.whyChoose,
+    audience: pick(h?.audienceEn, h?.audienceAr) || content.headings?.audience,
+    learn: pick(h?.learnEn, h?.learnAr) || content.headings?.learn,
+    careers: pick(h?.careersEn, h?.careersAr) || content.headings?.careers,
+    about: pick(h?.aboutEn, h?.aboutAr) || content.headings?.about,
+    faq: pick(h?.faqEn, h?.faqAr) || undefined,
+  };
+
+  // Personas and career-opportunity cards come from the bundled content only —
+  // they are not editable in the course form.
+  const personas = content.audience;
+  const opportunities = content.careerOpportunities;
+
+  const aboutHeading = heads.about ?? (/diploma|دبلوم/i.test(
+    `${course.titleEn} ${course.titleAr}`,
+  )
+    ? tr("Why This Diploma Matters", "لماذا تهمّك هذه الدبلومة")
+    : tr("Why This Program Matters", "لماذا يهمّك هذا البرنامج"));
 
   const courseUrl = localeUrl(`/courses/${slug}`, locale);
   const courseTitle = locale === "ar" ? course.titleAr : course.titleEn;
@@ -386,7 +429,10 @@ export default async function CourseDetailPage({
   // Array order IS the progression, so it is preserved as authored.
   const careerRoles = course.careerRoles?.length
     ? course.careerRoles
-        .map((r) => ({ title: pick(r.titleEn, r.titleAr) }))
+        .map((r) => ({
+          title: pick(r.titleEn, r.titleAr),
+          description: pick(r.descriptionEn, r.descriptionAr) || undefined,
+        }))
         .filter((r) => r.title)
     : content.careerRoles;
 
@@ -403,11 +449,11 @@ export default async function CourseDetailPage({
   const navItems = [
     { id: "why-choose", label: tr("Highlights", "المميزات") },
     { id: "overview", label: tr("Why It Matters", "لماذا يهم") },
+    { id: "careers", label: tr("Career Outcomes", "المخرجات المهنية") },
     { id: "learn", label: t("whatYouLearn") },
     ...(course.modules?.length
       ? [{ id: "curriculum", label: t("curriculum") }]
       : []),
-    { id: "careers", label: tr("Career Outcomes", "المخرجات المهنية") },
     { id: "journey", label: tr("Experience", "التجربة") },
     { id: "reviews", label: tr("Reviews", "التقييمات") },
     { id: "faq", label: tr("Admissions", "القبول") },
@@ -439,14 +485,27 @@ export default async function CourseDetailPage({
       <div className="space-y-4 p-5">
         {/* Urgency — only from a REAL cohort date. Was `today + 14 days`, i.e. a
             deadline that reset every day and never actually arrived. */}
-        {startsOn && (
+        {(startsOn || course.seatsLeft) && (
           <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-100 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-900/40">
             <Flame className="size-4 shrink-0" />
             <span>
-              {tr(
-                `Next cohort starts ${startsOn}`,
-                `الدفعة القادمة تبدأ ${startsOn}`,
-              )}
+              {/* Both facts come from the course record. `seatsLeft` was set on
+                  the model and mapped into CourseRow but never rendered — the
+                  earlier "18 seats left" was a literal, so this stays silent
+                  unless a real number is set. */}
+              {startsOn
+                ? tr(
+                    `Next cohort starts ${startsOn}`,
+                    `الدفعة القادمة تبدأ ${startsOn}`,
+                  )
+                : ""}
+              {startsOn && course.seatsLeft ? " · " : ""}
+              {course.seatsLeft
+                ? tr(
+                    `${course.seatsLeft} seats left`,
+                    `${course.seatsLeft} مقعد متبقٍ`,
+                  )
+                : ""}
             </span>
           </div>
         )}
@@ -577,8 +636,17 @@ export default async function CourseDetailPage({
             locale,
             price,
             currency: "EGP",
-            rating: course.rating > 0 ? course.rating : undefined,
-            reviewCount: course.rating > 0 ? reviews : undefined,
+            // Real reviews only. A course with none emits no rating and no
+            // Review markup — silence beats claiming stars nobody gave.
+            rating: hasRealReviews && course.rating > 0 ? course.rating : undefined,
+            reviewCount: hasRealReviews ? realReviews.length : undefined,
+            reviews: hasRealReviews
+              ? realReviews.map((r) => ({
+                  author: r.reviewerName,
+                  rating: r.rating,
+                  body: r.comment,
+                }))
+              : undefined,
           }),
           breadcrumbLd([
             {
@@ -670,27 +738,9 @@ export default async function CourseDetailPage({
                     <CourseWhyThisDiploma
                       locale={locale}
                       cards={whyCards}
-                      title={content.headings?.whyChoose}
+                      title={heads.whyChoose}
                     />
                   </CourseSectionBand>
-
-                  {content.audience?.length ? (
-                    <CourseSectionBand tone="muted" spacing="md">
-                      <CourseAudienceCards
-                        title={content.headings?.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
-                        personas={content.audience}
-                        locale={locale}
-                      />
-                    </CourseSectionBand>
-                  ) : whoShouldAttend ? (
-                    <CourseSectionBand tone="muted" spacing="md">
-                      <CourseWhoShouldAttend
-                        title={content.headings?.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
-                        content={whoShouldAttend}
-                        locale={locale}
-                      />
-                    </CourseSectionBand>
-                  ) : null}
 
                 </div>
               </div>
@@ -722,9 +772,19 @@ export default async function CourseDetailPage({
                 ) : null}
               </CourseSectionBand>
 
+              <CourseSectionBand tone="white" spacing="lg">
+                <CourseCareerGrowth
+                  locale={locale}
+                  opportunities={opportunities}
+                  roles={careerRoles}
+                  title={heads.careers}
+                  demandLine={undefined}
+                />
+              </CourseSectionBand>
+
               <CourseSectionBand tone="white" spacing="lg" className="lg:mt-2">
                 <CourseWhatYouLearn
-                  title={content.headings?.learn ?? tr("What You'll Learn", "ماذا ستتعلّم")}
+                  title={heads.learn ?? tr("What You'll Learn", "ماذا ستتعلّم")}
                   subtitle={t("whatYouLearnLead")}
                   items={outcomes}
                   locale={locale}
@@ -782,15 +842,23 @@ export default async function CourseDetailPage({
                 </CourseSectionBand>
               ) : null}
 
-              <CourseSectionBand tone="white" spacing="lg">
-                <CourseCareerGrowth
-                  locale={locale}
-                  opportunities={content.careerOpportunities}
-                  roles={careerRoles}
-                  title={content.headings?.careers}
-                  demandLine={undefined}
-                />
-              </CourseSectionBand>
+              {personas?.length ? (
+                <CourseSectionBand tone="muted" spacing="md">
+                  <CourseAudienceCards
+                    title={heads.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
+                    personas={personas}
+                    locale={locale}
+                  />
+                </CourseSectionBand>
+              ) : whoShouldAttend ? (
+                <CourseSectionBand tone="muted" spacing="md">
+                  <CourseWhoShouldAttend
+                    title={heads.audience ?? tr("Who This Program Is For", "لمن هذا البرنامج")}
+                    content={whoShouldAttend}
+                    locale={locale}
+                  />
+                </CourseSectionBand>
+              ) : null}
 
               <CourseSectionBand tone="emphasis" spacing="lg">
                 <CourseLearningExperience locale={locale} />
@@ -815,13 +883,13 @@ export default async function CourseDetailPage({
                     rating={rating}
                     reviewCount={reviews}
                     distribution={distribution}
-                    reviews={content.reviews}
+                    reviews={reviewWall}
                   />
                 </div>
               </CourseSectionBand>
 
               <CourseSectionBand tone="muted" spacing="md">
-                <CourseFaq locale={locale} groups={faqGroups} />
+                <CourseFaq locale={locale} groups={faqGroups} title={heads.faq} />
               </CourseSectionBand>
 
               {content.seoSections.length > 0 && (

@@ -1,7 +1,9 @@
 "use client";
 
+import * as React from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslations } from "next-intl";
+import { ChevronDown } from "lucide-react";
 
 import type { CourseFormValues } from "@/validations/course-schema";
 import { CURRENCIES } from "@/constants/course-options";
@@ -35,10 +37,149 @@ const CURRENCY_STYLES: Record<
   },
 };
 
-/** Stacked currency rows — Price, Sale price, Discount (%) per row. */
+function CurrencyRow({
+  currencyKey,
+  control,
+  t,
+  onPriceChange,
+  recalcDiscount,
+  recalcSalePrice,
+}: {
+  currencyKey: CurrencyKey;
+  control: ReturnType<typeof useFormContext<CourseFormValues>>["control"];
+  t: ReturnType<typeof useTranslations>;
+  onPriceChange: (key: CurrencyKey) => void;
+  recalcDiscount: (key: CurrencyKey) => void;
+  recalcSalePrice: (key: CurrencyKey) => void;
+}) {
+  const style = CURRENCY_STYLES[currencyKey];
+
+  const priceLabel = () => {
+    if (currencyKey === "egp") return t("price");
+    if (currencyKey === "sar") return t("priceSar");
+    return t("priceUsd");
+  };
+
+  const salePriceLabel = () => {
+    if (currencyKey === "egp") return t("salePrice");
+    if (currencyKey === "sar") return t("salePriceSar");
+    return t("salePriceUsd");
+  };
+
+  return (
+    <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+      <div className="flex shrink-0 items-center gap-2.5 sm:w-28">
+        <span
+          className={cn(
+            "grid size-9 place-items-center rounded-full text-xs font-semibold",
+            style.badge,
+          )}
+        >
+          {currencyKey === "egp" ? "$" : style.label}
+        </span>
+        <span className="font-medium">{style.label}</span>
+      </div>
+
+      <div className="grid flex-1 gap-4 sm:grid-cols-3">
+        <FormField
+          control={control}
+          name={`pricing.${currencyKey}.price`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs text-muted-foreground">
+                {priceLabel()}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    onPriceChange(currencyKey);
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={`pricing.${currencyKey}.salePrice`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs text-muted-foreground">
+                {salePriceLabel()}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    recalcDiscount(currencyKey);
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={`pricing.${currencyKey}.discount`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs text-muted-foreground">
+                {t("discountPct")}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder="0"
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    recalcSalePrice(currencyKey);
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </div>
+  );
+}
+
+function hasOptionalPricing(pricing: CourseFormValues["pricing"] | undefined) {
+  if (!pricing) return false;
+  const keys: CurrencyKey[] = ["sar", "usd"];
+  return keys.some((key) => {
+    const row = pricing[key];
+    return (
+      Number(row?.price) > 0 ||
+      Number(row?.salePrice) > 0 ||
+      Number(row?.discount) > 0
+    );
+  });
+}
+
+/** Stacked currency rows — EGP shown by default; SAR & USD optional behind collapse. */
 export function PricingSection() {
-  const { control, setValue, getValues } = useFormContext<CourseFormValues>();
+  const { control, setValue, getValues, watch } =
+    useFormContext<CourseFormValues>();
   const t = useTranslations("CourseForm");
+  const [showOptional, setShowOptional] = React.useState(false);
+  const pricing = watch("pricing");
+  const hasOptional = hasOptionalPricing(pricing);
 
   const recalcDiscount = (key: CurrencyKey) => {
     const { price, salePrice } = getValues(`pricing.${key}`);
@@ -58,127 +199,66 @@ export function PricingSection() {
     );
   };
 
-  // Price changed: if a discount is already set, keep it and recompute the
-  // sale price; otherwise fall back to deriving the discount from sale price.
   const onPriceChange = (key: CurrencyKey) => {
     const { discount } = getValues(`pricing.${key}`);
     if (Number(discount) > 0) recalcSalePrice(key);
     else recalcDiscount(key);
   };
 
-  const priceLabel = (key: CurrencyKey) => {
-    if (key === "egp") return t("price");
-    if (key === "sar") return t("priceSar");
-    return t("priceUsd");
-  };
-
-  const salePriceLabel = (key: CurrencyKey) => {
-    if (key === "egp") return t("salePrice");
-    if (key === "sar") return t("salePriceSar");
-    return t("salePriceUsd");
-  };
+  const optionalCurrencies = CURRENCIES.filter((c) => c.code !== "EGP");
 
   return (
     <div className="divide-y rounded-lg border">
-      {CURRENCIES.map((cur) => {
-        const key = cur.code.toLowerCase() as CurrencyKey;
-        const style = CURRENCY_STYLES[key];
+      <CurrencyRow
+        currencyKey="egp"
+        control={control}
+        t={t}
+        onPriceChange={onPriceChange}
+        recalcDiscount={recalcDiscount}
+        recalcSalePrice={recalcSalePrice}
+      />
 
-        return (
-          <div
-            key={cur.code}
-            className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center"
-          >
-            <div className="flex shrink-0 items-center gap-2.5 sm:w-28">
-              <span
-                className={cn(
-                  "grid size-9 place-items-center rounded-full text-xs font-semibold",
-                  style.badge,
-                )}
-              >
-                {key === "egp" ? "$" : style.label}
+      <div className="bg-muted/20">
+        <button
+          type="button"
+          onClick={() => setShowOptional((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-start text-sm font-medium text-foreground transition-colors hover:bg-muted/40"
+          aria-expanded={showOptional}
+        >
+          <span className="flex items-center gap-2">
+            {t("optionalCurrencies")}
+            {hasOptional && !showOptional ? (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                {t("filled")}
               </span>
-              <span className="font-medium">{cur.code}</span>
-            </div>
-
-            <div className="grid flex-1 gap-4 sm:grid-cols-3">
-              <FormField
-                control={control}
-                name={`pricing.${key}.price`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-muted-foreground">
-                      {priceLabel(key)}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          onPriceChange(key);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={control}
-                name={`pricing.${key}.salePrice`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-muted-foreground">
-                      {salePriceLabel(key)}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          recalcDiscount(key);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={control}
-                name={`pricing.${key}.discount`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-muted-foreground">
-                      {t("discountPct")}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          recalcSalePrice(key);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            ) : null}
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-4 shrink-0 text-muted-foreground transition-transform",
+              showOptional && "rotate-180",
+            )}
+          />
+        </button>
+        {showOptional ? (
+          <div className="divide-y border-t">
+            {optionalCurrencies.map((cur) => {
+              const key = cur.code.toLowerCase() as CurrencyKey;
+              return (
+                <CurrencyRow
+                  key={cur.code}
+                  currencyKey={key}
+                  control={control}
+                  t={t}
+                  onPriceChange={onPriceChange}
+                  recalcDiscount={recalcDiscount}
+                  recalcSalePrice={recalcSalePrice}
+                />
+              );
+            })}
           </div>
-        );
-      })}
+        ) : null}
+      </div>
     </div>
   );
 }

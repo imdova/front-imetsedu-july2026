@@ -65,6 +65,8 @@ export interface CourseFaq {
 export interface CareerRole {
   titleAr: string;
   titleEn: string;
+  descriptionEn: string;
+  descriptionAr: string;
 }
 
 export interface CourseFinalCta {
@@ -72,6 +74,15 @@ export interface CourseFinalCta {
   headingAr: string;
   bodyEn: string;
   bodyAr: string;
+}
+
+export interface CourseHeadings {
+  whyChooseEn: string; whyChooseAr: string;
+  audienceEn: string; audienceAr: string;
+  learnEn: string; learnAr: string;
+  careersEn: string; careersAr: string;
+  aboutEn: string; aboutAr: string;
+  faqEn: string; faqAr: string;
 }
 
 export interface PricingDetails {
@@ -107,6 +118,8 @@ export interface CourseFormData {
   relatedCourseSlugs: string[];
   /** Closing CTA; all-blank ⇒ the shared line. */
   finalCta: CourseFinalCta;
+  /** Keyword H2s; blank ⇒ generic headings. */
+  headings: CourseHeadings;
   pricing: {
     egp: PricingDetails;
     sar: PricingDetails;

@@ -22,6 +22,7 @@ import type {
   CareerRoleValues,
   CourseFinalCtaValues,
   CourseFormValues,
+  CourseHeadingsValues,
   CourseFaqValues,
   WhyChooseItemValues,
 } from "@/validations/course-schema";
@@ -111,46 +112,6 @@ function StructureMain() {
         </div>
       </FormSection>
 
-      <FormSection title={t("secAudience")} description={t("secAudienceDesc")}>
-        <div className="grid gap-5 lg:grid-cols-2">
-          <FormField
-            control={control}
-            name="whoCanAttendEn"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("fAudienceEn")}</FormLabel>
-                <FormControl>
-                  <Textarea
-                    rows={4}
-                    placeholder={t("audiencePlaceholderEn")}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="whoCanAttendAr"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("fAudienceAr")}</FormLabel>
-                <FormControl>
-                  <Textarea
-                    dir="rtl"
-                    rows={4}
-                    placeholder={t("audiencePlaceholderAr")}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-      </FormSection>
-
       <FormSection
         title={t("secCurriculum")}
         description={t("secCurriculumDesc")}
@@ -171,6 +132,7 @@ function StructureMain() {
       <FaqsSection />
       <CareerRolesSection />
       <FinalCtaSection />
+      <HeadingsSection />
       <RelatedCoursesSection />
     </>
   );
@@ -373,7 +335,8 @@ function CareerRolesSection() {
   const commit = (next: CareerRoleValues[]) =>
     setValue("careerRoles", next, { shouldDirty: true });
 
-  const add = () => commit([...roles, { titleEn: "", titleAr: "" }]);
+  const add = () =>
+    commit([...roles, { titleEn: "", titleAr: "", descriptionEn: "", descriptionAr: "" }]);
 
   const update = (index: number, patch: Partial<CareerRoleValues>) =>
     commit(roles.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -425,6 +388,22 @@ function CareerRolesSection() {
                       placeholder={t("careerRoleArPlaceholder")}
                     />
                   </Field>
+                  <Field label={t("careerRoleDescEn")}>
+                    <Textarea
+                      rows={2}
+                      value={role.descriptionEn}
+                      onChange={(e) => update(index, { descriptionEn: e.target.value })}
+                      placeholder={t("careerRoleDescPh")}
+                    />
+                  </Field>
+                  <Field label={t("careerRoleDescAr")}>
+                    <Textarea
+                      dir="rtl"
+                      rows={2}
+                      value={role.descriptionAr}
+                      onChange={(e) => update(index, { descriptionAr: e.target.value })}
+                    />
+                  </Field>
                 </div>
                 <div className="flex shrink-0 flex-col gap-1">
                   <Button
@@ -470,6 +449,55 @@ function CareerRolesSection() {
           ))}
         </div>
       )}
+    </FormSection>
+  );
+}
+
+/**
+ * Section H2s. Each blank field falls back on its own to the page's generic
+ * heading, so filling one in does not commit you to filling the rest.
+ */
+function HeadingsSection() {
+  const { watch, setValue } = useFormContext<CourseFormValues>();
+  const t = useTranslations("CourseForm");
+  const h = watch("headings");
+  // Placeholders show the real course name, so the example heading is the one
+  // this course should actually use. Passed as an ICU param, never interpolated
+  // into the message — angle brackets there would parse as a rich-text tag.
+  const program = watch("titleEn") || t("whyChooseTitleFallback");
+
+  const set = (patch: Partial<CourseHeadingsValues>) =>
+    setValue("headings", { ...h, ...patch }, { shouldDirty: true });
+
+  const rows: { key: keyof CourseHeadingsValues; arKey: keyof CourseHeadingsValues; label: string; ph: string }[] = [
+    { key: "whyChooseEn", arKey: "whyChooseAr", label: t("hWhyChoose"), ph: t("hWhyChoosePh", { program }) },
+    { key: "audienceEn", arKey: "audienceAr", label: t("hAudience"), ph: t("hAudiencePh", { program }) },
+    { key: "aboutEn", arKey: "aboutAr", label: t("hAbout"), ph: t("hAboutPh") },
+    { key: "learnEn", arKey: "learnAr", label: t("hLearn"), ph: t("hLearnPh", { program }) },
+    { key: "careersEn", arKey: "careersAr", label: t("hCareers"), ph: t("hCareersPh", { program }) },
+    { key: "faqEn", arKey: "faqAr", label: t("hFaq"), ph: t("hFaqPh") },
+  ];
+
+  return (
+    <FormSection title={t("secHeadings")} description={t("secHeadingsDesc")}>
+      <div className="space-y-3">
+        {rows.map((r) => (
+          <div key={r.key} className="grid gap-3 sm:grid-cols-[10rem_1fr_1fr] sm:items-center">
+            <span className="text-xs font-medium text-muted-foreground">{r.label}</span>
+            <Input
+              value={h?.[r.key] ?? ""}
+              onChange={(e) => set({ [r.key]: e.target.value } as Partial<CourseHeadingsValues>)}
+              placeholder={r.ph}
+            />
+            <Input
+              dir="rtl"
+              value={h?.[r.arKey] ?? ""}
+              onChange={(e) => set({ [r.arKey]: e.target.value } as Partial<CourseHeadingsValues>)}
+              placeholder={t("hArabicPh")}
+            />
+          </div>
+        ))}
+      </div>
     </FormSection>
   );
 }

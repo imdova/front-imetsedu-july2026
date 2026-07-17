@@ -7,7 +7,11 @@
  * `undefined`/`[]` and the page skips them.
  */
 
-export type CareerRole = { title: string };
+export type CareerRole = {
+  title: string;
+  /** One line on what the role does. Optional — a title-only rung is valid. */
+  description?: string;
+};
 export type CareerOpportunity = {
   title: string;
   /** One-line role description — keeps the card scannable but richer. */
@@ -120,7 +124,8 @@ export function resolveModuleOutcomes(
   if (slug !== "hospital-management-diploma") return [];
   const ar = isAr(locale);
   const t = moduleTitle.toLowerCase();
-  const has = (...keys: string[]) => keys.some((k) => t.includes(k.toLowerCase()));
+  const has = (...keys: string[]) =>
+    keys.some((k) => t.includes(k.toLowerCase()));
 
   if (has("quality", "accreditation", "جودة", "اعتماد")) {
     return ar
@@ -135,7 +140,10 @@ export function resolveModuleOutcomes(
           "Measure healthcare performance",
         ];
   }
-  if (has("leadership", "management", "قيادة", "إدارة") && !has("hospital", "operations", "مستشف", "تشغيل")) {
+  if (
+    has("leadership", "management", "قيادة", "إدارة") &&
+    !has("hospital", "operations", "مستشف", "تشغيل")
+  ) {
     return ar
       ? [
           "قيادة فرق الرعاية الصحية بثقة",
@@ -237,14 +245,18 @@ export function resolveModuleTopics(
   if (slug !== "hospital-management-diploma") return [];
   const ar = isAr(locale);
   const t = moduleTitle.toLowerCase();
-  const has = (...keys: string[]) => keys.some((k) => t.includes(k.toLowerCase()));
+  const has = (...keys: string[]) =>
+    keys.some((k) => t.includes(k.toLowerCase()));
 
   if (has("quality", "accreditation", "جودة", "اعتماد")) {
     return ar
       ? ["تحسين الجودة", "سلامة المرضى", "مؤشرات الأداء"]
       : ["Quality Improvement", "Patient Safety", "Performance"];
   }
-  if (has("leadership", "management", "قيادة", "إدارة") && !has("hospital", "operations", "مستشف", "تشغيل")) {
+  if (
+    has("leadership", "management", "قيادة", "إدارة") &&
+    !has("hospital", "operations", "مستشف", "تشغيل")
+  ) {
     return ar
       ? ["القيادة", "الفرق", "الثقافة المؤسسية"]
       : ["Leadership", "Teams", "Culture"];
@@ -281,11 +293,15 @@ export function resolveModuleTopics(
 }
 
 /** Six cards: Why Choose + Benefits + Why Study — no duplicate "what is" essay. */
-function whyThisDiplomaCards(locale: string): { title: string; body: string }[] {
+function whyThisDiplomaCards(
+  locale: string,
+): { title: string; body: string }[] {
   const ar = isAr(locale);
   return [
     {
-      title: ar ? "دبلومة معترف بها دوليًا" : "Internationally Recognized Diploma",
+      title: ar
+        ? "دبلومة معترف بها دوليًا"
+        : "Internationally Recognized Diploma",
       body: ar
         ? "منهج مبني على أطر وممارسات المستشفيات العالمية — شهادة موثّقة يقدّرها أصحاب العمل."
         : "Curriculum built on global hospital frameworks — a verifiable credential employers recognize.",
@@ -297,7 +313,9 @@ function whyThisDiplomaCards(locale: string): { title: string; body: string }[] 
         : "Instructors who have managed real hospital operations and teach what actually works on the floor.",
     },
     {
-      title: ar ? "مهارات تشغيل وتمويل وجودة" : "Operations, Finance & Quality Skills",
+      title: ar
+        ? "مهارات تشغيل وتمويل وجودة"
+        : "Operations, Finance & Quality Skills",
       body: ar
         ? "تخطيط تشغيلي، موازنات، مؤشرات أداء، وتحسين جودة — أدوات تستخدمها فورًا في عملك."
         : "Operations planning, budgets, KPIs, and quality improvement — tools you can apply at work immediately.",
@@ -361,7 +379,9 @@ function defaultReviews(locale: string): CourseReview[] {
     },
     {
       name: ar ? "خالد العتيبي" : "Khaled Al-Otaibi",
-      role: ar ? "منسّق اعتماد المستشفيات" : "Hospital Accreditation Coordinator",
+      role: ar
+        ? "منسّق اعتماد المستشفيات"
+        : "Hospital Accreditation Coordinator",
       country: ar ? "قطر 🇶🇦" : "Qatar 🇶🇦",
       rating: 5,
       text: ar
@@ -394,10 +414,18 @@ function cphqContent(locale: string): CourseContent {
   const ar = isAr(locale);
   return {
     headings: {
-      whyChoose: ar ? "لماذا تختار برنامج CPHQ من IMETS" : "Why Choose the IMETS CPHQ Preparation Program",
-      audience: ar ? "لمن برنامج CPHQ هذا" : "Who Should Join This CPHQ Preparation Program",
-      learn: ar ? "ماذا ستتعلّم في برنامج CPHQ" : "What You'll Learn in This CPHQ Preparation Program",
-      careers: ar ? "الفرص المهنية بعد شهادة CPHQ" : "Career Opportunities After CPHQ Certification",
+      whyChoose: ar
+        ? "لماذا تختار برنامج CPHQ من IMETS"
+        : "Why Choose the IMETS CPHQ Preparation Program",
+      audience: ar
+        ? "لمن برنامج CPHQ هذا"
+        : "Who Should Join This CPHQ Preparation Program",
+      learn: ar
+        ? "ماذا ستتعلّم في برنامج CPHQ"
+        : "What You'll Learn in This CPHQ Preparation Program",
+      careers: ar
+        ? "الفرص المهنية بعد شهادة CPHQ"
+        : "Career Opportunities After CPHQ Certification",
     },
     relatedSlugs: [
       "healthcare-quality-management-diploma",
@@ -409,8 +437,12 @@ function cphqContent(locale: string): CourseContent {
         ? "المؤسسات الصحية في السعودية والإمارات وقطر وعُمان ومصر تبحث بشكل متزايد عن متخصصين مدرَّبين في جودة الرعاية الصحية وسلامة المرضى."
         : "Healthcare organizations across Saudi Arabia, UAE, Qatar, Oman and Egypt increasingly seek professionals trained in healthcare quality and patient safety.",
       more: ar
-        ? ["برنامج IMETS للتحضير لشهادة CPHQ يساعدك على بناء معرفة عملية، والاستعداد بثقة لامتحان CPHQ الدولي، وتطوير مهارات تقدّرها المستشفيات في جميع أنحاء الشرق الأوسط."]
-        : ["The IMETS CPHQ Preparation Program helps you build practical knowledge, prepare confidently for the international CPHQ certification, and develop skills valued by hospitals across the Middle East."],
+        ? [
+            "برنامج IMETS للتحضير لشهادة CPHQ يساعدك على بناء معرفة عملية، والاستعداد بثقة لامتحان CPHQ الدولي، وتطوير مهارات تقدّرها المستشفيات في جميع أنحاء الشرق الأوسط.",
+          ]
+        : [
+            "The IMETS CPHQ Preparation Program helps you build practical knowledge, prepare confidently for the international CPHQ certification, and develop skills valued by hospitals across the Middle East.",
+          ],
     },
     audience: [
       {
@@ -478,7 +510,9 @@ function cphqContent(locale: string): CourseContent {
       ? "مع توسّع برامج الاعتماد مثل JCI وCBAHI وGAHAR، تستمر الحاجة لمتخصصي الجودة في مستشفيات الخليج والشرق الأوسط."
       : "As accreditation programs like JCI, CBAHI and GAHAR expand, hospitals across the GCC and wider Middle East keep hiring for healthcare quality roles.",
     finalCta: {
-      heading: ar ? "مستعد لقيادة الجودة في مستشفاك؟" : "Ready to Lead Quality in Your Hospital?",
+      heading: ar
+        ? "مستعد لقيادة الجودة في مستشفاك؟"
+        : "Ready to Lead Quality in Your Hospital?",
       body: ar
         ? "استعد لامتحان CPHQ مع دفعة من متخصصي الجودة في الشرق الأوسط."
         : "Prepare for the CPHQ exam alongside a cohort of quality professionals across the Middle East.",
@@ -486,7 +520,9 @@ function cphqContent(locale: string): CourseContent {
     whyChoose: whyChooseReasons(locale),
     whyThisDiploma: whyThisDiplomaCards(locale),
     careerRoles: [
-      { title: ar ? "أخصائي جودة رعاية صحية" : "Healthcare Quality Specialist" },
+      {
+        title: ar ? "أخصائي جودة رعاية صحية" : "Healthcare Quality Specialist",
+      },
       { title: ar ? "أخصائي جودة أول" : "Senior Quality Specialist" },
       { title: ar ? "مشرف جودة" : "Quality Supervisor" },
       { title: ar ? "مدير جودة الرعاية الصحية" : "Healthcare Quality Manager" },
@@ -501,7 +537,9 @@ function cphqContent(locale: string): CourseContent {
           : "CPHQ (Certified Professional in Healthcare Quality) is the most globally recognized credential in healthcare quality, awarded by NAHQ. It proves your mastery of quality management, patient safety, data management, and accreditation — and it's in high demand across hospitals in the GCC and the wider Middle East.",
       },
       {
-        heading: ar ? "لماذا تصبح متخصصًا في جودة الرعاية الصحية؟" : "Why Become a Healthcare Quality Professional?",
+        heading: ar
+          ? "لماذا تصبح متخصصًا في جودة الرعاية الصحية؟"
+          : "Why Become a Healthcare Quality Professional?",
         body: ar
           ? "جودة الرعاية الصحية من أسرع المجالات نموًا في القطاع الطبي. مع توسّع برامج الاعتماد مثل JCI وCBAHI وGAHAR، أصبحت المستشفيات بحاجة ماسّة لمتخصصين يقودون التحسين المستمر. هذا مسار مهني مستقر، مؤثّر، ومطلوب في كل منشأة صحية."
           : "Healthcare quality is one of the fastest-growing fields in the medical sector. As accreditation programs like JCI, CBAHI, and GAHAR expand, hospitals urgently need professionals who can lead continuous improvement. It's a stable, high-impact career that's needed in every healthcare facility.",
@@ -516,10 +554,18 @@ function hospitalManagementContent(locale: string): CourseContent {
   const ar = isAr(locale);
   return {
     headings: {
-      whyChoose: ar ? "لماذا تختار دبلومة إدارة المستشفيات من IMETS" : "Why Choose the IMETS Hospital Management Diploma",
-      audience: ar ? "لمن دبلومة إدارة المستشفيات هذه" : "Who Should Join This Hospital Management Diploma",
-      learn: ar ? "ماذا ستتعلّم في دبلومة إدارة المستشفيات" : "What You'll Learn in This Hospital Management Diploma",
-      careers: ar ? "الفرص المهنية بعد دبلومة إدارة المستشفيات" : "Career Opportunities After a Hospital Management Diploma",
+      whyChoose: ar
+        ? "لماذا تختار دبلومة إدارة المستشفيات من IMETS"
+        : "Why Choose the IMETS Hospital Management Diploma",
+      audience: ar
+        ? "لمن دبلومة إدارة المستشفيات هذه"
+        : "Who Should Join This Hospital Management Diploma",
+      learn: ar
+        ? "ماذا ستتعلّم في دبلومة إدارة المستشفيات"
+        : "What You'll Learn in This Hospital Management Diploma",
+      careers: ar
+        ? "الفرص المهنية بعد دبلومة إدارة المستشفيات"
+        : "Career Opportunities After a Hospital Management Diploma",
     },
     relatedSlugs: [
       "healthcare-quality-management-diploma",
@@ -527,7 +573,9 @@ function hospitalManagementContent(locale: string): CourseContent {
       "healthcare-hr-management-diploma",
     ],
     finalCta: {
-      heading: ar ? "مستعد لقيادة تشغيل المستشفى؟" : "Ready to Lead Hospital Operations?",
+      heading: ar
+        ? "مستعد لقيادة تشغيل المستشفى؟"
+        : "Ready to Lead Hospital Operations?",
       body: ar
         ? "ابنِ مهارات القيادة واستعد لأدوار إدارية في المنشآت الصحية."
         : "Build leadership skills and prepare for management roles in hospitals.",
@@ -572,7 +620,9 @@ function hospitalManagementContent(locale: string): CourseContent {
               : "Yes. Most programs support flexible installment plans. Speak with admissions to confirm the plan for this diploma.",
           },
           {
-            q: ar ? "كم يستغرق إنهاء البرنامج؟" : "How long does it take to finish?",
+            q: ar
+              ? "كم يستغرق إنهاء البرنامج؟"
+              : "How long does it take to finish?",
             a: ar
               ? "معظم الدفعات تمتد عدة أشهر مع جلسات أسبوعية مباشرة. المدة الدقيقة تظهر حسب الدفعة على الصفحة."
               : "Most cohorts run for several months with weekly live sessions. Exact duration is shown per intake on the program page.",
@@ -607,7 +657,9 @@ function hospitalManagementContent(locale: string): CourseContent {
               : "Yes. You access materials, recordings, and assignments through your student portal throughout the program — and afterward for review.",
           },
           {
-            q: ar ? "هل يمكنني الدراسة وأنا أعمل بدوام كامل؟" : "Can I study while working full-time?",
+            q: ar
+              ? "هل يمكنني الدراسة وأنا أعمل بدوام كامل؟"
+              : "Can I study while working full-time?",
             a: ar
               ? "نعم. الجلسات تناسب المهنيين العاملين، والتسجيلات متاحة متى فاتك شيء."
               : "Yes. Sessions are scheduled for working professionals, and recordings cover anything you miss.",
@@ -630,7 +682,9 @@ function hospitalManagementContent(locale: string): CourseContent {
               : "Yes — a verifiable certificate of completion for your CV and LinkedIn after you meet the requirements.",
           },
           {
-            q: ar ? "هل يعترف أصحاب العمل بهذه الدبلومة؟" : "Do employers recognize this diploma?",
+            q: ar
+              ? "هل يعترف أصحاب العمل بهذه الدبلومة؟"
+              : "Do employers recognize this diploma?",
             a: ar
               ? "نعم. المنهج مبني على أطر مستشفيات عالمية، والشهادة موثّقة ويقدّرها أصحاب العمل في القطاع الصحي."
               : "Yes. The curriculum follows international hospital frameworks, and employers value this verifiable management credential.",
@@ -642,7 +696,9 @@ function hospitalManagementContent(locale: string): CourseContent {
               : "Through applied assignments and a final assessment — so you prove you can apply what you learned in a real operational context.",
           },
           {
-            q: ar ? "هل سيساعدني هذا في الترقية؟" : "Will this help me get promoted?",
+            q: ar
+              ? "هل سيساعدني هذا في الترقية؟"
+              : "Will this help me get promoted?",
             a: ar
               ? "نعم. تبني مهارات القيادة والتشغيل والجودة التي تبحث عنها لجان التوظيف للأدوار الإشرافية والإدارية."
               : "Yes. It builds the leadership, operations, and quality skills hiring managers look for in supervisor and management roles.",
@@ -677,7 +733,11 @@ function hospitalManagementContent(locale: string): CourseContent {
       { title: ar ? "مشرف وحدة" : "Unit Supervisor" },
       { title: ar ? "مدير قسم" : "Department Manager" },
       { title: ar ? "مدير عمليات المستشفى" : "Hospital Operations Manager" },
-      { title: ar ? "مدير / استشاري رعاية صحية" : "Healthcare Director / Consultant" },
+      {
+        title: ar
+          ? "مدير / استشاري رعاية صحية"
+          : "Healthcare Director / Consultant",
+      },
     ],
     careerOpportunities: [
       {
@@ -735,7 +795,6 @@ function hospitalManagementContent(locale: string): CourseContent {
   };
 }
 
-
 /**
  * Bespoke CIC content.
  *
@@ -760,10 +819,18 @@ function cicContent(locale: string): CourseContent {
   const ar = isAr(locale);
   return {
     headings: {
-      whyChoose: ar ? "لماذا تختار برنامج CIC من IMETS" : "Why Choose the IMETS CIC Preparation Program",
-      audience: ar ? "لمن برنامج CIC هذا" : "Who Should Join This CIC Preparation Program",
-      learn: ar ? "ماذا ستتعلّم في برنامج CIC" : "What You'll Learn in This CIC Preparation Program",
-      careers: ar ? "الفرص المهنية بعد شهادة CIC" : "Career Opportunities After CIC Certification",
+      whyChoose: ar
+        ? "لماذا تختار برنامج CIC من IMETS"
+        : "Why Choose the IMETS CIC Preparation Program",
+      audience: ar
+        ? "لمن برنامج CIC هذا"
+        : "Who Should Join This CIC Preparation Program",
+      learn: ar
+        ? "ماذا ستتعلّم في برنامج CIC"
+        : "What You'll Learn in This CIC Preparation Program",
+      careers: ar
+        ? "الفرص المهنية بعد شهادة CIC"
+        : "Career Opportunities After CIC Certification",
     },
     relatedSlugs: [
       "infection-control-diploma",
@@ -775,8 +842,12 @@ function cicContent(locale: string): CourseContent {
         ? "المستشفيات في الشرق الأوسط تُقيّم برامج مكافحة العدوى لديها وفق معايير اعتماد دولية، وتبحث عن متخصصين يستطيعون قيادة هذا العمل وإثبات كفاءتهم بشهادة معترف بها."
         : "Hospitals across the Middle East are assessed against international accreditation standards for infection prevention, and are looking for professionals who can lead that work and prove it with a recognised credential.",
       more: ar
-        ? ["برنامج IMETS للتحضير لشهادة CIC يساعدك على بناء معرفة عملية في الوقاية من العدوى ومكافحتها، والاستعداد بثقة لامتحان CIC الذي يصدره مجلس CBIC."]
-        : ["The IMETS CIC Preparation Program helps you build practical infection prevention and control knowledge, and prepare with confidence for the CIC examination awarded by CBIC."],
+        ? [
+            "برنامج IMETS للتحضير لشهادة CIC يساعدك على بناء معرفة عملية في الوقاية من العدوى ومكافحتها، والاستعداد بثقة لامتحان CIC الذي يصدره مجلس CBIC.",
+          ]
+        : [
+            "The IMETS CIC Preparation Program helps you build practical infection prevention and control knowledge, and prepare with confidence for the CIC examination awarded by CBIC.",
+          ],
     },
     audience: null,
     faqs: [
@@ -784,25 +855,33 @@ function cicContent(locale: string): CourseContent {
         title: ar ? "القبول" : "Admissions",
         items: [
           {
-            q: ar ? "هل شهادة CIC معترف بها دوليًا؟" : "Is CIC recognized internationally?",
+            q: ar
+              ? "هل شهادة CIC معترف بها دوليًا؟"
+              : "Is CIC recognized internationally?",
             a: ar
               ? "شهادة CIC يصدرها مجلس Certification Board of Infection Control and Epidemiology ‏(CBIC)، وهو المجلس المستقل المسؤول عن اعتماد متخصصي الوقاية من العدوى ومكافحتها. لا يضع CBIC أي قيد على جنسية المتقدّم أو بلده في شروط الأهلية المنشورة، والشهادة تُعرف على نطاق واسع في برامج اعتماد المستشفيات."
               : "CIC is awarded by the Certification Board of Infection Control and Epidemiology (CBIC), the independent board that certifies infection prevention and control professionals. CBIC's published eligibility requirements set no nationality or country restriction, and the credential is widely referenced in hospital accreditation programs.",
           },
           {
-            q: ar ? "من المؤهل لدخول امتحان CIC؟" : "Who is eligible for the CIC exam?",
+            q: ar
+              ? "من المؤهل لدخول امتحان CIC؟"
+              : "Who is eligible for the CIC exam?",
             a: ar
               ? "يشترط CBIC ثلاثة شروط معًا: أن تكون مسؤولًا مباشرة عن أنشطة الوقاية من العدوى ومكافحتها في وظيفتك الحالية؛ وأن تكون أنهيت تعليمًا جامعيًا في مجال صحي (طب، تمريض، مختبرات، صحة عامة، أحياء … وغيرها)؛ وأن تمتلك خبرة عمل: سنة واحدة بدوام كامل، أو سنتين بدوام جزئي، أو 3000 ساعة خلال السنوات الثلاث السابقة. الأهلية يحددها CBIC وحده — وليس IMETS. راجع cbic.org قبل التقديم."
               : "CBIC requires all three: you are directly responsible for infection prevention and control activities in your current role; you have completed post-secondary education in a health-related field (medicine, nursing, laboratory technology, public health, biology, and others); and you have work experience of at least one year full-time, or two years part-time, or 3,000 hours earned during the previous three years. Eligibility is decided by CBIC, not by IMETS — check cbic.org before you apply.",
           },
           {
-            q: ar ? "هل أحتاج خبرة في مكافحة العدوى؟" : "Do I need infection control experience?",
+            q: ar
+              ? "هل أحتاج خبرة في مكافحة العدوى؟"
+              : "Do I need infection control experience?",
             a: ar
               ? "للالتحاق ببرنامج IMETS: لا — يبدأ البرنامج من الأساسيات. لكن لدخول امتحان CIC نفسه: نعم — يشترط CBIC خبرة عملية (سنة بدوام كامل، أو سنتان بدوام جزئي، أو 3000 ساعة خلال ثلاث سنوات). البرنامج يجهّزك للامتحان، لكنه لا يمنحك الأهلية لدخوله."
               : "To join the IMETS program: no — it starts from the fundamentals. To sit the CIC exam itself: yes — CBIC requires practical experience (one year full-time, two years part-time, or 3,000 hours across three years). The program prepares you for the exam; it does not make you eligible for it.",
           },
           {
-            q: ar ? "هل يمكنني الحضور من السعودية؟" : "Can I attend from Saudi Arabia?",
+            q: ar
+              ? "هل يمكنني الحضور من السعودية؟"
+              : "Can I attend from Saudi Arabia?",
             a: ar
               ? "نعم. البرنامج أونلاين بالكامل، وطلابنا ينضمّون من السعودية والخليج والشرق الأوسط. كل ما تحتاجه هو اتصال بالإنترنت."
               : "Yes. The program is fully online and our students join from Saudi Arabia, the GCC and the wider Middle East. All you need is an internet connection.",
@@ -813,7 +892,9 @@ function cicContent(locale: string): CourseContent {
         title: ar ? "الدراسة والامتحان" : "Studying & the exam",
         items: [
           {
-            q: ar ? "كيف تُقدَّم الجلسات المباشرة؟" : "How are live classes delivered?",
+            q: ar
+              ? "كيف تُقدَّم الجلسات المباشرة؟"
+              : "How are live classes delivered?",
             a: ar
               ? "جلسات مباشرة أسبوعية عبر الإنترنت مع المدرّب، بالإضافة إلى مواد يمكنك مراجعتها بوتيرتك. تُسجَّل كل جلسة وتُضاف إلى حسابك، فإن فاتتك واحدة تجدها خلال ساعات."
               : "Live weekly online sessions with the instructor, plus material you can revisit at your own pace. Every session is recorded and added to your account, so a missed class is available within hours.",
@@ -859,10 +940,18 @@ function cicContent(locale: string): CourseContent {
     whyThisDiploma: whyThisDiplomaCards(locale),
     careerRoles: [
       { title: ar ? "ممرض مكافحة عدوى" : "Infection Control Nurse" },
-      { title: ar ? "أخصائي وقاية من العدوى أول" : "Senior Infection Preventionist" },
+      {
+        title: ar
+          ? "أخصائي وقاية من العدوى أول"
+          : "Senior Infection Preventionist",
+      },
       { title: ar ? "منسّق مكافحة العدوى" : "IPC Coordinator" },
       { title: ar ? "مدير مكافحة العدوى" : "Infection Control Manager" },
-      { title: ar ? "استشاري إقليمي للوقاية من العدوى" : "Regional Infection Prevention Consultant" },
+      {
+        title: ar
+          ? "استشاري إقليمي للوقاية من العدوى"
+          : "Regional Infection Prevention Consultant",
+      },
     ],
     careerOpportunities: [],
     seoSections: [
@@ -885,7 +974,9 @@ function cicContent(locale: string): CourseContent {
           : "Per CBIC (July 2026): the exam is multiple choice and consists of 150 questions, of which 135 count toward your score and 15 are unscored pretest items. It runs as two 90-minute sections, preceded by a 10-minute introduction and tutorial, separated by a 16-minute break, and followed by a 5-minute survey. Passing requires a scaled score of at least 700 on a 300–900 scale — not a percentage of questions answered correctly. The 135 scored questions are distributed across eight content domains. Exam details are set by CBIC and do change — CBIC has already published a revised content outline for 2027 — so always confirm at cbic.org.",
       },
       {
-        heading: ar ? "لماذا تختار IMETS للتحضير لشهادة CIC؟" : "Why Choose IMETS For CIC Preparation?",
+        heading: ar
+          ? "لماذا تختار IMETS للتحضير لشهادة CIC؟"
+          : "Why Choose IMETS For CIC Preparation?",
         body: ar
           ? "التحضير هنا مبني حول مجالات محتوى امتحان CIC الثمانية كما ينشرها CBIC، لا حول منهج عام في مكافحة العدوى. الجلسات مباشرة أسبوعيًا مع مدرّبين يعملون داخل منشآت صحية، وتُسجَّل كلها فتبقى متاحة للمراجعة قبل الامتحان. الشرح بالعربية والإنجليزية معًا، وهو ما يهم عند دراسة مصطلحات امتحان يُقدَّم بالإنجليزية. ونكون صريحين في أمر واحد: IMETS جهة تدريب مستقلة وليست تابعة لـ CBIC — نحن نجهّزك للامتحان، والشهادة يمنحها CBIC وحده."
           : "Preparation here is built around the eight CIC content domains as CBIC publishes them, not around a general infection control syllabus. Sessions are live and weekly with instructors who work inside healthcare facilities, and every one is recorded so it is there to revise before your exam date. Teaching runs in Arabic and English — which matters when you are learning the terminology of an exam sat in English. And we are straight about one thing: IMETS is an independent training provider, not affiliated with CBIC. We prepare you for the exam; only CBIC awards the credential.",
@@ -894,7 +985,6 @@ function cicContent(locale: string): CourseContent {
     reviews: defaultReviews(locale),
   };
 }
-
 
 /**
  * Bespoke Infection Control Diploma content.
@@ -928,10 +1018,18 @@ function infectionControlDiplomaContent(locale: string): CourseContent {
         "دبلومة مكافحة العدوى من IMETS: جلسات مباشرة أونلاين لمتخصصي الرعاية الصحية. مهارات عملية في الوقاية من العدوى، ومدرّبون خبراء، وشهادة إتمام.",
     },
     headings: {
-      whyChoose: ar ? "لماذا تختار دبلومة مكافحة العدوى من IMETS" : "Why Choose the IMETS Infection Control Diploma",
-      audience: ar ? "لمن دبلومة مكافحة العدوى هذه" : "Who Should Join This Infection Control Diploma",
-      learn: ar ? "ماذا ستتعلّم في دبلومة مكافحة العدوى" : "What You'll Learn in This Infection Control Diploma",
-      careers: ar ? "الفرص المهنية بعد دبلومة مكافحة العدوى" : "Career Opportunities After an Infection Control Diploma",
+      whyChoose: ar
+        ? "لماذا تختار دبلومة مكافحة العدوى من IMETS"
+        : "Why Choose the IMETS Infection Control Diploma",
+      audience: ar
+        ? "لمن دبلومة مكافحة العدوى هذه"
+        : "Who Should Join This Infection Control Diploma",
+      learn: ar
+        ? "ماذا ستتعلّم في دبلومة مكافحة العدوى"
+        : "What You'll Learn in This Infection Control Diploma",
+      careers: ar
+        ? "الفرص المهنية بعد دبلومة مكافحة العدوى"
+        : "Career Opportunities After an Infection Control Diploma",
     },
     // Verified against the live catalogue on 2026-07-16. `healthcare-quality-diploma`
     // and `healthcare-hr-diploma` do NOT exist — the real slugs carry "-management-".
@@ -955,15 +1053,21 @@ function infectionControlDiplomaContent(locale: string): CourseContent {
         ? "عدوى الرعاية الصحية من أكثر ما يُقاس في برامج الاعتماد بمستشفيات الخليج والشرق الأوسط. المنشآت تحتاج متخصص وقاية من العدوى يقود الوقاية من العدوى في المستشفى يوميًا — ترصّد العدوى، ووبائيات المستشفيات، وسلامة المرضى — لا من يعرفها نظريًا فقط."
         : "Healthcare-associated infections are among the most closely measured outcomes in GCC and Middle East hospital accreditation. Facilities need an infection prevention professional who can run hospital infection prevention day to day — infection surveillance, hospital epidemiology and patient safety — not only know it in theory.",
       more: ar
-        ? ["دبلومة مكافحة العدوى من IMETS تنقلك من الممارسة الإكلينيكية إلى الوقاية من العدوى: التحقيق في الفاشيات، والتعقيم، وصحة العاملين — بمنهج قابل للتطبيق داخل منشأتك من الأسبوع الأول، سواء كنت تستهدف دور ممرض مكافحة عدوى أو أخصائي وقاية من العدوى."]
-        : ["The IMETS Infection Control Diploma moves you from clinical practice into infection prevention: outbreak investigation, sterilisation and occupational health — taught so you can apply it inside your own facility from week one, whether you are aiming at an infection control nurse or infection prevention specialist role."],
+        ? [
+            "دبلومة مكافحة العدوى من IMETS تنقلك من الممارسة الإكلينيكية إلى الوقاية من العدوى: التحقيق في الفاشيات، والتعقيم، وصحة العاملين — بمنهج قابل للتطبيق داخل منشأتك من الأسبوع الأول، سواء كنت تستهدف دور ممرض مكافحة عدوى أو أخصائي وقاية من العدوى.",
+          ]
+        : [
+            "The IMETS Infection Control Diploma moves you from clinical practice into infection prevention: outbreak investigation, sterilisation and occupational health — taught so you can apply it inside your own facility from week one, whether you are aiming at an infection control nurse or infection prevention specialist role.",
+          ],
     },
     faqs: [
       {
         title: ar ? "من يمكنه الالتحاق" : "Who can join",
         items: [
           {
-            q: ar ? "هل هذه الدبلومة مناسبة للتمريض؟" : "Is this diploma suitable for nurses?",
+            q: ar
+              ? "هل هذه الدبلومة مناسبة للتمريض؟"
+              : "Is this diploma suitable for nurses?",
             a: ar
               ? "نعم — التمريض هو أكثر من يلتحق بها. فريق التمريض أقرب الناس لسلامة المرضى يوميًا، والدبلومة مصمّمة لتنقلك من الرعاية المباشرة إلى دور مخصص في الوقاية من العدوى."
               : "Yes — nurses are the largest group who take it. Nursing sits closest to patient safety day to day, and the diploma is built to move you from bedside care into a dedicated infection prevention role.",
@@ -988,10 +1092,12 @@ function infectionControlDiplomaContent(locale: string): CourseContent {
               : "They are two different things. CIC is a certification awarded by an independent board, CBIC: you sit their exam under eligibility rules they set (direct responsibility, health-related education, work experience), and they grant the credential. The Infection Control Diploma is an IMETS training program: it teaches the practice, needs no prior experience to join, and ends in an IMETS certificate of completion — not the CIC title. Many people take the diploma to build the foundation, then sit the CIC exam once they meet CBIC's eligibility.",
           },
           {
-            q: ar ? "هل الدبلومة معترف بها في دول الخليج؟" : "Is this diploma recognized in GCC countries?",
+            q: ar
+              ? "هل الدبلومة معترف بها في دول الخليج؟"
+              : "Is this diploma recognized in GCC countries?",
             a: ar
               ? "نكون دقيقين هنا: الشهادة يصدرها IMETS وهي قابلة للتحقق، وطلابنا يعملون في منشآت عبر الخليج والشرق الأوسط. لكن «الاعتراف» يعني أشياء مختلفة — تقدير جهة العمل للتدريب شيء، واعتماد جهة ترخيص مثل SCFHS أو DHA أو QCHP شيء آخر تحدده تلك الجهة وحدها لا نحن. إن كان هدفك متطلبًا تنظيميًا محددًا، تحقّق منه مع جهتك أولًا. وإن كان هدفك لقبًا من مجلس اعتماد دولي، فذلك هو CIC من CBIC."
-              : "Let us be precise. The certificate is issued by IMETS and is verifiable, and our students work in facilities across the GCC and wider Middle East. But \"recognized\" means different things: an employer valuing the training is one thing; approval by a licensing authority such as SCFHS, DHA or QCHP is another, and that is decided by those authorities, not by us. If you need it for a specific regulatory requirement, confirm with that authority first. If what you want is a title from an international certifying board, that is CIC from CBIC.",
+              : 'Let us be precise. The certificate is issued by IMETS and is verifiable, and our students work in facilities across the GCC and wider Middle East. But "recognized" means different things: an employer valuing the training is one thing; approval by a licensing authority such as SCFHS, DHA or QCHP is another, and that is decided by those authorities, not by us. If you need it for a specific regulatory requirement, confirm with that authority first. If what you want is a title from an international certifying board, that is CIC from CBIC.',
           },
           {
             q: ar ? "هل سأحصل على شهادة؟" : "Will I receive a certificate?",
@@ -1005,7 +1111,9 @@ function infectionControlDiplomaContent(locale: string): CourseContent {
         title: ar ? "الدراسة" : "Studying",
         items: [
           {
-            q: ar ? "هل يمكنني الدراسة أثناء العمل؟" : "Can I study while working?",
+            q: ar
+              ? "هل يمكنني الدراسة أثناء العمل؟"
+              : "Can I study while working?",
             a: ar
               ? "نعم — هذا هو التصميم. جلسات مباشرة أسبوعية خارج ساعات العمل المعتادة، وكل جلسة تُسجَّل وتُضاف إلى حسابك، فإن فاتتك مناوبة أو جلسة تتابعها لاحقًا بوتيرتك."
               : "Yes — that is the design. Live weekly sessions outside typical working hours, and every session is recorded and added to your account, so a shift that clashes with a class costs you nothing.",
@@ -1040,7 +1148,11 @@ function infectionControlDiplomaContent(locale: string): CourseContent {
     careerRoles: [
       { title: ar ? "ممرض إكلينيكي" : "Clinical Nurse" },
       { title: ar ? "ممرض مكافحة عدوى" : "Infection Control Nurse" },
-      { title: ar ? "أخصائي وقاية من العدوى أول" : "Senior Infection Prevention Specialist" },
+      {
+        title: ar
+          ? "أخصائي وقاية من العدوى أول"
+          : "Senior Infection Prevention Specialist",
+      },
       { title: ar ? "رئيس قسم" : "Department Lead" },
       { title: ar ? "استشاري" : "Consultant" },
     ],
@@ -1064,16 +1176,36 @@ function infectionControlDiplomaContent(locale: string): CourseContent {
  */
 const COURSE_EXTRAS: Record<
   string,
-  (ar: boolean) => Partial<Pick<CourseContent, "careerRoles" | "finalCta" | "headings" | "faqs" | "pageSeo" | "relatedSlugs">>
+  (
+    ar: boolean,
+  ) => Partial<
+    Pick<
+      CourseContent,
+      | "careerRoles"
+      | "finalCta"
+      | "headings"
+      | "faqs"
+      | "pageSeo"
+      | "relatedSlugs"
+    >
+  >
 > = {
   "healthcare-marketing-diploma": (ar) => ({
     careerRoles: [
-      { title: ar ? "منسّق التسويق الصحي" : "Healthcare Marketing Coordinator" },
-      { title: ar ? "أخصائي التسويق الصحي" : "Healthcare Marketing Specialist" },
+      {
+        title: ar ? "منسّق التسويق الصحي" : "Healthcare Marketing Coordinator",
+      },
+      {
+        title: ar ? "أخصائي التسويق الصحي" : "Healthcare Marketing Specialist",
+      },
       { title: ar ? "أخصائي تسويق أول" : "Senior Marketing Specialist" },
       { title: ar ? "مدير التسويق الصحي" : "Healthcare Marketing Manager" },
       { title: ar ? "مدير إدارة التسويق" : "Marketing Director" },
-      { title: ar ? "استشاري أعمال الرعاية الصحية" : "Healthcare Business Consultant" },
+      {
+        title: ar
+          ? "استشاري أعمال الرعاية الصحية"
+          : "Healthcare Business Consultant",
+      },
     ],
     finalCta: {
       heading: ar
@@ -1093,7 +1225,9 @@ const COURSE_EXTRAS: Record<
       learn: ar
         ? "ماذا ستتعلّم في دبلومة التسويق الصحي"
         : "What You'll Learn in This Healthcare Marketing Diploma",
-      careers: ar ? "الفرص المهنية في التسويق الصحي" : "Healthcare Marketing Career Opportunities",
+      careers: ar
+        ? "الفرص المهنية في التسويق الصحي"
+        : "Healthcare Marketing Career Opportunities",
       about: ar
         ? "لماذا تهمّ مهارات التسويق الصحي اليوم"
         : "Why Healthcare Marketing Skills Matter Today",
@@ -1119,19 +1253,25 @@ const COURSE_EXTRAS: Record<
         title: ar ? "من يمكنه الالتحاق" : "Who can join",
         items: [
           {
-            q: ar ? "هل الدبلومة مناسبة للأطباء؟" : "Is this diploma suitable for doctors?",
+            q: ar
+              ? "هل الدبلومة مناسبة للأطباء؟"
+              : "Is this diploma suitable for doctors?",
             a: ar
               ? "نعم. الأطباء الذين يديرون عياداتهم أو يقودون خطوطًا خدمية داخل مستشفى هم من أكثر من يستفيد: تتعلّم كيف تُبنى الثقة وتُستقطب الحالات المناسبة دون الإضرار بالعلاقة الإكلينيكية."
               : "Yes. Doctors who run their own clinic or lead a service line inside a hospital are among those who benefit most: you learn how trust is built and how the right patients are reached, without damaging the clinical relationship.",
           },
           {
-            q: ar ? "هل يستفيد أصحاب العيادات من هذه الدبلومة؟" : "Can clinic owners benefit from this diploma?",
+            q: ar
+              ? "هل يستفيد أصحاب العيادات من هذه الدبلومة؟"
+              : "Can clinic owners benefit from this diploma?",
             a: ar
               ? "نعم — وهذا من أوضح استخداماتها. أصحاب العيادات يتعاملون مع استقطاب المرضى وبناء العلامة والميزانية بأنفسهم، والدبلومة تعطيهم إطارًا لهذه القرارات بدل الاجتهاد."
               : "Yes — it is one of the clearest uses. Clinic owners handle patient acquisition, branding and budget themselves, and the diploma gives those decisions a framework instead of guesswork.",
           },
           {
-            q: ar ? "هل تُشترط خبرة سابقة في التسويق؟" : "Is prior marketing experience required?",
+            q: ar
+              ? "هل تُشترط خبرة سابقة في التسويق؟"
+              : "Is prior marketing experience required?",
             a: ar
               ? "لا. البرنامج يبدأ من الأساسيات ثم ينتقل إلى الاستراتيجية والتسويق الرقمي، وهو مصمّم لمن يأتي من خلفية صحية لا تسويقية."
               : "No. The program starts from the fundamentals and moves into strategy and digital marketing. It is built for people arriving from a healthcare background rather than a marketing one.",
@@ -1150,7 +1290,9 @@ const COURSE_EXTRAS: Record<
               : "Yes, and that difference is the point of the program. You are marketing a health decision, not a product: advertising rules are stricter, patient data privacy is binding, medical claims are constrained, and trust is slow to build and quick to lose. The tools are the same — message, funnel, measurement — but the boundaries are not.",
           },
           {
-            q: ar ? "هل سأتعلّم التسويق الرقمي الصحي؟" : "Will I learn digital healthcare marketing?",
+            q: ar
+              ? "هل سأتعلّم التسويق الرقمي الصحي؟"
+              : "Will I learn digital healthcare marketing?",
             a: ar
               ? "نعم — التسويق الرقمي جزء أساسي: القنوات، والمحتوى، والحملات المدفوعة، والقياس، وكيفية تطبيقها ضمن قيود قطاع الرعاية الصحية."
               : "Yes — digital is a core part: channels, content, paid campaigns and measurement, and how each applies within the constraints healthcare puts on them.",
@@ -1170,7 +1312,12 @@ const COURSE_EXTRAS: Record<
 };
 
 /** Generic, healthcare-flavoured content for any non-flagship course. */
-function genericContent(slug: string, titleEn: string, titleAr: string, locale: string): CourseContent {
+function genericContent(
+  slug: string,
+  titleEn: string,
+  titleAr: string,
+  locale: string,
+): CourseContent {
   const ar = isAr(locale);
   const title = ar ? titleAr : titleEn;
   const base: CourseContent = {
@@ -1214,7 +1361,8 @@ export function getCourseContent(opts: {
   locale: string;
 }): CourseContent {
   if (opts.slug === "cphq-preparation") return cphqContent(opts.locale);
-  if (opts.slug === "hospital-management-diploma") return hospitalManagementContent(opts.locale);
+  if (opts.slug === "hospital-management-diploma")
+    return hospitalManagementContent(opts.locale);
   if (opts.slug === "cic-preparation") return cicContent(opts.locale);
   if (opts.slug === "infection-control-diploma")
     return infectionControlDiplomaContent(opts.locale);
@@ -1225,7 +1373,9 @@ export function getCourseContent(opts: {
  * Review-distribution bars derived from the overall rating so the wall always
  * matches the headline number (no fake precision, just a believable spread).
  */
-export function ratingDistribution(rating: number): { star: number; pct: number }[] {
+export function ratingDistribution(
+  rating: number,
+): { star: number; pct: number }[] {
   // Anchor the top two buckets on the rating, taper the rest.
   const five = Math.min(92, Math.max(60, Math.round((rating - 3.6) * 55 + 60)));
   const four = Math.round((100 - five) * 0.62);

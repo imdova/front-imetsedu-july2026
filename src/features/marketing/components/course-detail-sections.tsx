@@ -636,15 +636,18 @@ export function CoursePullQuote({
 export function CourseFaq({
   locale,
   groups,
+  title,
 }: {
   locale: string;
   groups: FaqGroup[];
+  /** Keyword-bearing H2; falls back to "Admissions FAQ". */
+  title?: string;
 }) {
   if (!groups.length) return null;
   return (
     <section id="faq" className="scroll-mt-32">
       <h2 className="font-heading text-2xl font-bold tracking-tight">
-        {tr(locale, "Admissions FAQ", "أسئلة القبول")}
+        {title ?? tr(locale, "Admissions FAQ", "أسئلة القبول")}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
         {tr(
@@ -702,11 +705,7 @@ export function CourseTrustBar({ locale }: { locale: string }) {
     <section className="scroll-mt-32 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.07] via-card to-amber-50/40 px-5 py-8 sm:px-8 dark:via-card dark:to-amber-950/20">
       <div className="text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-          {tr(
-            locale,
-            "Results, not features",
-            "نتائج وليست مزايا",
-          )}
+          {tr(locale, "Results, not features", "نتائج وليست مزايا")}
         </p>
         <p className="mt-2 font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           {tr(

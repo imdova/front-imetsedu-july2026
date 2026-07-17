@@ -68,6 +68,8 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
       ? raw.careerRoles.map((r: any) => ({
           titleEn: r?.titleEn ?? "",
           titleAr: r?.titleAr ?? "",
+          descriptionEn: r?.descriptionEn ?? "",
+          descriptionAr: r?.descriptionAr ?? "",
         }))
       : [],
     relatedCourseSlugs: Array.isArray(raw.relatedCourseSlugs)
@@ -78,6 +80,20 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
       headingAr: raw.finalCta?.headingAr ?? "",
       bodyEn: raw.finalCta?.bodyEn ?? "",
       bodyAr: raw.finalCta?.bodyAr ?? "",
+    },
+    headings: {
+      whyChooseEn: raw.headings?.whyChooseEn ?? "",
+      whyChooseAr: raw.headings?.whyChooseAr ?? "",
+      audienceEn: raw.headings?.audienceEn ?? "",
+      audienceAr: raw.headings?.audienceAr ?? "",
+      learnEn: raw.headings?.learnEn ?? "",
+      learnAr: raw.headings?.learnAr ?? "",
+      careersEn: raw.headings?.careersEn ?? "",
+      careersAr: raw.headings?.careersAr ?? "",
+      aboutEn: raw.headings?.aboutEn ?? "",
+      aboutAr: raw.headings?.aboutAr ?? "",
+      faqEn: raw.headings?.faqEn ?? "",
+      faqAr: raw.headings?.faqAr ?? "",
     },
     pricing: {
       egp: pricingBlock(raw.pricing?.egp),

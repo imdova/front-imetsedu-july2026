@@ -9,6 +9,7 @@ import {
   Stethoscope,
   ShieldCheck,
   Users,
+  UserRoundPlus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -47,8 +48,10 @@ export function parseAudienceItems(content: string): string[] {
 function audienceIcon(item: string): LucideIcon {
   const t = item.toLowerCase();
   const has = (...w: string[]) => w.some((x) => t.includes(x));
+  if (has("infection", "practitioner", "مكافحة العدوى", "وقاية")) return UserRoundPlus;
   if (has("director", "executive", "chief", "ceo", "مدير تنفيذي", "مديري")) return Briefcase;
   if (has("administrator", "administration", "hospital manager", "إداري", "إدارة")) return Building2;
+  if (has("public-health", "public health", "الصحة العامة")) return Users;
   if (has("clinic", "department manager", "supervisor", "عيادة", "مشرف")) return ClipboardList;
   if (has("consultant", "advisor", "استشاري", "مستشار")) return Compass;
   if (has("entrepreneur", "founder", "owner", "رائد", "مالك", "صاحب")) return Rocket;
@@ -77,37 +80,72 @@ export function CourseWhoShouldAttend({
 }: CourseWhoShouldAttendProps) {
   const items = parseAudienceItems(content);
   if (!items.length) return null;
+  const ar = locale === "ar";
+  const intro = ar
+    ? "إذا وجدت نفسك هنا، فأنت في المكان الصحيح."
+    : "If you see yourself here, you're in the right place.";
+
+  const highlightedTitle =
+    !ar && title.includes("Infection Control Diploma") ? (
+      <>
+        {title.replace("Infection Control Diploma", "").trim()}{" "}
+        <span className="text-amber-300">Infection Control Diploma</span>
+      </>
+    ) : ar && title.includes("دبلومة مكافحة العدوى") ? (
+      <>
+        {title.replace("دبلومة مكافحة العدوى", "").trim()}{" "}
+        <span className="text-amber-300">دبلومة مكافحة العدوى</span>
+      </>
+    ) : (
+      title
+    );
 
   return (
-    <section className={cn("scroll-mt-32", className)}>
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <h2 className="max-w-md font-heading text-2xl font-bold tracking-tight sm:text-3xl">
-          {title}
-        </h2>
-        <p className="max-w-sm text-sm text-muted-foreground lg:text-end">
-          {locale === "ar"
-            ? "إذا وجدت نفسك هنا — فأنت في المكان الصحيح."
-            : "If you see yourself here, you're in the right place."}
-        </p>
-      </div>
+    <section
+      dir={ar ? "rtl" : "ltr"}
+      className={cn(
+        "scroll-mt-32 overflow-hidden rounded-[2rem] bg-[#073fa3] px-5 py-8 text-white shadow-2xl shadow-blue-950/20 sm:px-8 sm:py-10 lg:px-10",
+        className,
+      )}
+    >
+      <div className="relative">
+        <div className="pointer-events-none absolute -end-2 -top-4 hidden text-amber-300/95 sm:block">
+          <ShieldCheck className="size-32 stroke-[1.5] lg:size-44" />
+        </div>
 
-      <ul
-        dir={locale === "ar" ? "rtl" : "ltr"}
-        className="mt-8 flex flex-wrap gap-2.5"
-      >
-        {items.map((item) => {
+        <div className="max-w-3xl">
+          <h2 className="font-heading text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+            {highlightedTitle}
+          </h2>
+          <div className="mt-5 h-0.5 w-36 rounded-full bg-amber-300" />
+          <p className="mt-5 text-base font-medium leading-relaxed text-white/85 sm:text-lg">
+            {intro}
+          </p>
+        </div>
+
+        <ul className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:pe-4 xl:max-w-5xl">
+          {items.map((item, index) => {
           const Icon = audienceIcon(item);
           return (
             <li
               key={item}
-              className="inline-flex max-w-full items-center gap-2 rounded-full border border-border/70 bg-background px-3.5 py-2 text-sm font-medium text-foreground shadow-sm"
+              className={cn(
+                "flex min-h-24 items-center gap-4 rounded-xl bg-white px-5 py-4 text-[#0a2f7a] shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/80",
+                items.length % 2 === 1 && index === items.length - 1 && "sm:col-span-2 lg:max-w-[calc(50%-0.5rem)]",
+              )}
             >
-              <Icon className="size-3.5 shrink-0 text-primary" />
-              <span className="truncate">{item}</span>
+              <span className="grid size-14 shrink-0 place-items-center rounded-full bg-[#073fa3] text-amber-300 shadow-sm">
+                <Icon className="size-7" strokeWidth={1.8} />
+              </span>
+              <span className="h-14 w-px shrink-0 bg-amber-300/70" aria-hidden />
+              <span className="font-heading text-lg font-extrabold leading-snug sm:text-xl">
+                {item}
+              </span>
             </li>
           );
-        })}
-      </ul>
+          })}
+        </ul>
+      </div>
     </section>
   );
 }
