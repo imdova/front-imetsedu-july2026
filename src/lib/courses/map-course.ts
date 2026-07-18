@@ -84,6 +84,9 @@ export function mapCourse(raw: any): CourseRow {
     brochureUrl: raw?.brochureUrl || undefined,
     curriculumUrl: raw?.curriculumUrl || undefined,
     programGuideUrl: raw?.programGuideUrl || undefined,
+    // The admin form uploads a course-overview PDF into `courseOverview`; expose
+    // it so the "Download Brochure" button can actually use it.
+    courseOverviewUrl: raw?.courseOverview || undefined,
     nextStartDate: raw?.nextStartDate || undefined,
     seatsLeft: typeof raw?.seatsLeft === "number" ? raw.seatsLeft : undefined,
     seatsTotal: typeof raw?.seatsTotal === "number" ? raw.seatsTotal : undefined,

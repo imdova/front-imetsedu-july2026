@@ -453,6 +453,8 @@
     "dropOrBrowsePdf": "اسحب وأفلت PDF أو تصفّح",
     "imageHint": "JPG أو PNG · يُوصى بـ 1280×720",
     "fCourseOverview": "ملف PDF نظرة عامة على الدورة",
+    "fBrochure": "بروشور PDF",
+    "brochurePdfHint": "ملف PDF حتى {size} ميجابايت. يُستخدم في زر «تحميل البروشور» (يرجع إلى نظرة عامة عن الدورة إذا تُرك فارغًا).",
     "overviewPdfHint": "PDF فقط · بحد أقصى {size} ميجابايت",
     "secMediaExtras": "الوسائط والملفات",
     "secAlumniPhotos": "صور الخريجين",

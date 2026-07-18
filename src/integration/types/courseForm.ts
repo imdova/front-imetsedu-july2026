@@ -170,6 +170,7 @@ export interface CourseFormData {
   previewVideoUrl?: string;
   courseOverview: string;
   courseOverviewFile?: string; // UI helper – stores the uploaded PDF URL
+  brochureUrl?: string; // uploaded brochure PDF URL (Download Brochure button)
   webhookUrl?: string;
   status: "draft" | "published";
   isActive: boolean;

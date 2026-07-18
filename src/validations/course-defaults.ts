@@ -22,6 +22,7 @@ export function makeDefaultCourseValues(): CourseFormValues {
     previewVideoUrl: "",
     image: "",
     courseOverviewFile: "",
+    brochureUrl: "",
     pricing: {
       egp: { ...emptyPricing },
       sar: { ...emptyPricing },

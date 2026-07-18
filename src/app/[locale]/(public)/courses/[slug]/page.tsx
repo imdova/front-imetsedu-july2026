@@ -39,6 +39,7 @@ import {
   CourseTrustBar,
   CourseSectionBand,
   CourseFaq,
+  CourseKnowledgeCenter,
   CoursePullQuote,
 } from "@/features/marketing/components/course-detail-sections";
 import { CourseAbout } from "@/features/marketing/components/course-about";
@@ -423,7 +424,12 @@ export default async function CourseDetailPage({
     : content.faqs?.length
       ? content.faqs
       : [{ title: tr("General", "عام"), items: defaultFaqItems }];
-  const faqsFlat = faqGroups.flatMap((g) => g.items);
+  // FAQPage schema follows what's actually on the page: when a sales FAQ is
+  // shown inside the Knowledge Center, mark that up (the standalone FAQ is
+  // hidden in that case); otherwise mark up the regular FAQ.
+  const faqsFlat = content.salesFaq?.length
+    ? content.salesFaq
+    : faqGroups.flatMap((g) => g.items);
 
   // Career Outcomes ladder: the course form's roles win over the bundled ladder.
   // Array order IS the progression, so it is preserved as authored.
@@ -454,6 +460,16 @@ export default async function CourseDetailPage({
   const pullQuote =
     pick(course.quote?.textEn, course.quote?.textAr) || content.demandLine;
 
+  // "Download Brochure": a dedicated brochure/curriculum/program-guide URL if
+  // set, else the uploaded course-overview PDF (the only one the admin form can
+  // currently set). Empty ⇒ the button softly scrolls to the overview section.
+  const brochureHref =
+    course.brochureUrl ||
+    course.curriculumUrl ||
+    course.programGuideUrl ||
+    course.courseOverviewUrl ||
+    "";
+
   const navItems = [
     { id: "why-choose", label: tr("Highlights", "المميزات") },
     { id: "overview", label: tr("Why It Matters", "لماذا يهم") },
@@ -466,6 +482,9 @@ export default async function CourseDetailPage({
     { id: "journey", label: tr("Experience", "التجربة") },
     { id: "reviews", label: tr("Reviews", "التقييمات") },
     { id: "faq", label: tr("Admissions", "القبول") },
+    ...(content.knowledgeCenter?.length
+      ? [{ id: "knowledge-center", label: tr("Knowledge Center", "مركز المعرفة") }]
+      : []),
   ];
 
   const enrollCard = (
@@ -591,15 +610,8 @@ export default async function CourseDetailPage({
           className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5"
         >
           <a
-            href={
-              course.brochureUrl ||
-              course.curriculumUrl ||
-              course.programGuideUrl ||
-              "#overview"
-            }
-            {...(course.brochureUrl ||
-            course.curriculumUrl ||
-            course.programGuideUrl
+            href={brochureHref || "#overview"}
+            {...(brochureHref
               ? { target: "_blank", rel: "noopener noreferrer" }
               : {})}
           >
@@ -897,9 +909,45 @@ export default async function CourseDetailPage({
                 </div>
               </CourseSectionBand>
 
-              <CourseSectionBand tone="muted" spacing="md">
-                <CourseFaq locale={locale} groups={faqGroups} title={heads.faq} />
-              </CourseSectionBand>
+              {/* Standalone FAQ — hidden when a sales FAQ is incorporated into
+                  the Knowledge Center (that section renders the FAQ itself). */}
+              {!content.salesFaq?.length && (
+                <CourseSectionBand tone="muted" spacing="md">
+                  <CourseFaq locale={locale} groups={faqGroups} title={heads.faq} />
+                </CourseSectionBand>
+              )}
+
+              {content.knowledgeCenter && content.knowledgeCenter.length > 0 && (
+                <CourseSectionBand tone="white" spacing="lg">
+                  <CourseKnowledgeCenter
+                    locale={locale}
+                    title={
+                      content.knowledgeTitle ??
+                      tr("Knowledge Center", "مركز المعرفة")
+                    }
+                    description={content.knowledgeIntro ?? undefined}
+                    items={content.knowledgeCenter}
+                    groups={content.knowledgeGroups ?? []}
+                    faq={content.salesFaq ?? undefined}
+                    ctaHeading={
+                      content.knowledgeCta ??
+                      tr("Ready to Start Your Journey?", "جاهز لبدء رحلتك؟")
+                    }
+                    cta={
+                      <CourseApplyDialog
+                        courseId={course.id}
+                        courseTitle={course.titleEn}
+                        webhookUrl={applyWebhook}
+                        trigger={
+                          <Button size="lg" className="w-full">
+                            {t("applyNow")}
+                          </Button>
+                        }
+                      />
+                    }
+                  />
+                </CourseSectionBand>
+              )}
 
               {content.seoSections.length > 0 && (
                 <CourseSectionBand tone="white" spacing="lg">
@@ -937,15 +985,8 @@ export default async function CourseDetailPage({
                     className="h-12 min-w-[11rem] flex-1 rounded-full border-white/50 bg-transparent px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white"
                   >
                     <a
-                      href={
-                        course.brochureUrl ||
-                        course.curriculumUrl ||
-                        course.programGuideUrl ||
-                        "#overview"
-                      }
-                      {...(course.brochureUrl ||
-                      course.curriculumUrl ||
-                      course.programGuideUrl
+                      href={brochureHref || "#overview"}
+                      {...(brochureHref
                         ? { target: "_blank", rel: "noopener noreferrer" }
                         : {})}
                     >

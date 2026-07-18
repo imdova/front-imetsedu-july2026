@@ -206,6 +206,7 @@ function toFullUpdatePayload(d: CourseFormData): Record<string, unknown> {
     imagesReviews: d.imagesReviews,
     previewVideoUrl: d.previewVideoUrl || undefined,
     courseOverview: d.courseOverview || undefined,
+    brochureUrl: d.brochureUrl || undefined,
     status: d.status,
     isActive: d.isActive,
     isFeatured: d.isFeatured,

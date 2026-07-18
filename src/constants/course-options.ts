@@ -66,5 +66,6 @@ export const LESSON_TYPE_OPTIONS: {
 /** Max upload sizes (MB) used by the media fields. */
 export const UPLOAD_LIMITS = {
   overviewPdfMb: 20,
+  brochurePdfMb: 20,
   coverImageMb: 5,
 } as const;

@@ -53,6 +53,7 @@ export function toCoursePayload(v: CourseFormValues): CourseFormData {
     imagesReviews: v.imagesReviews,
     previewVideoUrl: v.previewVideoUrl,
     courseOverview: v.courseOverviewFile ?? "",
+    brochureUrl: v.brochureUrl || undefined,
     webhookUrl: v.webhookUrl,
     status: v.status,
     isActive: v.isActive,

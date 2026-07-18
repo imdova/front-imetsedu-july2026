@@ -140,6 +140,8 @@ export const courseFormSchema = z.object({
   previewVideoUrl: youtubeOrEmpty,
   image: z.string().trim(),
   courseOverviewFile: z.string().trim(),
+  /** Uploaded brochure PDF URL (distinct from the course-overview PDF). */
+  brochureUrl: z.string().trim(),
 
   /* --- Pricing --- */
   pricing: z.object({

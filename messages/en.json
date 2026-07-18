@@ -453,6 +453,8 @@
     "dropOrBrowsePdf": "Drag & drop PDF or browse",
     "imageHint": "JPG or PNG · 1280×720 recommended",
     "fCourseOverview": "Course Overview PDF",
+    "fBrochure": "Brochure PDF",
+    "brochurePdfHint": "PDF up to {size} MB. Used by the \"Download Brochure\" button (falls back to the course overview if empty).",
     "overviewPdfHint": "PDF only · max {size} MB",
     "secMediaExtras": "Media & Files",
     "secAlumniPhotos": "Alumni Photos",

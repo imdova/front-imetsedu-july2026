@@ -124,22 +124,19 @@ export function CourseWhoShouldAttend({
           </p>
         </div>
 
-        <ul className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:pe-4 xl:max-w-5xl">
-          {items.map((item, index) => {
+        <ul className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-3">
+          {items.map((item) => {
           const Icon = audienceIcon(item);
           return (
             <li
               key={item}
-              className={cn(
-                "flex min-h-24 items-center gap-4 rounded-xl bg-white px-5 py-4 text-[#0a2f7a] shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/80",
-                items.length % 2 === 1 && index === items.length - 1 && "sm:col-span-2 lg:max-w-[calc(50%-0.5rem)]",
-              )}
+              className="flex min-h-[4.25rem] items-center gap-3 rounded-xl bg-white px-4 py-3 text-[#0a2f7a] shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-white/80"
             >
-              <span className="grid size-14 shrink-0 place-items-center rounded-full bg-[#073fa3] text-amber-300 shadow-sm">
-                <Icon className="size-7" strokeWidth={1.8} />
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#073fa3] text-amber-300 shadow-sm">
+                <Icon className="size-5" strokeWidth={1.8} />
               </span>
-              <span className="h-14 w-px shrink-0 bg-amber-300/70" aria-hidden />
-              <span className="font-heading text-lg font-extrabold leading-snug sm:text-xl">
+              <span className="h-10 w-px shrink-0 bg-amber-300/70" aria-hidden />
+              <span className="font-heading text-sm font-bold leading-snug">
                 {item}
               </span>
             </li>

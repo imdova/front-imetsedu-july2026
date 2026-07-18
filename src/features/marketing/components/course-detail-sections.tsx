@@ -24,6 +24,7 @@ import {
   Download,
   ChevronRight,
   Check,
+  BookOpen,
 } from "lucide-react";
 
 import { cn, getInitials } from "@/lib/utils";
@@ -34,10 +35,13 @@ import type {
   CareerRole,
   CourseReview,
   FaqGroup,
+  FaqItem,
+  KnowledgeGroup,
   SeoSection,
 } from "@/features/marketing/lib/course-content";
 import { CareerRoadmapTimeline } from "@/features/marketing/components/career-roadmap-timeline";
 import { CountUp } from "@/features/marketing/components/count-up";
+import { KnowledgeTimeline } from "@/features/marketing/components/knowledge-timeline";
 
 const tr = (locale: string, en: string, ar: string) =>
   locale === "ar" ? ar : en;
@@ -681,6 +685,108 @@ export function CourseFaq({
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Knowledge Center — a numbered timeline of "learning cards".         */
+/* The long answers are grouped into themed cards (by each item's       */
+/* `group` key) and rendered by the client `KnowledgeTimeline`: native  */
+/* <details> for desktop + crawlers (content stays in the HTML on every  */
+/* viewport), and a real bottom sheet on mobile.                        */
+/* ------------------------------------------------------------------ */
+export function CourseKnowledgeCenter({
+  locale,
+  title,
+  description,
+  items,
+  groups,
+  faq,
+  ctaHeading,
+  cta,
+}: {
+  locale: string;
+  title: string;
+  /** One-line summary under the H2 (keyword-rich). Optional. */
+  description?: string;
+  items: FaqItem[];
+  /** Ordered topic groups (label + emoji per card), defined per program. */
+  groups: KnowledgeGroup[];
+  /** "Program & Enrollment" sales FAQ shown as the left column. */
+  faq?: FaqItem[];
+  ctaHeading?: string;
+  cta?: React.ReactNode;
+}) {
+  if (!items.length || !groups.length) return null;
+  const ar = locale === "ar";
+  const hasFaq = !!faq?.length;
+
+  return (
+    <section id="knowledge-center" className="scroll-mt-32" dir={ar ? "rtl" : "ltr"}>
+      <h2 className="font-heading text-2xl font-bold tracking-tight text-[#0a2f7a] sm:text-3xl">
+        {title}
+      </h2>
+      {description && (
+        <p className="mt-3 max-w-3xl text-[0.95rem] leading-relaxed text-muted-foreground sm:text-base">
+          {description}
+        </p>
+      )}
+
+      <div className={cn("mt-8 grid gap-8 lg:gap-10", hasFaq && "lg:grid-cols-3")}>
+        {/* LEFT (1/3): Program & Enrollment sales FAQ (exclusive accordion) */}
+        {hasFaq && (
+          <aside id="faq" className="scroll-mt-32 lg:col-span-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+              📚 {ar ? "البرنامج والتسجيل" : "Program & Enrollment"}
+            </span>
+            <h3 className="mt-3 font-heading text-lg font-bold tracking-tight text-foreground">
+              {ar ? "الأسئلة الشائعة عن البرنامج" : "Program FAQ"}
+            </h3>
+            <div className="mt-4 space-y-2.5">
+              {faq!.map((f, i) => (
+                <details
+                  key={i}
+                  name="cic-program-faq"
+                  className="group rounded-xl border border-border/60 bg-card/60 px-4 py-3 transition-colors open:border-primary/30 open:bg-card open:shadow-sm"
+                >
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-3 text-sm font-semibold text-foreground">
+                    {f.q}
+                    <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 rtl:rotate-180 rtl:group-open:-rotate-90" />
+                  </summary>
+                  <p className="mt-2.5 text-[0.9rem] leading-relaxed text-muted-foreground">
+                    {f.a}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </aside>
+        )}
+
+        {/* RIGHT (2/3): Knowledge Center timeline (exclusive accordion cards) */}
+        <div className={cn(hasFaq && "lg:col-span-2")}>
+          <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#B8860B]">
+            <BookOpen className="size-4" /> {ar ? "مركز المعرفة" : "Knowledge Center"}
+          </p>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {ar
+              ? "اضغط أي بطاقة لعرض شرح مفصّل — تُغلق البقية تلقائيًا."
+              : "Click any card to expand its full guide — the others collapse automatically."}
+          </p>
+          <KnowledgeTimeline locale={locale} items={items} groups={groups} />
+        </div>
+      </div>
+
+      {(ctaHeading || cta) && (
+        <div className="mt-10 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center ring-1 ring-primary/10 sm:p-8">
+          {ctaHeading && (
+            <p className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {ctaHeading}
+            </p>
+          )}
+          {cta && <div className="mx-auto mt-5 max-w-xs">{cta}</div>}
+        </div>
+      )}
     </section>
   );
 }

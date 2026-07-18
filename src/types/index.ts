@@ -112,6 +112,9 @@ export interface CourseRow {
   brochureUrl?: string;
   curriculumUrl?: string;
   programGuideUrl?: string;
+  /** Uploaded course-overview PDF (admin form → `courseOverview`). Used as the
+   *  "Download Brochure" target when no dedicated brochure URL is set. */
+  courseOverviewUrl?: string;
   /** Next cohort start (ISO) — drives "Starts in N days". */
   nextStartDate?: string;
   /** REAL remaining seats. Undefined ⇒ nothing shown (never fabricated). */

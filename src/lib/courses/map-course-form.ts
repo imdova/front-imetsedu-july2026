@@ -115,6 +115,7 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
       : [],
     previewVideoUrl: raw.previewVideoUrl ?? "",
     courseOverviewFile: raw.courseOverview ?? "",
+    brochureUrl: raw.brochureUrl ?? "",
     status: raw.status === "published" ? "published" : "draft",
     isActive: raw.isActive !== false,
     isFeatured: !!raw.isFeatured,

@@ -569,6 +569,26 @@ function BasicInfoSidebar({
             </FormItem>
           )}
         />
+        <FormField
+          control={control}
+          name="brochureUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("fBrochure")}</FormLabel>
+              <FormControl>
+                <FileUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                  label={t("dropOrBrowsePdf")}
+                  hint={t("brochurePdfHint", {
+                    size: UPLOAD_LIMITS.brochurePdfMb,
+                  })}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </FormSection>
 
       <FormSection title={t("secDetails")}>
