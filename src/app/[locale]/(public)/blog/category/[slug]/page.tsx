@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 import { setRequestLocale } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { staticPageMeta } from "@/lib/seo";
 import { ArticleCard } from "@/features/blog/components/article-card";
@@ -40,11 +42,25 @@ export default async function BlogCategoryPage({
   if (!res.ok) notFound();
   const { category, data } = res.data;
 
+  const ar = locale === "ar";
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className={`mb-8 rounded-3xl bg-gradient-to-br to-transparent p-8 ${COLOR_WASH[category.color] ?? COLOR_WASH.primary}`}>
-        <h1 className="font-heading text-3xl font-bold tracking-tight">{category.name}</h1>
-        {category.description && <p className="mt-2 max-w-2xl text-muted-foreground">{category.description}</p>}
+      <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <Link href="/blog" className="hover:text-foreground">{ar ? "المدونة" : "Blog"}</Link>
+        <ChevronRight className="size-3.5 rtl:rotate-180" />
+        <span className="text-foreground">{category.name}</span>
+      </nav>
+
+      <div className={`mb-8 overflow-hidden rounded-3xl bg-gradient-to-br to-transparent p-8 ring-1 ring-border/50 sm:p-10 ${COLOR_WASH[category.color] ?? COLOR_WASH.primary}`}>
+        <span className="inline-flex items-center rounded-full bg-background/70 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-foreground/70 ring-1 ring-border/50">
+          {ar ? "قسم" : "Topic"}
+        </span>
+        <h1 className="mt-4 font-heading text-3xl font-bold tracking-tight text-balance sm:text-4xl">{category.name}</h1>
+        {category.description && <p className="mt-3 max-w-2xl text-muted-foreground">{category.description}</p>}
+        <p className="mt-4 text-sm font-medium text-foreground/60">
+          {data.length} {ar ? "مقالة" : data.length === 1 ? "article" : "articles"}
+        </p>
       </div>
 
       {data.length === 0 ? (

@@ -10,7 +10,8 @@ import { dal } from "@/lib/dal";
 import { Badge } from "@/components/ui/badge";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL, SITE_NAME, localeUrl, metaDescription, breadcrumbLd } from "@/lib/seo";
-import { ArticleSections, ArticleContent } from "@/features/blog/components/article-sections";
+import { ArticleSections, ArticleContent, headingId } from "@/features/blog/components/article-sections";
+import { ReadingProgress, ArticleToc } from "@/features/blog/components/article-reader-ui";
 
 // Memoize per request so generateMetadata + the page share one fetch
 // (the backend increments `views` on read — we want exactly one increment).
@@ -104,8 +105,17 @@ export default async function ArticleDetailPage({
     .map((slug) => coursesRes?.ok ? coursesRes.data.find((c) => c.slug === slug) : undefined)
     .filter((c): c is NonNullable<typeof c> => Boolean(c));
 
+  // Table of contents from the article's H2s (ids match the renderer's slug).
+  const tocItems = (post.sections ?? [])
+    .flatMap((s) => s.cols)
+    .flatMap((c) => c.blocks)
+    .filter((b) => b.type === "heading" && b.level === 2 && !!b.text)
+    .map((b) => ({ id: headingId(b.text as string), text: b.text as string }))
+    .filter((t) => t.text.toLowerCase() !== "frequently asked questions");
+
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+    <article className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+      <ReadingProgress targetId="article-body" />
       <JsonLd data={[articleLd, ...(faqLd ? [faqLd] : []), crumb]} />
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
         <Link href="/" className="hover:text-foreground">{locale === "ar" ? "الرئيسية" : "Home"}</Link>
@@ -115,43 +125,66 @@ export default async function ArticleDetailPage({
         <span className="line-clamp-1 text-foreground">{post.title}</span>
       </nav>
 
-      <header className="mt-4 space-y-3">
-        {post.category && <Badge variant="secondary">{post.category}</Badge>}
-        <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{post.title}</h1>
-        {post.excerpt && <p className="text-lg text-muted-foreground">{post.excerpt}</p>}
-        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          {post.authorName && <span className="font-medium text-foreground">{post.authorName}</span>}
-          {post.publishedAt && <span className="inline-flex items-center gap-1"><CalendarDays className="size-4" />{fmtDate(post.publishedAt)}</span>}
-          <span className="inline-flex items-center gap-1"><Clock className="size-4" />{post.readingMinutes} min read</span>
+      {/* Hero header */}
+      <header className="mt-4 overflow-hidden rounded-3xl bg-gradient-to-br from-primary/[0.09] via-primary/[0.03] to-transparent p-6 ring-1 ring-primary/10 sm:p-9">
+        {post.category && (
+          <Badge variant="secondary" className="mb-3">{post.category}</Badge>
+        )}
+        <h1 className="font-heading text-3xl font-bold leading-[1.15] tracking-tight text-balance sm:text-[2.6rem]">
+          {post.title}
+        </h1>
+        {post.excerpt && (
+          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">{post.excerpt}</p>
+        )}
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+          {post.authorName && (
+            <span className="inline-flex items-center gap-2 font-medium text-foreground">
+              <span className="grid size-7 place-items-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                {post.authorName.slice(0, 1)}
+              </span>
+              {post.authorName}
+            </span>
+          )}
+          {post.publishedAt && (
+            <span className="inline-flex items-center gap-1.5"><CalendarDays className="size-4" />{fmtDate(post.publishedAt)}</span>
+          )}
+          <span className="inline-flex items-center gap-1.5"><Clock className="size-4" />{post.readingMinutes} {locale === "ar" ? "دقيقة قراءة" : "min read"}</span>
         </div>
       </header>
 
       {post.coverImageUrl && (
-        <div className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl bg-muted">
+        <div className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-3xl bg-muted">
           <Image
             src={post.coverImageUrl}
             alt={post.title}
             fill
-            sizes="(max-width: 768px) 100vw, 768px"
+            sizes="(max-width: 1024px) 100vw, 1024px"
             priority
             className="object-cover"
           />
         </div>
       )}
 
-      <div className="mt-8">
-        {post.sections && post.sections.length > 0 ? (
-          <ArticleSections sections={post.sections} />
-        ) : (
-          <ArticleContent html={post.content} />
-        )}
-      </div>
+      {/* Body + table-of-contents rail */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-12">
+        <div id="article-body" className="min-w-0">
+          {post.sections && post.sections.length > 0 ? (
+            <ArticleSections sections={post.sections} />
+          ) : (
+            <ArticleContent html={post.content} />
+          )}
 
-      {post.tags.length > 0 && (
-        <div className="mt-10 flex flex-wrap gap-2 border-t border-border/60 pt-6">
-          {post.tags.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
+          {post.tags.length > 0 && (
+            <div className="mt-10 flex flex-wrap gap-2 border-t border-border/60 pt-6">
+              {post.tags.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
+            </div>
+          )}
         </div>
-      )}
+
+        <aside className="order-first lg:order-none">
+          <ArticleToc items={tocItems} label={locale === "ar" ? "على هذه الصفحة" : "On this page"} />
+        </aside>
+      </div>
 
       {/* Related courses — the course title IS the anchor text, which is the
           only reason an internal link like this carries any weight. */}

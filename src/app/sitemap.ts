@@ -33,11 +33,13 @@ function entry(
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [coursesRes, catsRes, instRes, freeRes] = await Promise.all([
+  const [coursesRes, catsRes, instRes, freeRes, blogRes, blogCatsRes] = await Promise.all([
     dal.courses.fetchCourses().catch(() => null),
     dal.lookups.fetchCategories().catch(() => null),
     dal.lookups.fetchInstructors().catch(() => null),
     dal.freeCourses.fetchFreePrograms().catch(() => null),
+    dal.blog.fetchPublicArticles({ limit: 1000 }).catch(() => null),
+    dal.blog.fetchTopics().catch(() => null),
   ]);
 
   const entries: MetadataRoute.Sitemap = STATIC_PATHS.map((p) => entry(p));
@@ -66,6 +68,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (freeRes?.ok) {
     for (const p of freeRes.data)
       entries.push(entry(`/free-courses/${p.slug}`));
+  }
+  // Published blog articles (the public list returns only PUBLISHED).
+  if (blogRes?.ok) {
+    for (const post of blogRes.data.data) {
+      if (!post.slug) continue;
+      const lm = post.updatedAt ? new Date(post.updatedAt) : undefined;
+      entries.push(entry(`/blog/${post.slug}`, lm && !Number.isNaN(lm.getTime()) ? lm : undefined));
+    }
+  }
+  // Blog category landing pages.
+  if (blogCatsRes?.ok) {
+    for (const c of blogCatsRes.data)
+      if (c.slug) entries.push(entry(`/blog/category/${c.slug}`));
   }
 
   return entries;
