@@ -488,7 +488,104 @@ function cphqContent(locale: string): CourseContent {
           : "Quality is a path you enter through knowledge, not years served. The program starts from fundamentals and prepares you for a first quality role.",
       },
     ],
-    faqs: null,
+    // Certification facts are quoted from NAHQ, fetched 2026-07-18:
+    //   - Governing body, NCCA accreditation, "held in 60+ countries":
+    //     https://nahq.org/credentials/cphq-certified-professional-in-healthcare-quality/
+    //   - No formal eligibility (2 yrs recommended), 125 scored + 15 pretest
+    //     questions, 3-hour limit, online remote-proctor or test centre via PSI:
+    //     https://nahq.org/.../cphq-certified-professional-in-healthcare-quality/apply/
+    // Program facts (10 weeks, 8 domains, ONE comprehensive mock + 500+ practice
+    // questions) are the live course record's own copy — keep them in step with
+    // it. No salary figure: there is no sourced CPHQ pay number for this region.
+    faqs: [
+      {
+        title: ar ? "عن شهادة CPHQ" : "About the CPHQ Certification",
+        items: [
+          {
+            q: ar
+              ? "ما هي شهادة CPHQ؟"
+              : "What is the CPHQ certification?",
+            a: ar
+              ? "شهادة CPHQ (أخصائي معتمد في جودة الرعاية الصحية) هي الشهادة المهنية المتخصصة في جودة الرعاية الصحية وسلامة المرضى. تصدرها لجنة Healthcare Quality Certification Commission ‏(HQCC)، ذراع الاعتماد في الجمعية الوطنية لجودة الرعاية الصحية ‏(NAHQ)، وتغطي قيادة الجودة، وسلامة المرضى، وتحسين الأداء والعمليات، وتحليل البيانات الصحية، والعمل التنظيمي والاعتماد."
+              : "The Certified Professional in Healthcare Quality (CPHQ) is the professional certification for healthcare quality and patient safety. It is awarded by the Healthcare Quality Certification Commission (HQCC), the certifying arm of the National Association for Healthcare Quality (NAHQ), and covers quality leadership, patient safety, performance and process improvement, health data analytics, and regulatory and accreditation work.",
+          },
+          {
+            q: ar
+              ? "هل شهادة CPHQ معترف بها دوليًا؟"
+              : "Is CPHQ recognized internationally?",
+            a: ar
+              ? "نعم. تصف NAHQ شهادة CPHQ بأنها الشهادة المعتمدة الوحيدة في جودة الرعاية الصحية — فهي معتمدة من National Commission for Certifying Agencies ‏(NCCA) — وتذكر أنها يحملها متخصصون في أكثر من 60 دولة. وهي معترف بها على نطاق واسع في مستشفيات الخليج والشرق الأوسط، حيث تُقدّر برامج الاعتماد الكوادر الحاصلة على شهادات في الجودة."
+              : "Yes. NAHQ describes CPHQ as the only accredited certification in healthcare quality — it is accredited by the National Commission for Certifying Agencies (NCCA) — and reports that it is held by professionals in more than 60 countries. It is widely recognised across hospitals in the GCC and the wider Middle East, where accreditation programs value quality-certified staff.",
+          },
+          {
+            q: ar
+              ? "لمن شهادة CPHQ؟"
+              : "Who should take CPHQ?",
+            a: ar
+              ? "تناسب شهادة CPHQ كل من يعمل في جودة الرعاية الصحية وسلامة المرضى — أو يرغب في الانتقال إليها: الأطباء، والتمريض، والصيادلة، وأطباء الأسنان، وإداريو المستشفيات، وحديثو التخرج الذين يستهدفون أول دور في الجودة. إذا كان عملك يمسّ الاعتماد أو سلامة المرضى أو تحسين الأداء، فإن الشهادة توثّق تلك الخبرة رسميًا."
+              : "CPHQ suits anyone who works on — or wants to move into — healthcare quality and patient safety: physicians, nurses, pharmacists, dentists, hospital administrators, and fresh graduates aiming for a first quality role. If your work touches accreditation, patient safety, or performance improvement, the credential formalises that expertise.",
+          },
+          {
+            q: ar
+              ? "هل أحتاج خبرة في الجودة؟"
+              : "Do I need quality experience?",
+            a: ar
+              ? "لا. لا تضع NAHQ أي شرط أهلية رسمي لدخول امتحان CPHQ — فهي توصي بنحو عامين من الخبرة في جودة الرعاية الصحية لكنها لا تشترطها. وبرنامجنا مصمَّم بحيث يستطيع الأطباء وحديثو التخرج بلا خلفية في الجودة أن يبدأوا من الأساسيات ويستعدّوا بثقة."
+              : "No. NAHQ sets no formal eligibility requirement to sit the CPHQ exam — it recommends around two years of healthcare quality experience but does not require it. Our program is built so that clinicians and fresh graduates with no quality background can start from the fundamentals and prepare with confidence.",
+          },
+        ],
+      },
+      {
+        title: ar ? "الامتحان" : "The Exam",
+        items: [
+          {
+            q: ar
+              ? "ما مدى صعوبة الامتحان؟"
+              : "How difficult is the exam?",
+            a: ar
+              ? "امتحان CPHQ امتحان واحد يُؤدّى على الحاسب: 125 سؤالًا محتسبًا بالإضافة إلى 15 سؤالًا تجريبيًا غير محتسب، بحدٍّ أقصى ثلاث ساعات. وهو يكافئ الاستعداد المنظّم عبر جميع مجالات الجودة لا الحفظ — وهو تحديدًا ما بُني عليه برنامجنا الممتد 10 أسابيع."
+              : "The CPHQ is a single computer-based exam: 125 scored questions plus 15 unscored pretest questions, with a three-hour limit. It rewards structured preparation across all the quality domains rather than memorisation — which is exactly what our 10-week program is built around.",
+          },
+          {
+            q: ar
+              ? "هل الامتحان أونلاين؟"
+              : "Is the exam online?",
+            a: ar
+              ? "نعم — تتيح NAHQ امتحان CPHQ أونلاين مع مراقب مباشر عن بُعد، أو حضوريًا في مركز اختبار، فتختار ما يناسبك؛ ويُقدَّم عبر شريك الاختبارات PSI. لاحظ أن الامتحان نفسه يُحجَز ويُؤدّى مع NAHQ/PSI — ودور برنامجنا هو إعدادك له، لا عقد الامتحان."
+              : "Yes — NAHQ offers the CPHQ exam both online with a live remote proctor and in person at a test center, so you can choose whichever suits you; it is delivered through NAHQ's testing partner, PSI. Note the exam itself is booked and sat with NAHQ/PSI — our program prepares you for it, it does not administer the exam.",
+          },
+        ],
+      },
+      {
+        title: ar ? "برنامج IMETS" : "The IMETS Program",
+        items: [
+          {
+            q: ar
+              ? "كم يستغرق التحضير؟"
+              : "How long does preparation take?",
+            a: ar
+              ? "يمتد برنامج التحضير لشهادة CPHQ لدينا على 10 أسابيع، ويجمع بين جلسات مباشرة يقودها خبراء ومواد ذاتية التعلّم تغطّي مجالات CPHQ الثمانية كاملة. ومعظم المتقدّمين يكونون جاهزين لدخول الامتحان بنهاية البرنامج، بوتيرة تناسب المهنيين العاملين الذين يدرسون إلى جانب عمل بدوام كامل."
+              : "Our CPHQ Preparation Program runs for 10 weeks, combining live expert-led sessions with self-paced material covering all eight CPHQ domains. Most candidates are ready to sit the exam by the end of the program, at a pace that suits working professionals studying alongside a full-time job.",
+          },
+          {
+            q: ar
+              ? "كم عدد الامتحانات التجريبية المتضمَّنة؟"
+              : "How many mock exams are included?",
+            a: ar
+              ? "يتضمّن البرنامج امتحانًا تجريبيًا شاملًا واحدًا يحاكي الامتحان الحقيقي، بالإضافة إلى بنك من أكثر من 500 سؤال تدريبي بأسلوب الامتحان تعمل عليها أثناء دراسة كل مجال. ومعًا يتيحان لك التدرّب على ظروف الامتحان واكتشاف نقاط ضعفك قبل الموعد الفعلي."
+              : "The program includes one full, comprehensive mock exam that mirrors the real test, plus a bank of 500+ exam-style practice questions you work through as you study each domain. Together they let you rehearse exam conditions and find your weak areas before the real thing.",
+          },
+          {
+            q: ar
+              ? "هل تساعدني IMETS بعد الدورة؟"
+              : "Will IMETS help after the course?",
+            a: ar
+              ? "نعم. تحتفظ بالوصول إلى تسجيلات الجلسات ومواد الدورة لتواصل المراجعة حتى موعد امتحانك، ويبقى مدرّبونا ومجتمع الطلاب متاحين لأسئلة الامتحان والإرشاد. فالدعم لا يتوقف يوم انتهاء الجلسات المباشرة."
+              : "Yes. You keep access to the session recordings and course materials so you can keep revising right up to your exam date, and our instructors and student community stay available for exam questions and guidance. Support doesn't stop the day the live sessions end.",
+          },
+        ],
+      },
+    ],
     outcomes: ar
       ? [
           "قياس وتحسين جودة الرعاية داخل مستشفاك",

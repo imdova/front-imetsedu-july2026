@@ -11,6 +11,7 @@ import type {
   CourseFinalCtaValues,
   CourseFormValues,
   CourseHeadingsValues,
+  CourseQuoteValues,
 } from "@/validations/course-schema";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,6 +83,49 @@ export function FinalCtaSection() {
       {!cta.headingEn && !cta.headingAr && (
         <p className="mt-3 text-[11px] text-muted-foreground">
           {t("ctaFallbackNote")}
+        </p>
+      )}
+    </FormSection>
+  );
+}
+
+/**
+ * Editorial pull-quote shown between sections on the public page. Leave both
+ * fields blank and the page keeps its bundled per-course demand line — the
+ * English field is what decides whether this counts as "set".
+ */
+export function QuoteSection() {
+  const { watch, setValue } = useFormContext<CourseFormValues>();
+  const t = useTranslations("CourseForm");
+  const quote = watch("quote") ?? { textEn: "", textAr: "" };
+
+  const set = (patch: Partial<CourseQuoteValues>) =>
+    setValue("quote", { ...quote, ...patch }, { shouldDirty: true });
+
+  return (
+    <FormSection title={t("secQuote")} description={t("secQuoteDesc")}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={t("quoteTextEn")}>
+          <Textarea
+            rows={3}
+            value={quote.textEn}
+            onChange={(e) => set({ textEn: e.target.value })}
+            placeholder={t("quoteTextEnPlaceholder")}
+          />
+        </Field>
+        <Field label={t("quoteTextAr")}>
+          <Textarea
+            dir="rtl"
+            rows={3}
+            value={quote.textAr}
+            onChange={(e) => set({ textAr: e.target.value })}
+            placeholder={t("quoteTextArPlaceholder")}
+          />
+        </Field>
+      </div>
+      {!quote.textEn && !quote.textAr && (
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          {t("quoteFallbackNote")}
         </p>
       )}
     </FormSection>

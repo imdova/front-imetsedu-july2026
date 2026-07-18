@@ -55,6 +55,7 @@ export function makeDefaultCourseValues(): CourseFormValues {
     careerRoles: [],
     relatedCourseSlugs: [],
     finalCta: { headingEn: "", headingAr: "", bodyEn: "", bodyAr: "" },
+    quote: { textEn: "", textAr: "" },
     headings: { whyChooseEn: "", whyChooseAr: "", audienceEn: "", audienceAr: "", learnEn: "", learnAr: "", careersEn: "", careersAr: "", aboutEn: "", aboutAr: "", faqEn: "", faqAr: "" },
     modules: [
       {

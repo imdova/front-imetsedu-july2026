@@ -75,6 +75,10 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
     relatedCourseSlugs: Array.isArray(raw.relatedCourseSlugs)
       ? raw.relatedCourseSlugs.filter((x: unknown): x is string => typeof x === "string")
       : [],
+    quote: {
+      textEn: raw.quote?.textEn ?? "",
+      textAr: raw.quote?.textAr ?? "",
+    },
     finalCta: {
       headingEn: raw.finalCta?.headingEn ?? "",
       headingAr: raw.finalCta?.headingAr ?? "",

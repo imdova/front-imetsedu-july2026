@@ -49,6 +49,7 @@ import { SeoPanel } from "../seo-panel";
 import {
   FinalCtaSection,
   HeadingsSection,
+  QuoteSection,
   RelatedCoursesSection,
 } from "../seo-closing-sections";
 import { UPLOAD_LIMITS } from "@/constants/course-options";
@@ -488,6 +489,7 @@ function BasicInfoMain({
       </FormSection>
 
       <FinalCtaSection />
+      <QuoteSection />
       <HeadingsSection />
       <RelatedCoursesSection />
     </>

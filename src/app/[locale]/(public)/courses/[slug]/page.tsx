@@ -436,15 +436,23 @@ export default async function CourseDetailPage({
         .filter((r) => r.title)
     : content.careerRoles;
 
-  const whyCards =
-    content.whyThisDiploma.length > 0
+  // Reason cards under the hero. The course form's cards win, then the bundled
+  // per-course set, then the shared IMETS reasons. DB-first matches faqs and
+  // careerRoles above; previously the bundled set always won, which silently
+  // shadowed anything typed into the form.
+  const whyCards = course.whyChoose?.length
+    ? course.whyChoose.map((r) => ({
+        title: pick(r.titleEn, r.titleAr),
+        body: pick(r.bodyEn, r.bodyAr),
+      }))
+    : content.whyThisDiploma.length > 0
       ? content.whyThisDiploma
-      : course.whyChoose?.length
-        ? course.whyChoose.map((r) => ({
-            title: pick(r.titleEn, r.titleAr),
-            body: pick(r.bodyEn, r.bodyAr),
-          }))
-        : content.whyChoose;
+      : content.whyChoose;
+
+  // Editorial pull-quote: the course form's quote wins, else the bundled
+  // per-course demand line. DB-first, like the sections above.
+  const pullQuote =
+    pick(course.quote?.textEn, course.quote?.textAr) || content.demandLine;
 
   const navItems = [
     { id: "why-choose", label: tr("Highlights", "المميزات") },
@@ -855,9 +863,9 @@ export default async function CourseDetailPage({
                 </CourseSectionBand>
               ) : null}
 
-              {content.demandLine ? (
+              {pullQuote ? (
                 <CourseSectionBand tone="emphasis" spacing="md">
-                  <CoursePullQuote locale={locale} quote={content.demandLine} />
+                  <CoursePullQuote locale={locale} quote={pullQuote} />
                 </CourseSectionBand>
               ) : null}
 

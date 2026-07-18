@@ -76,6 +76,12 @@ export interface CourseFinalCta {
   bodyAr: string;
 }
 
+/** Editorial pull-quote; both blank ⇒ the bundled demand line. */
+export interface CourseQuote {
+  textEn: string;
+  textAr: string;
+}
+
 export interface CourseHeadings {
   whyChooseEn: string; whyChooseAr: string;
   audienceEn: string; audienceAr: string;
@@ -118,6 +124,8 @@ export interface CourseFormData {
   relatedCourseSlugs: string[];
   /** Closing CTA; all-blank ⇒ the shared line. */
   finalCta: CourseFinalCta;
+  /** Editorial pull-quote; both blank ⇒ the bundled demand line. */
+  quote?: CourseQuote;
   /** Keyword H2s; blank ⇒ generic headings. */
   headings: CourseHeadings;
   pricing: {

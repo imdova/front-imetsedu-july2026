@@ -92,6 +92,12 @@ export const courseFinalCtaSchema = z.object({
   bodyAr: z.string().trim(),
 });
 
+/** Editorial pull-quote between sections. Both blank ⇒ the bundled demand line. */
+export const courseQuoteSchema = z.object({
+  textEn: z.string().trim(),
+  textAr: z.string().trim(),
+});
+
 /** Keyword-bearing H2s. Blank ⇒ the page's generic heading for that section. */
 export const courseHeadingsSchema = z.object({
   whyChooseEn: z.string().trim(),
@@ -183,6 +189,8 @@ export const courseFormSchema = z.object({
   careerRoles: z.array(careerRoleSchema),
   /** All-blank ⇒ the bundled/shared closing line. */
   finalCta: courseFinalCtaSchema,
+  /** Both blank ⇒ the bundled per-course demand line. */
+  quote: courseQuoteSchema,
   /** Blank fields fall back to the page's generic headings. */
   headings: courseHeadingsSchema,
   /** Curated "Continue Your Professional Journey" links, by slug.
@@ -205,6 +213,7 @@ export type WhyChooseItemValues = z.infer<typeof whyChooseItemSchema>;
 export type CourseFaqValues = z.infer<typeof courseFaqSchema>;
 export type CareerRoleValues = z.infer<typeof careerRoleSchema>;
 export type CourseFinalCtaValues = z.infer<typeof courseFinalCtaSchema>;
+export type CourseQuoteValues = z.infer<typeof courseQuoteSchema>;
 export type CourseHeadingsValues = z.infer<typeof courseHeadingsSchema>;
 export type LessonValues = z.infer<typeof lessonSchema>;
 export type ModuleValues = z.infer<typeof moduleSchema>;

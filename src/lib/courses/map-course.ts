@@ -193,6 +193,10 @@ export function mapCourse(raw: any): CourseRow {
             bodyAr: raw.finalCta.bodyAr ?? "",
           }
         : undefined,
+    quote:
+      raw?.quote && (raw.quote.textEn || raw.quote.textAr)
+        ? { textEn: raw.quote.textEn ?? "", textAr: raw.quote.textAr ?? "" }
+        : undefined,
     instructorNames: Array.isArray(raw?.instructors)
       ? raw.instructors
           .map((i: any) =>

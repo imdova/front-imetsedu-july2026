@@ -138,6 +138,8 @@ export interface CourseRow {
   relatedCourseSlugs?: string[];
   /** Admin-authored closing CTA. Absent/blank ⇒ the bundled or shared line. */
   finalCta?: { headingEn?: string; headingAr?: string; bodyEn?: string; bodyAr?: string };
+  /** Editorial pull-quote. Both blank ⇒ the bundled demand line. */
+  quote?: { textEn?: string; textAr?: string };
   /** Admin-authored keyword H2s. Blank fields ⇒ the generic headings. */
   headings?: {
     whyChooseEn?: string; whyChooseAr?: string;
