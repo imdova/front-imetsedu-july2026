@@ -16,6 +16,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import type { CurriculumModule } from "@/types";
+import type { CurriculumDetail } from "@/features/marketing/lib/hospital-curriculum";
 
 /** Live curriculum — premium module cards in a 2-column grid. */
 export function CourseCurriculum({
@@ -23,11 +24,14 @@ export function CourseCurriculum({
   locale,
   moduleOutcomes,
   moduleTopics,
+  moduleDetails,
 }: {
   modules: CurriculumModule[];
   locale: string;
   moduleOutcomes?: (string[] | undefined)[];
   moduleTopics?: (string[] | undefined)[];
+  /** Lecture-level detail (objectives / topics / workshop) when authored. */
+  moduleDetails?: (CurriculumDetail | null | undefined)[];
 }) {
   const t = useTranslations("Marketing");
   const ar = locale === "ar";
@@ -41,8 +45,13 @@ export function CourseCurriculum({
           const title =
             (ar ? m.titleAr || m.titleEn : m.titleEn || m.titleAr) ||
             `Module ${i + 1}`;
-          const sessionCount = m.lessons.length;
-          const outcomes = moduleOutcomes?.[i]?.filter(Boolean) ?? [];
+          const detail = moduleDetails?.[i] ?? null;
+          const lectures = detail?.lectures ?? [];
+          const sessionCount = lectures.length || m.lessons.length;
+          const outcomes =
+            detail?.outcomes?.filter(Boolean) ??
+            moduleOutcomes?.[i]?.filter(Boolean) ??
+            [];
           const topics = moduleTopics?.[i]?.filter(Boolean) ?? [];
           const cardSurface = expanded
             ? "border-primary/25 bg-white shadow-md shadow-primary/10 ring-1 ring-primary/10 dark:bg-card md:col-span-2"
@@ -156,6 +165,18 @@ export function CourseCurriculum({
                       />
                     </div>
 
+                    {detail?.meta ? (
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary/80">
+                        {detail.meta}
+                      </p>
+                    ) : null}
+
+                    {detail?.aim ? (
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {detail.aim}
+                      </p>
+                    ) : null}
+
                     {outcomes.length > 0 ? (
                       <div>
                         <p className="text-sm font-semibold text-foreground">
@@ -179,7 +200,81 @@ export function CourseCurriculum({
                   </div>
 
                   <div>
-                    {sessionCount > 0 ? (
+                    {lectures.length > 0 ? (
+                      <>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                          {t("moduleSessionsHeading")}
+                        </p>
+                        <ul className="mt-2 space-y-2">
+                          {lectures.map((lec, j) => (
+                            <li key={`${lec.title}-${j}`}>
+                              <details className="group rounded-xl border border-border/60 bg-card/60 transition-colors open:border-primary/25 open:bg-card open:shadow-sm">
+                                <summary className="flex cursor-pointer list-none items-start gap-2.5 px-3 py-2.5 text-sm">
+                                  <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[0.65rem] font-bold tabular-nums text-primary">
+                                    {j + 1}
+                                  </span>
+                                  <span className="min-w-0 flex-1 font-semibold leading-snug text-foreground">
+                                    {lec.title}
+                                  </span>
+                                  <ChevronDown className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                                </summary>
+
+                                <div className="space-y-3 border-t border-border/50 px-3 py-3 ps-[2.6rem]">
+                                  {lec.objectives?.length ? (
+                                    <div>
+                                      <p className="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                                        {ar ? "أهداف التعلّم" : "Learning objectives"}
+                                      </p>
+                                      <ul className="mt-1.5 space-y-1.5">
+                                        {lec.objectives.map((o) => (
+                                          <li
+                                            key={o}
+                                            className="flex items-start gap-2 text-[0.82rem] leading-snug text-muted-foreground"
+                                          >
+                                            <span className="mt-1 grid size-3.5 shrink-0 place-items-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                                              <Check className="size-2 stroke-[3]" aria-hidden />
+                                            </span>
+                                            {o}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  ) : null}
+
+                                  <div>
+                                    <p className="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                                      {ar ? "أهم الموضوعات" : "Key topics"}
+                                    </p>
+                                    <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                                      {lec.topics.map((tp) => (
+                                        <li
+                                          key={tp}
+                                          className="rounded-md bg-primary/[0.07] px-2 py-1 text-[0.75rem] leading-snug text-foreground/80 ring-1 ring-primary/10"
+                                        >
+                                          {tp}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+
+                                  {lec.practice ? (
+                                    <div className="rounded-lg bg-amber-50 px-3 py-2 ring-1 ring-amber-200/70 dark:bg-amber-950/25 dark:ring-amber-900/40">
+                                      <p className="inline-flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-400">
+                                        <ClipboardList className="size-3.5" aria-hidden />
+                                        {lec.practiceLabel ?? "Workshop"}
+                                      </p>
+                                      <p className="mt-1 text-[0.82rem] leading-snug text-foreground/85">
+                                        {lec.practice}
+                                      </p>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </details>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : sessionCount > 0 ? (
                       <>
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                           {t("moduleSessionsHeading")}

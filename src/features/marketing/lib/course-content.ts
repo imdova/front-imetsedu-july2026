@@ -159,6 +159,50 @@ export function resolveModuleOutcomes(
   const has = (...keys: string[]) =>
     keys.some((k) => t.includes(k.toLowerCase()));
 
+  // Course-specific matches FIRST. Several course names share the words
+  // "hospital" / "management" / "healthcare", so the generic branches further
+  // down would otherwise swallow them (e.g. "Advanced Hospital & Strategic
+  // Management" would resolve as Operations).
+  if (has("fundamental", "أساسيات")) {
+    return ar
+      ? [
+          "قراءة هيكل المستشفى وحوكمته وخطوط التبعية",
+          "حساب مؤشرات التشغيل الأساسية (الإشغال، متوسط الإقامة، دوران الأسرّة)",
+          "الإلمام بالخدمات المساندة والتأهّب للطوارئ",
+        ]
+      : [
+          "Read a hospital's structure, governance and reporting lines",
+          "Calculate core operational metrics (occupancy, ALOS, bed turnover)",
+          "Map support services and emergency preparedness",
+        ];
+  }
+  if (has("strategic", "strategy", "استراتيج")) {
+    return ar
+      ? [
+          "بناء خطة استراتيجية متوائمة مع الرؤية والرسالة",
+          "تحليل البيئة الداخلية والخارجية (SWOT وPESTLE)",
+          "متابعة التنفيذ بمؤشرات الأداء وبطاقة الأداء المتوازن",
+        ]
+      : [
+          "Build a strategic plan aligned to vision and mission",
+          "Analyze the internal and external environment (SWOT, PESTLE)",
+          "Track execution with KPIs and a Balanced Scorecard",
+        ];
+  }
+  if (has("supply chain", "سلسلة الإمداد", "إمداد")) {
+    return ar
+      ? [
+          "تخطيط المشتريات واختيار المورّدين",
+          "ضبط المخزون ومستوياته وتواريخ الصلاحية",
+          "ضمان تدفّق المستلزمات إلى نقاط الرعاية",
+        ]
+      : [
+          "Plan procurement and supplier selection",
+          "Control inventory levels, stock and expiry",
+          "Keep supplies flowing to points of care",
+        ];
+  }
+
   if (has("quality", "accreditation", "جودة", "اعتماد")) {
     return ar
       ? [
@@ -170,6 +214,32 @@ export function resolveModuleOutcomes(
           "Design quality improvement initiatives",
           "Apply patient safety principles",
           "Measure healthcare performance",
+        ];
+  }
+  if (has("hr", "human resource", "موارد بشرية")) {
+    return ar
+      ? [
+          "تخطيط احتياجات الكوادر الصحية",
+          "إدارة أداء الفريق بإنصاف ووضوح",
+          "بناء بيئة عمل تدعم الاستبقاء",
+        ]
+      : [
+          "Plan staffing needs for healthcare teams",
+          "Manage team performance fairly and clearly",
+          "Build a retention-friendly work environment",
+        ];
+  }
+  if (has("financ", "budget", "cost", "تمويل", "موازنة", "تكلف")) {
+    return ar
+      ? [
+          "قراءة وتفسير الميزانيات الصحية",
+          "ربط التكلفة بجودة الخدمة",
+          "المساهمة في قرارات تمويل القسم",
+        ]
+      : [
+          "Read and interpret healthcare budgets",
+          "Link cost decisions to service quality",
+          "Contribute to department financial decisions",
         ];
   }
   if (
@@ -280,10 +350,37 @@ export function resolveModuleTopics(
   const has = (...keys: string[]) =>
     keys.some((k) => t.includes(k.toLowerCase()));
 
+  // Course-specific matches FIRST — see the note in resolveModuleOutcomes.
+  if (has("fundamental", "أساسيات")) {
+    return ar
+      ? ["أنظمة صحية", "الهيكل والحوكمة", "التشغيل"]
+      : ["Health Systems", "Governance", "Operations"];
+  }
+  if (has("strategic", "strategy", "استراتيج")) {
+    return ar
+      ? ["الاستراتيجية", "التحليل", "بطاقة الأداء المتوازن"]
+      : ["Strategy", "Analysis", "Balanced Scorecard"];
+  }
+  if (has("supply chain", "سلسلة الإمداد", "إمداد")) {
+    return ar
+      ? ["المشتريات", "المخزون", "اللوجستيات"]
+      : ["Procurement", "Inventory", "Logistics"];
+  }
+
   if (has("quality", "accreditation", "جودة", "اعتماد")) {
     return ar
       ? ["تحسين الجودة", "سلامة المرضى", "مؤشرات الأداء"]
       : ["Quality Improvement", "Patient Safety", "Performance"];
+  }
+  if (has("hr", "human resource", "موارد بشرية")) {
+    return ar
+      ? ["الموارد البشرية", "الكوادر", "الأداء"]
+      : ["HR", "Staffing", "Performance"];
+  }
+  if (has("financ", "budget", "cost", "تمويل", "موازنة", "تكلف")) {
+    return ar
+      ? ["التمويل", "الميزانية", "التكلفة"]
+      : ["Finance", "Budget", "Cost"];
   }
   if (
     has("leadership", "management", "قيادة", "إدارة") &&
@@ -1378,34 +1475,11 @@ function cicContent(locale: string): CourseContent {
       },
     ],
     careerOpportunities: [],
-    seoSections: [
-      {
-        heading: ar ? "ما هي شهادة CIC؟" : "What Is CIC Certification?",
-        body: ar
-          ? "CIC هي شهادة الاعتماد في الوقاية من العدوى ومكافحتها، ويصدرها مجلس Certification Board of Infection Control and Epidemiology ‏(CBIC) — وهو مجلس مستقل مهمّته اعتماد المتخصصين في هذا المجال، منفصل عن أي جهة تدريب. تُثبت الشهادة أن حاملها يمتلك المعرفة المطلوبة عبر مجالات الممارسة: تحديد الأمراض المعدية، والمراقبة الوبائية، ومنع انتقال العدوى، وصحة العاملين، وإدارة البرنامج، والتعليم والبحث، وبيئة الرعاية، والتنظيف والتطهير والتعقيم. وهي موجّهة لمن يتولّى مسؤولية مباشرة عن برنامج مكافحة العدوى في منشأة صحية."
-          : "CIC is the certification in infection prevention and control, awarded by the Certification Board of Infection Control and Epidemiology (CBIC) — an independent certifying board, separate from any training provider. It demonstrates knowledge across the practice domains: identifying infectious disease processes, surveillance and epidemiologic investigation, preventing transmission, occupational health, program management and communication, education and research, environment of care, and cleaning, disinfection and sterilisation. It is aimed at professionals who hold direct responsibility for an infection prevention program in a healthcare facility.",
-      },
-      {
-        heading: ar ? "لماذا تحصل على شهادة CIC؟" : "Why Become CIC Certified?",
-        body: ar
-          ? "الوقاية من العدوى مسار مهني قائم بذاته: يبدأ من ممرض مكافحة عدوى ويتدرّج إلى منسّق ثم مدير ثم استشاري. والشهادة يصدرها مجلس مستقل لا يرتبط بجهة التدريب، ما يجعلها مرجعًا يمكن للمستشفيات في أي دولة الاعتماد عليه — ولا يضع CBIC قيدًا على الجنسية في شروط الأهلية المنشورة. ولأن برامج الاعتماد تُقيّم مكافحة العدوى مباشرة، فإن حَمَلة الشهادة غالبًا ما يقودون هذا الملف داخل المنشأة."
-          : "Infection prevention is a career track in its own right: it starts at Infection Control Nurse and progresses through Coordinator, Manager and Consultant. The credential comes from an independent board with no tie to any training provider, which is what lets a hospital in any country rely on it — and CBIC's published eligibility sets no nationality restriction. Because accreditation programs assess infection prevention directly, certified professionals often lead that file inside the facility.",
-      },
-      {
-        heading: ar ? "نظرة على امتحان CIC" : "CIC Exam Overview",
-        body: ar
-          ? "وفق CBIC (يوليو 2026): الامتحان اختيار من متعدد ويتكوّن من 150 سؤالًا، يُحتسب منها 135 سؤالًا في الدرجة بينما 15 سؤالًا تجريبية لا تُحتسب. يُقسَّم إلى قسمين مدة كل منهما 90 دقيقة، تسبقهما مقدمة وشرح 10 دقائق، ويفصل بينهما استراحة 16 دقيقة، ويليهما استبيان 5 دقائق. النجاح يتطلب درجة موزونة لا تقل عن 700 على مقياس من 300 إلى 900 — وليست نسبة مئوية من الأسئلة الصحيحة. تتوزّع الأسئلة الـ135 على ثمانية مجالات محتوى. تفاصيل الامتحان يحددها CBIC وقد تتغيّر — وقد نشر CBIC بالفعل مخطط محتوى مُحدّثًا لعام 2027 — لذا تحقّق دائمًا من cbic.org."
-          : "Per CBIC (July 2026): the exam is multiple choice and consists of 150 questions, of which 135 count toward your score and 15 are unscored pretest items. It runs as two 90-minute sections, preceded by a 10-minute introduction and tutorial, separated by a 16-minute break, and followed by a 5-minute survey. Passing requires a scaled score of at least 700 on a 300–900 scale — not a percentage of questions answered correctly. The 135 scored questions are distributed across eight content domains. Exam details are set by CBIC and do change — CBIC has already published a revised content outline for 2027 — so always confirm at cbic.org.",
-      },
-      {
-        heading: ar
-          ? "لماذا تختار IMETS للتحضير لشهادة CIC؟"
-          : "Why Choose IMETS For CIC Preparation?",
-        body: ar
-          ? "التحضير هنا مبني حول مجالات محتوى امتحان CIC الثمانية كما ينشرها CBIC، لا حول منهج عام في مكافحة العدوى. الجلسات مباشرة أسبوعيًا مع مدرّبين يعملون داخل منشآت صحية، وتُسجَّل كلها فتبقى متاحة للمراجعة قبل الامتحان. الشرح بالعربية والإنجليزية معًا، وهو ما يهم عند دراسة مصطلحات امتحان يُقدَّم بالإنجليزية. ونكون صريحين في أمر واحد: IMETS جهة تدريب مستقلة وليست تابعة لـ CBIC — نحن نجهّزك للامتحان، والشهادة يمنحها CBIC وحده."
-          : "Preparation here is built around the eight CIC content domains as CBIC publishes them, not around a general infection control syllabus. Sessions are live and weekly with instructors who work inside healthcare facilities, and every one is recorded so it is there to revise before your exam date. Teaching runs in Arabic and English — which matters when you are learning the terminology of an exam sat in English. And we are straight about one thing: IMETS is an independent training provider, not affiliated with CBIC. We prepare you for the exam; only CBIC awards the credential.",
-      },
-    ],
+    // Removed 2026-07-20 (user request): the long-form SEO band ("What Is CIC
+    // Certification?" / "Why Become CIC Certified?" / "CIC Exam Overview" /
+    // "Why Choose IMETS…") duplicated the Knowledge Center, which now covers the
+    // same ground in more depth. Empty ⇒ the page skips the section entirely.
+    seoSections: [],
     reviews: defaultReviews(locale),
   };
 }

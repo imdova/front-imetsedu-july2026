@@ -50,6 +50,7 @@ import {
   resolveModuleOutcomes,
   resolveModuleTopics,
 } from "@/features/marketing/lib/course-content";
+import { resolveModuleDetail } from "@/features/marketing/lib/hospital-curriculum";
 import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
 import { WhatsAppFab } from "@/features/marketing/components/whatsapp-fab";
 import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
@@ -867,6 +868,12 @@ export default async function CourseDetailPage({
                             course.slug,
                             m.titleEn || m.titleAr || "",
                             locale,
+                          ),
+                        )}
+                        moduleDetails={course.modules.map((m) =>
+                          resolveModuleDetail(
+                            course.slug,
+                            m.titleEn || m.titleAr || "",
                           ),
                         )}
                       />
