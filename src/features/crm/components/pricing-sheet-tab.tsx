@@ -1,14 +1,26 @@
 "use client";
 
 import * as React from "react";
-import { Pencil, Trash2, Plus, Loader2, Coins, Search, SearchX } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  Loader2,
+  Coins,
+  Search,
+  SearchX,
+  Banknote,
+  CreditCard,
+  CalendarClock,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type { PriceRow } from "@/lib/dal/pricing";
 import { usePermission } from "@/hooks/use-permission";
 import { useConfirm } from "@/hooks/use-confirm";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,21 +32,25 @@ const REGIONS = [
   {
     label: "Egypt", currency: "EGP", keys: ["egyptCash", "egypt2", "egypt3"] as Field[],
     head: "text-blue-700 dark:text-blue-300", tint: "bg-blue-50/60 dark:bg-blue-950/20",
-    chip: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300", ring: "border-blue-200 dark:border-blue-900/40",
+    chip: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    ring: "border-blue-200 dark:border-blue-900/40", dot: "bg-blue-500",
   },
   {
     label: "Arab Countries", currency: "USD", keys: ["arabCash", "arab2", "arab3"] as Field[],
     head: "text-amber-700 dark:text-amber-300", tint: "bg-amber-50/70 dark:bg-amber-950/20",
-    chip: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300", ring: "border-amber-200 dark:border-amber-900/40",
+    chip: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+    ring: "border-amber-200 dark:border-amber-900/40", dot: "bg-amber-500",
   },
   {
     label: "Saudi Arabia", currency: "SAR", keys: ["saudiCash", "saudi2", "saudi3"] as Field[],
     head: "text-emerald-700 dark:text-emerald-300", tint: "bg-emerald-50/60 dark:bg-emerald-950/20",
-    chip: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300", ring: "border-emerald-200 dark:border-emerald-900/40",
+    chip: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+    ring: "border-emerald-200 dark:border-emerald-900/40", dot: "bg-emerald-500",
   },
 ];
 const PLANS = ["Cash", "2 installments", "3 installments"];
-const PLAN_SHORT = ["Cash", "2×", "3×"];
+/** Per-plan icon for the row label — cash is the headline, then the two plans. */
+const PLAN_ICON: LucideIcon[] = [Banknote, CreditCard, CalendarClock];
 
 const emptyForm: Omit<PriceRow, "id" | "order"> = {
   program: "",
@@ -62,12 +78,22 @@ const joinInst = (parts: string[]): string => {
   while (cleaned.length && cleaned[cleaned.length - 1] === "") cleaned.pop();
   return cleaned.join(SEP);
 };
-/** Render a cell: pipe-joined installments show as "a + b"; single values as-is. */
-const cellText = (v: string) => {
-  if (!has(v)) return "—";
+/** A price cell: emphasizes the amount(s); installment "+" separators are muted. */
+function CellValue({ v }: { v: string }) {
+  if (!has(v)) return <span className="text-muted-foreground/30">—</span>;
   const parts = v.split("|").map((s) => s.trim()).filter(Boolean);
-  return parts.length > 1 ? parts.join(" + ") : v.trim();
-};
+  if (parts.length <= 1) return <span>{v.trim()}</span>;
+  return (
+    <span className="inline-flex flex-wrap items-center justify-center gap-x-1">
+      {parts.map((p, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <span className="text-muted-foreground/45">+</span>}
+          <span>{p}</span>
+        </React.Fragment>
+      ))}
+    </span>
+  );
+}
 
 export function PricingSheetTab() {
   const canCreate = usePermission("crm.office.create");
@@ -143,9 +169,17 @@ export function PricingSheetTab() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-lg font-semibold tracking-tight">Pricing sheet <span className="ms-1 text-sm font-normal text-muted-foreground">· {rows.length} programs</span></h3>
-          <p className="text-sm text-muted-foreground">Course prices by region and payment plan.</p>
+        <div className="flex items-center gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+            <Coins className="size-5" />
+          </span>
+          <div>
+            <h3 className="text-lg font-semibold tracking-tight">
+              Pricing sheet{" "}
+              <span className="ms-1 text-sm font-normal text-muted-foreground">· {rows.length} programs</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">Course prices by region and payment plan.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative flex-1 sm:w-52 sm:flex-none">
@@ -157,10 +191,12 @@ export function PricingSheetTab() {
       </div>
 
       {/* Region legend */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border/60 bg-muted/25 px-3.5 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">Regions</span>
         {REGIONS.map((rg) => (
-          <span key={rg.label} className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium", rg.chip)}>
-            <span className="size-1.5 rounded-full bg-current" /> {rg.label} ({rg.currency})
+          <span key={rg.label} className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/80">
+            <span className={cn("size-2 rounded-full", rg.dot)} />
+            {rg.label} <span className="text-muted-foreground">· {rg.currency}</span>
           </span>
         ))}
       </div>
@@ -178,85 +214,100 @@ export function PricingSheetTab() {
           <Button variant="ghost" size="sm" onClick={() => setQuery("")}>Clear search</Button>
         </div>
       ) : (
-        <>
-          {/* Desktop / tablet — table */}
-          <div className="hidden overflow-x-auto rounded-2xl border border-border/70 bg-card shadow-sm lg:block">
-            <table className="w-full min-w-[860px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b text-xs uppercase tracking-wide">
-                  <th rowSpan={2} className="sticky start-0 z-10 bg-card px-4 py-2.5 text-start font-semibold">Program</th>
-                  {REGIONS.map((rg) => (
-                    <th key={rg.label} colSpan={3} className={cn("border-s px-3 py-2 text-center font-bold", rg.tint, rg.head)}>
-                      {rg.label} <span className="font-normal normal-case opacity-70">({rg.currency})</span>
-                    </th>
-                  ))}
-                  {canManage && <th rowSpan={2} className="border-s bg-card px-3 py-2.5 text-end font-semibold text-muted-foreground">Actions</th>}
-                </tr>
-                <tr className="border-b text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {REGIONS.map((rg) =>
-                    PLANS.map((p, i) => (
-                      <th key={rg.label + p} className={cn("px-3 py-1.5 text-center font-medium", rg.tint, i === 0 && "border-s")}>{p}</th>
-                    )),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map((r, ri) => (
-                  <tr key={r.id} className={cn("border-b last:border-0 transition-colors hover:bg-primary/5", ri % 2 === 1 && "bg-muted/20")}>
-                    <td className="sticky start-0 z-10 bg-inherit px-4 py-3 font-semibold text-foreground">{r.program}</td>
-                    {REGIONS.map((rg) =>
-                      rg.keys.map((k, i) => (
-                        <td key={r.id + k} className={cn("px-3 py-3 text-center tabular-nums", i === 0 ? cn("border-s font-semibold text-foreground") : "text-muted-foreground", !has(r[k]) && "text-muted-foreground/40")}>
-                          {cellText(r[k])}
-                        </td>
-                      )),
-                    )}
-                    {canManage && (
-                      <td className="border-s px-3 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="size-8" title="Edit" onClick={() => openEdit(r)}><Pencil className="size-4" /></Button>
-                          <Button variant="ghost" size="icon" className="size-8" title="Delete" onClick={() => remove(r)}><Trash2 className="size-4 text-destructive" /></Button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile — cards */}
-          <div className="space-y-3 lg:hidden">
-            {visible.map((r) => (
-              <div key={r.id} className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-                <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-4 py-2.5">
-                  <p className="font-semibold text-foreground">{r.program}</p>
-                  {canManage && (
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="size-7" title="Edit" onClick={() => openEdit(r)}><Pencil className="size-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="size-7" title="Delete" onClick={() => remove(r)}><Trash2 className="size-3.5 text-destructive" /></Button>
-                    </div>
-                  )}
-                </div>
-                <div className="grid gap-2 p-3 sm:grid-cols-3">
-                  {REGIONS.map((rg) => (
-                    <div key={rg.label} className={cn("rounded-xl border p-2.5", rg.ring, rg.tint)}>
-                      <p className={cn("mb-1.5 text-xs font-bold", rg.head)}>{rg.label} <span className="font-normal opacity-70">({rg.currency})</span></p>
-                      <dl className="space-y-1">
-                        {rg.keys.map((k, i) => (
-                          <div key={k} className="flex items-center justify-between gap-2 text-sm">
-                            <dt className="text-xs text-muted-foreground">{PLAN_SHORT[i]}</dt>
-                            <dd className={cn("font-medium tabular-nums", has(r[k]) ? "text-foreground" : "text-muted-foreground/40")}>{cellText(r[k])}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </div>
-                  ))}
-                </div>
+        // One card per program; inside each, plans are vertical ROWS
+        // (Cash / 2 installments / 3 installments) and regions are the columns.
+        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+          {visible.map((r) => (
+            <div
+              key={r.id}
+              className="group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-transparent transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:ring-primary/10"
+            >
+              {/* Header — program identity */}
+              <div className="flex items-center gap-2.5 border-b bg-gradient-to-r from-primary/[0.06] to-transparent px-3.5 py-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 font-heading text-xs font-bold uppercase tracking-tight text-primary ring-1 ring-primary/15">
+                  {getInitials(r.program)}
+                </span>
+                <p className="min-w-0 flex-1 truncate font-semibold tracking-tight text-foreground" title={r.program}>
+                  {r.program}
+                </p>
+                {canManage && (
+                  <div className="flex shrink-0 items-center gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
+                    <Button variant="ghost" size="icon" className="size-7" title="Edit" onClick={() => openEdit(r)}><Pencil className="size-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="size-7" title="Delete" onClick={() => remove(r)}><Trash2 className="size-3.5 text-destructive" /></Button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        </>
+
+              {/* Prices — plans as rows, regions as columns */}
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="px-3.5 py-2 text-start text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                        Plan
+                      </th>
+                      {REGIONS.map((rg) => (
+                        <th key={rg.label} className={cn("border-s px-3 py-2 text-center align-middle leading-none", rg.tint)}>
+                          <span className={cn("inline-flex items-center gap-1.5 text-xs font-bold", rg.head)}>
+                            <span className={cn("size-1.5 rounded-full", rg.dot)} />
+                            {rg.currency}
+                          </span>
+                          <span className="mt-1 block text-[10px] font-medium normal-case text-muted-foreground">
+                            {rg.label}
+                          </span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PLANS.map((plan, i) => {
+                      const isCash = i === 0;
+                      const Icon = PLAN_ICON[i];
+                      return (
+                        <tr
+                          key={plan}
+                          className={cn(
+                            "border-b transition-colors last:border-0 hover:bg-primary/[0.04]",
+                            isCash && "bg-primary/[0.035]",
+                          )}
+                        >
+                          <td className="whitespace-nowrap px-3.5 py-2.5">
+                            <span className="inline-flex items-center gap-2">
+                              <Icon
+                                className={cn(
+                                  "size-3.5 shrink-0",
+                                  isCash ? "text-primary" : "text-muted-foreground/60",
+                                )}
+                              />
+                              <span className={cn("text-sm", isCash ? "font-semibold text-foreground" : "font-medium text-foreground/80")}>
+                                {plan}
+                              </span>
+                            </span>
+                          </td>
+                          {REGIONS.map((rg) => {
+                            const v = r[rg.keys[i]];
+                            return (
+                              <td
+                                key={rg.label}
+                                className={cn(
+                                  "border-s px-3 py-2.5 text-center tabular-nums",
+                                  isCash ? "text-[0.95rem] font-bold text-foreground" : "font-medium text-muted-foreground",
+                                  !has(v) && "text-muted-foreground/30",
+                                )}
+                              >
+                                <CellValue v={v} />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Add / edit dialog (super-admin) */}
@@ -270,16 +321,22 @@ export function PricingSheetTab() {
             </div>
             {REGIONS.map((rg) => (
               <div key={rg.label} className={cn("space-y-2.5 rounded-xl border p-3", rg.ring, rg.tint)}>
-                <p className={cn("text-sm font-bold", rg.head)}>{rg.label} <span className="text-xs font-normal opacity-70">({rg.currency})</span></p>
+                <p className={cn("inline-flex items-center gap-1.5 text-sm font-bold", rg.head)}>
+                  <span className={cn("size-2 rounded-full", rg.dot)} />
+                  {rg.label} <span className="text-xs font-normal opacity-70">({rg.currency})</span>
+                </p>
                 <div className="space-y-2.5">
                   {rg.keys.map((k, i) => {
                     // index 0 = Cash (1 input), 1 = 2 installments (2 inputs),
                     // 2 = 3 installments (3 inputs).
                     const count = i + 1;
                     const parts = splitInst(form[k], count);
+                    const PlanIcon = PLAN_ICON[i];
                     return (
                       <div key={k} className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">{PLANS[i]}</Label>
+                        <Label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <PlanIcon className="size-3.5" /> {PLANS[i]}
+                        </Label>
                         <div
                           className={cn(
                             "grid gap-2",
