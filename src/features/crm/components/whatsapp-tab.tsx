@@ -2,8 +2,7 @@
 
 import * as React from "react";
 import {
-  Link2,
-  ExternalLink,
+  MessageCircle,
   Pencil,
   Trash2,
   Plus,
@@ -12,16 +11,8 @@ import {
   Loader2,
   Copy,
   Check,
-  Star,
-  FileText,
-  CreditCard,
-  Share2,
-  Camera,
-  Play,
-  Globe,
-  MessageCircle,
-  Send,
-  type LucideIcon,
+  Phone,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,7 +24,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -42,111 +32,43 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const emptyForm = { title: "", url: "", description: "", category: "" };
+/**
+ * WhatsApp contacts — name + number → a shareable wa.me link.
+ *
+ * Reuses the existing "Important Links" store (no new backend): each contact is
+ * saved as a link with category "WhatsApp", `title` = name, `url` = the wa.me
+ * link, and `description` = the number as typed (for faithful reload/display).
+ * The Important Links tab hides this category so the two don't overlap.
+ */
+const CATEGORY = "WhatsApp";
 
-/** Map a link (title + url) to a brand-ish icon + colour. */
-function brand(
-  title: string,
-  url: string,
-): { Icon: LucideIcon; chip: string; accent: string } {
-  const t = `${title} ${url}`.toLowerCase();
-  if (t.includes("facebook") || t.includes("fb.com") || t.includes("fb.me"))
-    return {
-      Icon: Share2,
-      chip: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-      accent: "from-blue-500 to-blue-400",
-    };
-  if (t.includes("instagram") || t.includes("instagr.am"))
-    return {
-      Icon: Camera,
-      chip: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
-      accent: "from-pink-500 to-fuchsia-400",
-    };
-  if (t.includes("youtube") || t.includes("youtu.be"))
-    return {
-      Icon: Play,
-      chip: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-      accent: "from-red-500 to-red-400",
-    };
-  if (t.includes("whatsapp") || t.includes("wa.me"))
-    return {
-      Icon: MessageCircle,
-      chip: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-      accent: "from-emerald-500 to-emerald-400",
-    };
-  if (t.includes("telegram") || t.includes("t.me"))
-    return {
-      Icon: Send,
-      chip: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
-      accent: "from-sky-500 to-sky-400",
-    };
-  if (t.includes("review") || t.includes("rating") || t.includes("testimonial"))
-    return {
-      Icon: Star,
-      chip: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-      accent: "from-amber-500 to-amber-400",
-    };
-  if (
-    t.includes("policy") ||
-    t.includes("terms") ||
-    t.includes("privacy") ||
-    t.includes("refund")
-  )
-    return {
-      Icon: FileText,
-      chip: "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300",
-      accent: "from-slate-500 to-slate-400",
-    };
-  if (
-    t.includes("pay") ||
-    t.includes("checkout") ||
-    t.includes("invoice") ||
-    t.includes("fawry") ||
-    t.includes("stripe")
-  )
-    return {
-      Icon: CreditCard,
-      chip: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
-      accent: "from-violet-500 to-violet-400",
-    };
-  return {
-    Icon: Globe,
-    chip: "bg-primary/10 text-primary",
-    accent: "from-primary to-primary/50",
-  };
-}
+/** Keep only digits — wa.me needs the full international number with no + or spaces. */
+const digits = (s: string) => (s || "").replace(/\D/g, "");
+const waLink = (num: string) => `https://wa.me/${digits(num)}`;
+/** Pretty display: +<number> (the raw digits, grouped loosely). */
+const prettyNumber = (num: string) => {
+  const d = digits(num);
+  return d ? `+${d}` : "";
+};
+/** Recover the number from a stored contact (description first, then the url). */
+const numberOf = (l: ImportantLink) =>
+  digits(l.description) || (l.url.match(/wa\.me\/(\d+)/)?.[1] ?? "");
 
-/** Turn a possibly-relative href into an absolute, openable URL. */
-function toHref(url: string): string {
-  const u = url.trim();
-  if (!u) return "#";
-  if (/^https?:\/\//i.test(u) || u.startsWith("/")) return u;
-  return `https://${u}`;
-}
-
-/** Short, readable version of a URL for display. */
-function prettyUrl(url: string): string {
-  return url
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/$/, "");
-}
-
-export function ImportantLinksTab() {
+export function WhatsAppTab() {
   const canCreate = usePermission("crm.office.create");
   const canEdit = usePermission("crm.office.edit");
   const canDelete = usePermission("crm.office.delete");
   const canManage = canCreate || canEdit || canDelete;
   const { confirm, Confirmation } = useConfirm();
 
-  const [links, setLinks] = React.useState<ImportantLink[]>([]);
+  const [items, setItems] = React.useState<ImportantLink[]>([]);
   const [query, setQuery] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ImportantLink | null>(null);
-  const [form, setForm] = React.useState(emptyForm);
+  const [form, setForm] = React.useState({ name: "", number: "" });
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -154,7 +76,10 @@ export function ImportantLinksTab() {
     (async () => {
       const res = await dal.importantLinks.fetchImportantLinks();
       if (cancelled) return;
-      if (res.ok) setLinks(res.data);
+      if (res.ok)
+        setItems(
+          res.data.filter((l) => (l.category || "").toLowerCase() === "whatsapp"),
+        );
       setLoading(false);
     })();
     return () => {
@@ -162,31 +87,20 @@ export function ImportantLinksTab() {
     };
   }, []);
 
-  // WhatsApp contacts live in their own "WhatsApp" tab (same store, category
-  // "WhatsApp") — keep them out of the general links list so they don't double-show.
-  const baseLinks = links.filter(
-    (l) => (l.category || "").toLowerCase() !== "whatsapp",
-  );
   const q = query.trim().toLowerCase();
   const visible = q
-    ? baseLinks.filter(
+    ? items.filter(
         (l) =>
-          l.title.toLowerCase().includes(q) ||
-          l.url.toLowerCase().includes(q) ||
-          l.category.toLowerCase().includes(q) ||
-          l.description.toLowerCase().includes(q),
+          l.title.toLowerCase().includes(q) || numberOf(l).includes(digits(q)),
       )
-    : baseLinks;
+    : items;
 
   const copy = async (l: ImportantLink) => {
     try {
-      await navigator.clipboard.writeText(toHref(l.url));
+      await navigator.clipboard.writeText(waLink(numberOf(l)));
       setCopiedId(l.id);
-      toast.success("Link copied");
-      window.setTimeout(
-        () => setCopiedId((c) => (c === l.id ? null : c)),
-        1500,
-      );
+      toast.success("WhatsApp link copied");
+      window.setTimeout(() => setCopiedId((c) => (c === l.id ? null : c)), 1500);
     } catch {
       toast.error("Couldn't copy — select the link manually");
     }
@@ -194,35 +108,34 @@ export function ImportantLinksTab() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ name: "", number: "" });
     setOpen(true);
   };
   const openEdit = (l: ImportantLink) => {
     setEditing(l);
-    setForm({
-      title: l.title,
-      url: l.url,
-      description: l.description,
-      category: l.category,
-    });
+    setForm({ name: l.title, number: numberOf(l) });
     setOpen(true);
   };
 
+  const nameOk = form.name.trim().length >= 2;
+  const numOk = digits(form.number).length >= 8;
+
   const save = async () => {
-    if (!form.title.trim()) {
-      toast.error("Title is required");
+    if (!nameOk) {
+      toast.error("Name is required");
       return;
     }
-    if (!form.url.trim()) {
-      toast.error("URL is required");
+    if (!numOk) {
+      toast.error("Enter a valid WhatsApp number (with country code)");
       return;
     }
     setSaving(true);
+    const num = digits(form.number);
     const payload = {
-      title: form.title.trim(),
-      url: form.url.trim(),
-      description: form.description.trim(),
-      category: form.category.trim(),
+      title: form.name.trim(),
+      url: `https://wa.me/${num}`,
+      description: num, // number, for faithful reload
+      category: CATEGORY,
     };
     const res = editing
       ? await dal.importantLinks.updateImportantLink(editing.id, payload)
@@ -232,20 +145,20 @@ export function ImportantLinksTab() {
       toast.error(res.error);
       return;
     }
-    setLinks((p) =>
+    setItems((p) =>
       editing
         ? p.map((x) => (x.id === res.data.id ? res.data : x))
         : [...p, res.data],
     );
-    toast.success(editing ? "Link updated" : "Link added");
+    toast.success(editing ? "Contact updated" : "Contact added");
     setOpen(false);
   };
 
   const remove = async (l: ImportantLink) => {
     if (
       !(await confirm({
-        title: "Delete link",
-        description: `“${l.title}”?`,
+        title: "Delete contact",
+        description: `Remove “${l.title}” from WhatsApp contacts?`,
         confirmText: "Delete",
         variant: "destructive",
       }))
@@ -253,7 +166,7 @@ export function ImportantLinksTab() {
       return;
     const res = await dal.importantLinks.deleteImportantLink(l.id);
     if (res.ok) {
-      setLinks((p) => p.filter((x) => x.id !== l.id));
+      setItems((p) => p.filter((x) => x.id !== l.id));
       toast.success("Deleted");
     } else toast.error(res.error);
   };
@@ -271,14 +184,14 @@ export function ImportantLinksTab() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold tracking-tight">
-            Important links{" "}
+            WhatsApp contacts{" "}
             <span className="ms-1 text-sm font-normal text-muted-foreground">
-              · {baseLinks.length}
+              · {items.length}
             </span>
           </h3>
           <p className="text-sm text-muted-foreground">
-            Quick-access links your team opens every day — reviews, policies,
-            payment links, social pages.
+            Save a name and number to get a ready <code>wa.me</code> link your
+            team can open or share.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -287,32 +200,31 @@ export function ImportantLinksTab() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search…"
+              placeholder="Search name or number…"
               className="ps-9"
             />
           </div>
           {canCreate && (
             <Button className="shrink-0 gap-1.5" onClick={openCreate}>
               <Plus className="size-4" />{" "}
-              <span className="hidden sm:inline">Add link</span>
+              <span className="hidden sm:inline">Add contact</span>
             </Button>
           )}
         </div>
       </div>
 
-      {baseLinks.length === 0 ? (
+      {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-gradient-to-b from-muted/30 to-transparent py-20 text-center">
-          <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <Link2 className="size-7" />
+          <span className="grid size-14 place-items-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+            <MessageCircle className="size-7" />
           </span>
-          <p className="font-medium text-foreground">No links yet</p>
+          <p className="font-medium text-foreground">No WhatsApp contacts yet</p>
           <p className="mx-auto max-w-md text-sm text-muted-foreground">
-            Add your reviews page, policy pages, payment links and social pages
-            so your team can reach them in one click.
+            Add a name and number and we&apos;ll build the wa.me link for you.
           </p>
           {canCreate && (
             <Button variant="outline" className="gap-1.5" onClick={openCreate}>
-              <Plus className="size-4" /> Add link
+              <Plus className="size-4" /> Add contact
             </Button>
           )}
         </div>
@@ -331,38 +243,30 @@ export function ImportantLinksTab() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((l) => {
-            const b = brand(l.title, l.url);
+            const num = numberOf(l);
+            const link = waLink(num);
             return (
               <article
                 key={l.id}
                 className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
-                <span
-                  className={cn(
-                    "absolute inset-x-0 top-0 h-1 bg-gradient-to-r",
-                    b.accent,
-                  )}
-                />
+                <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 to-emerald-400" />
                 <div className="flex flex-1 flex-col p-4 pt-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="inline-flex min-w-0 items-center gap-2.5">
-                      <span
-                        className={cn(
-                          "grid size-10 shrink-0 place-items-center rounded-xl",
-                          b.chip,
-                        )}
-                      >
-                        <b.Icon className="size-5" />
+                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                        <MessageCircle className="size-5" />
                       </span>
                       <div className="min-w-0">
                         <h4 className="truncate font-semibold text-foreground">
                           {l.title}
                         </h4>
-                        {l.category && (
-                          <span className="text-xs text-muted-foreground">
-                            {l.category}
-                          </span>
-                        )}
+                        <span
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+                          dir="ltr"
+                        >
+                          <Phone className="size-3 shrink-0" /> {prettyNumber(num)}
+                        </span>
                       </div>
                     </div>
                     {canManage && (
@@ -388,30 +292,26 @@ export function ImportantLinksTab() {
                       </div>
                     )}
                   </div>
-                  {l.description.trim() && (
-                    <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-                      {l.description}
-                    </p>
-                  )}
                   <a
-                    href={toHref(l.url)}
+                    href={link}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-3 inline-flex items-center gap-1 truncate text-xs text-primary hover:underline"
-                    title={l.url}
+                    dir="ltr"
+                    title={link}
                   >
-                    <Globe className="size-3 shrink-0" />{" "}
-                    <span className="truncate">{prettyUrl(l.url)}</span>
+                    <MessageCircle className="size-3 shrink-0" />
+                    <span className="truncate">wa.me/{num}</span>
                   </a>
                 </div>
                 <div className="flex items-center gap-2 border-t p-3">
-                  <Button asChild size="sm" className="flex-1 gap-1.5">
-                    <a
-                      href={toHref(l.url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="size-4" /> Open
+                  <Button
+                    asChild
+                    size="sm"
+                    className="flex-1 gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
+                    <a href={link} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="size-4" /> Open chat
                     </a>
                   </Button>
                   <Button
@@ -419,7 +319,7 @@ export function ImportantLinksTab() {
                     size="sm"
                     className="gap-1.5"
                     onClick={() => copy(l)}
-                    title="Copy link"
+                    title="Copy wa.me link"
                   >
                     {copiedId === l.id ? (
                       <Check className="size-4" />
@@ -434,63 +334,49 @@ export function ImportantLinksTab() {
         </div>
       )}
 
-      {/* Add / edit dialog (super-admin) */}
+      {/* Add / edit dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit link" : "New link"}</DialogTitle>
+            <DialogTitle>
+              {editing ? "Edit WhatsApp contact" : "New WhatsApp contact"}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-1.5">
               <Label>
-                Title <span className="text-destructive">*</span>
+                Name <span className="text-destructive">*</span>
               </Label>
               <Input
-                value={form.title}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, title: e.target.value }))
-                }
-                placeholder="e.g. Reviews page, Refund policy, Facebook page"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Admissions – Ahmed"
               />
             </div>
             <div className="space-y-1.5">
               <Label>
-                URL <span className="text-destructive">*</span>
+                WhatsApp number <span className="text-destructive">*</span>
               </Label>
               <Input
-                value={form.url}
+                value={form.number}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, url: e.target.value }))
+                  setForm((f) => ({ ...f, number: e.target.value }))
                 }
-                placeholder="/success-stories  or  https://facebook.com/imetsedu"
+                placeholder="201115782721"
+                inputMode="tel"
+                dir="ltr"
               />
               <p className="text-xs text-muted-foreground">
-                Site path (e.g. <code>/success-stories</code>) or full URL. Opens in a
-                new tab.
+                Full international number, country code first, no <code>+</code> or
+                spaces (e.g. <code>201115782721</code>).
+                {numOk && (
+                  <>
+                    {" "}
+                    Link:{" "}
+                    <code dir="ltr">wa.me/{digits(form.number)}</code>
+                  </>
+                )}
               </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Category</Label>
-                <Input
-                  value={form.category}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, category: e.target.value }))
-                  }
-                  placeholder="e.g. Social, Policy, Payment"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Description</Label>
-              <Textarea
-                rows={2}
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
-                placeholder="Optional note about when/how to use this link"
-              />
             </div>
           </div>
           <DialogFooter>
@@ -503,7 +389,7 @@ export function ImportantLinksTab() {
             </Button>
             <Button
               onClick={save}
-              disabled={saving || !form.title.trim() || !form.url.trim()}
+              disabled={saving || !nameOk || !numOk}
               className="gap-1.5"
             >
               {saving && <Loader2 className="size-4 animate-spin" />}

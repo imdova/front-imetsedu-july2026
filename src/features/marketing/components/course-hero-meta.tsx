@@ -11,10 +11,7 @@ import { getTranslations } from "next-intl/server";
 import type { CourseRow } from "@/types";
 import { cn, formatCompact } from "@/lib/utils";
 import { courseSocialProof } from "@/features/marketing/lib/course-social-proof";
-
-function formatHeroPrice(amount: number) {
-  return `EGP ${Math.round(amount).toLocaleString("en-US")}`;
-}
+import { CoursePrice } from "@/features/marketing/components/course-price";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -58,12 +55,10 @@ function MetaItem({
 
 export async function CourseHeroMeta({
   course,
-  price,
-  onSale,
+  locale,
 }: {
   course: CourseRow;
-  price: number;
-  onSale: boolean;
+  locale: string;
 }) {
   const t = await getTranslations("Marketing");
   const { rating, reviews } = courseSocialProof(course);
@@ -94,14 +89,13 @@ export async function CourseHeroMeta({
       <MetaDivider />
 
       <MetaItem icon={Tag}>
-        <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="font-semibold tabular-nums">{formatHeroPrice(price)}</span>
-          {onSale && (
-            <span className="text-xs text-red-300 line-through tabular-nums">
-              {formatHeroPrice(course.priceEGP)}
-            </span>
-          )}
-        </span>
+        <CoursePrice
+          locale={locale}
+          variant="strip"
+          egp={{ price: course.priceEGP, sale: course.salePriceEGP }}
+          sar={{ price: course.priceSAR ?? 0, sale: course.salePriceSAR ?? 0 }}
+          usd={{ price: course.priceUSD ?? 0, sale: course.salePriceUSD ?? 0 }}
+        />
       </MetaItem>
 
       <MetaDivider />

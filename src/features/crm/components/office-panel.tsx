@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { MessageSquareText, ClipboardList, Coins, Wallet, FileText, Link2, Plus, Upload } from "lucide-react";
+import { MessageSquareText, ClipboardList, Coins, Wallet, FileText, Link2, Plus, Upload, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,10 +11,12 @@ import { RegistrationSheetsTab } from "@/features/crm/components/registration-sh
 import { PricingSheetTab } from "@/features/crm/components/pricing-sheet-tab";
 import { PaymentMethodsTab } from "@/features/crm/components/payment-methods-tab";
 import { ImportantLinksTab } from "@/features/crm/components/important-links-tab";
+import { WhatsAppTab } from "@/features/crm/components/whatsapp-tab";
 
 const TABS = [
   { value: "messages", label: "Message Templates", icon: MessageSquareText },
   { value: "links", label: "Important Links", icon: Link2 },
+  { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
   { value: "registration", label: "Registration Sheets", icon: ClipboardList },
   { value: "pricing", label: "Pricing Sheet", icon: Coins },
   { value: "payment", label: "Payment Methods", icon: Wallet },
@@ -62,6 +64,7 @@ export function OfficePanel() {
 
       <TabsContent value="messages"><MessageTemplatesTab /></TabsContent>
       <TabsContent value="links"><ImportantLinksTab /></TabsContent>
+      <TabsContent value="whatsapp"><WhatsAppTab /></TabsContent>
       <TabsContent value="registration"><RegistrationSheetsTab /></TabsContent>
       <TabsContent value="pricing"><PricingSheetTab /></TabsContent>
       <TabsContent value="payment"><PaymentMethodsTab /></TabsContent>

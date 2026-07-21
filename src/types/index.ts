@@ -76,7 +76,10 @@ export interface CourseRow {
   difficulty: Difficulty;
   priceEGP: number;
   salePriceEGP: number;
-  /** USD pricing (used by the online / PayPal checkout). 0 when not configured. */
+  /** SAR pricing (shown to visitors in Saudi Arabia). 0 when not configured. */
+  priceSAR?: number;
+  salePriceSAR?: number;
+  /** USD pricing (used by the online / PayPal checkout + shown outside EG/SA). 0 when not configured. */
   priceUSD?: number;
   salePriceUSD?: number;
   students: number;

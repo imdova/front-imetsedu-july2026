@@ -174,7 +174,7 @@ export function PublicHeader({
                 : undefined,
             )}
           >
-            <Link href="/register">{tm("getStarted")}</Link>
+            <Link href="/become-instructor">{tm("footerBecomeInstructor")}</Link>
           </Button>
 
           <Sheet>
@@ -236,7 +236,7 @@ export function PublicHeader({
                     <Link href="/login">{tc("signIn")}</Link>
                   </Button>
                   <Button asChild>
-                    <Link href="/register">{tm("getStarted")}</Link>
+                    <Link href="/become-instructor">{tm("footerBecomeInstructor")}</Link>
                   </Button>
                 </div>
               </nav>

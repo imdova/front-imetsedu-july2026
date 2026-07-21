@@ -44,7 +44,30 @@ const emptyForm: Omit<PriceRow, "id" | "order"> = {
 };
 
 const has = (v: string) => Boolean(v && v.trim() && !/^-+$/.test(v.trim()));
-const cellText = (v: string) => (has(v) ? v : "—");
+
+/**
+ * Installment plans store one value per installment inside the existing
+ * free-text field, pipe-joined ("6000 | 6000"). These split it into `n` inputs
+ * for editing and join them back for storage — so no backend change is needed.
+ */
+const SEP = " | ";
+const ORD = ["1st", "2nd", "3rd"];
+const splitInst = (v: string, n: number): string[] => {
+  const parts = (v || "").split("|").map((s) => s.trim());
+  return Array.from({ length: n }, (_, i) => parts[i] ?? "");
+};
+const joinInst = (parts: string[]): string => {
+  const cleaned = parts.map((s) => s.trim());
+  // Drop trailing blanks so an unfinished plan doesn't persist a dangling "6000 |".
+  while (cleaned.length && cleaned[cleaned.length - 1] === "") cleaned.pop();
+  return cleaned.join(SEP);
+};
+/** Render a cell: pipe-joined installments show as "a + b"; single values as-is. */
+const cellText = (v: string) => {
+  if (!has(v)) return "—";
+  const parts = v.split("|").map((s) => s.trim()).filter(Boolean);
+  return parts.length > 1 ? parts.join(" + ") : v.trim();
+};
 
 export function PricingSheetTab() {
   const canCreate = usePermission("crm.office.create");
@@ -83,6 +106,14 @@ export function PricingSheetTab() {
     setForm(rest);
     setOpen(true);
   };
+
+  /** Update one installment of a plan, keeping the field pipe-joined. */
+  const setInstPart = (k: Field, count: number, idx: number, val: string) =>
+    setForm((f) => {
+      const parts = splitInst(f[k], count);
+      parts[idx] = val;
+      return { ...f, [k]: joinInst(parts) };
+    });
 
   const save = async () => {
     if (!form.program.trim()) { toast.error("Program name is required"); return; }
@@ -238,19 +269,43 @@ export function PricingSheetTab() {
               <Input value={form.program} onChange={(e) => setForm((f) => ({ ...f, program: e.target.value }))} placeholder="e.g. CPHQ" />
             </div>
             {REGIONS.map((rg) => (
-              <div key={rg.label} className={cn("space-y-2 rounded-xl border p-3", rg.ring, rg.tint)}>
+              <div key={rg.label} className={cn("space-y-2.5 rounded-xl border p-3", rg.ring, rg.tint)}>
                 <p className={cn("text-sm font-bold", rg.head)}>{rg.label} <span className="text-xs font-normal opacity-70">({rg.currency})</span></p>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {rg.keys.map((k, i) => (
-                    <div key={k} className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">{PLANS[i]}</Label>
-                      <Input value={form[k]} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} placeholder="—" className="bg-background" />
-                    </div>
-                  ))}
+                <div className="space-y-2.5">
+                  {rg.keys.map((k, i) => {
+                    // index 0 = Cash (1 input), 1 = 2 installments (2 inputs),
+                    // 2 = 3 installments (3 inputs).
+                    const count = i + 1;
+                    const parts = splitInst(form[k], count);
+                    return (
+                      <div key={k} className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">{PLANS[i]}</Label>
+                        <div
+                          className={cn(
+                            "grid gap-2",
+                            count === 1 && "grid-cols-1",
+                            count === 2 && "grid-cols-2",
+                            count === 3 && "grid-cols-3",
+                          )}
+                        >
+                          {parts.map((p, idx) => (
+                            <Input
+                              key={idx}
+                              value={p}
+                              onChange={(e) => setInstPart(k, count, idx, e.target.value)}
+                              placeholder={count === 1 ? "—" : `${ORD[idx]} payment`}
+                              className="bg-background"
+                              aria-label={count === 1 ? PLANS[i] : `${PLANS[i]} · ${ORD[idx]} payment`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
-            <p className="text-xs text-muted-foreground">Type the value exactly as it should appear (e.g. <code>11500</code>, <code>450 $</code>, <code>1,800 SAR</code>). Leave blank where a plan is not offered.</p>
+            <p className="text-xs text-muted-foreground">Enter each value as it should appear (e.g. <code>11500</code>, <code>450 $</code>). For installment plans, type the amount of each payment in its own box — they show on the sheet as <code>6000&nbsp;+&nbsp;6000</code>. Leave blank where a plan isn&apos;t offered.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>

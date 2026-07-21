@@ -21,6 +21,7 @@ function avgRating(reviews?: any[]): number {
 
 export function mapCourse(raw: any): CourseRow {
   const egp = raw?.pricing?.egp ?? {};
+  const sar = raw?.pricing?.sar ?? {};
   const usd = raw?.pricing?.usd ?? {};
   const lectures =
     typeof raw?.lectures === "number"
@@ -47,6 +48,8 @@ export function mapCourse(raw: any): CourseRow {
     difficulty,
     priceEGP: egp.price ?? 0,
     salePriceEGP: egp.salePrice ?? 0,
+    priceSAR: sar.price ?? 0,
+    salePriceSAR: sar.salePrice ?? 0,
     priceUSD: usd.price ?? 0,
     salePriceUSD: usd.salePrice ?? 0,
     students: typeof raw?.students === "number" ? raw.students : Array.isArray(raw?.students) ? raw.students.length : 0,

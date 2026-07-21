@@ -18,7 +18,6 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import { deriveDiscount, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { CourseHeroMeta } from "@/features/marketing/components/course-hero-meta";
@@ -51,6 +50,7 @@ import {
   resolveModuleTopics,
 } from "@/features/marketing/lib/course-content";
 import { resolveModuleDetail } from "@/features/marketing/lib/hospital-curriculum";
+import { CoursePrice } from "@/features/marketing/components/course-price";
 import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
 import { WhatsAppFab } from "@/features/marketing/components/whatsapp-fab";
 import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
@@ -576,25 +576,15 @@ export default async function CourseDetailPage({
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {tr("Program Investment", "الاستثمار في البرنامج")}
         </p>
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="font-heading text-3xl font-bold text-primary tabular-nums">
-            {formatCurrency(price, "EGP")}
-          </span>
-          {onSale && (
-            <>
-              <span className="text-muted-foreground line-through tabular-nums">
-                {formatCurrency(course.priceEGP, "EGP")}
-              </span>
-              {/* Derived from the real prices — can never drift from what's charged. */}
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                {tr(
-                  `Save ${deriveDiscount(course.priceEGP, course.salePriceEGP)}%`,
-                  `وفّر ${deriveDiscount(course.priceEGP, course.salePriceEGP)}٪`,
-                )}
-              </span>
-            </>
-          )}
-        </div>
+        {/* Currency follows the visitor's country (EG→EGP, SA→SAR, else→USD),
+            resolved client-side; EGP is the SSR default. */}
+        <CoursePrice
+          locale={locale}
+          variant="hero"
+          egp={{ price: course.priceEGP, sale: course.salePriceEGP }}
+          sar={{ price: course.priceSAR ?? 0, sale: course.salePriceSAR ?? 0 }}
+          usd={{ price: course.priceUSD ?? 0, sale: course.salePriceUSD ?? 0 }}
+        />
         <CourseApplyDialog
           courseId={course.id}
           courseTitle={course.titleEn}
@@ -741,7 +731,7 @@ export default async function CourseDetailPage({
                     {heroSubheadline}
                   </p>
                 )}
-                <CourseHeroMeta course={course} price={price} onSale={onSale} />
+                <CourseHeroMeta course={course} locale={locale} />
               </div>
             </section>
 
@@ -1032,16 +1022,13 @@ export default async function CourseDetailPage({
             <p className="truncate text-[11px] leading-tight text-muted-foreground">
               {courseTitle}
             </p>
-            <p className="flex items-baseline gap-1.5 leading-tight">
-              <span className="font-heading text-lg font-bold tabular-nums text-primary">
-                {formatCurrency(price, "EGP")}
-              </span>
-              {onSale && (
-                <span className="text-[11px] text-muted-foreground line-through tabular-nums">
-                  {formatCurrency(course.priceEGP, "EGP")}
-                </span>
-              )}
-            </p>
+            <CoursePrice
+              locale={locale}
+              variant="compact"
+              egp={{ price: course.priceEGP, sale: course.salePriceEGP }}
+              sar={{ price: course.priceSAR ?? 0, sale: course.salePriceSAR ?? 0 }}
+              usd={{ price: course.priceUSD ?? 0, sale: course.salePriceUSD ?? 0 }}
+            />
           </div>
           <CourseApplyDialog
             courseId={course.id}
