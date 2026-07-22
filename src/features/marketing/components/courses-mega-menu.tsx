@@ -5,6 +5,7 @@ import { ChevronDown, ArrowRight, Sparkles, Star, Users, Layers } from "lucide-r
 
 import { Link } from "@/i18n/navigation";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useGeoCurrency, pickCourseMoney } from "@/hooks/use-geo-currency";
 
 export interface MegaCourse {
   id: string;
@@ -14,6 +15,11 @@ export interface MegaCourse {
   thumbnailUrl: string;
   price: number;
   salePrice: number;
+  /** Geo pricing (SAR for Saudi visitors, USD elsewhere). 0 when not configured. */
+  priceSAR?: number;
+  salePriceSAR?: number;
+  priceUSD?: number;
+  salePriceUSD?: number;
   rating: number;
   students: number;
   isBestseller: boolean;
@@ -56,6 +62,7 @@ export function CoursesMegaMenu({
   const [hovered, setHovered] = React.useState<string | null>(null);
   const closeTimer = React.useRef<number | null>(null);
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const geoCurrency = useGeoCurrency();
 
   const cancelClose = () => {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
@@ -180,8 +187,14 @@ export function CoursesMegaMenu({
 
                 <ul className="grid gap-3 sm:grid-cols-3">
                   {shown.map((c) => {
-                    const onSale = c.salePrice > 0 && c.salePrice < c.price;
-                    const shownPrice = onSale ? c.salePrice : c.price;
+                    const money = pickCourseMoney(
+                      geoCurrency,
+                      { price: c.price, sale: c.salePrice },
+                      { price: c.priceSAR ?? 0, sale: c.salePriceSAR ?? 0 },
+                      { price: c.priceUSD ?? 0, sale: c.salePriceUSD ?? 0 },
+                    );
+                    const onSale = money.sale > 0 && money.sale < money.price;
+                    const shownPrice = onSale ? money.sale : money.price;
                     return (
                       <li key={c.id}>
                         <Link
@@ -224,11 +237,11 @@ export function CoursesMegaMenu({
                             {shownPrice > 0 && (
                               <span className="mt-auto flex items-baseline gap-1.5 pt-2.5">
                                 <span className="font-heading text-sm font-bold tabular-nums text-primary">
-                                  {formatCurrency(shownPrice, "EGP")}
+                                  {formatCurrency(shownPrice, money.currency)}
                                 </span>
                                 {onSale && (
                                   <span className="text-[10px] text-muted-foreground line-through tabular-nums">
-                                    {formatCurrency(c.price, "EGP")}
+                                    {formatCurrency(money.price, money.currency)}
                                   </span>
                                 )}
                               </span>

@@ -3,19 +3,21 @@
 import * as React from "react";
 
 import { cn, deriveDiscount, formatCurrency } from "@/lib/utils";
-import type { CurrencyCode } from "@/types";
+import {
+  useGeoCurrency,
+  pickCourseMoney,
+  type Money,
+} from "@/hooks/use-geo-currency";
 
 /**
  * Geo-aware course price.
  *
  * Renders EGP on the server / first paint (matches the static/ISR HTML crawlers
- * see, and the no-JS fallback). After mount it asks `/api/geo` for the visitor's
- * country and swaps the currency: Egypt→EGP, Saudi Arabia→SAR, elsewhere→USD.
- * If the course has no price configured in the target currency, it stays on EGP,
- * so a missing SAR/USD price never shows "0".
+ * see, and the no-JS fallback). After mount it asks `/api/geo` (shared, cached
+ * across every price on the page) for the visitor's country and swaps the
+ * currency: Egypt→EGP, Saudi Arabia→SAR, elsewhere→USD. If the course has no
+ * price in the target currency it stays on EGP, so a missing price never shows "0".
  */
-
-type Money = { price: number; sale: number };
 
 export function CoursePrice({
   egp,
@@ -31,26 +33,9 @@ export function CoursePrice({
   variant?: "hero" | "compact" | "strip";
 }) {
   const ar = locale === "ar";
-  const [currency, setCurrency] = React.useState<CurrencyCode>("EGP");
-
-  React.useEffect(() => {
-    let alive = true;
-    fetch("/api/geo")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((geo: { country?: string; currency?: CurrencyCode } | null) => {
-        // No country resolved ⇒ keep the EGP default (don't guess).
-        if (!alive || !geo?.country || !geo.currency) return;
-        const target = geo.currency;
-        const pool = target === "SAR" ? sar : target === "USD" ? usd : egp;
-        if (pool && pool.price > 0) setCurrency(target);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [egp, sar, usd]);
-
-  const money = currency === "SAR" ? sar! : currency === "USD" ? usd! : egp;
+  const geoCurrency = useGeoCurrency();
+  const money = pickCourseMoney(geoCurrency, egp, sar, usd);
+  const currency = money.currency;
   const onSale = money.sale > 0 && money.sale < money.price;
   const shown = onSale ? money.sale : money.price;
 

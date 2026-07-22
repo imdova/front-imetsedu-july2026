@@ -20,9 +20,10 @@ import type { CourseRow, InstructorLookup } from "@/types";
 import { cn, deriveDiscount, formatCompact } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { courseSocialProof } from "@/features/marketing/lib/course-social-proof";
+import { useGeoCurrency, pickCourseMoney } from "@/hooks/use-geo-currency";
 
-function formatEgp(amount: number) {
-  return `${amount.toLocaleString("en-US")} EGP`;
+function formatMoney(amount: number, currency: string) {
+  return `${amount.toLocaleString("en-US")} ${currency}`;
 }
 
 function resolveFaculty(
@@ -53,10 +54,19 @@ export function CourseCard({
   instructors?: InstructorLookup[];
 }) {
   const t = useTranslations("Marketing");
-  const onSale =
-    course.salePriceEGP > 0 && course.salePriceEGP < course.priceEGP;
-  const price = onSale ? course.salePriceEGP : course.priceEGP;
-  const discountPct = deriveDiscount(course.priceEGP, course.salePriceEGP);
+  // Currency follows the visitor's country (EG→EGP, SA→SAR, else→USD); EGP is
+  // the default until geo resolves, and any course without a price in the target
+  // currency stays on EGP.
+  const geoCurrency = useGeoCurrency();
+  const money = pickCourseMoney(
+    geoCurrency,
+    { price: course.priceEGP, sale: course.salePriceEGP },
+    { price: course.priceSAR ?? 0, sale: course.salePriceSAR ?? 0 },
+    { price: course.priceUSD ?? 0, sale: course.salePriceUSD ?? 0 },
+  );
+  const onSale = money.sale > 0 && money.sale < money.price;
+  const price = onSale ? money.sale : money.price;
+  const discountPct = deriveDiscount(money.price, money.sale);
   const { rating, reviews } = courseSocialProof(course);
   const isBestSeller = course.isBestseller || course.students >= 800;
   const isMostPopular = course.isTopRated || rating >= 4.7;
@@ -188,11 +198,11 @@ export function CourseCard({
         <div className="mt-auto flex flex-wrap items-baseline gap-2 pt-1">
           {onSale && (
             <span className="text-sm text-muted-foreground line-through tabular-nums">
-              {formatEgp(course.priceEGP)}
+              {formatMoney(money.price, money.currency)}
             </span>
           )}
           <span className="font-heading text-xl font-bold tabular-nums text-[#1e3a5f] dark:text-primary">
-            {formatEgp(price)}
+            {formatMoney(price, money.currency)}
           </span>
         </div>
 
