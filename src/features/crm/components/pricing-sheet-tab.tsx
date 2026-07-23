@@ -214,13 +214,14 @@ export function PricingSheetTab() {
           <Button variant="ghost" size="sm" onClick={() => setQuery("")}>Clear search</Button>
         </div>
       ) : (
-        // One card per program; inside each, plans are vertical ROWS
-        // (Cash / 2 installments / 3 installments) and regions are the columns.
-        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+        // One card per program, two per row on wide screens; inside each, plans
+        // are vertical ROWS (Cash / 2 installments / 3 installments) and regions
+        // are the columns.
+        <div className="grid gap-4 xl:grid-cols-2">
           {visible.map((r) => (
             <div
               key={r.id}
-              className="group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-transparent transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:ring-primary/10"
+              className="group relative z-0 flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm ring-1 ring-transparent transition-all duration-200 hover:z-10 hover:scale-[1.03] hover:border-primary/25 hover:shadow-lg hover:ring-primary/10"
             >
               {/* Header — program identity */}
               <div className="flex items-center gap-2.5 border-b bg-gradient-to-r from-primary/[0.06] to-transparent px-3.5 py-3">
