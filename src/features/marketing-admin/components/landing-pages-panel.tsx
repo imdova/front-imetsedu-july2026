@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils/time-ago";
 
 const emptyForm: LandingPageInput = {
-  name: "", path: "", status: "draft", language: "en", campaign: "", audience: "", description: "", whatsappNumber: "",
+  name: "", path: "", status: "draft", language: "en", campaign: "", audience: "", description: "", whatsappNumber: "", heroVideoUrl: "",
 };
 const LANG_TABS: { key: LandingLanguage; label: string }[] = [
   { key: "en", label: "English" },
@@ -95,6 +95,7 @@ export function LandingPagesPanel({
     setForm({
       name: p.name, path: p.path, status: p.status, language: p.language ?? "en", campaign: p.campaign,
       audience: p.audience, description: p.description, thumbnailUrl: p.thumbnailUrl, whatsappNumber: p.whatsappNumber ?? "",
+      heroVideoUrl: p.heroVideoUrl ?? "",
     });
     setOpen(true);
   };
@@ -116,7 +117,7 @@ export function LandingPagesPanel({
   const toInput = (p: MarketingLandingPage): LandingPageInput => ({
     name: p.name, path: p.path, status: p.status, language: p.language ?? "en",
     campaign: p.campaign, audience: p.audience, description: p.description, thumbnailUrl: p.thumbnailUrl,
-    whatsappNumber: p.whatsappNumber ?? "",
+    whatsappNumber: p.whatsappNumber ?? "", heroVideoUrl: p.heroVideoUrl ?? "",
   });
 
   const saveWhatsapp = async (p: MarketingLandingPage, whatsappNumber: string) => {
@@ -406,6 +407,14 @@ export function LandingPagesPanel({
                 placeholder="201115782721 (with country code, no +)"
                 dir="ltr"
                 inputMode="tel"
+              />
+            </Field>
+            <Field label="Hero video (YouTube URL)">
+              <Input
+                value={form.heroVideoUrl ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, heroVideoUrl: e.target.value }))}
+                placeholder="https://youtu.be/…  or  https://www.youtube.com/watch?v=…"
+                dir="ltr"
               />
             </Field>
             <Field label="Description">

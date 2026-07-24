@@ -10,6 +10,7 @@ export interface LandingPageDto {
   description: string;
   thumbnailUrl: string;
   whatsappNumber?: string;
+  heroVideoUrl?: string;
   views: number;
   clicks: number;
   registrations?: number;

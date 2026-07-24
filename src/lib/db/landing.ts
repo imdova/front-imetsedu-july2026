@@ -23,6 +23,7 @@ export interface MarketingLandingPage {
   description: string;
   thumbnailUrl?: string;
   whatsappNumber?: string; // connected WhatsApp number for this landing page
+  heroVideoUrl?: string; // hero-section YouTube video URL for this landing page
   views: number;
   clicks: number;
   ctr: number; // derived: clicks/views %
@@ -41,6 +42,7 @@ export type LandingPageInput = {
   description: string;
   thumbnailUrl?: string;
   whatsappNumber?: string;
+  heroVideoUrl?: string;
 };
 
 export interface LandingStats {

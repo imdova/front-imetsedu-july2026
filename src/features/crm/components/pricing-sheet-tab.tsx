@@ -12,6 +12,7 @@ import {
   Banknote,
   CreditCard,
   CalendarClock,
+  Maximize2,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -95,6 +96,79 @@ function CellValue({ v }: { v: string }) {
   );
 }
 
+/**
+ * Prices for one program — plans are rows, regions are columns. `large` scales
+ * up type/padding for the full-screen view.
+ */
+function ProgramPriceTable({ r, large = false }: { r: PriceRow; large?: boolean }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b">
+            <th className={cn("px-3.5 text-start font-semibold uppercase tracking-[0.1em] text-muted-foreground", large ? "py-3 text-xs" : "py-2 text-[10px]")}>
+              Plan
+            </th>
+            {REGIONS.map((rg) => (
+              <th key={rg.label} className={cn("border-s px-3 text-center align-middle leading-none", rg.tint, large ? "py-3" : "py-2")}>
+                <span className={cn("inline-flex items-center gap-1.5 font-bold", rg.head, large ? "text-sm" : "text-xs")}>
+                  <span className={cn("size-1.5 rounded-full", rg.dot)} />
+                  {rg.currency}
+                </span>
+                <span className={cn("mt-1 block font-medium normal-case text-muted-foreground", large ? "text-xs" : "text-[10px]")}>
+                  {rg.label}
+                </span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {PLANS.map((plan, i) => {
+            const isCash = i === 0;
+            const Icon = PLAN_ICON[i];
+            return (
+              <tr
+                key={plan}
+                className={cn(
+                  "border-b transition-colors last:border-0 hover:bg-primary/[0.04]",
+                  isCash && "bg-primary/[0.035]",
+                )}
+              >
+                <td className={cn("whitespace-nowrap px-3.5", large ? "py-4" : "py-2.5")}>
+                  <span className="inline-flex items-center gap-2">
+                    <Icon className={cn("shrink-0", large ? "size-4" : "size-3.5", isCash ? "text-primary" : "text-muted-foreground/60")} />
+                    <span className={cn(large ? "text-base" : "text-sm", isCash ? "font-semibold text-foreground" : "font-medium text-foreground/80")}>
+                      {plan}
+                    </span>
+                  </span>
+                </td>
+                {REGIONS.map((rg) => {
+                  const v = r[rg.keys[i]];
+                  return (
+                    <td
+                      key={rg.label}
+                      className={cn(
+                        "border-s px-3 text-center tabular-nums",
+                        large ? "py-4" : "py-2.5",
+                        isCash
+                          ? cn("font-bold text-foreground", large ? "text-xl" : "text-[0.95rem]")
+                          : cn("font-medium text-muted-foreground", large && "text-base"),
+                        !has(v) && "text-muted-foreground/30",
+                      )}
+                    >
+                      <CellValue v={v} />
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function PricingSheetTab() {
   const canCreate = usePermission("crm.office.create");
   const canEdit = usePermission("crm.office.edit");
@@ -110,6 +184,7 @@ export function PricingSheetTab() {
   const [editing, setEditing] = React.useState<PriceRow | null>(null);
   const [form, setForm] = React.useState(emptyForm);
   const [saving, setSaving] = React.useState(false);
+  const [fullscreen, setFullscreen] = React.useState<PriceRow | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -231,81 +306,27 @@ export function PricingSheetTab() {
                 <p className="min-w-0 flex-1 truncate font-semibold tracking-tight text-foreground" title={r.program}>
                   {r.program}
                 </p>
-                {canManage && (
-                  <div className="flex shrink-0 items-center gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
-                    <Button variant="ghost" size="icon" className="size-7" title="Edit" onClick={() => openEdit(r)}><Pencil className="size-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="size-7" title="Delete" onClick={() => remove(r)}><Trash2 className="size-3.5 text-destructive" /></Button>
-                  </div>
-                )}
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 text-muted-foreground"
+                    title="View full screen"
+                    onClick={() => setFullscreen(r)}
+                  >
+                    <Maximize2 className="size-3.5" />
+                  </Button>
+                  {canManage && (
+                    <div className="flex items-center gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
+                      <Button variant="ghost" size="icon" className="size-7" title="Edit" onClick={() => openEdit(r)}><Pencil className="size-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="size-7" title="Delete" onClick={() => remove(r)}><Trash2 className="size-3.5 text-destructive" /></Button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Prices — plans as rows, regions as columns */}
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="px-3.5 py-2 text-start text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                        Plan
-                      </th>
-                      {REGIONS.map((rg) => (
-                        <th key={rg.label} className={cn("border-s px-3 py-2 text-center align-middle leading-none", rg.tint)}>
-                          <span className={cn("inline-flex items-center gap-1.5 text-xs font-bold", rg.head)}>
-                            <span className={cn("size-1.5 rounded-full", rg.dot)} />
-                            {rg.currency}
-                          </span>
-                          <span className="mt-1 block text-[10px] font-medium normal-case text-muted-foreground">
-                            {rg.label}
-                          </span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PLANS.map((plan, i) => {
-                      const isCash = i === 0;
-                      const Icon = PLAN_ICON[i];
-                      return (
-                        <tr
-                          key={plan}
-                          className={cn(
-                            "border-b transition-colors last:border-0 hover:bg-primary/[0.04]",
-                            isCash && "bg-primary/[0.035]",
-                          )}
-                        >
-                          <td className="whitespace-nowrap px-3.5 py-2.5">
-                            <span className="inline-flex items-center gap-2">
-                              <Icon
-                                className={cn(
-                                  "size-3.5 shrink-0",
-                                  isCash ? "text-primary" : "text-muted-foreground/60",
-                                )}
-                              />
-                              <span className={cn("text-sm", isCash ? "font-semibold text-foreground" : "font-medium text-foreground/80")}>
-                                {plan}
-                              </span>
-                            </span>
-                          </td>
-                          {REGIONS.map((rg) => {
-                            const v = r[rg.keys[i]];
-                            return (
-                              <td
-                                key={rg.label}
-                                className={cn(
-                                  "border-s px-3 py-2.5 text-center tabular-nums",
-                                  isCash ? "text-[0.95rem] font-bold text-foreground" : "font-medium text-muted-foreground",
-                                  !has(v) && "text-muted-foreground/30",
-                                )}
-                              >
-                                <CellValue v={v} />
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <ProgramPriceTable r={r} />
             </div>
           ))}
         </div>
@@ -373,6 +394,35 @@ export function PricingSheetTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Full-screen view of one program's prices */}
+      <Dialog open={!!fullscreen} onOpenChange={(o) => !o && setFullscreen(null)}>
+        <DialogContent className="w-[95vw] max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 font-heading text-xs font-bold uppercase text-primary ring-1 ring-primary/15">
+                {fullscreen ? getInitials(fullscreen.program) : ""}
+              </span>
+              <span className="truncate">{fullscreen?.program}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {fullscreen && (
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-xl border border-border/70">
+                <ProgramPriceTable r={fullscreen} large />
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                {REGIONS.map((rg) => (
+                  <span key={rg.label} className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/80">
+                    <span className={cn("size-2 rounded-full", rg.dot)} />
+                    {rg.label} <span className="text-muted-foreground">· {rg.currency}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {Confirmation}
     </div>
   );

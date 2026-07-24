@@ -26,11 +26,24 @@ export async function fetchLandingWhatsapp(path: string): Promise<string> {
     return "";
   }
 }
+
+/** LIVE (public, no auth): the hero-section YouTube URL for a landing path.
+ * Returns "" if the path isn't registered, has no video, or the call fails.
+ * Safe to call from public server pages. */
+export async function fetchLandingHeroVideo(path: string): Promise<string> {
+  try {
+    const res = await svc.getPublicConfig(path);
+    return res.ok ? (res.data?.heroVideoUrl ?? "") : "";
+  } catch {
+    return "";
+  }
+}
 const mapPage = (d: svc.LandingPageDto): MarketingLandingPage => ({
   id: d._id, name: d.name, path: d.path, status: d.status as MarketingLandingPage["status"],
   language: (d.language as MarketingLandingPage["language"]) ?? "en",
   campaign: d.campaign, audience: d.audience, description: d.description, thumbnailUrl: d.thumbnailUrl,
   whatsappNumber: d.whatsappNumber ?? "",
+  heroVideoUrl: d.heroVideoUrl ?? "",
   views: d.views, clicks: d.clicks, ctr: ctrOf(d.clicks, d.views),
   registrations: d.registrations ?? 0,
   createdAt: d.createdAt, updatedAt: d.updatedAt,

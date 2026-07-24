@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CourseApplyForm } from "@/features/marketing/components/course-apply-form";
+import { LandingHeroVideo } from "@/features/marketing/components/landing-hero-video";
 
 const PATH = "/lp/cphq";
 const COURSE = "CPHQ Exam Prep";
@@ -247,7 +248,8 @@ export default async function CphqLandingPage({ params }: { params: Promise<{ lo
               {c.facts.map((f) => <li key={f} className="inline-flex items-center gap-1.5"><CheckCircle2 className="size-4 text-success" /> {f}</li>)}
             </ul>
           </div>
-          <div className="lg:ps-4">
+          <div className="space-y-4 lg:ps-4">
+            <LandingHeroVideo path={trackPath} />
             <p className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary"><Sparkles className="size-4" /> {c.formEyebrow}</p>
             <CourseApplyForm path={trackPath} courseName={COURSE} lang={lang} />
           </div>

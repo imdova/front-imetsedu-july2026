@@ -21,6 +21,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PartnershipForm } from "@/features/marketing/components/partnership-form";
+import { LandingHeroVideo } from "@/features/marketing/components/landing-hero-video";
 
 const PATH = "/lp/partnership";
 
@@ -234,7 +235,8 @@ export default async function PartnershipLandingPage({
               ))}
             </ul>
           </div>
-          <div className="lg:ps-4">
+          <div className="space-y-4 lg:ps-4">
+            <LandingHeroVideo path={trackPath} />
             <p className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
               <Sparkles className="size-4" /> {c.formEyebrow}
             </p>

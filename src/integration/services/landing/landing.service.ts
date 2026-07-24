@@ -48,7 +48,7 @@ export const emailLeads = (ids: string[] | undefined, subject: string, html: str
 export const trackLanding = (path: string, type: "view" | "click") =>
   api.post<{ success: boolean }>(API_LANDING_TRACK, { path, type }, { requireAuth: false });
 export const getPublicConfig = (path: string) =>
-  api.get<{ path: string; whatsappNumber: string; status: string }>(API_LANDING_PUBLIC_CONFIG, {
+  api.get<{ path: string; whatsappNumber: string; heroVideoUrl: string; status: string }>(API_LANDING_PUBLIC_CONFIG, {
     params: { path }, requireAuth: false,
   });
 export const captureLead = (input: Record<string, unknown>) =>
