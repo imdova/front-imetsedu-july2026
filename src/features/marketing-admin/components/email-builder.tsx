@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { GripVertical, Trash2, Bookmark, Settings2, Eye, EyeOff, Save, ArrowLeft, Plus } from "lucide-react";
+import { GripVertical, Trash2, Bookmark, Settings2, Eye, EyeOff, Save, ArrowLeft, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Link } from "@/i18n/navigation";
@@ -9,7 +9,7 @@ import { dal } from "@/lib/dal";
 import type { BrandBlock } from "@/lib/db/email-marketing";
 import {
   type Block, type BlockType, type Design,
-  BLOCK_LABELS, PRESETS, makeBlock, renderBlock, renderDesign, parseDesign, DEFAULT_SETTINGS,
+  BLOCK_LABELS, PRESETS, PERSONALIZATION_TOKENS, makeBlock, renderBlock, renderDesign, parseDesign, brandStarter, DEFAULT_SETTINGS,
 } from "@/features/marketing-admin/email-blocks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ import {
 import { SortableList } from "@/components/shared/sortable/sortable-list";
 import { cn } from "@/lib/utils";
 
-const BLOCK_TYPES: BlockType[] = ["heading", "text", "button", "image", "divider", "spacer", "hero"];
+const BLOCK_TYPES: BlockType[] = ["header", "heading", "text", "button", "image", "divider", "spacer", "hero", "footer"];
 
 export function EmailBuilder({
   entityType, entityId, entityName, initialDesign, initialBrandBlocks,
@@ -95,6 +95,18 @@ export function EmailBuilder({
           <Badge variant="outline" className="capitalize">{entityType}</Badge>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              if (design.blocks.length && !window.confirm("Replace the current design with the IMETS brand template?")) return;
+              setDesign(brandStarter());
+              setSelectedId(null);
+            }}
+          >
+            <Sparkles className="size-4" /> Brand template
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreview((p) => !p)}>
             {preview ? <EyeOff className="size-4" /> : <Eye className="size-4" />} {preview ? "Edit" : "Preview"}
           </Button>
@@ -225,23 +237,45 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
       <SelectContent><SelectItem value="left">Left</SelectItem><SelectItem value="center">Center</SelectItem><SelectItem value="right">Right</SelectItem></SelectContent>
     </Select>
   );
+  /** Insert-personalization chips — append a merge tag to the given field. */
+  const tokens = (k: string) => (
+    <div className="flex flex-wrap gap-1 pt-1">
+      <span className="text-[11px] text-muted-foreground/70">Insert:</span>
+      {PERSONALIZATION_TOKENS.map((tk) => (
+        <button
+          key={tk.token}
+          type="button"
+          onClick={() => onChange({ [k]: `${String(x[k] ?? "")}${tk.token}` })}
+          className="rounded border border-border/60 bg-muted/40 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+        >
+          {tk.label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
       <p className="text-xs font-semibold text-muted-foreground">{BLOCK_LABELS[block.type]} block</p>
+      {block.type === "header" && <>
+        <F label="Logo image URL (optional)">{text("logoSrc")}</F>
+        <p className="-mt-2 text-[11px] leading-snug text-muted-foreground">Leave blank to use the IMETS wordmark. Use a hosted PNG/JPG — SVG may not render in email clients.</p>
+        <div className="grid grid-cols-2 gap-3"><F label="Brand (gold)">{text("brandTop")}</F><F label="Brand (white)">{text("brandSub")}</F></div>
+        <F label="Background">{color("bg")}</F>
+      </>}
       {block.type === "heading" && <>
-        <F label="Text">{area("text")}</F>
+        <F label="Text">{area("text")}{tokens("text")}</F>
         <F label="Level"><Select value={String(x.level ?? 2)} onValueChange={(v) => onChange({ level: Number(v) })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">H1</SelectItem><SelectItem value="2">H2</SelectItem><SelectItem value="3">H3</SelectItem></SelectContent></Select></F>
         <F label="Align">{align("align")}</F>
         <F label="Color">{color("color")}</F>
       </>}
       {block.type === "text" && <>
-        <F label="Text">{area("text")}</F>
+        <F label="Text">{area("text")}{tokens("text")}</F>
         <F label="Align">{align("align")}</F>
         <F label="Color">{color("color")}</F>
       </>}
       {block.type === "button" && <>
-        <F label="Label">{text("label")}</F>
+        <F label="Label">{text("label")}{tokens("label")}</F>
         <F label="URL">{text("url")}</F>
         <F label="Align">{align("align")}</F>
         <div className="grid grid-cols-2 gap-3"><F label="Background">{color("bg")}</F><F label="Text color">{color("color")}</F></div>
@@ -255,10 +289,17 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
       {block.type === "divider" && <F label="Color">{color("color")}</F>}
       {block.type === "spacer" && <F label="Height (px)">{num("height")}</F>}
       {block.type === "hero" && <>
-        <F label="Title">{text("title")}</F>
-        <F label="Subtitle">{area("subtitle")}</F>
+        <F label="Title">{text("title")}{tokens("title")}</F>
+        <F label="Subtitle">{area("subtitle")}{tokens("subtitle")}</F>
         <F label="Button label">{text("buttonLabel")}</F>
         <F label="Button URL">{text("buttonUrl")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Background">{color("bg")}</F><F label="Text color">{color("color")}</F></div>
+        <div className="grid grid-cols-2 gap-3"><F label="Button bg">{color("buttonBg")}</F><F label="Button text">{color("buttonColor")}</F></div>
+      </>}
+      {block.type === "footer" && <>
+        <F label="Text">{area("text")}</F>
+        <F label="Link URL">{text("link")}</F>
+        <F label="Link label">{text("linkLabel")}</F>
         <div className="grid grid-cols-2 gap-3"><F label="Background">{color("bg")}</F><F label="Text color">{color("color")}</F></div>
       </>}
     </div>
