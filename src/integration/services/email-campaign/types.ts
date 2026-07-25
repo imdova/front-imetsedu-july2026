@@ -1,11 +1,21 @@
 /** Raw backend shapes from the NestJS `email-campaign` module. */
+export interface ManualRecipientDto {
+  email: string;
+  name?: string;
+}
+
 export interface CampaignDto {
   _id: string;
+  name?: string;
   subject: string;
   previewText: string;
   fromName: string;
+  fromEmail?: string;
   replyTo: string;
+  language?: string;
   audience: string;
+  sources?: string[];
+  manualRecipients?: ManualRecipientDto[];
   status: string;
   scheduledAt?: string;
   sentAt?: string;
@@ -17,6 +27,19 @@ export interface CampaignDto {
   trackOpens?: boolean;
   trackClicks?: boolean;
   createdAt: string;
+}
+
+export interface AudienceDto {
+  key: string;
+  label: string;
+  group: string;
+  description: string;
+  count: number;
+}
+
+export interface RecipientsPreviewDto {
+  total: number;
+  breakdown: { key: string; label: string; count: number }[];
 }
 
 export interface TemplateDto {

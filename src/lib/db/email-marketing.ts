@@ -8,13 +8,39 @@ import { respond, clone } from "./delay";
 
 export type CampaignStatus = "DRAFT" | "SCHEDULED" | "SENT";
 
+/** A recipient added manually or imported from a spreadsheet. */
+export interface ManualRecipient {
+  email: string;
+  name?: string;
+}
+
+/** A selectable platform audience with a live count (Step-3 insights). */
+export interface AudienceOption {
+  key: string;
+  label: string;
+  group: string;
+  description: string;
+  count: number;
+}
+
+/** Deduped reach preview for a recipient selection. */
+export interface RecipientsPreview {
+  total: number;
+  breakdown: { key: string; label: string; count: number }[];
+}
+
 export interface Campaign {
   id: string;
+  name?: string;
   subject: string;
   previewText: string;
   fromName: string;
+  fromEmail?: string;
   replyTo: string;
-  audience: string; // segment value
+  language?: string;
+  audience: string; // legacy single-segment value
+  sources?: string[]; // selected platform-audience keys
+  manualRecipients?: ManualRecipient[];
   status: CampaignStatus;
   scheduledAt?: string;
   sentAt?: string;
@@ -23,17 +49,27 @@ export interface Campaign {
   clicks: number;
   openRate: number; // %
   clickRate: number; // %
+  trackOpens?: boolean;
+  trackClicks?: boolean;
   design?: string; // JSON string of the block design (from the email builder)
   body?: string; // rendered HTML
   createdAt: string;
 }
 
 export type CampaignInput = {
+  name?: string;
   subject: string;
   previewText: string;
   fromName: string;
+  fromEmail?: string;
   replyTo: string;
+  language?: string;
   audience: string;
+  sources?: string[];
+  manualRecipients?: ManualRecipient[];
+  trackOpens?: boolean;
+  trackClicks?: boolean;
+  templateId?: string; // create-only: seed design/body from this template
   status?: CampaignStatus;
 };
 

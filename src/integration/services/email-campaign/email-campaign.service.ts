@@ -1,6 +1,6 @@
 import { api, type Result } from "@integration/services/http/client";
 import {
-  API_EMAIL_STATS, API_EMAIL_SEGMENTS,
+  API_EMAIL_STATS, API_EMAIL_SEGMENTS, API_EMAIL_AUDIENCES, API_EMAIL_RECIPIENTS_PREVIEW,
   API_EMAIL_CAMPAIGNS, apiEmailCampaign, apiEmailCampaignAction,
   API_EMAIL_TEMPLATES, apiEmailTemplate, apiEmailTemplateDesign,
   API_EMAIL_AUTOMATIONS, apiEmailAutomation, apiEmailAutomationToggle,
@@ -8,11 +8,15 @@ import {
 } from "@integration/constants/api/email";
 import type {
   CampaignDto, TemplateDto, AutomationDto, BrandBlockDto, EmailStatsDto, SegmentDto,
+  AudienceDto, RecipientsPreviewDto, ManualRecipientDto,
 } from "./types";
 
-/* Stats + segments */
+/* Stats + segments + audiences */
 export const getStats = () => api.get<EmailStatsDto>(API_EMAIL_STATS);
 export const getSegments = () => api.get<SegmentDto[]>(API_EMAIL_SEGMENTS);
+export const getAudiences = () => api.get<AudienceDto[]>(API_EMAIL_AUDIENCES);
+export const previewRecipients = (sources: string[], manualRecipients: ManualRecipientDto[]) =>
+  api.post<RecipientsPreviewDto>(API_EMAIL_RECIPIENTS_PREVIEW, { sources, manualRecipients });
 
 /* Campaigns */
 export const listCampaigns = () => api.get<CampaignDto[]>(API_EMAIL_CAMPAIGNS);

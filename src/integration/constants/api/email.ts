@@ -3,6 +3,8 @@ const B = "/admin/email";
 export const API_EMAIL_STATS = `${B}/campaigns/stats`;
 export const API_EMAIL_SEGMENTS = `${B}/campaigns/segments`;
 export const API_EMAIL_AUDIENCE_PREVIEW = `${B}/campaigns/audience-preview`;
+export const API_EMAIL_AUDIENCES = `${B}/audiences`;
+export const API_EMAIL_RECIPIENTS_PREVIEW = `${B}/recipients-preview`;
 
 export const API_EMAIL_CAMPAIGNS = `${B}/campaigns`;
 export const apiEmailCampaign = (id: string) => `${B}/campaigns/${id}`;

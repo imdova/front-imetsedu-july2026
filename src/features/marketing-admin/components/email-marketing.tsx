@@ -26,9 +26,6 @@ import { SystemEmailsTab } from "./system-emails-tab";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -68,24 +65,9 @@ export function EmailMarketing({
 
   const segLabel = (v: string) => segments.find((s) => s.value === v)?.label ?? v;
 
-  /* ── Campaign editor ── */
-  const [cmpOpen, setCmpOpen] = React.useState(false);
-  const [cmpEditing, setCmpEditing] = React.useState<Campaign | null>(null);
-  const [cmpForm, setCmpForm] = React.useState<CampaignInput>(emptyCampaign);
-  const openCreateCmp = () => { setCmpEditing(null); setCmpForm(emptyCampaign); setCmpOpen(true); };
-  const openEditCmp = (c: Campaign) => {
-    setCmpEditing(c);
-    setCmpForm({ subject: c.subject, previewText: c.previewText, fromName: c.fromName, replyTo: c.replyTo, audience: c.audience, status: c.status });
-    setCmpOpen(true);
-  };
-  const saveCmp = async () => {
-    if (!cmpForm.subject.trim()) return;
-    const res = cmpEditing
-      ? await dal.emailMarketing.updateCampaign(cmpEditing.id, cmpForm)
-      : await dal.emailMarketing.createCampaign(cmpForm);
-    if (res.ok && res.data) { upsertCampaign(res.data); toast.success(cmpEditing ? "Campaign updated" : "Campaign created"); setCmpOpen(false); refreshStats(); }
-    else toast.error(res.ok ? "Not found" : res.error);
-  };
+  /* ── Campaign create/edit now live on the full-page wizard ── */
+  const openCreateCmp = () => router.push("/admin/marketing/email/new");
+  const openEditCmp = (c: Campaign) => router.push(`/admin/marketing/email/new?campaignId=${c.id}`);
 
   /* ── Schedule + test modals ── */
   const [schedFor, setSchedFor] = React.useState<Campaign | null>(null);
@@ -339,35 +321,6 @@ export function EmailMarketing({
           <SystemEmailsTab />
         </TabsContent>
       </Tabs>
-
-      {/* Campaign editor */}
-      <Dialog open={cmpOpen} onOpenChange={setCmpOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{cmpEditing ? "Edit campaign" : "New campaign"}</DialogTitle>
-            <DialogDescription>Subject, sender and audience. The block content is designed in the email builder (later phase).</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <Editor label="Subject" required value={cmpForm.subject} onChange={(v) => setCmpForm((f) => ({ ...f, subject: v }))} />
-            <Editor label="Preview text" value={cmpForm.previewText} onChange={(v) => setCmpForm((f) => ({ ...f, previewText: v }))} />
-            <div className="grid grid-cols-2 gap-4">
-              <Editor label="From name" value={cmpForm.fromName} onChange={(v) => setCmpForm((f) => ({ ...f, fromName: v }))} />
-              <Editor label="Reply-to" value={cmpForm.replyTo} onChange={(v) => setCmpForm((f) => ({ ...f, replyTo: v }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">Audience</Label>
-              <Select value={cmpForm.audience} onValueChange={(v) => setCmpForm((f) => ({ ...f, audience: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{segments.map((s) => <SelectItem key={s.value} value={s.value}>{s.label} ({s.count.toLocaleString()})</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCmpOpen(false)}>Cancel</Button>
-            <Button onClick={saveCmp} disabled={!cmpForm.subject.trim()}>{cmpEditing ? "Save changes" : "Create campaign"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Template editor */}
       <Dialog open={tplOpen} onOpenChange={setTplOpen}>

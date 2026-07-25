@@ -12,15 +12,19 @@ import * as svc from "@integration/services/email-campaign";
 import type {
   Campaign, CampaignInput, EmailTemplate, TemplateInput,
   AudienceSegment, Automation, AutomationInput, EmailStats, BrandBlock,
+  AudienceOption, RecipientsPreview, ManualRecipient,
 } from "@/lib/db/email-marketing";
 
 const rate = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
 
 const mapCampaign = (d: svc.CampaignDto): Campaign => ({
-  id: d._id, subject: d.subject, previewText: d.previewText, fromName: d.fromName, replyTo: d.replyTo,
-  audience: d.audience, status: d.status as Campaign["status"], scheduledAt: d.scheduledAt, sentAt: d.sentAt,
+  id: d._id, name: d.name, subject: d.subject, previewText: d.previewText,
+  fromName: d.fromName, fromEmail: d.fromEmail, replyTo: d.replyTo, language: d.language,
+  audience: d.audience, sources: d.sources, manualRecipients: d.manualRecipients,
+  status: d.status as Campaign["status"], scheduledAt: d.scheduledAt, sentAt: d.sentAt,
   recipientCount: d.recipientCount, opens: d.opens, clicks: d.clicks,
   openRate: rate(d.opens, d.recipientCount), clickRate: rate(d.clicks, d.recipientCount),
+  trackOpens: d.trackOpens, trackClicks: d.trackClicks,
   design: d.design, body: d.body, createdAt: d.createdAt,
 });
 const mapTemplate = (d: svc.TemplateDto): EmailTemplate => ({
@@ -41,6 +45,16 @@ export async function fetchEmailStats(): Promise<Result<EmailStats>> {
 export async function fetchSegments(): Promise<Result<AudienceSegment[]>> {
   const res = await svc.getSegments();
   return res.ok ? ok(res.data as AudienceSegment[]) : res;
+}
+export async function fetchAudiences(): Promise<Result<AudienceOption[]>> {
+  const res = await svc.getAudiences();
+  return res.ok ? ok(res.data as AudienceOption[]) : res;
+}
+export async function previewRecipients(
+  sources: string[], manualRecipients: ManualRecipient[],
+): Promise<Result<RecipientsPreview>> {
+  const res = await svc.previewRecipients(sources, manualRecipients);
+  return res.ok ? ok(res.data as RecipientsPreview) : res;
 }
 
 /* ── Campaigns ── */
