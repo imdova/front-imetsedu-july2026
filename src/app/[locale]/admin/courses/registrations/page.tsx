@@ -45,9 +45,17 @@ export default async function AdminRegistrationsPage({ params }: { params: Promi
       createdAtISO: l.createdAtISO,
     }));
 
-  const courseOptions = courses
-    .map((c) => c.titleEn || c.titleAr || c.slug)
-    .filter(Boolean)
+  // Every course in the catalogue (even ones with no registrations yet), plus
+  // any course value that actually appears on an applicant — deduped + sorted.
+  const courseOptions = Array.from(
+    new Set(
+      [
+        ...courses.map((c) => c.titleEn || c.titleAr || c.slug),
+        ...applicants.flatMap((a) => a.courses),
+      ].filter(Boolean),
+    ),
+  )
+    .sort((a, b) => a.localeCompare(b))
     .map((v) => ({ value: v, label: v }));
   const counselorList = counselorsRes.ok ? counselorsRes.data : [];
   const counselorOptions = counselorList.map((c) => ({ value: c.name, label: c.name }));

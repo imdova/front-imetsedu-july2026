@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search, Columns3, Eye, UserPlus, Download, Mail, X, Loader2, MessageCircle, Trash2, Send } from "lucide-react";
+import { Search, Columns3, Eye, UserPlus, Download, Mail, X, Loader2, MessageCircle, Trash2, Send, FilterX } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
@@ -80,6 +80,12 @@ function inRange(iso: string | undefined, range: Range): boolean {
 
 const uniqOptions = (vals: string[]): Option[] =>
   Array.from(new Set(vals.filter(Boolean))).map((v) => ({ value: v, label: v }));
+
+/** First 3 words of a title (with an ellipsis when trimmed) — for compact badges. */
+const first3 = (s: string): string => {
+  const words = (s || "").trim().split(/\s+/);
+  return words.length <= 3 ? s : `${words.slice(0, 3).join(" ")}…`;
+};
 
 export function RegistrationsTable({
   applicants,
@@ -201,6 +207,24 @@ export function RegistrationsTable({
   const countryOptions = React.useMemo(() => uniqOptions(applicants.map((a) => a.country)), [applicants]);
   const specialtyOptions = React.useMemo(() => uniqOptions(applicants.map((a) => a.specialty)), [applicants]);
 
+  const anyFilter =
+    !!search ||
+    course !== "all" ||
+    country !== "all" ||
+    specialty !== "all" ||
+    salesAgent !== "all" ||
+    group !== "all" ||
+    range !== "all";
+  const clearFilters = () => {
+    setSearch("");
+    setCourse("all");
+    setCountry("all");
+    setSpecialty("all");
+    setSalesAgent("all");
+    setGroup("all");
+    setRange("all");
+  };
+
   const rows = React.useMemo(
     () =>
       applicants.filter((a) => {
@@ -255,7 +279,7 @@ export function RegistrationsTable({
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
           {row.original.courses.length
-            ? row.original.courses.map((c, i) => <Badge key={i} variant="outline" className="border-primary/30 text-primary">{c}</Badge>)
+            ? row.original.courses.map((c, i) => <Badge key={i} variant="outline" title={c} className="border-primary/30 text-primary">{first3(c)}</Badge>)
             : <span className="text-xs text-muted-foreground">—</span>}
         </div>
       ),
@@ -343,6 +367,12 @@ export function RegistrationsTable({
               <Filter label={t("rgFGroup")} value={group} onChange={setGroup} all={t("rgAllGroups")} options={[]} />
               <Filter label={t("rgFSalesAgent")} value={salesAgent} onChange={setSalesAgent} all={t("rgAllSalesAgents")} options={counselorOptions} />
             </div>
+            <div className="flex shrink-0 items-center gap-2">
+            {anyFilter && (
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" onClick={clearFilters} title="Clear all filters">
+                <FilterX className="size-4" /> Clear filters
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="shrink-0 gap-1.5">
@@ -363,6 +393,7 @@ export function RegistrationsTable({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
         )}
         bulkBar={(table) => {
