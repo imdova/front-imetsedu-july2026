@@ -3,6 +3,7 @@ import {
   API_EMAIL_TEMPLATES,
   apiEmailTemplate,
   API_EMAIL_TEMPLATES_SEND,
+  API_EMAIL_TEMPLATES_SEND_BULK,
 } from "@integration/constants/api/email-templates";
 
 export interface EmailTemplateDto {
@@ -31,4 +32,21 @@ export function updateEmailTemplate(id: string, patch: Partial<EmailTemplateDto>
 
 export function sendEmail(input: SendEmailInput): Promise<Result<void>> {
   return api.post<void>(API_EMAIL_TEMPLATES_SEND, input);
+}
+
+export interface BulkRecipient {
+  email: string;
+  name?: string;
+}
+export interface BulkEmailResult {
+  sent: number;
+  failed: number;
+  total: number;
+}
+export function sendBulkEmail(input: {
+  recipients: BulkRecipient[];
+  subject: string;
+  html: string;
+}): Promise<Result<BulkEmailResult>> {
+  return api.post<BulkEmailResult>(API_EMAIL_TEMPLATES_SEND_BULK, input);
 }

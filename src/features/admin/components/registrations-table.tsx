@@ -3,17 +3,23 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search, Columns3, Eye, UserPlus, Download, Mail, X, Loader2 } from "lucide-react";
+import { Search, Columns3, Eye, UserPlus, Download, Mail, X, Loader2, MessageCircle, Trash2, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { getInitials, cn } from "@/lib/utils";
+import { useConfirm } from "@/hooks/use-confirm";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -28,6 +34,7 @@ export interface CourseApplicant {
   id: string;
   student: string;
   email: string;
+  phone: string;
   courses: string[];
   country: string;
   specialty: string;
@@ -36,6 +43,16 @@ export interface CourseApplicant {
   createdAt: string;
   createdAtISO?: string;
 }
+
+/** wa.me chat link from a phone number (digits only, country code first). */
+const digits = (s: string) => (s || "").replace(/\D/g, "");
+const waLink = (phone: string, name: string) => {
+  const d = digits(phone);
+  if (!d) return "";
+  const first = (name || "").trim().split(/\s+/)[0] || "";
+  const text = `Hello ${first}, this is IMETS Medical School regarding your course registration.`;
+  return `https://wa.me/${d}?text=${encodeURIComponent(text)}`;
+};
 
 const RANGES = ["today", "yesterday", "week", "month", "30d", "90d", "year"] as const;
 type Range = (typeof RANGES)[number] | "all";
@@ -80,7 +97,69 @@ export function RegistrationsTable({
 }) {
   const t = useTranslations("Admin");
   const router = useRouter();
+  const { confirm, Confirmation } = useConfirm();
   const [assigning, setAssigning] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+
+  // Bulk-email compose dialog state.
+  const [emailOpen, setEmailOpen] = React.useState(false);
+  const [emailTargets, setEmailTargets] = React.useState<CourseApplicant[]>([]);
+  const [subject, setSubject] = React.useState("");
+  const [body, setBody] = React.useState("");
+  const [sending, setSending] = React.useState(false);
+  const resetSelRef = React.useRef<(() => void) | null>(null);
+
+  /** Bulk-delete the selected registrations (removes the underlying leads). */
+  const bulkDelete = async (ids: string[], done: () => void) => {
+    if (!ids.length) return;
+    const ok = await confirm({
+      title: "Delete registrations",
+      description: `Delete ${ids.length} registration(s)? This permanently removes the lead(s).`,
+      confirmText: "Delete",
+      variant: "destructive",
+    });
+    if (!ok) return;
+    setDeleting(true);
+    const res = await dal.crm.bulkDeleteLeads(ids);
+    setDeleting(false);
+    if (res.ok) {
+      toast.success(`Deleted ${res.data} registration(s)`);
+      done();
+      router.refresh();
+    } else {
+      toast.error(res.error);
+    }
+  };
+
+  /** Open the compose dialog for the selected registrants (those with an email). */
+  const openEmail = (rows: CourseApplicant[], done: () => void) => {
+    const withEmail = rows.filter((r) => r.email);
+    if (!withEmail.length) { toast.error(t("rgNoEmails")); return; }
+    setEmailTargets(withEmail);
+    setSubject("");
+    setBody("");
+    resetSelRef.current = done;
+    setEmailOpen(true);
+  };
+
+  /** Send the composed email to every target via the server (configured SMTP). */
+  const sendBulkEmail = async () => {
+    if (!subject.trim() || !body.trim()) { toast.error("Subject and message are required"); return; }
+    setSending(true);
+    const recipients = emailTargets.map((r) => ({ email: r.email, name: r.student }));
+    // Admin types plain text; preserve line breaks as HTML.
+    const html = body.trim().replace(/\n/g, "<br>");
+    const res = await dal.transactionalEmail.sendBulk(recipients, subject.trim(), html);
+    setSending(false);
+    if (res.ok) {
+      const { sent, failed, total } = res.data;
+      toast.success(`Sent ${sent}/${total}${failed ? ` · ${failed} failed` : ""}`);
+      setEmailOpen(false);
+      resetSelRef.current?.();
+    } else {
+      toast.error(res.error);
+    }
+  };
 
   /** Bulk-assign the selected applicants to a sales agent (counselor). */
   const assignAgent = async (counselorId: string, ids: string[], done: () => void) => {
@@ -99,23 +178,16 @@ export function RegistrationsTable({
 
   /** Download the selected applicants as a CSV (client-side). */
   const exportSelected = (rows: CourseApplicant[]) => {
-    const head = ["Student", "Email", "Courses", "Country", "Specialty", "Sales agent", "Source", "Created"];
+    const head = ["Student", "Email", "Phone", "Courses", "Country", "Specialty", "Sales agent", "Source", "Created"];
     const cell = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
     const lines = rows.map((a) =>
-      [a.student, a.email, a.courses.join(" | "), a.country, a.specialty, a.salesAgent, a.leadSource, a.createdAt].map(cell).join(","));
+      [a.student, a.email, a.phone, a.courses.join(" | "), a.country, a.specialty, a.salesAgent, a.leadSource, a.createdAt].map(cell).join(","));
     const csv = [head.map(cell).join(","), ...lines].join("\r\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
     link.href = url; link.download = "registrations.csv"; link.click();
     URL.revokeObjectURL(url);
     toast.success(t("rgExportedToast", { n: rows.length }));
-  };
-
-  /** Open a pre-filled email (BCC) to the selected applicants. */
-  const emailSelected = (rows: CourseApplicant[]) => {
-    const emails = Array.from(new Set(rows.map((a) => a.email).filter(Boolean)));
-    if (!emails.length) { toast.error(t("rgNoEmails")); return; }
-    window.open(`mailto:?bcc=${encodeURIComponent(emails.join(","))}`, "_self");
   };
 
   const [search, setSearch] = React.useState("");
@@ -134,7 +206,7 @@ export function RegistrationsTable({
       applicants.filter((a) => {
         if (search) {
           const q = search.toLowerCase();
-          if (!(a.student.toLowerCase().includes(q) || a.email.toLowerCase().includes(q) || a.courses.join(" ").toLowerCase().includes(q))) return false;
+          if (!(a.student.toLowerCase().includes(q) || a.email.toLowerCase().includes(q) || a.phone.toLowerCase().includes(q) || a.courses.join(" ").toLowerCase().includes(q))) return false;
         }
         if (course !== "all" && !a.courses.includes(course)) return false;
         if (country !== "all" && a.country !== country) return false;
@@ -188,6 +260,26 @@ export function RegistrationsTable({
         </div>
       ),
     },
+    {
+      id: "whatsapp",
+      header: "WhatsApp",
+      cell: ({ row }) => {
+        const link = waLink(row.original.phone, row.original.student);
+        return link ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            dir="ltr"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 hover:underline dark:text-emerald-400"
+          >
+            <MessageCircle className="size-3.5" /> {row.original.phone}
+          </a>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        );
+      },
+    },
     { id: "createdAt", header: t("colCreated"), cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.createdAt}</span> },
     { id: "country", header: t("rgCountry"), cell: ({ row }) => <span className="text-sm">{row.original.country || "—"}</span> },
     { id: "specialty", header: t("rgSpeciality"), cell: ({ row }) => <span className="text-sm">{row.original.specialty || "—"}</span> },
@@ -197,13 +289,23 @@ export function RegistrationsTable({
       id: "actions",
       header: t("csColActions"),
       enableHiding: false,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          <Button variant="ghost" size="icon" className="size-8" onClick={() => router.push(`${basePath}/leads/${row.original.id}`)} aria-label={t("rgView")}>
-            <Eye className="size-4" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const link = waLink(row.original.phone, row.original.student);
+        return (
+          <div className="flex items-center justify-end gap-1">
+            {link && (
+              <Button asChild variant="ghost" size="icon" className="size-8 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400" title="Send WhatsApp message">
+                <a href={link} target="_blank" rel="noopener noreferrer" aria-label="Send WhatsApp message">
+                  <MessageCircle className="size-4" />
+                </a>
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" className="size-8" onClick={() => router.push(`${basePath}/leads/${row.original.id}`)} aria-label={t("rgView")}>
+              <Eye className="size-4" />
+            </Button>
+          </div>
+        );
+      },
     },
   ], [t, router, basePath]);
 
@@ -231,6 +333,7 @@ export function RegistrationsTable({
         columns={columns}
         data={rows}
         pageSize={10}
+        headerClassName="bg-primary [&_th]:text-white"
         toolbar={(table) => (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -283,8 +386,18 @@ export function RegistrationsTable({
               <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => exportSelected(selectedRows)}>
                 <Download className="size-3.5" />{t("rgExportSel")}
               </Button>
-              <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => emailSelected(selectedRows)}>
+              <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => openEmail(selectedRows, () => table.resetRowSelection())}>
                 <Mail className="size-3.5" />{t("rgEmailSel")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={deleting}
+                className="h-8 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                onClick={() => bulkDelete(ids, () => table.resetRowSelection())}
+              >
+                {deleting ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                Delete
               </Button>
               <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-muted-foreground" onClick={() => table.resetRowSelection()}>
                 <X className="size-3.5" />{t("rgClearSel")}
@@ -294,6 +407,42 @@ export function RegistrationsTable({
         }}
         emptyState={<p className="text-sm text-muted-foreground">{t("rgEmpty")}</p>}
       />
+
+      {/* Compose + send bulk email (server-side, via the configured SMTP) */}
+      <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Email {emailTargets.length} registrant{emailTargets.length === 1 ? "" : "s"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Subject</Label>
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Your CPHQ enrollment" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Message</Label>
+              <Textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={8}
+                placeholder={"Hello {{name}},\n\n…\n\nIMETS Medical School"}
+              />
+              <p className="text-xs text-muted-foreground">
+                Sent individually to each recipient. Use <code>{"{{name}}"}</code> to insert the
+                student&apos;s name. Line breaks are preserved.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailOpen(false)} disabled={sending}>Cancel</Button>
+            <Button onClick={sendBulkEmail} disabled={sending || !subject.trim() || !body.trim()} className="gap-1.5">
+              {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              {sending ? "Sending…" : `Send to ${emailTargets.length}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {Confirmation}
     </div>
   );
 }

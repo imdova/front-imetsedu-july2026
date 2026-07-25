@@ -42,3 +42,13 @@ export async function sendTest(email: string, subject: string, body: string): Pr
   const res = await svc.sendEmail({ email, subject, body });
   return res.ok ? ok(true) : res;
 }
+
+/** Send one HTML email to an explicit recipient list (supports {{name}}/{{email}}).
+ * Server-side bulk send via the configured SMTP; returns delivery counts. */
+export async function sendBulk(
+  recipients: { email: string; name?: string }[],
+  subject: string,
+  html: string,
+): Promise<Result<{ sent: number; failed: number; total: number }>> {
+  return svc.sendBulkEmail({ recipients, subject, html });
+}

@@ -35,6 +35,7 @@ export default async function AdminRegistrationsPage({ params }: { params: Promi
       id: l.id,
       student: l.fullName,
       email: l.email,
+      phone: [l.phoneCountryCode, l.phone].filter(Boolean).join(" ").trim(),
       courses: l.coursesOfInterest.map((c) => nameById.get(c) ?? c),
       country: l.country,
       specialty: l.specialty ?? "",
