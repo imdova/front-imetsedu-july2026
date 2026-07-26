@@ -19,6 +19,8 @@ export default async function AutomationBuilderPage({
   const { automationId } = await searchParams;
 
   const res = automationId ? await dal.emailMarketing.fetchAutomation(automationId) : null;
+  const templatesRes = await dal.emailMarketing.fetchTemplates();
+  const templates = templatesRes.ok ? templatesRes.data : [];
 
   if (!res || !res.ok || !res.data) {
     return (
@@ -32,7 +34,7 @@ export default async function AutomationBuilderPage({
   return (
     <div className="mx-auto max-w-[1400px] py-2">
       <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Loading builder…</div>}>
-        <AutomationBuilder automation={res.data} />
+        <AutomationBuilder automation={res.data} templates={templates} />
       </Suspense>
     </div>
   );
