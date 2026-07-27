@@ -5,7 +5,6 @@ import { GraduationCap, CalendarClock, CheckCircle2, Award, Users, BrainCircuit,
 
 import type { FreeProgram } from "@/lib/dal/free-courses";
 import { FreeLecturePlayer } from "./free-lecture-player";
-import { FreeLectureQuiz } from "./free-lecture-quiz";
 import { getFreeQuiz } from "@/features/free-courses/lib/free-quiz-data";
 import { SimpleLeadForm } from "@/features/marketing/components/simple-lead-form";
 import { RegistrationCountdown } from "@/features/marketing/components/registration-countdown";
@@ -37,28 +36,15 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { loc
 
   return (
     <div className="space-y-10">
-      {/* 1 · Watch */}
-      {playable.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">
-          {tr(locale, "Lectures are being uploaded — check back shortly.", "يجري رفع المحاضرات — تابعنا قريبًا.")}
-        </div>
-      ) : (
-        <FreeLecturePlayer locale={locale} lectures={playable} />
+      {/* 1 · Watch lectures + take the quiz (one playlist) */}
+      {playable.length === 0 && (
+        <p className="rounded-xl border border-dashed border-border/70 p-4 text-center text-sm text-muted-foreground">
+          {tr(locale, "Lectures are being uploaded — try the quiz meanwhile.", "يجري رفع المحاضرات — جرّب الاختبار لحد ما تنزل.")}
+        </p>
       )}
+      <FreeLecturePlayer locale={locale} lectures={playable} quiz={quiz} onQuizPassed={onPassed} />
 
-      {/* 2 · Quiz */}
-      <section>
-        <div className="mb-4 flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary"><BrainCircuit className="size-5" /></span>
-          <div>
-            <h2 className="font-heading text-xl font-bold">{tr(locale, "Test your knowledge", "اختبر معلوماتك")}</h2>
-            <p className="text-xs text-muted-foreground">{tr(locale, "A quick check on what you just learned.", "اختبار سريع على اللي اتعلمته.")}</p>
-          </div>
-        </div>
-        <FreeLectureQuiz locale={locale} quiz={quiz} onPassed={onPassed} />
-      </section>
-
-      {/* 3 · Enroll in the next live cohort */}
+      {/* 2 · Enroll in the next live cohort */}
       <section ref={enrollRef} className={cn("scroll-mt-24 overflow-hidden rounded-3xl border shadow-lg transition", passed ? "border-[#f4c430] ring-2 ring-[#f4c430]/30" : "border-border/70")}>
         <div className="grid lg:grid-cols-2">
           {/* pitch */}
