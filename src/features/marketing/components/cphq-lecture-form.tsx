@@ -78,6 +78,8 @@ export function CphqLectureForm({
       dal.landing.trackLanding(path, "click").catch(() => {});
       try {
         sessionStorage.setItem("imets_cphq_lead", JSON.stringify({ ...lead, path, courseName }));
+        // Persist the lead so free-courses pages can greet them by name later.
+        localStorage.setItem("imets_lead", JSON.stringify(lead));
         // Already registered here → unlock the free-lecture player so they skip
         // the gate form on /free-courses/*.
         localStorage.setItem(FREE_ACCESS_KEY, "1");

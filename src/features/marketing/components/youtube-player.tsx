@@ -21,12 +21,15 @@ export function YouTubePlayer({
   unmuteOnStart = true,
   hideYouTubeChrome = false,
   onEnded,
+  onProgress,
   className,
 }: {
   videoId: string;
   unmuteLabel?: string;
   /** Fires once when the video finishes playing (state ENDED). */
   onEnded?: () => void;
+  /** Fires ~every 1.5s while playing with the watched percentage (0–100). */
+  onProgress?: (pct: number) => void;
   /** Overlay the top strip so the video title + "Watch on YouTube" link aren't
    * clickable (keeps the centre play button and bottom controls usable). */
   hideYouTubeChrome?: boolean;
@@ -44,10 +47,23 @@ export function YouTubePlayer({
   const [muted, setMuted] = React.useState(true);
   const [ready, setReady] = React.useState(false);
   const onEndedRef = React.useRef(onEnded);
-  React.useEffect(() => { onEndedRef.current = onEnded; });
+  const onProgressRef = React.useRef(onProgress);
+  React.useEffect(() => { onEndedRef.current = onEnded; onProgressRef.current = onProgress; });
 
   React.useEffect(() => {
     let cancelled = false;
+    // Poll watched percentage while the video is playing.
+    const progressTimer = window.setInterval(() => {
+      try {
+        const p = playerRef.current;
+        const YT = (window as any).YT;
+        if (p?.getPlayerState?.() === YT?.PlayerState?.PLAYING) {
+          const d = p.getDuration?.() || 0;
+          const c = p.getCurrentTime?.() || 0;
+          if (d > 0) onProgressRef.current?.((c / d) * 100);
+        }
+      } catch { /* ignore */ }
+    }, 1500);
     loadYouTubeApi().then(() => {
       if (cancelled || !hostRef.current) return;
       const YT = (window as any).YT;
@@ -97,6 +113,7 @@ export function YouTubePlayer({
     });
     return () => {
       cancelled = true;
+      window.clearInterval(progressTimer);
       try { playerRef.current?.destroy?.(); } catch { /* ignore */ }
     };
   }, [videoId, autoPlay, unmuteOnStart]);

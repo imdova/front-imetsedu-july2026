@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, Play, Lock, Trophy, MessageCircle } from "lucide-react";
+import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, Play, Lock, Trophy, MessageCircle, X } from "lucide-react";
 
 import type { FreeLecture } from "@/lib/dal/free-courses";
 import type { QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
@@ -46,6 +46,9 @@ export function FreeLecturePlayer({
   const [watched, setWatched] = React.useState<Set<string>>(() => new Set());
   const [completed, setCompleted] = React.useState<Set<string>>(() => new Set());
   const [ended, setEnded] = React.useState(false);
+  const [showEnjoy, setShowEnjoy] = React.useState(false);
+  const [show80, setShow80] = React.useState(false);
+  const funnelRef = React.useRef({ enjoy: false, near: false });
   const progressPct = lectures.length ? Math.round((completed.size / lectures.length) * 100) : 0;
 
   const isQuiz = activeId === QUIZ_ID;
@@ -58,13 +61,26 @@ export function FreeLecturePlayer({
 
   const select = (id: string) => {
     setActiveId(id);
-    setEnded(false);
+    setEnded(false); setShow80(false); setShowEnjoy(false);
+    funnelRef.current = { enjoy: false, near: false };
     if (id !== QUIZ_ID) setWatched((prev) => new Set(prev).add(id));
   };
   const go = (dir: -1 | 1) => { const n = order[idx + dir]; if (n) select(n); };
   const onVideoEnded = () => {
     setEnded(true);
     if (active) setCompleted((prev) => new Set(prev).add(active.id));
+  };
+  // In-video conversion funnel: gentle nudge at 20%, unlock banner at 80%.
+  const onVideoProgress = (pct: number) => {
+    if (pct >= 20 && !funnelRef.current.enjoy) {
+      funnelRef.current.enjoy = true;
+      setShowEnjoy(true);
+      window.setTimeout(() => setShowEnjoy(false), 4500);
+    }
+    if (pct >= 80 && !funnelRef.current.near) {
+      funnelRef.current.near = true;
+      setShow80(true);
+    }
   };
 
   const youTubeId = active && active.videoProvider === "youtube" ? extractYouTubeVideoId(active.videoUrl) : null;
@@ -123,7 +139,7 @@ export function FreeLecturePlayer({
 
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-black shadow-sm">
               {youTubeId ? (
-                <YouTubePlayer key={active.id} videoId={youTubeId} autoPlay={false} hideYouTubeChrome onEnded={onVideoEnded} />
+                <YouTubePlayer key={active.id} videoId={youTubeId} autoPlay={false} hideYouTubeChrome onEnded={onVideoEnded} onProgress={onVideoProgress} />
               ) : active.videoProvider === "vdocipher" ? (
                 <div className="relative aspect-video">
                   <iframe
@@ -145,6 +161,30 @@ export function FreeLecturePlayer({
                 <span className="pointer-events-none absolute start-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-white shadow backdrop-blur">
                   <Play className="size-3 fill-current" /> {tr(locale, "Free lesson", "درس مجاني")} {lessonIdx + 1} / {lectures.length}
                 </span>
+              )}
+
+              {/* 20% — gentle nudge */}
+              {showEnjoy && !ended && !show80 && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-16 z-10 flex justify-center px-3">
+                  <span className="animate-in fade-in rounded-full bg-black/75 px-3.5 py-1.5 text-xs font-semibold text-white shadow backdrop-blur">
+                    👋 {tr(locale, "Enjoy the lesson!", "استمتع بالدرس!")}
+                  </span>
+                </div>
+              )}
+
+              {/* 80% — the rest is in the full program */}
+              {show80 && !ended && (
+                <div className="absolute inset-x-0 bottom-0 z-10 flex items-center gap-3 bg-gradient-to-t from-black/90 to-black/20 p-3 sm:p-4">
+                  <p className="min-w-0 flex-1 text-start text-sm font-semibold text-white">
+                    {tr(locale, "Almost there — the rest of the program is waiting for you.", "قربت تخلّص — باقي المنهج مستنيك في البرنامج الكامل.")}
+                  </p>
+                  <a href="#enroll-offer" className="shrink-0 rounded-lg bg-[#f4c430] px-3.5 py-1.5 text-xs font-extrabold text-[#0a1424] transition hover:bg-[#f4c430]/90">
+                    {tr(locale, "Unlock", "افتح")}
+                  </a>
+                  <button onClick={() => setShow80(false)} className="shrink-0 text-white/70 transition hover:text-white" aria-label="Close">
+                    <X className="size-4" />
+                  </button>
+                </div>
               )}
 
               {/* End-of-video conversion overlay */}

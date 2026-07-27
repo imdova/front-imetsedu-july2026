@@ -14,6 +14,24 @@ const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : e
 /** Cohort discount shown on the offer (edit to match the running promo). */
 const DISCOUNT = "30%";
 
+/** First name of the visitor if they registered (landing form or the gate form). */
+function getLeadFirstName(): string {
+  try {
+    const sources: [Storage, string][] = [
+      [localStorage, "imets_lead"],
+      [sessionStorage, "imets_cphq_lead"],
+      [localStorage, "imets_free_access"],
+    ];
+    for (const [store, key] of sources) {
+      const raw = store.getItem(key);
+      if (!raw || raw === "1") continue;
+      const name = String((JSON.parse(raw) as { name?: string })?.name ?? "").trim().split(/\s+/)[0];
+      if (name) return name;
+    }
+  } catch { /* ignore */ }
+  return "";
+}
+
 /** Full lesson experience: watch recorded lectures → quiz → enroll in the next live cohort. */
 export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: quizProp }: { locale: string; program: FreeProgram; advisorWhatsapp?: string; quiz?: QuizQuestion[] }) {
   const playable = program.lectures.filter((l) => l.videoUrl);
@@ -21,6 +39,12 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
   const name = (locale === "ar" ? program.titleAr : program.titleEn) || program.titleEn;
   const enrollRef = React.useRef<HTMLDivElement>(null);
   const [passed, setPassed] = React.useState(false);
+  const [firstName, setFirstName] = React.useState("");
+
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read the stored lead name on mount
+    setFirstName(getLeadFirstName());
+  }, []);
 
   const onPassed = () => {
     setPassed(true);
@@ -36,6 +60,19 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
 
   return (
     <div className="space-y-10">
+      {/* Personalized welcome for registered visitors */}
+      {firstName && (
+        <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.08] to-transparent p-4 sm:p-5">
+          <p className="font-bold">
+            👋 {tr(locale, `Hi ${firstName},`, `أهلاً ${firstName}،`)}{" "}
+            <span className="text-primary">{tr(locale, "you've reached your first free lesson! 🎉", "وصلت لأول درس مجاني! 🎉")}</span>
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {tr(locale, `After this lesson you'll know whether the ${name} program is the right fit for you.`, `بعد ما تخلّص الدرس ده هتعرف إذا كان برنامج ${name} مناسب ليك.`)}
+          </p>
+        </div>
+      )}
+
       {/* 1 · Watch lectures + take the quiz (one playlist) */}
       {playable.length === 0 && (
         <p className="rounded-xl border border-dashed border-border/70 p-4 text-center text-sm text-muted-foreground">
