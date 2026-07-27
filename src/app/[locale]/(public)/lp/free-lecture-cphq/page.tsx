@@ -430,6 +430,15 @@ export default async function FreeLectureCphqPage({
           </Button>
         </div>
       </section>
+
+      {/* Sticky mobile CTA (mobile only) */}
+      <div className="h-16 md:hidden" />
+      <a
+        href="#register"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 bg-[#f4c430] px-4 py-3.5 text-center text-sm font-extrabold text-[#0a1424] shadow-[0_-4px_20px_rgba(0,0,0,0.18)] md:hidden"
+      >
+        📅 احجز مقعدك المجاني
+      </a>
     </div>
   );
 }
