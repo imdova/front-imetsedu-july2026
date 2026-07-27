@@ -45,7 +45,9 @@ export type BlockType =
   | "buttons"
   | "coupon"
   | "product"
-  | "countdown";
+  | "countdown"
+  | "spotlight"
+  | "coursesList";
 
 export interface Block {
   id: string;
@@ -91,6 +93,8 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   coupon: "Coupon / voucher",
   product: "Product card",
   countdown: "Countdown",
+  spotlight: "Spotlight card",
+  coursesList: "Courses list",
 };
 
 let seq = 0;
@@ -154,13 +158,28 @@ export function defaultProps(type: BlockType): Record<string, string | number> {
     case "gallery":
       return { img1: "", img2: "", img3: "" };
     case "buttons":
-      return { count: 2, l1: "Button", u1: BRAND.site, l2: "Button", u2: BRAND.site, l3: "Button", u3: BRAND.site, bg: BRAND.blue, color: "#ffffff" };
+      return {
+        count: 2,
+        l1: "Button", u1: BRAND.site, bg1: BRAND.blue, color1: "#ffffff",
+        l2: "Button", u2: BRAND.site, bg2: BRAND.gold, color2: BRAND.ink,
+        l3: "Button", u3: BRAND.site, bg3: BRAND.blue, color3: "#ffffff",
+        bg: BRAND.blue, color: "#ffffff",
+      };
     case "coupon":
       return { title: "DISCOUNT / VOUCHER", greeting: "Dear Customer,", text: "Thank you for being with us. This is how we show love!", discountLabel: "-50%", codeLabel: "YOUR CODE BELOW", code: "DISCOUNT50", bg: "#2f7bff", leftBg: "#ffffff", badgeBg: "#ef4444" };
     case "product":
       return { image: "", eyebrow: "New collection", title: "Lovemyjob pink t-shirt", text: "", price: "$9.99", comparePrice: "$15.99", buttonLabel: "Shop now", buttonUrl: BRAND.site, buttonBg: BRAND.blue, buttonColor: "#ffffff" };
     case "countdown":
       return { title: "Offer ends in", endDate: "", gifUrl: "", boxBg: BRAND.ink, numColor: "#ffffff", labelColor: "#f4c430", align: "center" };
+    case "spotlight":
+      return { eyebrow: "", title: "Digital Marketing", text: "Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore.", buttonLabel: "Read More", buttonUrl: BRAND.site, image: "", imageSide: "left", bg: "#6f4fd8", color: "#ffffff", buttonBg: BRAND.gold, buttonColor: BRAND.ink };
+    case "coursesList":
+      return {
+        heading: "Featured courses", count: 3, buttonBg: BRAND.blue, buttonColor: "#ffffff",
+        c1img: "", c1title: "CPHQ Preparation", c1subtitle: "Healthcare Quality", c1btn: "View course", c1url: `${BRAND.site}/courses`,
+        c2img: "", c2title: "CIC Certification", c2subtitle: "Infection Control", c2btn: "View course", c2url: `${BRAND.site}/courses`,
+        c3img: "", c3title: "Hospital Management", c3subtitle: "Diploma", c3btn: "View course", c3url: `${BRAND.site}/courses`,
+      };
   }
 }
 
@@ -171,7 +190,7 @@ export function makeBlock(type: BlockType): Block {
 /* ── Preset library ── */
 export type PresetCategory = "Text" | "Content" | "Media" | "Buttons" | "Commerce" | "Interactive" | "Layout";
 /** Display order of the classified library groups. */
-export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Text", "Content", "Media", "Buttons", "Commerce", "Interactive", "Layout"];
+export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Text", "Content", "Media", "Buttons", "Commerce", "Interactive"];
 
 export interface Preset { id: string; label: string; category: PresetCategory; make: () => Block }
 const p = (type: BlockType, label: string, category: PresetCategory, overrides: Record<string, string | number> = {}): Preset => ({
@@ -184,17 +203,17 @@ export const PRESETS: Preset[] = [
   // Text
   p("heading", "Title", "Text", { text: "Welcome to IMETS", level: 1, align: "center", color: BRAND.blue }),
   p("heading", "Subtitle", "Text", { text: "Professional diplomas & courses", level: 3, align: "center", color: "#6b7280" }),
-  p("text", "Paragraph", "Text"),
   // Content
-  p("hero", "Hero (blue + gold)", "Content"),
   p("videoCta", "Highlight video", "Content"),
   p("textImage", "Text + image (right)", "Content"),
   p("textImage", "Text + image (left)", "Content", { imageSide: "left" }),
   p("article", "Article layout", "Content"),
+  p("spotlight", "Spotlight (image left)", "Content"),
+  p("spotlight", "Spotlight (image right)", "Content", { title: "Content Marketing", imageSide: "right" }),
+  p("coursesList", "Courses list", "Content"),
   p("features3", "Highlight 3 features", "Content"),
   p("features4", "Highlight 4 features", "Content"),
   // Media
-  p("image", "Image", "Media"),
   p("imageGrid", "Image grid", "Media"),
   p("gallery", "Gallery", "Media"),
   // Buttons
@@ -207,11 +226,6 @@ export const PRESETS: Preset[] = [
   p("product", "Product card", "Commerce"),
   // Interactive
   p("countdown", "Countdown timer", "Interactive"),
-  // Layout
-  p("header", "Brand header", "Layout"),
-  p("footer", "Footer", "Layout"),
-  p("divider", "Divider", "Layout"),
-  p("spacer", "Spacer", "Layout"),
 ];
 
 /**
@@ -415,7 +429,9 @@ export function renderBlock(b: Block): string {
       const n = Number(x.count) === 3 ? 3 : 2;
       const cells = Array.from({ length: n }, (_, i) => {
         const k = i + 1;
-        return `<td align="center" width="${Math.floor(100 / n)}%" style="padding:0 6px;">${emailBtn(x[`l${k}`], x[`u${k}`], x.bg ?? BRAND.blue, x.color ?? "#ffffff")}</td>`;
+        const bg = x[`bg${k}`] ?? x.bg ?? BRAND.blue;
+        const color = x[`color${k}`] ?? x.color ?? "#ffffff";
+        return `<td align="center" width="${Math.floor(100 / n)}%" style="padding:0 6px;">${emailBtn(x[`l${k}`], x[`u${k}`], bg, color)}</td>`;
       }).join("");
       return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 16px;"><tr>${cells}</tr></table>`;
     }
@@ -476,6 +492,40 @@ export function renderBlock(b: Block): string {
         <table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;"><tr>
           ${box(pad2(d), "Days")}${box(pad2(h), "Hours")}${box(pad2(m), "Mins")}${box(pad2(s), "Secs")}
         </tr></table>
+      </div>`;
+    }
+
+    case "spotlight": {
+      const panel = `<td valign="middle" width="55%" style="padding:26px 28px;background:${esc(x.bg)};border-radius:14px;font-family:Arial,sans-serif;">
+        ${x.eyebrow ? `<div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${esc(x.color)};opacity:.8;margin-bottom:8px;">${esc(x.eyebrow)}</div>` : ""}
+        <div style="font-size:21px;font-weight:800;color:${esc(x.color)};line-height:1.25;margin-bottom:10px;">${esc(x.title)}</div>
+        <p style="margin:0 0 18px;font-size:13px;line-height:1.6;color:${esc(x.color)};opacity:.92;">${nl2br(x.text)}</p>
+        ${emailBtn(x.buttonLabel, x.buttonUrl, x.buttonBg ?? BRAND.gold, x.buttonColor ?? BRAND.ink)}
+      </td>`;
+      const img = `<td valign="middle" width="45%" style="padding:8px;">${cellImg(x.image, 170, 12)}</td>`;
+      const row = x.imageSide === "right" ? panel + img : img + panel;
+      return `<div style="margin:6px 0 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${row}</tr></table>
+      </div>`;
+    }
+
+    case "coursesList": {
+      const n = Number(x.count) === 2 ? 2 : 3;
+      // One course per row: title / subtitle / button on the left, image (r=50) on the right.
+      const item = (i: number) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;border:1px solid #e5e7eb;border-radius:14px;">
+        <tr>
+          <td valign="middle" width="55%" style="padding:16px 18px;font-family:Arial,sans-serif;">
+            <div style="font-size:16px;font-weight:800;color:${BRAND.ink};line-height:1.3;">${esc(x[`c${i}title`])}</div>
+            <div style="margin-top:4px;font-size:13px;color:#6b7280;">${esc(x[`c${i}subtitle`])}</div>
+            <div style="margin-top:12px;">${emailBtn(x[`c${i}btn`], x[`c${i}url`], x.buttonBg ?? BRAND.blue, x.buttonColor ?? "#ffffff")}</div>
+          </td>
+          <td valign="middle" width="45%" style="padding:12px;">${cellImg(x[`c${i}img`], 110, 10)}</td>
+        </tr>
+      </table>`;
+      const items = Array.from({ length: n }, (_, i) => item(i + 1)).join("");
+      return `<div style="margin:6px 0 16px;">
+        ${x.heading ? `<div style="font-family:Arial,sans-serif;font-size:18px;font-weight:800;color:${BRAND.ink};margin-bottom:10px;">${esc(x.heading)}</div>` : ""}
+        ${items}
       </div>`;
     }
   }

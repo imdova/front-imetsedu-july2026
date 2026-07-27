@@ -24,6 +24,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { SystemEmailsTab } from "./system-emails-tab";
+import { SubscribersTab } from "./subscribers-tab";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -254,6 +255,7 @@ export function EmailMarketing({
       <Tabs value={tab} onValueChange={setTab} className="space-y-5">
         <TabsList className="h-auto flex-wrap gap-1 rounded-xl bg-muted/60 p-1">
           <TabTrigger value="dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <TabTrigger value="subscribers" icon={Users} label="Subscribers" />
           <TabTrigger value="campaigns" icon={Send} label="Campaigns" />
           <TabTrigger value="templates" icon={FileText} label="Templates" />
           <TabTrigger value="automations" icon={Zap} label="Automations" />
@@ -359,6 +361,10 @@ export function EmailMarketing({
             <QuickAction icon={FileText} title="New template" desc="Reusable branded design" onClick={openCreateTpl} />
             <QuickAction icon={Sparkles} title="New automation" desc="Smart drip sequence" onClick={createAut} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="subscribers">
+          <SubscribersTab />
         </TabsContent>
 
         <TabsContent value="campaigns" className="space-y-4">

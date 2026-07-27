@@ -13,6 +13,7 @@ import type {
   Campaign, CampaignInput, EmailTemplate, TemplateInput,
   AudienceSegment, Automation, AutomationInput, EmailStats, BrandBlock,
   AudienceOption, RecipientsPreview, ManualRecipient,
+  Subscriber, SubscriberInput, SubscriberGroup,
 } from "@/lib/db/email-marketing";
 
 const rate = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
@@ -166,5 +167,57 @@ export async function createBrandBlock(name: string, block: string): Promise<Res
 }
 export async function deleteBrandBlock(id: string): Promise<Result<boolean>> {
   const res = await svc.deleteBrandBlock(id);
+  return res.ok ? ok(true) : res;
+}
+
+/* ── Subscribers ── */
+const mapSubscriber = (d: svc.SubscriberDto): Subscriber => ({
+  id: d._id, email: d.email, name: d.name ?? "", phone: d.phone ?? "", source: d.source ?? "", tags: d.tags ?? [], createdAt: d.createdAt,
+});
+const mapGroup = (d: svc.SubscriberGroupDto): SubscriberGroup => ({ name: d.name, count: d.count, paths: d.paths ?? [] });
+export async function fetchSubscribers(search?: string, group?: string): Promise<Result<Subscriber[]>> {
+  const res = await svc.listSubscribers(search, group);
+  return res.ok ? ok(res.data.map(mapSubscriber)) : res;
+}
+export async function addSubscriber(input: SubscriberInput): Promise<Result<Subscriber>> {
+  const res = await svc.addSubscriber(input as unknown as Record<string, unknown>);
+  return res.ok ? ok(mapSubscriber(res.data)) : res;
+}
+export async function deleteSubscriber(id: string): Promise<Result<boolean>> {
+  const res = await svc.deleteSubscriber(id);
+  return res.ok ? ok(true) : res;
+}
+export async function bulkDeleteSubscribers(ids: string[]): Promise<Result<number>> {
+  const res = await svc.bulkDeleteSubscribers(ids);
+  return res.ok ? ok(res.data.deleted) : res;
+}
+export async function assignSubscribersGroup(ids: string[], group: string): Promise<Result<number>> {
+  const res = await svc.assignSubscribersGroup(ids, group);
+  return res.ok ? ok(res.data.modified) : res;
+}
+export async function unassignSubscribersGroup(ids: string[], group: string): Promise<Result<number>> {
+  const res = await svc.unassignSubscribersGroup(ids, group);
+  return res.ok ? ok(res.data.modified) : res;
+}
+
+/* ── Subscriber groups ── */
+export async function fetchSubscriberGroups(): Promise<Result<SubscriberGroup[]>> {
+  const res = await svc.listSubscriberGroups();
+  return res.ok ? ok(res.data.map(mapGroup)) : res;
+}
+export async function createSubscriberGroup(name: string): Promise<Result<SubscriberGroup>> {
+  const res = await svc.createSubscriberGroup(name);
+  return res.ok ? ok(mapGroup(res.data)) : res;
+}
+export async function renameSubscriberGroup(oldName: string, name: string): Promise<Result<SubscriberGroup>> {
+  const res = await svc.renameSubscriberGroup(oldName, name);
+  return res.ok ? ok(mapGroup(res.data)) : res;
+}
+export async function setSubscriberGroupPaths(name: string, paths: string[]): Promise<Result<SubscriberGroup>> {
+  const res = await svc.setSubscriberGroupPaths(name, paths);
+  return res.ok ? ok(mapGroup(res.data)) : res;
+}
+export async function deleteSubscriberGroup(name: string): Promise<Result<boolean>> {
+  const res = await svc.deleteSubscriberGroup(name);
   return res.ok ? ok(true) : res;
 }

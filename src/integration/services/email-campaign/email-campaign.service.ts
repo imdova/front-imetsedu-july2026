@@ -5,10 +5,13 @@ import {
   API_EMAIL_TEMPLATES, apiEmailTemplate, apiEmailTemplateDesign,
   API_EMAIL_AUTOMATIONS, apiEmailAutomation, apiEmailAutomationToggle,
   API_EMAIL_BRAND_BLOCKS, apiEmailBrandBlock,
+  API_EMAIL_SUBSCRIBERS, apiEmailSubscriber, API_EMAIL_SUBSCRIBERS_BULK_DELETE,
+  API_EMAIL_SUBSCRIBERS_ASSIGN, API_EMAIL_SUBSCRIBERS_UNASSIGN,
+  API_EMAIL_SUBSCRIBER_GROUPS, apiEmailSubscriberGroup,
 } from "@integration/constants/api/email";
 import type {
   CampaignDto, TemplateDto, AutomationDto, BrandBlockDto, EmailStatsDto, SegmentDto,
-  AudienceDto, RecipientsPreviewDto, ManualRecipientDto,
+  AudienceDto, RecipientsPreviewDto, ManualRecipientDto, SubscriberDto, SubscriberGroupDto,
 } from "./types";
 
 /* Stats + segments + audiences */
@@ -51,5 +54,26 @@ export const deleteAutomation = (id: string) => api.delete<{ success: boolean }>
 export const listBrandBlocks = () => api.get<BrandBlockDto[]>(API_EMAIL_BRAND_BLOCKS);
 export const createBrandBlock = (name: string, block: string) => api.post<BrandBlockDto>(API_EMAIL_BRAND_BLOCKS, { name, block });
 export const deleteBrandBlock = (id: string) => api.delete<{ success: boolean }>(apiEmailBrandBlock(id));
+
+/* Subscribers */
+export const listSubscribers = (search?: string, group?: string) => {
+  const q = new URLSearchParams();
+  if (search) q.set("search", search);
+  if (group && group !== "all") q.set("group", group);
+  const qs = q.toString();
+  return api.get<SubscriberDto[]>(qs ? `${API_EMAIL_SUBSCRIBERS}?${qs}` : API_EMAIL_SUBSCRIBERS);
+};
+export const addSubscriber = (input: Record<string, unknown>) => api.post<SubscriberDto>(API_EMAIL_SUBSCRIBERS, input);
+export const deleteSubscriber = (id: string) => api.delete<{ success: boolean }>(apiEmailSubscriber(id));
+export const bulkDeleteSubscribers = (ids: string[]) => api.post<{ success: boolean; deleted: number }>(API_EMAIL_SUBSCRIBERS_BULK_DELETE, { ids });
+export const assignSubscribersGroup = (ids: string[], group: string) => api.post<{ success: boolean; modified: number }>(API_EMAIL_SUBSCRIBERS_ASSIGN, { ids, group });
+export const unassignSubscribersGroup = (ids: string[], group: string) => api.post<{ success: boolean; modified: number }>(API_EMAIL_SUBSCRIBERS_UNASSIGN, { ids, group });
+
+/* Subscriber groups */
+export const listSubscriberGroups = () => api.get<SubscriberGroupDto[]>(API_EMAIL_SUBSCRIBER_GROUPS);
+export const createSubscriberGroup = (name: string) => api.post<SubscriberGroupDto>(API_EMAIL_SUBSCRIBER_GROUPS, { name });
+export const renameSubscriberGroup = (oldName: string, name: string) => api.patch<SubscriberGroupDto>(apiEmailSubscriberGroup(oldName), { name });
+export const setSubscriberGroupPaths = (name: string, paths: string[]) => api.patch<SubscriberGroupDto>(`${apiEmailSubscriberGroup(name)}/paths`, { paths });
+export const deleteSubscriberGroup = (name: string) => api.delete<{ success: boolean }>(apiEmailSubscriberGroup(name));
 
 export type { Result };

@@ -119,7 +119,7 @@ export function EmailBuilder({
       <div className="flex min-h-0 flex-1 gap-3">
         {/* Palette */}
         {!preview && (
-          <aside className="w-72 shrink-0 space-y-4 overflow-y-auto rounded-xl border border-border/70 bg-card p-3">
+          <aside className="w-[346px] shrink-0 space-y-4 overflow-y-auto rounded-xl border border-border/70 bg-card p-3">
             <div>
               <p className="mb-2 text-xs font-semibold text-muted-foreground">Quick blocks</p>
               <div className="grid grid-cols-2 gap-1.5">
@@ -139,7 +139,7 @@ export function EmailBuilder({
                   return (
                     <div key={cat}>
                       <p className="mb-1.5 px-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70">{cat}</p>
-                      <div className="space-y-1.5">
+                      <div className="grid grid-cols-2 gap-1.5">
                         {items.map((pr) => <PresetItem key={pr.id} preset={pr} onAdd={() => addBlock(pr.make())} />)}
                       </div>
                     </div>
@@ -378,10 +378,13 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
 
       {block.type === "buttons" && <>
         <F label="Number of buttons">{pick("count", [["2", "2 buttons"], ["3", "3 buttons"]], true)}</F>
-        <div className="grid grid-cols-[1fr_1fr] gap-2"><F label="Label 1">{text("l1")}</F><F label="URL 1">{text("u1")}</F></div>
-        <div className="grid grid-cols-[1fr_1fr] gap-2"><F label="Label 2">{text("l2")}</F><F label="URL 2">{text("u2")}</F></div>
-        {Number(x.count) === 3 && <div className="grid grid-cols-[1fr_1fr] gap-2"><F label="Label 3">{text("l3")}</F><F label="URL 3">{text("u3")}</F></div>}
-        <div className="grid grid-cols-2 gap-3"><F label="Background">{color("bg")}</F><F label="Text color">{color("color")}</F></div>
+        {Array.from({ length: Number(x.count) === 3 ? 3 : 2 }, (_, i) => i + 1).map((k) => (
+          <div key={k} className="space-y-2 rounded-lg border border-border/60 p-2.5">
+            <p className="text-[11px] font-semibold text-muted-foreground">Button {k}</p>
+            <div className="grid grid-cols-2 gap-2"><F label="Label">{text(`l${k}`)}</F><F label="URL">{text(`u${k}`)}</F></div>
+            <div className="grid grid-cols-2 gap-2"><F label="Background">{color(`bg${k}`)}</F><F label="Text color">{color(`color${k}`)}</F></div>
+          </div>
+        ))}
       </>}
 
       {block.type === "coupon" && <>
@@ -414,6 +417,33 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
         <F label="Align">{align("align")}</F>
         <div className="grid grid-cols-3 gap-2"><F label="Box">{color("boxBg")}</F><F label="Number">{color("numColor")}</F><F label="Label">{color("labelColor")}</F></div>
       </>}
+
+      {block.type === "spotlight" && <>
+        <F label="Eyebrow (small label)">{text("eyebrow")}</F>
+        <F label="Title">{text("title")}</F>
+        <F label="Text">{area("text")}{tokens("text")}</F>
+        <F label="Button label">{text("buttonLabel")}</F>
+        <F label="Button URL">{text("buttonUrl")}</F>
+        <F label="Image URL">{text("image")}</F>
+        <F label="Image side">{pick("imageSide", [["left", "Left"], ["right", "Right"]])}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Panel color">{color("bg")}</F><F label="Text color">{color("color")}</F></div>
+        <div className="grid grid-cols-2 gap-3"><F label="Button bg">{color("buttonBg")}</F><F label="Button text">{color("buttonColor")}</F></div>
+      </>}
+
+      {block.type === "coursesList" && <>
+        <F label="Section heading (optional)">{text("heading")}</F>
+        <F label="Number of courses">{pick("count", [["2", "2 courses"], ["3", "3 courses"]], true)}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Button bg">{color("buttonBg")}</F><F label="Button text">{color("buttonColor")}</F></div>
+        {Array.from({ length: Number(x.count) === 2 ? 2 : 3 }, (_, i) => i + 1).map((i) => (
+          <div key={i} className="space-y-2 rounded-lg border border-border/60 p-2.5">
+            <p className="text-[11px] font-semibold text-muted-foreground">Course {i}</p>
+            <F label="Image URL">{text(`c${i}img`)}</F>
+            <F label="Title">{text(`c${i}title`)}</F>
+            <F label="Subtitle">{text(`c${i}subtitle`)}</F>
+            <div className="grid grid-cols-2 gap-2"><F label="Button">{text(`c${i}btn`)}</F><F label="URL">{text(`c${i}url`)}</F></div>
+          </div>
+        ))}
+      </>}
     </div>
   );
 }
@@ -439,10 +469,10 @@ function PresetItem({ preset, onAdd }: { preset: Preset; onAdd: () => void }) {
       title={`Add ${preset.label}`}
       className="group block w-full overflow-hidden rounded-lg border border-border/60 bg-white text-start transition hover:border-primary/50 hover:shadow-sm"
     >
-      <div className="relative h-[62px] overflow-hidden bg-white">
+      <div className="relative h-[58px] overflow-hidden bg-white">
         <div
           className="pointer-events-none absolute left-0 top-0 origin-top-left"
-          style={{ width: 600, transform: "scale(0.41)" }}
+          style={{ width: 600, transform: "scale(0.26)" }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>

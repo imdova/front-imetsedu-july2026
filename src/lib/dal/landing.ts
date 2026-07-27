@@ -116,6 +116,14 @@ export interface CaptureLeadInput {
 }
 export async function captureLead(input: CaptureLeadInput): Promise<Result<{ id: string }>> {
   const res = await svc.captureLead(input as unknown as Record<string, unknown>);
+  if (res.ok) {
+    // Best-effort: also register the person as an email subscriber. The backend
+    // auto-joins any group whose linked form paths match `path` (never throws).
+    svc.subscribe({
+      email: input.email, name: input.name, phone: input.whatsapp,
+      source: input.path, path: input.path,
+    }).catch(() => {});
+  }
   return res.ok ? ok({ id: res.data._id }) : res;
 }
 export async function trackLanding(path: string, type: "view" | "click"): Promise<Result<boolean>> {

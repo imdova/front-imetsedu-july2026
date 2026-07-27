@@ -70,6 +70,22 @@ export interface BrandBlockDto {
   block: string;
 }
 
+export interface SubscriberDto {
+  _id: string;
+  email: string;
+  name?: string;
+  phone?: string;
+  source?: string;
+  tags?: string[];
+  createdAt: string;
+}
+
+export interface SubscriberGroupDto {
+  name: string;
+  count: number;
+  paths?: string[];
+}
+
 export interface EmailStatsDto {
   totalSubscribers: number;
   totalCampaigns: number;

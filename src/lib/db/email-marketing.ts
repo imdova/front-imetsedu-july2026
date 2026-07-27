@@ -96,6 +96,22 @@ export interface AudienceSegment {
   count: number;
 }
 
+export interface Subscriber {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  source: string;
+  tags: string[];
+  createdAt: string;
+}
+export type SubscriberInput = { email: string; name?: string; phone?: string; tags?: string[] };
+export interface SubscriberGroup {
+  name: string;
+  count: number;
+  paths: string[];
+}
+
 export type AutomationTrigger = "subscriber_created" | "tag_added";
 export interface Automation {
   id: string;

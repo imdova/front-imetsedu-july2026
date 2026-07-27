@@ -22,6 +22,7 @@ export const API_LANDING_CONTACT = "/admin/landing/contact";
 export const apiLandingMessage = (id: string) => `/admin/landing/contact/${id}`;
 
 // Public
+export const API_LANDING_SUBSCRIBE = "/landing/newsletter";
 export const API_LANDING_TRACK = "/landing/pages/track";
 export const API_LANDING_PUBLIC_CONFIG = "/landing/pages/public";
 export const API_FREE_EXAM_CAPTURE = "/free-exam/leads";
