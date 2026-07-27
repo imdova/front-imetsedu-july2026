@@ -140,7 +140,7 @@ export default async function FreeCoursesPage({
               {tr(locale, "Every program starts with a free introductory lecture — no payment, no card.", "كل برنامج بيبدأ بمحاضرة تعريفية مجانية — بدون دفع أو بطاقة.")}
             </p>
           </div>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {courses.map((c) => (
               <CourseLectureCard key={c.id} locale={locale} course={c} href={lpFor(c.slug)} />
             ))}
