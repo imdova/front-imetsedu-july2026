@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { Sparkles, PlayCircle, ChevronRight, Clock } from "lucide-react";
+import { Sparkles, PlayCircle, ChevronRight, Clock, ListVideo, BadgeCheck, Award, BrainCircuit, GraduationCap } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
@@ -54,6 +54,23 @@ export default async function FreeCourseDetailPage({
   const url = localeUrl(`/free-courses/${slug}`, locale);
   const lectureTitle = (l: (typeof program.lectures)[number]) =>
     (locale === "ar" ? l.titleAr : l.titleEn) || l.titleEn;
+
+  const totalMin = program.lectures.reduce((s, l) => s + (l.durationMinutes || 0), 0);
+  const durLabel = totalMin >= 60
+    ? `${Math.floor(totalMin / 60)}${tr(locale, "h", "س")}${totalMin % 60 ? ` ${totalMin % 60}${tr(locale, "m", "د")}` : ""}`
+    : `${totalMin} ${tr(locale, "min", "د")}`;
+  const count = program.lectures.length;
+  const FACTS = [
+    { icon: ListVideo, text: `${count} ${count === 1 ? tr(locale, "lecture", "محاضرة") : tr(locale, "lectures", "محاضرة")}` },
+    ...(totalMin > 0 ? [{ icon: Clock, text: durLabel }] : []),
+    { icon: BadgeCheck, text: tr(locale, "100% free", "مجاني ١٠٠٪") },
+    { icon: Award, text: tr(locale, "Certificate of attendance", "شهادة حضور") },
+  ];
+  const STEPS = [
+    { icon: PlayCircle, t: tr(locale, "Watch the lectures", "شاهد المحاضرات") },
+    { icon: BrainCircuit, t: tr(locale, "Take a quick quiz", "اختبر معلوماتك") },
+    { icon: GraduationCap, t: tr(locale, "Join the live cohort", "انضم للدفعة المباشرة") },
+  ];
 
   return (
     <>
@@ -129,14 +146,28 @@ export default async function FreeCourseDetailPage({
           </span>
           <h1 className="mt-3 font-heading text-3xl font-bold tracking-tight text-balance sm:text-4xl">{name}</h1>
           {body && <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">{body}</p>}
-          {program.lectures.length > 0 && (
-            <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-              <PlayCircle className="size-4 text-primary" />
-              {program.lectures.length}{" "}
-              {program.lectures.length === 1 ? tr(locale, "free lecture", "محاضرة مجانية") : tr(locale, "free lectures", "محاضرة مجانية")}
-            </p>
-          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {FACTS.map((f) => (
+              <span key={f.text} className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3 py-1.5 text-xs font-medium">
+                <f.icon className="size-3.5 text-primary" /> {f.text}
+              </span>
+            ))}
+          </div>
         </header>
+
+        {/* Learning path — orients the visitor before the gate. */}
+        <div className="mb-8 grid gap-3 sm:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <div key={s.t} className="relative flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><s.icon className="size-5" /></span>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{tr(locale, `Step ${i + 1}`, `خطوة ${i + 1}`)}</div>
+                <div className="text-sm font-semibold">{s.t}</div>
+              </div>
+              {i < STEPS.length - 1 && <ChevronRight className="absolute -end-2 top-1/2 hidden size-4 -translate-y-1/2 text-muted-foreground/40 sm:block rtl:rotate-180" />}
+            </div>
+          ))}
+        </div>
 
         {/* The gate only covers the PLAYER. */}
         <FreeCourseGate locale={locale} program={program} />
