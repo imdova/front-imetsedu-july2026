@@ -9,6 +9,7 @@ import { mergeSeo } from "@/lib/public-seo";
 import { seoAlternates, socialMeta, localeUrl, breadcrumbLd, metaDescription, SITE_NAME } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { FreeCourseGate } from "@/features/free-courses/components/free-course-gate";
+import type { QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
 import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
 
 const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
@@ -53,6 +54,23 @@ export default async function FreeCourseDetailPage({
   const res = await dal.freeCourses.fetchFreeProgram(slug);
   if (!res.ok) notFound();
   const program = res.data;
+
+  // Admin-selected quiz from the quiz bank (public GET) → mapped to the lesson
+  // quiz shape; falls back to the bundled default inside the experience.
+  let quiz: QuizQuestion[] | undefined;
+  if (program.quizId) {
+    const qr = await dal.quizzes.fetchQuizDetail(program.quizId);
+    if (qr.ok) {
+      const mapped = qr.data.questions
+        .filter((q) => ["single", "true-false", "multiple"].includes(q.type) && q.choices.length >= 2)
+        .map((q) => ({
+          q: { en: q.prompt, ar: q.prompt },
+          options: q.choices.map((c) => ({ en: c.text, ar: c.text })),
+          correct: Math.max(0, q.choices.findIndex((c) => c.isCorrect)),
+        }));
+      if (mapped.length) quiz = mapped;
+    }
+  }
 
   const name = (locale === "ar" ? program.titleAr : program.titleEn) || program.titleEn;
   const body = (locale === "ar" ? program.descriptionAr : program.descriptionEn) || "";
@@ -178,7 +196,7 @@ export default async function FreeCourseDetailPage({
 
         {/* The gate only covers the PLAYER. Advisor-mode slugs skip the form
             and offer a WhatsApp course advisor instead. */}
-        <FreeCourseGate locale={locale} program={program} advisorWhatsapp={ADVISOR_WHATSAPP[slug]} />
+        <FreeCourseGate locale={locale} program={program} advisorWhatsapp={ADVISOR_WHATSAPP[slug]} quiz={quiz} />
 
         {/* Curriculum in server HTML — indexable whether or not the gate is open,
             which is the whole point of gating the player and not the page. */}

@@ -30,6 +30,7 @@ export interface FreeProgram {
   isPublished: boolean;
   seoTitle: string;
   seoDescription: string;
+  quizId: string;
   lectureCount: number;
   lectures: FreeLecture[];
 }
@@ -45,6 +46,7 @@ export type FreeProgramInput = {
   isPublished?: boolean;
   seoTitle?: string;
   seoDescription?: string;
+  quizId?: string;
 };
 
 export type FreeLectureInput = {
@@ -86,6 +88,7 @@ const map = (d: svc.FreeProgramDto): FreeProgram => ({
   isPublished: !!d.isPublished,
   seoTitle: d.seoTitle ?? "",
   seoDescription: d.seoDescription ?? "",
+  quizId: d.quizId ?? "",
   lectureCount: d.lectureCount ?? d.lectures?.length ?? 0,
   lectures: (d.lectures ?? []).map(mapLecture),
 });

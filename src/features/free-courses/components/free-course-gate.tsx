@@ -4,6 +4,7 @@ import * as React from "react";
 import { Lock, CheckCircle2, Loader2 } from "lucide-react";
 
 import type { FreeProgram } from "@/lib/dal/free-courses";
+import type { QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
 import { FreeCourseGateForm } from "./free-course-gate-form";
 import { FreeLessonExperience } from "./free-lesson-experience";
 
@@ -16,12 +17,15 @@ export function FreeCourseGate({
   locale,
   program,
   advisorWhatsapp,
+  quiz,
 }: {
   locale: string;
   program: FreeProgram;
   /** When set, the email form is skipped entirely — lectures open directly and
    *  the enroll step becomes a "chat with a course advisor" WhatsApp CTA. */
   advisorWhatsapp?: string;
+  /** The resolved quiz (admin-selected from the bank, or the bundled default). */
+  quiz?: QuizQuestion[];
 }) {
 
   // null on the server AND the first client render, so the markup matches and
@@ -43,7 +47,7 @@ export function FreeCourseGate({
 
   // Advisor mode: no gate, no form — go straight to the lessons.
   if (advisorWhatsapp) {
-    return <FreeLessonExperience locale={locale} program={program} advisorWhatsapp={advisorWhatsapp} />;
+    return <FreeLessonExperience locale={locale} program={program} advisorWhatsapp={advisorWhatsapp} quiz={quiz} />;
   }
 
   if (unlocked === null) {
@@ -90,7 +94,7 @@ export function FreeCourseGate({
         <CheckCircle2 className="size-3.5" />
         {tr(locale, "Access unlocked — enjoy!", "تم فتح الوصول — استمتع!")}
       </p>
-      <FreeLessonExperience locale={locale} program={program} />
+      <FreeLessonExperience locale={locale} program={program} quiz={quiz} />
     </div>
   );
 }

@@ -25,6 +25,7 @@ export interface FreeProgramDto {
   isPublished?: boolean;
   seoTitle?: string;
   seoDescription?: string;
+  quizId?: string;
   /** Present on the public list endpoint. */
   lectureCount?: number;
   /** Present on the by-slug + admin detail endpoints. */

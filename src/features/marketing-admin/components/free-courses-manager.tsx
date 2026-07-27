@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
 import type { FreeProgram, FreeLecture, VideoProvider } from "@/lib/dal/free-courses";
+import type { QuizRow, QuizCategoryOption } from "@/lib/dal/quizzes";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ const slugify = (s: string) =>
 
 const EMPTY_PROGRAM = {
   titleEn: "", titleAr: "", slug: "", descriptionEn: "", descriptionAr: "",
-  thumbnailUrl: "", seoTitle: "", seoDescription: "", isPublished: false,
+  thumbnailUrl: "", seoTitle: "", seoDescription: "", quizId: "", isPublished: false,
 };
 const EMPTY_LECTURE = {
   titleEn: "", titleAr: "", descriptionEn: "", descriptionAr: "",
@@ -49,6 +50,15 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
   const [saving, setSaving] = React.useState(false);
   const [slugTouched, setSlugTouched] = React.useState(false);
   const [generating, setGenerating] = React.useState(false);
+
+  // Quiz bank (for the category → quiz selector).
+  const [quizCats, setQuizCats] = React.useState<QuizCategoryOption[]>([]);
+  const [quizzes, setQuizzes] = React.useState<QuizRow[]>([]);
+  const [quizCat, setQuizCat] = React.useState("");
+  React.useEffect(() => {
+    dal.quizzes.fetchQuizCategories().then((r) => { if (r.ok) setQuizCats(r.data); });
+    dal.quizzes.fetchQuizzes().then((r) => { if (r.ok) setQuizzes(r.data); });
+  }, []);
 
   /** Create a draft free program for each real published course (same title + image). */
   const generateFromCourses = async () => {
@@ -75,7 +85,7 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
   };
 
   const openCreate = () => {
-    setEditing(null); setPForm(EMPTY_PROGRAM); setSlugTouched(false); setProgOpen(true);
+    setEditing(null); setPForm(EMPTY_PROGRAM); setSlugTouched(false); setQuizCat(""); setProgOpen(true);
   };
   const openEdit = (p: FreeProgram) => {
     setEditing(p);
@@ -83,8 +93,9 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
       titleEn: p.titleEn, titleAr: p.titleAr, slug: p.slug,
       descriptionEn: p.descriptionEn, descriptionAr: p.descriptionAr,
       thumbnailUrl: p.thumbnailUrl, seoTitle: p.seoTitle,
-      seoDescription: p.seoDescription, isPublished: p.isPublished,
+      seoDescription: p.seoDescription, quizId: p.quizId, isPublished: p.isPublished,
     });
+    setQuizCat(quizzes.find((q) => q.id === p.quizId)?.categoryId ?? "");
     setSlugTouched(true);
     setProgOpen(true);
   };
@@ -220,6 +231,36 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
             <div className="space-y-1.5">
               <Label>Thumbnail</Label>
               <ImageUpload value={pForm.thumbnailUrl} onChange={(url) => setPForm((f) => ({ ...f, thumbnailUrl: url }))} />
+            </div>
+
+            {/* Quiz selector: category → quiz */}
+            <div className="space-y-2 rounded-xl border border-border/70 p-3">
+              <Label className="text-sm font-medium">Quiz (optional)</Label>
+              <p className="text-xs text-muted-foreground">Shown after the lectures. Leave empty to use the built-in default quiz.</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Category</Label>
+                  <Select value={quizCat || "none"} onValueChange={(v) => { setQuizCat(v === "none" ? "" : v); setPForm((f) => ({ ...f, quizId: "" })); }}>
+                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None (default) —</SelectItem>
+                      {quizCats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Quiz</Label>
+                  <Select value={pForm.quizId || "none"} onValueChange={(v) => setPForm((f) => ({ ...f, quizId: v === "none" ? "" : v }))} disabled={!quizCat}>
+                    <SelectTrigger><SelectValue placeholder={quizCat ? "Select quiz" : "Pick a category first"} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {quizzes.filter((q) => q.categoryId === quizCat).map((q) => (
+                        <SelectItem key={q.id} value={q.id}>{q.titleEn || q.titleAr} · {q.questionsCount}Q</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
             <details className="rounded-xl border border-border/70 p-3">

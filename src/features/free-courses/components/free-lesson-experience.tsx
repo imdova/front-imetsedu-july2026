@@ -5,7 +5,7 @@ import { GraduationCap, CalendarClock, CheckCircle2, Award, Users, BrainCircuit,
 
 import type { FreeProgram } from "@/lib/dal/free-courses";
 import { FreeLecturePlayer } from "./free-lecture-player";
-import { getFreeQuiz } from "@/features/free-courses/lib/free-quiz-data";
+import { getFreeQuiz, type QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
 import { SimpleLeadForm } from "@/features/marketing/components/simple-lead-form";
 import { RegistrationCountdown } from "@/features/marketing/components/registration-countdown";
 import { cn } from "@/lib/utils";
@@ -15,9 +15,9 @@ const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : e
 const DISCOUNT = "30%";
 
 /** Full lesson experience: watch recorded lectures → quiz → enroll in the next live cohort. */
-export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { locale: string; program: FreeProgram; advisorWhatsapp?: string }) {
+export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: quizProp }: { locale: string; program: FreeProgram; advisorWhatsapp?: string; quiz?: QuizQuestion[] }) {
   const playable = program.lectures.filter((l) => l.videoUrl);
-  const quiz = getFreeQuiz(program.slug);
+  const quiz = quizProp && quizProp.length ? quizProp : getFreeQuiz(program.slug);
   const name = (locale === "ar" ? program.titleAr : program.titleEn) || program.titleEn;
   const enrollRef = React.useRef<HTMLDivElement>(null);
   const [passed, setPassed] = React.useState(false);
