@@ -8,6 +8,10 @@ import { dal } from "@/lib/dal";
 import { useRouter } from "@/i18n/navigation";
 import { fbLeadContext, fireBrowserLead } from "@/lib/meta-events";
 import { gaEvent } from "@/lib/analytics";
+
+// Must match FREE_ACCESS_KEY in free-course-gate.tsx (kept literal to avoid
+// pulling the gate's player/quiz deps into this landing-page bundle).
+const FREE_ACCESS_KEY = "imets_free_access";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,7 +76,12 @@ export function CphqLectureForm({
     if (res.ok) {
       fireBrowserLead(fb.eventId, { content_name: courseName });
       dal.landing.trackLanding(path, "click").catch(() => {});
-      try { sessionStorage.setItem("imets_cphq_lead", JSON.stringify({ ...lead, path, courseName })); } catch { /* ignore */ }
+      try {
+        sessionStorage.setItem("imets_cphq_lead", JSON.stringify({ ...lead, path, courseName }));
+        // Already registered here → unlock the free-lecture player so they skip
+        // the gate form on /free-courses/*.
+        localStorage.setItem(FREE_ACCESS_KEY, "1");
+      } catch { /* ignore */ }
       router.push(thankYouPath);
       return; // keep the button disabled through the navigation
     }
