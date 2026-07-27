@@ -4,6 +4,7 @@ import * as React from "react";
 import { CheckCircle2, MessageCircle, ArrowLeft, PartyPopper, Mail, CalendarClock } from "lucide-react";
 
 import { dal } from "@/lib/dal";
+import { gaEvent, fbqTrack } from "@/lib/analytics";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,9 @@ export function CphqThankYou({ whatsappNumber = "201142293143" }: { whatsappNumb
     if (!parsed) setPhase("whatsapp"); // direct visit → skip the wizard
     setReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
+    // Meta CompleteRegistration + GA4 registration_complete (once, on the thank-you page).
+    fbqTrack("CompleteRegistration", { content_name: parsed?.courseName ?? "CPHQ Free Lecture" });
+    gaEvent("registration_complete");
   }, []);
 
   const firstName = (lead?.name ?? "").trim().split(" ")[0];

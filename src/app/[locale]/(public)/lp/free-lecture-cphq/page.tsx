@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CphqLectureForm } from "@/features/marketing/components/cphq-lecture-form";
+import { CphqAnalytics } from "@/features/marketing/components/cphq-analytics";
 import { RegistrationCountdown } from "@/features/marketing/components/registration-countdown";
 import { LandingHeroVideo } from "@/features/marketing/components/landing-hero-video";
 
@@ -127,6 +128,7 @@ export default async function FreeLectureCphqPage({
 
   return (
     <div dir="rtl" className="bg-background text-foreground">
+      <CphqAnalytics contentName={COURSE} />
       {/* ── 1 · Hero (pain headline + countdown + form) ── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary to-[#082a6b] text-primary-foreground">
         <div className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />

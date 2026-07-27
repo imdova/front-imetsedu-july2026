@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { dal } from "@/lib/dal";
 import { useRouter } from "@/i18n/navigation";
 import { fbLeadContext, fireBrowserLead } from "@/lib/meta-events";
+import { gaEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,15 +51,20 @@ export function CphqLectureForm({
   const router = useRouter();
   const [form, setForm] = React.useState({ name: "", email: "", code: "+20", whatsapp: "" });
   const [submitting, setSubmitting] = React.useState(false);
+  const startedRef = React.useRef(false);
 
   React.useEffect(() => { dal.landing.trackLanding(path, "view").catch(() => {}); }, [path]);
-  const set = (k: "name" | "email" | "code" | "whatsapp", v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: "name" | "email" | "code" | "whatsapp", v: string) => {
+    if (!startedRef.current) { startedRef.current = true; gaEvent("form_started"); } // GA4: first interaction
+    setForm((f) => ({ ...f, [k]: v }));
+  };
   const fullPhone = () => `${form.code}${digits(form.whatsapp)}`;
   const valid = form.name.trim().length > 1 && EMAIL_RE.test(form.email.trim()) && digits(form.whatsapp).length >= 8;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!valid) { toast.error("اكمل بياناتك بشكل صحيح"); return; }
+    gaEvent("form_submit"); // GA4
     setSubmitting(true);
     const fb = fbLeadContext();
     const lead = { name: form.name.trim(), email: form.email.trim(), whatsapp: fullPhone() };
