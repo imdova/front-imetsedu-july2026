@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, ShieldCheck, User, Phone, Mail } from "lucide-react";
+import { Loader2, ShieldCheck, User, Phone, Mail, Star } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
@@ -103,6 +103,10 @@ export function CphqLectureForm({
       <Button type="submit" size="lg" className="w-full gap-2" disabled={submitting || !valid}>
         {submitting ? <><Loader2 className="size-4 animate-spin" /> جارٍ الحجز…</> : "احجز مقعدي المجاني الآن"}
       </Button>
+      <div className="flex flex-col items-center gap-1">
+        <span className="flex text-[#f4c430]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-4 fill-current" />)}</span>
+        <span className="text-center text-xs font-medium text-muted-foreground">انضم لأكثر من 17,000 متخصص صحي بدأوا رحلتهم مع IMETS</span>
+      </div>
       <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">
         <ShieldCheck className="size-3.5 text-primary" /> بياناتك آمنة — لن نشاركها مع أي جهة.
       </p>
