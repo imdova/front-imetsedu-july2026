@@ -33,7 +33,19 @@ export type BlockType =
   | "divider"
   | "spacer"
   | "hero"
-  | "footer";
+  | "footer"
+  // ── rich content blocks ──
+  | "videoCta"
+  | "textImage"
+  | "article"
+  | "features3"
+  | "features4"
+  | "imageGrid"
+  | "gallery"
+  | "buttons"
+  | "coupon"
+  | "product"
+  | "countdown";
 
 export interface Block {
   id: string;
@@ -68,6 +80,17 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   spacer: "Spacer",
   hero: "Hero",
   footer: "Footer",
+  videoCta: "Highlight video",
+  textImage: "Text + image",
+  article: "Article layout",
+  features3: "3 features",
+  features4: "4 features",
+  imageGrid: "Image grid",
+  gallery: "Gallery",
+  buttons: "Button row",
+  coupon: "Coupon / voucher",
+  product: "Product card",
+  countdown: "Countdown",
 };
 
 let seq = 0;
@@ -77,7 +100,7 @@ export const makeBlockId = () =>
 export function defaultProps(type: BlockType): Record<string, string | number> {
   switch (type) {
     case "header":
-      return { logoSrc: "", brandTop: "IMETS", brandSub: "Medical School", bg: BRAND.blue };
+      return { logoSrc: `${BRAND.site}/logo-email.png`, brandTop: "IMETS", brandSub: "Medical School", bg: BRAND.blue };
     case "heading":
       return { text: "Your heading", level: 2, align: "left", color: BRAND.ink };
     case "text":
@@ -93,7 +116,51 @@ export function defaultProps(type: BlockType): Record<string, string | number> {
     case "hero":
       return { title: "Big announcement", subtitle: "A short supporting line.", bg: BRAND.blue, color: "#ffffff", buttonLabel: "Learn more", buttonUrl: BRAND.site, buttonBg: BRAND.gold, buttonColor: BRAND.ink };
     case "footer":
-      return { text: "IMETS Medical School — live online healthcare diplomas & certifications.", link: BRAND.site, linkLabel: "imetsedu.com", bg: "#f6f8fc", color: "#6b7280" };
+      return {
+        brandName: "IMETS Medical School",
+        address: "Nasr City, Cairo, Egypt",
+        phone: "+201008815007",
+        email: "info@imetsacademy.com",
+        facebookUrl: "https://facebook.com/imetsacademy",
+        twitterUrl: "https://twitter.com/imetsacademy",
+        instagramUrl: "https://instagram.com/imetsacademy",
+        unsubscribeLabel: "Unsubscribe",
+        unsubscribeUrl: `${BRAND.site}/unsubscribe`,
+        bg: "#0b1e63", color: "#c7d2ec",
+      };
+    case "videoCta":
+      return { thumb: "", videoUrl: BRAND.site, title: "Introducing a new program", text: "Watch a short intro and discover what makes IMETS diplomas different — live sessions with practicing consultants.", buttonLabel: "Read more", buttonUrl: BRAND.site, bg: "#ffffff", buttonBg: BRAND.blue, buttonColor: "#ffffff" };
+    case "textImage":
+      return { eyebrow: "New", title: "Nailing it on the head", text: "A short supporting paragraph that sits beside the image and explains the highlight in a sentence or two.", image: "", imageSide: "right" };
+    case "article":
+      return { title: "Get ready for the new intake", image: "", text: "Introduce the article with a clear, benefit-led paragraph. Keep it to two or three lines so the layout stays clean.", buttonLabel: "Take a closer look", buttonUrl: BRAND.site, buttonBg: BRAND.blue, buttonColor: "#ffffff" };
+    case "features3":
+      return {
+        heading: "Features", intro: "Everything your program includes at a glance.", viewAllLabel: "View all", viewAllUrl: BRAND.site,
+        f1icon: "⏱", f1color: "#16a34a", f1title: "Time saver", f1text: "Save hours with a ready structure that just works.",
+        f2icon: "🎨", f2color: "#f59e0b", f2title: "Clean design", f2text: "On-brand blocks that look sharp in every inbox.",
+        f3icon: "⚙️", f3color: "#ef4444", f3title: "Easy to customise", f3text: "Anyone on the team can build a perfect email.",
+      };
+    case "features4":
+      return {
+        heading: "All features", intro: "Neque porro quisquam est qui dolorem ipsum.", viewAllLabel: "View all", viewAllUrl: BRAND.site,
+        f1icon: "⏱", f1color: "#16a34a", f1title: "Time saver", f1text: "A ready structure so nothing distracts the reader.",
+        f2icon: "🎨", f2color: "#f59e0b", f2title: "Clean design", f2text: "Blocks that look great across desktop and mobile.",
+        f3icon: "⚙️", f3color: "#ef4444", f3title: "Easy to customise", f3text: "Build a perfect newsletter with an amazing tool.",
+        f4icon: "📈", f4color: "#0ea5e9", f4title: "More subscribers", f4text: "Content readers stay with, letter after letter.",
+      };
+    case "imageGrid":
+      return { img1: "", img2: "", img3: "", img4: "" };
+    case "gallery":
+      return { img1: "", img2: "", img3: "" };
+    case "buttons":
+      return { count: 2, l1: "Button", u1: BRAND.site, l2: "Button", u2: BRAND.site, l3: "Button", u3: BRAND.site, bg: BRAND.blue, color: "#ffffff" };
+    case "coupon":
+      return { title: "DISCOUNT / VOUCHER", greeting: "Dear Customer,", text: "Thank you for being with us. This is how we show love!", discountLabel: "-50%", codeLabel: "YOUR CODE BELOW", code: "DISCOUNT50", bg: "#2f7bff", leftBg: "#ffffff", badgeBg: "#ef4444" };
+    case "product":
+      return { image: "", eyebrow: "New collection", title: "Lovemyjob pink t-shirt", text: "", price: "$9.99", comparePrice: "$15.99", buttonLabel: "Shop now", buttonUrl: BRAND.site, buttonBg: BRAND.blue, buttonColor: "#ffffff" };
+    case "countdown":
+      return { title: "Offer ends in", endDate: "", gifUrl: "", boxBg: BRAND.ink, numColor: "#ffffff", labelColor: "#f4c430", align: "center" };
   }
 }
 
@@ -102,24 +169,49 @@ export function makeBlock(type: BlockType): Block {
 }
 
 /* ── Preset library ── */
-export interface Preset { id: string; label: string; make: () => Block }
-const p = (type: BlockType, label: string, overrides: Record<string, string | number> = {}): Preset => ({
+export type PresetCategory = "Text" | "Content" | "Media" | "Buttons" | "Commerce" | "Interactive" | "Layout";
+/** Display order of the classified library groups. */
+export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Text", "Content", "Media", "Buttons", "Commerce", "Interactive", "Layout"];
+
+export interface Preset { id: string; label: string; category: PresetCategory; make: () => Block }
+const p = (type: BlockType, label: string, category: PresetCategory, overrides: Record<string, string | number> = {}): Preset => ({
   id: `${type}-${label.toLowerCase().replace(/\s+/g, "-")}`,
   label,
+  category,
   make: () => ({ id: makeBlockId(), type, props: { ...defaultProps(type), ...overrides } }),
 });
 export const PRESETS: Preset[] = [
-  p("header", "Brand header"),
-  p("hero", "Hero (blue + gold)"),
-  p("heading", "Title", { text: "Welcome to IMETS", level: 1, align: "center", color: BRAND.blue }),
-  p("heading", "Subtitle", { text: "Professional diplomas & courses", level: 3, align: "center", color: "#6b7280" }),
-  p("text", "Paragraph"),
-  p("button", "Blue CTA", { align: "center" }),
-  p("button", "Gold CTA", { align: "center", bg: BRAND.gold, color: BRAND.ink }),
-  p("image", "Image"),
-  p("divider", "Divider"),
-  p("spacer", "Spacer"),
-  p("footer", "Footer"),
+  // Text
+  p("heading", "Title", "Text", { text: "Welcome to IMETS", level: 1, align: "center", color: BRAND.blue }),
+  p("heading", "Subtitle", "Text", { text: "Professional diplomas & courses", level: 3, align: "center", color: "#6b7280" }),
+  p("text", "Paragraph", "Text"),
+  // Content
+  p("hero", "Hero (blue + gold)", "Content"),
+  p("videoCta", "Highlight video", "Content"),
+  p("textImage", "Text + image (right)", "Content"),
+  p("textImage", "Text + image (left)", "Content", { imageSide: "left" }),
+  p("article", "Article layout", "Content"),
+  p("features3", "Highlight 3 features", "Content"),
+  p("features4", "Highlight 4 features", "Content"),
+  // Media
+  p("image", "Image", "Media"),
+  p("imageGrid", "Image grid", "Media"),
+  p("gallery", "Gallery", "Media"),
+  // Buttons
+  p("button", "Blue CTA", "Buttons", { align: "center" }),
+  p("button", "Gold CTA", "Buttons", { align: "center", bg: BRAND.gold, color: BRAND.ink }),
+  p("buttons", "2 buttons", "Buttons"),
+  p("buttons", "3 buttons", "Buttons", { count: 3 }),
+  // Commerce
+  p("coupon", "Coupon / voucher", "Commerce"),
+  p("product", "Product card", "Commerce"),
+  // Interactive
+  p("countdown", "Countdown timer", "Interactive"),
+  // Layout
+  p("header", "Brand header", "Layout"),
+  p("footer", "Footer", "Layout"),
+  p("divider", "Divider", "Layout"),
+  p("spacer", "Spacer", "Layout"),
 ];
 
 /**
@@ -157,6 +249,24 @@ const esc = (v: unknown) =>
 /** Preserve line breaks from textarea input in HTML output. */
 const nl2br = (v: unknown) => esc(v).replace(/\n/g, "<br>");
 
+/* ── Rich-block render helpers (table-safe, inline-styled) ── */
+const pad2 = (n: number) => String(Math.max(0, Math.floor(n))).padStart(2, "0");
+/** Full-width image inside a cell, or a neutral placeholder of the given height. */
+const cellImg = (src: unknown, h: number, radius = 8) =>
+  src
+    ? `<img src="${esc(src)}" alt="" width="100%" style="display:block;width:100%;height:auto;border-radius:${radius}px;" />`
+    : `<div style="width:100%;height:${h}px;background:#eef1f6;border-radius:${radius}px;"></div>`;
+const emailBtn = (label: unknown, url: unknown, bg: unknown, color: unknown) =>
+  `<a href="${esc(url)}" style="display:inline-block;background:${esc(bg)};color:${esc(color)};padding:11px 22px;border-radius:8px;text-decoration:none;font-family:Arial,sans-serif;font-weight:700;font-size:14px;">${esc(label)}</a>`;
+/** One feature column: tinted icon tile + title + supporting text. */
+const featureCol = (icon: unknown, color: unknown, title: unknown, text: unknown) =>
+  `<div style="font-family:Arial,sans-serif;">
+    <span style="display:inline-block;width:42px;height:42px;line-height:42px;text-align:center;border-radius:11px;background:${esc(color)}22;font-size:19px;">${esc(icon)}</span>
+    <div style="margin:10px 0 4px;font-size:15px;font-weight:700;color:${BRAND.ink};">${esc(title)}</div>
+    <div style="font-size:13px;line-height:1.55;color:#6b7280;">${esc(text)}</div>
+  </div>`;
+const cardOpen = (extra = "") => `<div style="border:1px solid #e5e7eb;border-radius:12px;padding:20px 22px;${extra}">`;
+
 export function renderBlock(b: Block): string {
   const x = b.props;
   switch (b.type) {
@@ -183,8 +293,191 @@ export function renderBlock(b: Block): string {
       return `<div style="height:${esc(x.height)}px;line-height:${esc(x.height)}px;font-size:1px;">&nbsp;</div>`;
     case "hero":
       return `<div style="background:${esc(x.bg)};color:${esc(x.color)};padding:38px 24px;text-align:center;border-radius:10px;margin-bottom:16px;font-family:Arial,sans-serif;"><h1 style="margin:0 0 10px;font-size:26px;line-height:1.25;">${esc(x.title)}</h1><p style="margin:0 0 20px;font-size:15px;opacity:.9;">${esc(x.subtitle)}</p><a href="${esc(x.buttonUrl)}" style="display:inline-block;background:${esc(x.buttonBg ?? BRAND.gold)};color:${esc(x.buttonColor ?? BRAND.ink)};padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${esc(x.buttonLabel)}</a></div>`;
-    case "footer":
-      return `<div style="border-top:3px solid ${BRAND.gold};background:${esc(x.bg)};padding:20px 24px;text-align:center;border-radius:0 0 10px 10px;font-family:Arial,sans-serif;"><p style="margin:0 0 6px;font-size:12px;line-height:1.6;color:${esc(x.color)};">${nl2br(x.text)}</p><a href="${esc(x.link)}" style="font-size:12px;font-weight:700;color:${BRAND.blue};text-decoration:none;">${esc(x.linkLabel)}</a></div>`;
+    case "footer": {
+      // Legacy footers (saved before the contact redesign) keep their simple layout.
+      if (!x.brandName) {
+        return `<div style="border-top:3px solid ${BRAND.gold};background:${esc(x.bg)};padding:20px 24px;text-align:center;border-radius:0 0 10px 10px;font-family:Arial,sans-serif;"><p style="margin:0 0 6px;font-size:12px;line-height:1.6;color:${esc(x.color)};">${nl2br(x.text)}</p><a href="${esc(x.link)}" style="font-size:12px;font-weight:700;color:${BRAND.blue};text-decoration:none;">${esc(x.linkLabel)}</a></div>`;
+      }
+      const bg = esc(x.bg);
+      const muted = esc(x.color);
+      const social = (url: unknown, glyph: string) =>
+        url ? `<a href="${esc(url)}" style="display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;background:#ffffff;color:${bg};font-family:Arial,sans-serif;font-weight:800;font-size:14px;text-decoration:none;margin-right:8px;">${glyph}</a>` : "";
+      const socials = [social(x.facebookUrl, "f"), social(x.twitterUrl, "&#120143;"), social(x.instagramUrl, "&#9673;")].join("");
+      return `<div style="background:${bg};padding:26px 28px;border-radius:0 0 10px 10px;font-family:Arial,sans-serif;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td valign="top">
+              <div style="font-size:17px;font-weight:800;color:#ffffff;">${esc(x.brandName)}</div>
+              ${x.address ? `<div style="margin-top:8px;font-size:13px;color:${muted};">${esc(x.address)}</div>` : ""}
+              ${socials ? `<div style="margin-top:16px;">${socials}</div>` : ""}
+            </td>
+            <td valign="top" align="right">
+              ${x.phone ? `<div style="font-size:13px;color:#ffffff;">${esc(x.phone)}</div>` : ""}
+              ${x.email ? `<div style="margin-top:4px;font-size:13px;color:${muted};"><a href="mailto:${esc(x.email)}" style="color:${muted};text-decoration:none;">${esc(x.email)}</a></div>` : ""}
+              ${x.unsubscribeUrl ? `<div style="margin-top:26px;"><a href="${esc(x.unsubscribeUrl)}" style="font-size:13px;color:#ffffff;text-decoration:underline;">${esc(x.unsubscribeLabel ?? "Unsubscribe")}</a></div>` : ""}
+            </td>
+          </tr>
+        </table>
+      </div>`;
+    }
+
+    case "videoCta": {
+      const thumb = x.thumb
+        ? `<img src="${esc(x.thumb)}" alt="${esc(x.title)}" width="100%" style="display:block;width:100%;height:auto;border-radius:10px 10px 0 0;" />`
+        : `<div style="width:100%;height:200px;background:#dfe4ec;border-radius:10px 10px 0 0;"></div>`;
+      return `<div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;margin:6px 0 16px;background:${esc(x.bg)};">
+        <a href="${esc(x.videoUrl)}" style="display:block;position:relative;text-decoration:none;">
+          ${thumb}
+          <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;line-height:64px;text-align:center;border-radius:50%;background:${BRAND.blue}e6;color:#ffffff;font-size:24px;">&#9654;</span>
+        </a>
+        <div style="padding:22px 24px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:${BRAND.ink};margin-bottom:8px;">${esc(x.title)}</div>
+          <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#6b7280;">${nl2br(x.text)}</p>
+          ${emailBtn(x.buttonLabel, x.buttonUrl, x.buttonBg ?? BRAND.blue, x.buttonColor ?? "#ffffff")}
+        </div>
+      </div>`;
+    }
+
+    case "textImage": {
+      const textCell = `<td valign="top" width="56%" style="padding:16px 18px;font-family:Arial,sans-serif;">
+        ${x.eyebrow ? `<div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:6px;">${esc(x.eyebrow)}</div>` : ""}
+        <div style="font-size:17px;font-weight:800;color:${BRAND.ink};line-height:1.3;margin-bottom:8px;">${esc(x.title)}</div>
+        <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280;">${nl2br(x.text)}</p>
+      </td>`;
+      const imgCell = `<td valign="top" width="44%" style="padding:16px;">${cellImg(x.image, 130, 8)}</td>`;
+      const row = x.imageSide === "left" ? imgCell + textCell : textCell + imgCell;
+      return `<div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin:6px 0 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${row}</tr></table>
+      </div>`;
+    }
+
+    case "article":
+      return `${cardOpen("text-align:center;font-family:Arial,sans-serif;margin:6px 0 16px;")}
+        <div style="font-size:22px;font-weight:800;color:${BRAND.ink};line-height:1.3;margin-bottom:16px;">${esc(x.title)}</div>
+        <div style="margin-bottom:16px;">${cellImg(x.image, 200, 10)}</div>
+        <p style="margin:0 0 18px;font-size:14px;line-height:1.65;color:#6b7280;">${nl2br(x.text)}</p>
+        ${emailBtn(x.buttonLabel, x.buttonUrl, x.buttonBg ?? BRAND.blue, x.buttonColor ?? "#ffffff")}
+      </div>`;
+
+    case "features3": {
+      const cols = [1, 2, 3].map((i) =>
+        `<td valign="top" width="33.33%" style="padding:6px 10px;">${featureCol(x[`f${i}icon`], x[`f${i}color`], x[`f${i}title`], x[`f${i}text`])}</td>`,
+      ).join("");
+      return `${cardOpen("font-family:Arial,sans-serif;margin:6px 0 16px;")}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-size:18px;font-weight:800;color:${BRAND.ink};">${esc(x.heading)}</td>
+          <td align="right"><a href="${esc(x.viewAllUrl)}" style="font-size:12px;color:#6b7280;text-decoration:none;background:#f3f4f6;padding:5px 12px;border-radius:6px;">${esc(x.viewAllLabel)}</a></td>
+        </tr></table>
+        <p style="margin:6px 0 16px;font-size:13px;color:#9aa4b2;">${esc(x.intro)}</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${cols}</tr></table>
+      </div>`;
+    }
+
+    case "features4": {
+      const cell = (i: number) => `<td valign="top" width="50%" style="padding:10px 12px;">${featureCol(x[`f${i}icon`], x[`f${i}color`], x[`f${i}title`], x[`f${i}text`])}</td>`;
+      return `${cardOpen("font-family:Arial,sans-serif;margin:6px 0 16px;")}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-size:18px;font-weight:800;color:${BRAND.ink};">${esc(x.heading)}</td>
+          <td align="right"><a href="${esc(x.viewAllUrl)}" style="font-size:12px;color:#6b7280;text-decoration:none;background:#f3f4f6;padding:5px 12px;border-radius:6px;">${esc(x.viewAllLabel)}</a></td>
+        </tr></table>
+        <p style="margin:6px 0 12px;font-size:13px;color:#9aa4b2;">${esc(x.intro)}</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>${cell(1)}${cell(2)}</tr>
+          <tr>${cell(3)}${cell(4)}</tr>
+        </table>
+      </div>`;
+    }
+
+    case "imageGrid":
+      return `<div style="margin:6px 0 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="33.33%" style="padding:4px;">${cellImg(x.img1, 90)}</td>
+            <td width="33.33%" style="padding:4px;">${cellImg(x.img2, 90)}</td>
+            <td width="33.33%" style="padding:4px;">${cellImg(x.img3, 90)}</td>
+          </tr>
+          <tr><td colspan="3" style="padding:4px;">${cellImg(x.img4, 150)}</td></tr>
+        </table>
+      </div>`;
+
+    case "gallery":
+      return `<div style="margin:6px 0 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="62%" rowspan="2" valign="top" style="padding:4px;">${cellImg(x.img1, 190)}</td>
+            <td width="38%" valign="top" style="padding:4px;">${cellImg(x.img2, 90)}</td>
+          </tr>
+          <tr><td valign="top" style="padding:4px;">${cellImg(x.img3, 90)}</td></tr>
+        </table>
+      </div>`;
+
+    case "buttons": {
+      const n = Number(x.count) === 3 ? 3 : 2;
+      const cells = Array.from({ length: n }, (_, i) => {
+        const k = i + 1;
+        return `<td align="center" width="${Math.floor(100 / n)}%" style="padding:0 6px;">${emailBtn(x[`l${k}`], x[`u${k}`], x.bg ?? BRAND.blue, x.color ?? "#ffffff")}</td>`;
+      }).join("");
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 16px;"><tr>${cells}</tr></table>`;
+    }
+
+    case "coupon":
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 16px;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+        <tr>
+          <td valign="middle" width="52%" style="background:${esc(x.leftBg)};padding:26px 24px;font-family:Arial,sans-serif;">
+            <div style="font-size:19px;font-weight:800;color:${BRAND.ink};line-height:1.25;margin-bottom:14px;">${esc(x.title)}</div>
+            <div style="font-size:14px;font-weight:700;color:${BRAND.ink};margin-bottom:6px;">${esc(x.greeting)}</div>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280;">${nl2br(x.text)}</p>
+          </td>
+          <td valign="middle" width="48%" align="center" style="background:${esc(x.bg)};padding:26px 20px;font-family:Arial,sans-serif;">
+            <div style="display:inline-block;background:${esc(x.badgeBg)};color:#ffffff;font-size:22px;font-weight:800;padding:8px 18px;border-radius:8px;">${esc(x.discountLabel)}</div>
+            <div style="margin:16px 0 8px;font-size:11px;letter-spacing:1px;color:#ffffff;opacity:.85;">${esc(x.codeLabel)}</div>
+            <div style="background:#ffffff;border-radius:6px;padding:10px 16px;font-size:15px;font-weight:800;letter-spacing:1px;color:${BRAND.ink};display:inline-block;">${esc(x.code)}</div>
+          </td>
+        </tr>
+      </table>`;
+
+    case "product":
+      return `${cardOpen("padding:0;overflow:hidden;margin:6px 0 16px;")}
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td width="42%" valign="middle" style="padding:16px;">${cellImg(x.image, 150, 10)}</td>
+          <td width="58%" valign="middle" style="padding:16px 20px;font-family:Arial,sans-serif;">
+            ${x.eyebrow ? `<div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:6px;">${esc(x.eyebrow)}</div>` : ""}
+            <div style="font-size:17px;font-weight:800;color:${BRAND.ink};line-height:1.3;margin-bottom:10px;">${esc(x.title)}</div>
+            <div style="margin-bottom:14px;">
+              <span style="font-size:18px;font-weight:800;color:${BRAND.ink};">${esc(x.price)}</span>
+              ${x.comparePrice ? `<span style="font-size:14px;color:#9aa4b2;text-decoration:line-through;margin-left:8px;">${esc(x.comparePrice)}</span>` : ""}
+            </div>
+            ${emailBtn(x.buttonLabel, x.buttonUrl, x.buttonBg ?? BRAND.blue, x.buttonColor ?? "#ffffff")}
+          </td>
+        </tr></table>
+      </div>`;
+
+    case "countdown": {
+      const align = String(x.align ?? "center");
+      const heading = x.title
+        ? `<div style="margin-bottom:12px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:${BRAND.ink};">${esc(x.title)}</div>`
+        : "";
+      if (x.gifUrl) {
+        return `<div style="text-align:${align};margin:8px 0 16px;">${heading}<img src="${esc(x.gifUrl)}" alt="Countdown" style="display:inline-block;max-width:100%;" /></div>`;
+      }
+      const ms = x.endDate ? Date.parse(String(x.endDate)) : NaN;
+      let diff = Number.isFinite(ms) ? Math.max(0, ms - Date.now()) / 1000 : 0;
+      const d = Math.floor(diff / 86400); diff %= 86400;
+      const h = Math.floor(diff / 3600); diff %= 3600;
+      const m = Math.floor(diff / 60); const s = Math.floor(diff % 60);
+      const box = (val: string, lab: string) => `<td align="center" style="padding:0 5px;">
+        <div style="background:${esc(x.boxBg)};border-radius:11px;padding:12px 4px;min-width:58px;">
+          <div style="font-family:Arial,sans-serif;font-size:26px;font-weight:800;color:${esc(x.numColor)};line-height:1;">${val}</div>
+        </div>
+        <div style="margin-top:6px;font-family:Arial,sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:${esc(x.labelColor)};">${lab}</div>
+      </td>`;
+      return `<div style="text-align:${align};margin:8px 0 16px;">
+        ${heading}
+        <table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;"><tr>
+          ${box(pad2(d), "Days")}${box(pad2(h), "Hours")}${box(pad2(m), "Mins")}${box(pad2(s), "Secs")}
+        </tr></table>
+      </div>`;
+    }
   }
 }
 

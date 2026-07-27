@@ -3,7 +3,8 @@
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-  Plus, MoreHorizontal, Users, Send, CalendarClock, Mail, Eye, MousePointerClick, Percent, FileText, Zap,
+  Plus, MoreHorizontal, Users, Send, Mail, MousePointerClick, Percent, FileText, Zap,
+  LayoutDashboard, ArrowRight, Eye, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +56,15 @@ export function EmailMarketing({
   const [automations, setAutomations] = React.useState(initialAutomations);
   const segments = initialSegments;
   const [stats, setStats] = React.useState(initialStats);
+  const [tab, setTab] = React.useState("dashboard");
+
+  const openRate = stats.totalRecipients ? Math.round((stats.totalOpens / stats.totalRecipients) * 1000) / 10 : 0;
+  const clickRate = stats.totalRecipients ? Math.round((stats.totalClicks / stats.totalRecipients) * 1000) / 10 : 0;
+  const recentCampaigns = React.useMemo(
+    () => [...campaigns].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5),
+    [campaigns],
+  );
+  const maxSegCount = Math.max(1, ...segments.map((s) => s.count));
 
   const refreshStats = React.useCallback(async () => {
     const res = await dal.emailMarketing.fetchEmailStats();
@@ -241,38 +251,115 @@ export function EmailMarketing({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Subscribers" value={stats.totalSubscribers.toLocaleString()} icon={Users} intent="primary" />
-        <KpiCard label="Scheduled" value={stats.scheduledCampaigns} icon={CalendarClock} intent="info" />
-        <KpiCard label="Sent" value={stats.sentCampaigns} icon={Send} intent="success" />
-        <KpiCard label="Total reached" value={stats.totalRecipients.toLocaleString()} icon={Mail} intent="warning" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Campaigns sent" value={stats.sentCampaigns} icon={Send} intent="primary" />
-        <KpiCard label="Total opens" value={stats.totalOpens.toLocaleString()} icon={Eye} intent="info" />
-        <KpiCard label="Total clicks" value={stats.totalClicks.toLocaleString()} icon={MousePointerClick} intent="warning" />
-        <KpiCard
-          label="Avg open rate"
-          value={`${stats.totalRecipients ? Math.round((stats.totalOpens / stats.totalRecipients) * 1000) / 10 : 0}%`}
-          icon={Percent}
-          intent="success"
-        />
-      </div>
-
-      {/* Per-segment KPI grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {segments.map((s) => (
-          <KpiCard key={s.value} label={s.label} value={s.count.toLocaleString()} icon={Users} intent="info" />
-        ))}
-      </div>
-
-      <Tabs defaultValue="campaigns" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="automations">Automations</TabsTrigger>
-          <TabsTrigger value="system">System Emails</TabsTrigger>
+      <Tabs value={tab} onValueChange={setTab} className="space-y-5">
+        <TabsList className="h-auto flex-wrap gap-1 rounded-xl bg-muted/60 p-1">
+          <TabTrigger value="dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <TabTrigger value="campaigns" icon={Send} label="Campaigns" />
+          <TabTrigger value="templates" icon={FileText} label="Templates" />
+          <TabTrigger value="automations" icon={Zap} label="Automations" />
+          <TabTrigger value="system" icon={Mail} label="System Emails" />
         </TabsList>
+
+        {/* ── Dashboard ── */}
+        <TabsContent value="dashboard" className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard label="Subscribers" value={stats.totalSubscribers.toLocaleString()} icon={Users} intent="primary" />
+            <KpiCard label="Campaigns sent" value={stats.sentCampaigns} icon={Send} intent="success" />
+            <KpiCard label="Total reached" value={stats.totalRecipients.toLocaleString()} icon={Mail} intent="info" />
+            <KpiCard label="Avg open rate" value={`${openRate}%`} icon={Percent} intent="warning" />
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            {/* Recent campaigns */}
+            <div className="rounded-2xl border border-border/60 bg-card lg:col-span-2">
+              <div className="flex items-center justify-between gap-3 border-b border-border/60 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary"><Send className="size-4" /></span>
+                  <h3 className="text-sm font-semibold">Recent campaigns</h3>
+                </div>
+                {campaigns.length > 0 && (
+                  <button onClick={() => setTab("campaigns")} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                    View all <ArrowRight className="size-3.5" />
+                  </button>
+                )}
+              </div>
+              {recentCampaigns.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 p-10 text-center text-muted-foreground">
+                  <Mail className="size-8 opacity-40" />
+                  <p className="text-sm font-medium">No campaigns yet</p>
+                  <Button size="sm" className="mt-1 gap-1.5" onClick={openCreateCmp}><Plus className="size-4" /> Create your first</Button>
+                </div>
+              ) : (
+                <ul className="divide-y divide-border/50">
+                  {recentCampaigns.map((c) => (
+                    <li key={c.id}>
+                      <button onClick={() => openEditCmp(c)} className="flex w-full items-center gap-3 p-3.5 text-left transition hover:bg-muted/40">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{c.subject || "Untitled campaign"}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {segLabel(c.audience)} · {c.status === "SENT" && c.sentAt ? `Sent ${timeAgo(c.sentAt)}` : c.status === "SCHEDULED" && c.scheduledAt ? timeAgo(c.scheduledAt) : `Created ${timeAgo(c.createdAt)}`}
+                          </p>
+                        </div>
+                        {c.status === "SENT" && (
+                          <div className="hidden shrink-0 items-center gap-3 text-xs tabular-nums text-muted-foreground sm:flex">
+                            <span className="inline-flex items-center gap-1"><Eye className="size-3.5" /> {c.openRate}%</span>
+                            <span className="inline-flex items-center gap-1"><MousePointerClick className="size-3.5" /> {c.clickRate}%</span>
+                          </div>
+                        )}
+                        <Badge variant={STATUS_BADGE[c.status]} className="shrink-0">{c.status}</Badge>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Side column: engagement + audiences + quick actions */}
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-border/60 bg-card p-4">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                  <span className="grid size-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><Eye className="size-4" /></span>
+                  Engagement
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <MiniStat label="Total opens" value={stats.totalOpens.toLocaleString()} sub={`${openRate}% open rate`} />
+                  <MiniStat label="Total clicks" value={stats.totalClicks.toLocaleString()} sub={`${clickRate}% click rate`} />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border/60 bg-card p-4">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                  <span className="grid size-8 place-items-center rounded-lg bg-blue-50 text-blue-600"><Users className="size-4" /></span>
+                  Audiences
+                </h3>
+                {segments.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No audience segments.</p>
+                ) : (
+                  <ul className="space-y-2.5">
+                    {segments.map((s) => (
+                      <li key={s.value}>
+                        <div className="mb-1 flex items-center justify-between text-xs">
+                          <span className="font-medium">{s.label}</span>
+                          <span className="tabular-nums text-muted-foreground">{s.count.toLocaleString()}</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-primary/70" style={{ width: `${Math.round((s.count / maxSegCount) * 100)}%` }} />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <QuickAction icon={Send} title="New campaign" desc="Compose & send to a segment" onClick={openCreateCmp} />
+            <QuickAction icon={FileText} title="New template" desc="Reusable branded design" onClick={openCreateTpl} />
+            <QuickAction icon={Sparkles} title="New automation" desc="Smart drip sequence" onClick={createAut} />
+          </div>
+        </TabsContent>
 
         <TabsContent value="campaigns" className="space-y-4">
           <div className="flex justify-end">
@@ -364,6 +451,44 @@ export function EmailMarketing({
 
       {Confirmation}
     </div>
+  );
+}
+
+function TabTrigger({ value, icon: Icon, label }: { value: string; icon: React.ElementType; label: string }) {
+  return (
+    <TabsTrigger value={value} className="gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+      <Icon className="size-4" /> <span>{label}</span>
+    </TabsTrigger>
+  );
+}
+
+function MiniStat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
+  return (
+    <div className="rounded-xl bg-muted/40 p-3">
+      <div className="text-lg font-bold tabular-nums">{value}</div>
+      <div className="text-xs font-medium">{label}</div>
+      {sub && <div className="mt-0.5 text-[11px] text-muted-foreground">{sub}</div>}
+    </div>
+  );
+}
+
+function QuickAction({ icon: Icon, title, desc, onClick }: {
+  icon: React.ElementType; title: string; desc: string; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4 text-left transition hover:border-primary/40 hover:shadow-md"
+    >
+      <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="truncate text-xs text-muted-foreground">{desc}</p>
+      </div>
+      <Plus className="size-4 text-muted-foreground transition group-hover:text-primary" />
+    </button>
   );
 }
 

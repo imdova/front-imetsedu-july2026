@@ -8,8 +8,8 @@ import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type { BrandBlock } from "@/lib/db/email-marketing";
 import {
-  type Block, type BlockType, type Design,
-  BLOCK_LABELS, PRESETS, PERSONALIZATION_TOKENS, makeBlock, renderBlock, renderDesign, parseDesign, brandStarter, DEFAULT_SETTINGS,
+  type Block, type BlockType, type Design, type Preset,
+  BLOCK_LABELS, PRESETS, PRESET_CATEGORY_ORDER, PERSONALIZATION_TOKENS, makeBlock, renderBlock, renderDesign, parseDesign, brandStarter, DEFAULT_SETTINGS,
 } from "@/features/marketing-admin/email-blocks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,9 +119,9 @@ export function EmailBuilder({
       <div className="flex min-h-0 flex-1 gap-3">
         {/* Palette */}
         {!preview && (
-          <aside className="w-56 shrink-0 space-y-4 overflow-y-auto rounded-xl border border-border/70 bg-card p-3">
+          <aside className="w-72 shrink-0 space-y-4 overflow-y-auto rounded-xl border border-border/70 bg-card p-3">
             <div>
-              <p className="mb-2 text-xs font-semibold text-muted-foreground">Blocks</p>
+              <p className="mb-2 text-xs font-semibold text-muted-foreground">Quick blocks</p>
               <div className="grid grid-cols-2 gap-1.5">
                 {BLOCK_TYPES.map((t) => (
                   <Button key={t} variant="outline" size="sm" className="justify-start gap-1" onClick={() => addBlock(makeBlock(t))}>
@@ -132,13 +132,19 @@ export function EmailBuilder({
             </div>
             <div>
               <p className="mb-2 text-xs font-semibold text-muted-foreground">Library</p>
-              <div className="space-y-1">
-                {PRESETS.map((pr) => (
-                  <button key={pr.id} onClick={() => addBlock(pr.make())}
-                    className="w-full rounded-md border border-border/60 px-2 py-1.5 text-start text-xs hover:bg-muted">
-                    {pr.label}
-                  </button>
-                ))}
+              <div className="space-y-3">
+                {PRESET_CATEGORY_ORDER.map((cat) => {
+                  const items = PRESETS.filter((pr) => pr.category === cat);
+                  if (!items.length) return null;
+                  return (
+                    <div key={cat}>
+                      <p className="mb-1.5 px-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70">{cat}</p>
+                      <div className="space-y-1.5">
+                        {items.map((pr) => <PresetItem key={pr.id} preset={pr} onAdd={() => addBlock(pr.make())} />)}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div>
@@ -237,6 +243,12 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
       <SelectContent><SelectItem value="left">Left</SelectItem><SelectItem value="center">Center</SelectItem><SelectItem value="right">Right</SelectItem></SelectContent>
     </Select>
   );
+  const pick = (k: string, opts: [string, string][], numeric = false) => (
+    <Select value={String(x[k] ?? opts[0][0])} onValueChange={(v) => onChange({ [k]: numeric ? Number(v) : v })}>
+      <SelectTrigger><SelectValue /></SelectTrigger>
+      <SelectContent>{opts.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+    </Select>
+  );
   /** Insert-personalization chips — append a merge tag to the given field. */
   const tokens = (k: string) => (
     <div className="flex flex-wrap gap-1 pt-1">
@@ -297,10 +309,110 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
         <div className="grid grid-cols-2 gap-3"><F label="Button bg">{color("buttonBg")}</F><F label="Button text">{color("buttonColor")}</F></div>
       </>}
       {block.type === "footer" && <>
-        <F label="Text">{area("text")}</F>
-        <F label="Link URL">{text("link")}</F>
-        <F label="Link label">{text("linkLabel")}</F>
+        <F label="Brand name">{text("brandName")}</F>
+        <F label="Address">{text("address")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Phone">{text("phone")}</F><F label="Email">{text("email")}</F></div>
+        <F label="Facebook URL">{text("facebookUrl")}</F>
+        <F label="Twitter / X URL">{text("twitterUrl")}</F>
+        <F label="Instagram URL">{text("instagramUrl")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Unsubscribe label">{text("unsubscribeLabel")}</F><F label="Unsubscribe URL">{text("unsubscribeUrl")}</F></div>
+        <div className="grid grid-cols-2 gap-3"><F label="Background">{color("bg")}</F><F label="Muted text">{color("color")}</F></div>
+      </>}
+
+      {block.type === "videoCta" && <>
+        <F label="Thumbnail image URL">{text("thumb")}</F>
+        <F label="Video link URL">{text("videoUrl")}</F>
+        <F label="Title">{text("title")}{tokens("title")}</F>
+        <F label="Text">{area("text")}{tokens("text")}</F>
+        <F label="Button label">{text("buttonLabel")}</F>
+        <F label="Button URL">{text("buttonUrl")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Button bg">{color("buttonBg")}</F><F label="Button text">{color("buttonColor")}</F></div>
+      </>}
+
+      {block.type === "textImage" && <>
+        <F label="Eyebrow (small label)">{text("eyebrow")}</F>
+        <F label="Title">{text("title")}</F>
+        <F label="Text">{area("text")}{tokens("text")}</F>
+        <F label="Image URL">{text("image")}</F>
+        <F label="Image side">{pick("imageSide", [["right", "Right"], ["left", "Left"]])}</F>
+      </>}
+
+      {block.type === "article" && <>
+        <F label="Title">{text("title")}</F>
+        <F label="Image URL">{text("image")}</F>
+        <F label="Text">{area("text")}{tokens("text")}</F>
+        <F label="Button label">{text("buttonLabel")}</F>
+        <F label="Button URL">{text("buttonUrl")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Button bg">{color("buttonBg")}</F><F label="Button text">{color("buttonColor")}</F></div>
+      </>}
+
+      {(block.type === "features3" || block.type === "features4") && <>
+        <F label="Heading">{text("heading")}</F>
+        <F label="Intro">{text("intro")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="“View all” label">{text("viewAllLabel")}</F><F label="“View all” URL">{text("viewAllUrl")}</F></div>
+        {Array.from({ length: block.type === "features4" ? 4 : 3 }, (_, i) => i + 1).map((i) => (
+          <div key={i} className="rounded-lg border border-border/60 p-2.5 space-y-2">
+            <p className="text-[11px] font-semibold text-muted-foreground">Feature {i}</p>
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <F label="Title">{text(`f${i}title`)}</F>
+              <F label="Icon">{text(`f${i}icon`)}</F>
+            </div>
+            <F label="Text">{area(`f${i}text`)}</F>
+            <F label="Icon color">{color(`f${i}color`)}</F>
+          </div>
+        ))}
+      </>}
+
+      {block.type === "imageGrid" && <>
+        <F label="Image 1 URL">{text("img1")}</F>
+        <F label="Image 2 URL">{text("img2")}</F>
+        <F label="Image 3 URL">{text("img3")}</F>
+        <F label="Image 4 URL (wide)">{text("img4")}</F>
+      </>}
+
+      {block.type === "gallery" && <>
+        <F label="Large image URL">{text("img1")}</F>
+        <F label="Top-right image URL">{text("img2")}</F>
+        <F label="Bottom-right image URL">{text("img3")}</F>
+      </>}
+
+      {block.type === "buttons" && <>
+        <F label="Number of buttons">{pick("count", [["2", "2 buttons"], ["3", "3 buttons"]], true)}</F>
+        <div className="grid grid-cols-[1fr_1fr] gap-2"><F label="Label 1">{text("l1")}</F><F label="URL 1">{text("u1")}</F></div>
+        <div className="grid grid-cols-[1fr_1fr] gap-2"><F label="Label 2">{text("l2")}</F><F label="URL 2">{text("u2")}</F></div>
+        {Number(x.count) === 3 && <div className="grid grid-cols-[1fr_1fr] gap-2"><F label="Label 3">{text("l3")}</F><F label="URL 3">{text("u3")}</F></div>}
         <div className="grid grid-cols-2 gap-3"><F label="Background">{color("bg")}</F><F label="Text color">{color("color")}</F></div>
+      </>}
+
+      {block.type === "coupon" && <>
+        <F label="Title">{text("title")}</F>
+        <F label="Greeting">{text("greeting")}{tokens("greeting")}</F>
+        <F label="Text">{area("text")}</F>
+        <F label="Discount label">{text("discountLabel")}</F>
+        <F label="Code label">{text("codeLabel")}</F>
+        <F label="Code">{text("code")}</F>
+        <div className="grid grid-cols-3 gap-2"><F label="Panel bg">{color("bg")}</F><F label="Left bg">{color("leftBg")}</F><F label="Badge bg">{color("badgeBg")}</F></div>
+      </>}
+
+      {block.type === "product" && <>
+        <F label="Image URL">{text("image")}</F>
+        <F label="Eyebrow">{text("eyebrow")}</F>
+        <F label="Title">{text("title")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Price">{text("price")}</F><F label="Compare price">{text("comparePrice")}</F></div>
+        <F label="Button label">{text("buttonLabel")}</F>
+        <F label="Button URL">{text("buttonUrl")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Button bg">{color("buttonBg")}</F><F label="Button text">{color("buttonColor")}</F></div>
+      </>}
+
+      {block.type === "countdown" && <>
+        <F label="Title (optional)">{text("title")}</F>
+        <F label="End date &amp; time">
+          <Input type="datetime-local" value={String(x.endDate ?? "")} onChange={(e) => onChange({ endDate: e.target.value })} />
+        </F>
+        <p className="-mt-2 text-[11px] leading-snug text-muted-foreground">Digits are a snapshot taken when you save. For a live-ticking timer, paste a countdown-GIF URL below.</p>
+        <F label="Live GIF URL (optional)">{text("gifUrl")}</F>
+        <F label="Align">{align("align")}</F>
+        <div className="grid grid-cols-3 gap-2"><F label="Box">{color("boxBg")}</F><F label="Number">{color("numColor")}</F><F label="Label">{color("labelColor")}</F></div>
       </>}
     </div>
   );
@@ -315,6 +427,30 @@ function SettingsEditor({ design, onChange }: { design: Design; onChange: (s: De
       <F label="Content background"><input type="color" value={s.contentBackground} onChange={(e) => onChange({ ...s, contentBackground: e.target.value })} className="h-9 w-full cursor-pointer rounded-md border border-border bg-background" /></F>
       <F label="Content width (px)"><Input type="number" value={s.width} onChange={(e) => onChange({ ...s, width: Number(e.target.value) || DEFAULT_SETTINGS.width })} /></F>
     </div>
+  );
+}
+
+/** A library item: a scaled live thumbnail of the block plus its label. */
+function PresetItem({ preset, onAdd }: { preset: Preset; onAdd: () => void }) {
+  const html = React.useMemo(() => renderBlock(preset.make()), [preset]);
+  return (
+    <button
+      onClick={onAdd}
+      title={`Add ${preset.label}`}
+      className="group block w-full overflow-hidden rounded-lg border border-border/60 bg-white text-start transition hover:border-primary/50 hover:shadow-sm"
+    >
+      <div className="relative h-[62px] overflow-hidden bg-white">
+        <div
+          className="pointer-events-none absolute left-0 top-0 origin-top-left"
+          style={{ width: 600, transform: "scale(0.41)" }}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-1 border-t border-border/50 bg-muted/30 px-2 py-1">
+        <span className="truncate text-[11px] font-medium">{preset.label}</span>
+        <Plus className="size-3 shrink-0 text-primary opacity-0 transition group-hover:opacity-100" />
+      </div>
+    </button>
   );
 }
 
