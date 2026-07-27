@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight } from "lucide-react";
+import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, Play, Lock } from "lucide-react";
 
 import type { FreeLecture } from "@/lib/dal/free-courses";
 import type { QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
@@ -20,12 +20,13 @@ const QUIZ_ID = "__quiz__";
  * the quiz screen. Next/Back walk through lectures → quiz.
  */
 export function FreeLecturePlayer({
-  locale, lectures, quiz = [], onQuizPassed,
+  locale, lectures, quiz = [], onQuizPassed, programName = "",
 }: {
   locale: string;
   lectures: FreeLecture[];
   quiz?: QuizQuestion[];
   onQuizPassed?: () => void;
+  programName?: string;
 }) {
   const hasQuiz = quiz.length > 0;
   const order = React.useMemo(
@@ -38,6 +39,7 @@ export function FreeLecturePlayer({
   const isQuiz = activeId === QUIZ_ID;
   const active = lectures.find((l) => l.id === activeId);
   const idx = Math.max(0, order.indexOf(activeId));
+  const lessonIdx = lectures.findIndex((l) => l.id === activeId);
 
   const title = (l: FreeLecture) => (locale === "ar" ? l.titleAr : l.titleEn) || l.titleEn;
   const desc = (l: FreeLecture) => (locale === "ar" ? l.descriptionAr : l.descriptionEn) || "";
@@ -67,7 +69,31 @@ export function FreeLecturePlayer({
           </div>
         ) : active ? (
           <>
-            <div className="overflow-hidden rounded-2xl border border-border/70 bg-black shadow-sm">
+            {/* Free-vs-paid teaser: what the full program adds beyond this lesson. */}
+            <div className="rounded-2xl border border-[#f4c430]/40 bg-gradient-to-br from-[#f4c430]/[0.12] to-transparent p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-extrabold">🎁 {tr(locale, "You're watching the first lesson — free", "أنت تشاهد أول درس مجاناً")}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {tr(
+                      locale,
+                      `After this lesson you'll have a clear picture of ${programName || "the program"}. The full program also includes:`,
+                      `بعد هذا الدرس ستحصل على فكرة واضحة عن ${programName || "البرنامج"}. أما المنهج الكامل فيتضمن:`,
+                    )}
+                  </p>
+                  <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold">
+                    {["Mock Exams", "Live Sessions", "Practice Questions", "WhatsApp Support"].map((b) => (
+                      <li key={b} className="inline-flex items-center gap-1"><CheckCircle2 className="size-3.5 text-emerald-500" /> {b}</li>
+                    ))}
+                  </ul>
+                </div>
+                <a href="#enroll-offer" className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition hover:bg-primary/90">
+                  <Lock className="size-4" /> {tr(locale, "Unlock Full Course", "افتح الكورس الكامل")}
+                </a>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-black shadow-sm">
               {youTubeId ? (
                 <YouTubePlayer key={active.id} videoId={youTubeId} autoPlay={false} hideYouTubeChrome />
               ) : active.videoProvider === "vdocipher" ? (
@@ -86,6 +112,11 @@ export function FreeLecturePlayer({
                   <AlertTriangle className="size-4" />
                   {tr(locale, "This lecture has no video yet.", "لا يوجد فيديو لهذه المحاضرة بعد.")}
                 </div>
+              )}
+              {lessonIdx >= 0 && lectures.length > 0 && (
+                <span className="pointer-events-none absolute start-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-white shadow backdrop-blur">
+                  <Play className="size-3 fill-current" /> {tr(locale, "Free lesson", "درس مجاني")} {lessonIdx + 1} / {lectures.length}
+                </span>
               )}
             </div>
             <div>

@@ -42,10 +42,10 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
           {tr(locale, "Lectures are being uploaded — try the quiz meanwhile.", "يجري رفع المحاضرات — جرّب الاختبار لحد ما تنزل.")}
         </p>
       )}
-      <FreeLecturePlayer locale={locale} lectures={playable} quiz={quiz} onQuizPassed={onPassed} />
+      <FreeLecturePlayer locale={locale} lectures={playable} quiz={quiz} onQuizPassed={onPassed} programName={name} />
 
       {/* 2 · Enroll in the next live cohort */}
-      <section ref={enrollRef} className={cn("scroll-mt-24 overflow-hidden rounded-3xl border shadow-lg transition", passed ? "border-[#f4c430] ring-2 ring-[#f4c430]/30" : "border-border/70")}>
+      <section id="enroll-offer" ref={enrollRef} className={cn("scroll-mt-24 overflow-hidden rounded-3xl border shadow-lg transition", passed ? "border-[#f4c430] ring-2 ring-[#f4c430]/30" : "border-border/70")}>
         <div className="grid lg:grid-cols-2">
           {/* pitch */}
           <div className="bg-gradient-to-br from-primary to-[#082a6b] p-7 text-primary-foreground sm:p-9">
