@@ -84,6 +84,21 @@ type Row = Omit<MarketingLandingPage, "ctr" | "registrations">;
 
 const pages: Row[] = [
   {
+    id: "lp_free_lecture_cphq",
+    name: "Free Lecture — CPHQ (Egypt)",
+    path: "/lp/free-lecture-cphq",
+    status: "published",
+    language: "ar",
+    campaign: "cphq-free-lecture",
+    audience: "Egyptian healthcare professionals",
+    description: "Bilingual (AR×EN) free-lecture funnel for CPHQ — hero + reg form for Egyptian doctors, pharmacists & nurses.",
+    thumbnailUrl: "",
+    views: 0,
+    clicks: 0,
+    createdAt: "2026-07-27T09:00:00.000Z",
+    updatedAt: "2026-07-27T09:00:00.000Z",
+  },
+  {
     id: "lp_1",
     name: "Summer Intake 2026",
     path: "/lp/summer-intake-2026",
