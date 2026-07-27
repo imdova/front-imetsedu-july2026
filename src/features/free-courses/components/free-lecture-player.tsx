@@ -69,7 +69,7 @@ export function FreeLecturePlayer({
           <>
             <div className="overflow-hidden rounded-2xl border border-border/70 bg-black shadow-sm">
               {youTubeId ? (
-                <YouTubePlayer key={active.id} videoId={youTubeId} autoPlay={false} />
+                <YouTubePlayer key={active.id} videoId={youTubeId} autoPlay={false} hideYouTubeChrome />
               ) : active.videoProvider === "vdocipher" ? (
                 <div className="relative aspect-video">
                   <iframe

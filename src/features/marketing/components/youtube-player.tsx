@@ -19,10 +19,14 @@ export function YouTubePlayer({
   unmuteLabel = "Tap for sound",
   autoPlay = true,
   unmuteOnStart = true,
+  hideYouTubeChrome = false,
   className,
 }: {
   videoId: string;
   unmuteLabel?: string;
+  /** Overlay the top strip so the video title + "Watch on YouTube" link aren't
+   * clickable (keeps the centre play button and bottom controls usable). */
+  hideYouTubeChrome?: boolean;
   /** Autoplay (muted, then attempt unmute). When false, the video loads paused —
    * the user plays/pauses/mutes via the native controls (no forced background sound). */
   autoPlay?: boolean;
@@ -99,6 +103,11 @@ export function YouTubePlayer({
   return (
     <div className={cn("relative aspect-video w-full overflow-hidden bg-black", className)}>
       <div ref={hostRef} className="size-full" />
+      {hideYouTubeChrome && (
+        // Blocks the top-bar title + "Watch on YouTube"/share links from being
+        // clicked; the centre play button and bottom controls stay reachable.
+        <div className="absolute inset-x-0 top-0 z-[5] h-14" aria-hidden />
+      )}
       {ready && autoPlay && muted && (
         <button
           type="button"
