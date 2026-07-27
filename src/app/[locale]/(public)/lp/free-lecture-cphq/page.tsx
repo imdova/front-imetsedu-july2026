@@ -332,7 +332,7 @@ export default async function FreeLectureCphqPage({
             {/* Portrait */}
             <div className="mx-auto w-full max-w-[280px]">
               <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-white/15 shadow-2xl">
-                <Image src="/instructor-cphq.jpg" alt="محاضر CPHQ — استشاري الجودة الصحية في IMETS" fill sizes="280px" className="object-cover object-top" priority />
+                <Image src="/instructor-cphq.webp" alt="محاضر CPHQ — استشاري الجودة الصحية في IMETS" fill sizes="280px" loading="lazy" className="object-cover object-top" />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-3 pt-8 text-center">
                   <div className="text-sm font-bold text-white">استشاري الجودة الصحية</div>
                   <div className="text-xs text-white/75">IMETS Faculty · CPHQ</div>

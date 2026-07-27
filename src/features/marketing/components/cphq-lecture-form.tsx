@@ -1,16 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Loader2, ShieldCheck, User, Phone, Mail, MessageCircle, ArrowLeft } from "lucide-react";
+import { Loader2, ShieldCheck, User, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
+import { useRouter } from "@/i18n/navigation";
 import { fbLeadContext, fireBrowserLead } from "@/lib/meta-events";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const digits = (s: string) => s.replace(/\D/g, "");
@@ -37,109 +37,43 @@ const COUNTRIES = [
   { code: "+212", iso: "ma", name: "المغرب" },
 ];
 
-/** Lead-qualification wizard shown after registration (helps the sales team). */
-const WIZARD = [
-  { key: "التخصص", q: "ما تخصصك؟", options: ["طبيب", "صيدلي", "تمريض", "أخصائي جودة", "خريج جديد", "أخرى"] },
-  { key: "العمل", q: "هل تعمل حاليًا؟", options: ["نعم، في مستشفى", "نعم، مكان آخر", "لا، أبحث عن عمل", "طالب / خريج جديد"] },
-  { key: "الهدف", q: "هل تريد الحصول على CPHQ خلال سنة؟", options: ["نعم، بجدية 🔥", "ربما", "مجرد استكشاف"] },
-];
-
-type Phase = "form" | "wizard" | "whatsapp";
-
+/**
+ * Minimal registration for the CPHQ free-lecture page (name + email + WhatsApp).
+ * On success it stashes the lead in sessionStorage and routes to the full
+ * thank-you page (celebration → qualification wizard → WhatsApp).
+ */
 export function CphqLectureForm({
-  path, courseName, whatsappNumber = "201115782721",
+  path, courseName, thankYouPath = "/lp/free-lecture-cphq/thank-you",
 }: {
-  path: string; courseName: string; whatsappNumber?: string;
+  path: string; courseName: string; whatsappNumber?: string; thankYouPath?: string;
 }) {
-  const [phase, setPhase] = React.useState<Phase>("form");
+  const router = useRouter();
   const [form, setForm] = React.useState({ name: "", email: "", code: "+20", whatsapp: "" });
   const [submitting, setSubmitting] = React.useState(false);
-  const [qIndex, setQIndex] = React.useState(0);
-  const [answers, setAnswers] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => { dal.landing.trackLanding(path, "view").catch(() => {}); }, [path]);
   const set = (k: "name" | "email" | "code" | "whatsapp", v: string) => setForm((f) => ({ ...f, [k]: v }));
   const fullPhone = () => `${form.code}${digits(form.whatsapp)}`;
   const valid = form.name.trim().length > 1 && EMAIL_RE.test(form.email.trim()) && digits(form.whatsapp).length >= 8;
 
-  // Capture the lead the moment the form is submitted (seat reserved).
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!valid) { toast.error("اكمل بياناتك بشكل صحيح"); return; }
     setSubmitting(true);
     const fb = fbLeadContext();
-    const res = await dal.landing.captureLead({
-      name: form.name.trim(), email: form.email.trim(), whatsapp: fullPhone(),
-      interest: courseName, region: "Egypt", path, ...fb,
-    });
+    const lead = { name: form.name.trim(), email: form.email.trim(), whatsapp: fullPhone() };
+    const res = await dal.landing.captureLead({ ...lead, interest: courseName, region: "Egypt", path, ...fb });
+    if (res.ok) {
+      fireBrowserLead(fb.eventId, { content_name: courseName });
+      dal.landing.trackLanding(path, "click").catch(() => {});
+      try { sessionStorage.setItem("imets_cphq_lead", JSON.stringify({ ...lead, path, courseName })); } catch { /* ignore */ }
+      router.push(thankYouPath);
+      return; // keep the button disabled through the navigation
+    }
     setSubmitting(false);
-    if (res.ok) { fireBrowserLead(fb.eventId, { content_name: courseName }); dal.landing.trackLanding(path, "click").catch(() => {}); setPhase("wizard"); }
-    else toast.error(res.error);
+    toast.error(res.error);
   };
 
-  // Enrich the lead with the wizard answers (qualification for sales).
-  const pickAnswer = (opt: string) => {
-    const key = WIZARD[qIndex].key;
-    const next = { ...answers, [key]: opt };
-    setAnswers(next);
-    if (qIndex < WIZARD.length - 1) { setQIndex((i) => i + 1); return; }
-    const summary = Object.entries(next).map(([k, v]) => `${k}: ${v}`).join(" · ");
-    dal.landing.captureLead({
-      name: form.name.trim(), email: form.email.trim(), whatsapp: fullPhone(),
-      profession: next["التخصص"] ?? "", interest: `${courseName} — ${summary}`, region: "Egypt", path,
-    }).catch(() => {});
-    setPhase("whatsapp");
-  };
-
-  /* ── WhatsApp (final) ── */
-  if (phase === "whatsapp") {
-    const waText = encodeURIComponent(`مرحبًا، سجّلت في محاضرة CPHQ المجانية — اسمي ${form.name.trim()}`);
-    return (
-      <div className="space-y-4 text-center" dir="rtl">
-        <div className="mx-auto grid size-12 place-items-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 className="size-7" /></div>
-        <div>
-          <h3 className="text-lg font-bold text-emerald-700">تمام! مقعدك محجوز 🎉</h3>
-          <p className="mt-1 text-sm text-muted-foreground">فضلت خطوة واحدة — انضم لجروب الواتساب عشان يوصلك رابط الحضور والتذكيرات.</p>
-        </div>
-        <Button asChild size="lg" className="w-full gap-2 bg-[#25D366] text-white hover:bg-[#25D366]/90">
-          <a href={`https://wa.me/${whatsappNumber}?text=${waText}`} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="size-5" /> انضم لجروب الواتساب
-          </a>
-        </Button>
-        <p className="text-[11px] text-muted-foreground">مهم عشان متفوتش المحاضرة ✅</p>
-      </div>
-    );
-  }
-
-  /* ── Qualification wizard ── */
-  if (phase === "wizard") {
-    const step = WIZARD[qIndex];
-    return (
-      <div className="space-y-4" dir="rtl">
-        <div className="text-center">
-          <p className="text-sm font-bold text-primary">شكرًا لتسجيلك، {form.name.trim().split(" ")[0]} 🙌</p>
-          <p className="text-xs text-muted-foreground">3 أسئلة سريعة تساعدنا نخدمك أحسن</p>
-        </div>
-        <div className="flex items-center justify-center gap-1.5">
-          {WIZARD.map((_, i) => <span key={i} className={cn("h-1.5 w-8 rounded-full", i <= qIndex ? "bg-primary" : "bg-border")} />)}
-        </div>
-        <div>
-          <p className="mb-3 text-center text-base font-bold">{step.q}</p>
-          <div className="grid gap-2">
-            {step.options.map((opt) => (
-              <button key={opt} onClick={() => pickAnswer(opt)}
-                className="flex items-center justify-between rounded-lg border border-border/70 bg-card px-4 py-2.5 text-right text-sm font-medium transition hover:border-primary hover:bg-primary/5">
-                {opt}
-                <ArrowLeft className="size-4 text-muted-foreground" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  /* ── Registration form ── */
   const selIso = COUNTRIES.find((c) => c.code === form.code)?.iso ?? "eg";
   return (
     <form onSubmit={submit} dir="rtl" className="space-y-3.5">
