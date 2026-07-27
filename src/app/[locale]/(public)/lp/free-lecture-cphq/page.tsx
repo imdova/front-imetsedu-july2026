@@ -168,7 +168,7 @@ export default async function FreeLectureCphqPage({
           <div id="register" className="lg:sticky lg:top-6">
             <div className="rounded-2xl border border-border/70 bg-card p-1 shadow-xl shadow-primary/5">
               <div className="rounded-xl bg-gradient-to-b from-primary/[0.05] to-transparent p-4 sm:p-5">
-                <p className="mb-1 text-center text-base font-bold text-primary">احجز مقعدك المجاني الآن</p>
+                <p className="mb-1 text-center text-base font-bold text-primary">احجز مقعدي المجاني الآن</p>
                 <p className="mb-4 text-center text-xs text-muted-foreground">خطوتان فقط — ويوصلك رابط الحضور على الإيميل والواتساب</p>
                 <CphqLectureForm path={PATH} courseName={COURSE} whatsappNumber="201142293143" />
               </div>
@@ -418,7 +418,7 @@ export default async function FreeLectureCphqPage({
         <div className="mx-auto max-w-2xl space-y-5 px-4">
           <h2 className="text-2xl font-extrabold sm:text-3xl">ابدأ رحلتك في الجودة الصحية اليوم</h2>
           <p className="text-sm opacity-90 sm:text-base">
-            احجز مقعدك المجاني قبل اكتمال العدد — محاضرة Live أونلاين، 90 دقيقة، وبشهادة حضور.
+            احجز مقعدي المجاني قبل اكتمال العدد — محاضرة Live أونلاين، 90 دقيقة، وبشهادة حضور.
           </p>
           <div className="flex flex-col items-center gap-1.5">
             <span className="flex text-[#f4c430]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-5 fill-current" />)}</span>
@@ -437,7 +437,7 @@ export default async function FreeLectureCphqPage({
         href="#register"
         className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 bg-[#f4c430] px-4 py-3.5 text-center text-sm font-extrabold text-[#0a1424] shadow-[0_-4px_20px_rgba(0,0,0,0.18)] md:hidden"
       >
-        📅 احجز مقعدك المجاني
+        📅 احجز مقعدي المجاني
       </a>
     </div>
   );
