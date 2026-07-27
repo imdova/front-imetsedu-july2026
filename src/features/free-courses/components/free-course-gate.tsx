@@ -5,7 +5,7 @@ import { Lock, CheckCircle2, Loader2 } from "lucide-react";
 
 import type { FreeProgram } from "@/lib/dal/free-courses";
 import { FreeCourseGateForm } from "./free-course-gate-form";
-import { FreeLecturePlayer } from "./free-lecture-player";
+import { FreeLessonExperience } from "./free-lesson-experience";
 
 /** One global unlock — "complete the form once, then take me to free lectures". */
 export const FREE_ACCESS_KEY = "imets_free_access";
@@ -35,8 +35,6 @@ export function FreeCourseGate({
       setUnlocked(false);
     }
   }, []);
-
-  const playable = program.lectures.filter((l) => l.videoUrl);
 
   if (unlocked === null) {
     return (
@@ -82,17 +80,7 @@ export function FreeCourseGate({
         <CheckCircle2 className="size-3.5" />
         {tr(locale, "Access unlocked — enjoy!", "تم فتح الوصول — استمتع!")}
       </p>
-      {playable.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">
-          {tr(
-            locale,
-            "Lectures for this program are being uploaded — check back shortly.",
-            "يجري رفع محاضرات هذا البرنامج — تابعنا قريبًا.",
-          )}
-        </div>
-      ) : (
-        <FreeLecturePlayer locale={locale} lectures={playable} />
-      )}
+      <FreeLessonExperience locale={locale} program={program} />
     </div>
   );
 }
