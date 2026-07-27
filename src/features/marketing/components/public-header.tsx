@@ -9,7 +9,6 @@ import { BRAND, PUBLIC_NAV, PUBLIC_RESOURCES, RESOURCES_HREF } from "@/constants
 import { Button } from "@/components/ui/button";
 import { CoursesMegaMenu, type MegaCategory, type MegaCourse } from "@/features/marketing/components/courses-mega-menu";
 import { ResourcesMenu } from "@/features/marketing/components/resources-menu";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { BrandImage } from "@/components/shared/brand-image";
 import {
@@ -147,12 +146,6 @@ export function PublicHeader({
 
         <div className="ms-auto flex items-center gap-1.5">
           <LanguageSwitcher variant={isHome ? "overlay" : "default"} />
-          <ThemeToggle
-            className={cn(
-              isHome &&
-                "text-white hover:bg-white/10 hover:text-white",
-            )}
-          />
           <Button
             asChild
             variant="ghost"

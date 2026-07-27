@@ -189,18 +189,12 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
                 <F label="Accent color"><ColorInput value={form.theme.accentColor} onChange={(v) => patch("theme", { accentColor: v })} /></F>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <F label="Mode">
-                  <Select value={form.theme.mode} onValueChange={(v) => patch("theme", { mode: v as SsTheme["mode"] })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="light">Light</SelectItem><SelectItem value="dark">Dark</SelectItem><SelectItem value="system">System</SelectItem></SelectContent>
-                  </Select>
-                </F>
                 <F label="Radius">
                   <Select value={form.theme.radius} onValueChange={(v) => patch("theme", { radius: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["square", "modern", "soft", "round"].map((r) => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
                   </Select>
                 </F>
               </div>
-              <Toggle label="Let visitors switch theme" checked={form.theme.allowUserToggle} onChange={(v) => patch("theme", { allowUserToggle: v })} />
               <ThemePreview theme={form.theme} />
             </>}
 

@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { GraduationCap } from "lucide-react";
 import {
@@ -100,7 +99,6 @@ export function AppHeader({ nav = ADMIN_NAV, showCreate = true }: AppHeaderProps
         )}
 
         <LanguageSwitcher />
-        <ThemeToggle />
 
         <NotificationBell />
 

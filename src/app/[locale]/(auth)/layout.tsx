@@ -4,7 +4,6 @@ import { setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { BRAND } from "@/constants/navigation";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 /** Auth screens — never index. */
@@ -34,7 +33,6 @@ export default async function AuthLayout({
         </Link>
         <div className="flex items-center gap-1">
           <LanguageSwitcher />
-          <ThemeToggle />
         </div>
       </header>
 

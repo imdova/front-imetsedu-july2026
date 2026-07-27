@@ -1,5 +1,3 @@
-import { THEME_STORAGE_KEY } from "./theme-constants";
-
 /**
  * No-flash theme bootstrap. Sets the `dark` class + `color-scheme` before first
  * paint so there's no light→dark flash.
@@ -14,6 +12,7 @@ import { THEME_STORAGE_KEY } from "./theme-constants";
  *    client, which is exactly the behaviour we want.
  */
 export function ThemeNoFlashScript() {
-  const js = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}')||'system';var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
+  // Dark mode is disabled platform-wide — always render light.
+  const js = `(function(){try{var e=document.documentElement;e.classList.remove('dark');e.style.colorScheme='light';}catch(e){}})();`;
   return <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: js }} />;
 }
