@@ -4,7 +4,7 @@ import {
   ArrowLeft, Sparkles, CheckCircle2, Users, Star, Award,
   ShieldCheck, MessageCircle, GraduationCap, ClipboardCheck, BookOpen,
   Globe2, TrendingUp, CalendarClock, HelpCircle, Target,
-  Briefcase, Wallet, Building2, ArrowUpRight, PlayCircle, FileCheck2,
+  Briefcase, Wallet, ArrowUpRight, PlayCircle, FileCheck2,
   HeartCrack, Compass, BadgeCheck, UserCheck, Clock3, ArrowLeftRight,
 } from "lucide-react";
 
@@ -47,7 +47,7 @@ const STATS = [
   { value: "17,000+", label: "Healthcare Professionals" },
   { value: "4.9★", label: "Average Rating" },
   { value: "200+", label: "Live Sessions" },
-  { value: "12", label: "Years Experience" },
+  { value: "12+", label: "Years Experience" },
 ];
 
 /* ── FOMO: last cohort funnel ── */
@@ -91,12 +91,12 @@ const AUDIENCE = [
 ];
 
 const BENEFITS = [
-  { icon: Briefcase, label: "زيادة فرص التوظيف" },
-  { icon: TrendingUp, label: "الترقية داخل المستشفى" },
-  { icon: ClipboardCheck, label: "دخول قسم الجودة" },
-  { icon: Wallet, label: "زيادة الراتب" },
-  { icon: Building2, label: "الانتقال للإدارة الصحية" },
-  { icon: Globe2, label: "فرص عمل في الخليج" },
+  { icon: Wallet, ar: "زيادة الراتب", en: "Salary" },
+  { icon: TrendingUp, ar: "الترقية داخل المستشفى", en: "Promotion" },
+  { icon: Users, ar: "قيادة فرق الجودة", en: "Leadership" },
+  { icon: ArrowLeftRight, ar: "تغيير مسارك المهني", en: "Career Shift" },
+  { icon: ClipboardCheck, ar: "دخول قسم الجودة", en: "Quality Dept." },
+  { icon: Globe2, ar: "فرص عمل في الخليج", en: "Gulf Jobs" },
 ];
 
 const SPEAKER_POINTS = [
@@ -150,14 +150,16 @@ export default async function FreeLectureCphqPage({
                 </li>
               ))}
             </ul>
-            <div className="pt-1"><RegistrationCountdown /></div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" variant="secondary" className="gap-2 bg-[#f4c430] text-[#0a1424] hover:bg-[#f4c430]/90">
-                <a href="#register">احجز مقعدي المجاني <ArrowLeft className="size-4" /></a>
-              </Button>
-              <span className="inline-flex items-center gap-1.5 text-sm text-white/80">
-                <CalendarClock className="size-4 text-[#f4c430]" /> الأماكن محدودة
-              </span>
+            <div className="space-y-2.5 pt-1">
+              <RegistrationCountdown />
+              <div className="flex flex-wrap items-center gap-3">
+                <Button asChild size="lg" variant="secondary" className="gap-2 bg-[#f4c430] text-[#0a1424] hover:bg-[#f4c430]/90">
+                  <a href="#register">احجز مقعدي المجاني <ArrowLeft className="size-4" /></a>
+                </Button>
+                <span className="inline-flex items-center gap-1.5 text-sm text-white/80">
+                  <CalendarClock className="size-4 text-[#f4c430]" /> الأماكن محدودة
+                </span>
+              </div>
             </div>
             <LandingHeroVideo path={PATH} />
           </div>
@@ -205,8 +207,8 @@ export default async function FreeLectureCphqPage({
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-4 py-12 sm:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.label} className="text-center">
-              <div className="text-3xl font-extrabold sm:text-4xl">{s.value}</div>
-              <div className="mt-1 text-xs opacity-85 sm:text-sm">{s.label}</div>
+              <div className="text-4xl font-extrabold leading-none text-[#f4c430] sm:text-5xl">{s.value}</div>
+              <div className="mt-2 text-[11px] font-medium uppercase tracking-wide opacity-80 sm:text-xs">{s.label}</div>
             </div>
           ))}
         </div>
@@ -216,7 +218,7 @@ export default async function FreeLectureCphqPage({
       <section className="py-12">
         <div className="mx-auto max-w-4xl px-4">
           <div className="rounded-2xl border border-[#f4c430]/40 bg-[#f4c430]/[0.06] p-6">
-            <p className="mb-5 text-center text-sm font-bold text-[#8a6d00]">📊 نتائج آخر دفعة من المحاضرة</p>
+            <p className="mb-5 text-center text-base font-extrabold text-[#8a6d00]">🔥 نتائج آخر محاضرة · In the last session</p>
             <div className="grid grid-cols-3 gap-3">
               {LAST_COHORT.map((c, i) => (
                 <div key={c.label} className="relative text-center">
@@ -241,8 +243,8 @@ export default async function FreeLectureCphqPage({
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PAINS.map((p) => (
               <Card key={p.t} className="border-border/70">
-                <CardContent className="space-y-2 p-5">
-                  <span className="grid size-11 place-items-center rounded-xl bg-rose-50 text-rose-500"><p.icon className="size-5" /></span>
+                <CardContent className="space-y-2.5 p-5">
+                  <span className="grid size-14 place-items-center rounded-2xl bg-rose-50 text-rose-500"><p.icon className="size-7" /></span>
                   <h3 className="text-base font-bold">{p.t}</h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">{p.b}</p>
                 </CardContent>
@@ -296,7 +298,7 @@ export default async function FreeLectureCphqPage({
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {AUDIENCE.map((a) => (
             <div key={a.label} className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4">
-              <span className="grid size-12 shrink-0 place-items-center rounded-full bg-primary/10 text-2xl">{a.emoji}</span>
+              <span className="grid size-14 shrink-0 place-items-center rounded-full bg-primary/10 text-3xl ring-2 ring-primary/10">{a.emoji}</span>
               <span className="text-sm font-semibold">{a.label}</span>
             </div>
           ))}
@@ -309,9 +311,12 @@ export default async function FreeLectureCphqPage({
           <Heading eyebrow="ليه CPHQ بالذات؟" title="أكثر من مجرد شهادة" sub="استثمار مباشر في مستقبلك المهني." />
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             {BENEFITS.map((b) => (
-              <div key={b.label} className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4">
-                <span className="grid size-10 place-items-center rounded-lg bg-[#f4c430]/15 text-[#b8860b]"><b.icon className="size-5" /></span>
-                <span className="text-sm font-bold">{b.label}</span>
+              <div key={b.en} className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4">
+                <span className="grid size-11 place-items-center rounded-lg bg-[#f4c430]/15 text-[#b8860b]"><b.icon className="size-5" /></span>
+                <span>
+                  <span className="block text-sm font-bold">{b.ar}</span>
+                  <span className="block text-xs font-medium uppercase tracking-wide text-muted-foreground">{b.en}</span>
+                </span>
                 <CheckCircle2 className="ms-auto size-5 text-emerald-500" />
               </div>
             ))}
@@ -319,44 +324,52 @@ export default async function FreeLectureCphqPage({
         </div>
       </section>
 
-      {/* ── 6 · Speaker ── */}
-      <Section eyebrow="محاضرك" title="ليه تثق باللي هيشرحلك؟">
-        <div className="mx-auto max-w-3xl">
-          <Card className="border-border/70">
-            <CardContent className="flex flex-col items-center gap-5 p-6 sm:flex-row sm:items-start">
-              <div className="grid size-24 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-[#082a6b] text-primary-foreground">
-                <GraduationCap className="size-11" />
-              </div>
-              <div className="flex-1 text-center sm:text-right">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-                  <BadgeCheck className="size-3.5" /> CPHQ Certified
+      {/* ── 6 · Speaker (trust hero) ── */}
+      <section className="bg-gradient-to-br from-primary to-[#082a6b] py-16 text-primary-foreground">
+        <div className="mx-auto max-w-5xl px-4">
+          <div className="grid items-center gap-8 lg:grid-cols-[290px_1fr]">
+            {/* Portrait (swap the placeholder for a real photo) */}
+            <div className="mx-auto w-full max-w-[280px]">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-white/15 bg-white/10 shadow-2xl">
+                <div className="grid h-full place-items-center text-white/30"><GraduationCap className="size-28" /></div>
+                <div className="absolute inset-x-0 bottom-0 bg-black/30 p-3 text-center backdrop-blur-sm">
+                  <div className="text-sm font-bold">استشاري الجودة الصحية</div>
+                  <div className="text-xs text-white/70">IMETS Faculty</div>
                 </div>
-                <h3 className="mt-2 text-lg font-extrabold">استشاري الجودة الصحية — فريق IMETS</h3>
-                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {SPEAKER_POINTS.map((p) => (
-                    <li key={p} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" /> {p}
-                    </li>
-                  ))}
-                </ul>
               </div>
-            </CardContent>
-          </Card>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            {[
-              { icon: PlayCircle, t: "شرح تطبيقي", b: "من واقع المستشفيات، مش تنظير." },
-              { icon: MessageCircle, t: "بالعربي", b: "مع المصطلحات الإنجليزي المعتمدة." },
-              { icon: Clock3, t: "مركّز", b: "90 دقيقة من غير حشو." },
-            ].map((x) => (
-              <div key={x.t} className="rounded-xl border border-border/70 bg-card p-4 text-center">
-                <x.icon className="mx-auto mb-1.5 size-5 text-primary" />
-                <div className="text-sm font-bold">{x.t}</div>
-                <div className="text-xs text-muted-foreground">{x.b}</div>
+            </div>
+            {/* Bio */}
+            <div className="space-y-4">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4c430] px-3 py-1 text-xs font-bold text-[#0a1424]"><BadgeCheck className="size-3.5" /> محاضرك · CPHQ Certified</span>
+              <h2 className="text-2xl font-extrabold sm:text-3xl">ليه تثق باللي هيشرحلك؟</h2>
+              <p className="leading-relaxed text-white/85">
+                نخبة من استشاريي الجودة المعتمدين بخبرة عملية داخل المستشفيات — مش تنظير. بيشرحوا بالعربي
+                ويركّزوا على اللي هيفيدك في الامتحان وفي شغلك من أول يوم.
+              </p>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {SPEAKER_POINTS.map((p) => (
+                  <li key={p} className="flex items-start gap-2 text-sm"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#f4c430]" /> {p}</li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-3 pt-1">
+                <SpeakerStat value="12+" label="سنوات خبرة" />
+                <SpeakerStat value="17,000+" label="متدرب" />
+                <SpeakerStat value="4.9★" label="تقييم" />
               </div>
-            ))}
+              <div className="flex flex-wrap items-center gap-4 pt-1">
+                {[
+                  { icon: PlayCircle, t: "شرح تطبيقي" },
+                  { icon: MessageCircle, t: "بالعربي" },
+                  { icon: Clock3, t: "90 دقيقة مركّزة" },
+                ].map((x) => (
+                  <span key={x.t} className="inline-flex items-center gap-1.5 text-xs text-white/80"><x.icon className="size-4 text-[#f4c430]" /> {x.t}</span>
+                ))}
+              </div>
+              <div className="pt-1 text-xl font-extrabold"><span className="text-[#f4c430]">IMETS</span> <span className="text-white/90">Medical School</span></div>
+            </div>
           </div>
         </div>
-      </Section>
+      </section>
 
       {/* ── 7 · Testimonials ── */}
       <section className="bg-muted/30 py-14">
@@ -372,9 +385,12 @@ export default async function FreeLectureCphqPage({
                 <CardContent className="space-y-3 p-5">
                   <div className="flex gap-0.5 text-[#f4c430]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-4 fill-current" />)}</div>
                   <p className="text-sm leading-relaxed">“{t.quote}”</p>
-                  <div className="pt-1">
-                    <div className="text-sm font-bold">{t.name}</div>
-                    <div className="text-xs text-muted-foreground">{t.role}</div>
+                  <div className="flex items-center gap-3 pt-1">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">{t.name.replace("د. ", "").trim().charAt(0)}</span>
+                    <div>
+                      <div className="text-sm font-bold">{t.name}</div>
+                      <div className="text-xs text-muted-foreground">{t.role}</div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -404,6 +420,10 @@ export default async function FreeLectureCphqPage({
           <p className="text-sm opacity-90 sm:text-base">
             احجز مقعدك المجاني قبل اكتمال العدد — محاضرة Live أونلاين، 90 دقيقة، وبشهادة حضور.
           </p>
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="flex text-[#f4c430]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-5 fill-current" />)}</span>
+            <span className="text-sm font-semibold">انضم إلى أكثر من 17,000 متخصص صحي</span>
+          </div>
           <div className="flex justify-center"><RegistrationCountdown /></div>
           <Button asChild size="lg" variant="secondary" className="gap-2 bg-[#f4c430] text-[#0a1424] hover:bg-[#f4c430]/90">
             <a href="#register">احجز مقعدي المجاني الآن <ArrowLeft className="size-4" /></a>
@@ -423,6 +443,15 @@ function Section({ eyebrow, title, sub, children }: { eyebrow: string; title: st
         <div className="mt-8">{children}</div>
       </div>
     </section>
+  );
+}
+
+function SpeakerStat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-center">
+      <div className="text-xl font-extrabold text-[#f4c430]">{value}</div>
+      <div className="text-[11px] text-white/75">{label}</div>
+    </div>
   );
 }
 
