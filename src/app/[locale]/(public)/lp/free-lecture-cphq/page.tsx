@@ -170,7 +170,7 @@ export default async function FreeLectureCphqPage({
               <div className="rounded-xl bg-gradient-to-b from-primary/[0.05] to-transparent p-4 sm:p-5">
                 <p className="mb-1 text-center text-base font-bold text-primary">احجز مقعدك المجاني الآن</p>
                 <p className="mb-4 text-center text-xs text-muted-foreground">خطوتان فقط — ويوصلك رابط الحضور على الإيميل والواتساب</p>
-                <CphqLectureForm path={PATH} courseName={COURSE} />
+                <CphqLectureForm path={PATH} courseName={COURSE} whatsappNumber="201142293143" />
               </div>
             </div>
           </div>
