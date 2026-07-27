@@ -217,6 +217,11 @@ export async function setSubscriberGroupPaths(name: string, paths: string[]): Pr
   const res = await svc.setSubscriberGroupPaths(name, paths);
   return res.ok ? ok(mapGroup(res.data)) : res;
 }
+/** Reconcile which groups a single page path (course/landing) feeds. */
+export async function setPathGroups(path: string, groups: string[]): Promise<Result<{ path: string; groups: string[] }>> {
+  const res = await svc.linkPathToGroups(path, groups);
+  return res.ok ? ok(res.data) : res;
+}
 export async function deleteSubscriberGroup(name: string): Promise<Result<boolean>> {
   const res = await svc.deleteSubscriberGroup(name);
   return res.ok ? ok(true) : res;

@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DataTableColumnHeader } from "@/components/shared/data-table/data-table-column-header";
+import { EmailGroupSelect } from "@/features/marketing-admin/components/email-group-select";
+import type { SubscriberGroup } from "@/lib/db/email-marketing";
 import { StatusBadge, DifficultyBadge } from "./course-badges";
 
 type CoursesT = ReturnType<typeof useTranslations<"Courses">>;
@@ -36,12 +38,14 @@ interface ColumnOptions {
   onDelete: (course: CourseRow) => void;
   onDuplicate: (course: CourseRow) => void;
   t: CoursesT;
+  emailGroups?: SubscriberGroup[];
 }
 
 export function getCourseColumns({
   onDelete,
   onDuplicate,
   t,
+  emailGroups = [],
 }: ColumnOptions): ColumnDef<CourseRow>[] {
   return [
     {
@@ -162,6 +166,14 @@ export function getCourseColumns({
       accessorKey: "status",
       header: t("colStatus"),
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
+    {
+      id: "emailGroup",
+      header: t("colEmailGroup"),
+      cell: ({ row }) => (
+        <EmailGroupSelect path={`/courses/${row.original.slug}`} groups={emailGroups} />
+      ),
+      enableSorting: false,
     },
     {
       id: "actions",

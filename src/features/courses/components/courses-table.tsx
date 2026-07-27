@@ -75,6 +75,11 @@ export function CoursesTable({ initialData }: CoursesTableProps) {
   const [range, setRange] = React.useState<RangeKey>("all");
   const [hasStudents, setHasStudents] = React.useState(false);
   const [view, setView] = React.useState<"list" | "grid">("list");
+  const [emailGroups, setEmailGroups] = React.useState<import("@/lib/db/email-marketing").SubscriberGroup[]>([]);
+
+  React.useEffect(() => {
+    dal.emailMarketing.fetchSubscriberGroups().then((r) => { if (r.ok) setEmailGroups(r.data); });
+  }, []);
 
   const categories = React.useMemo(
     () => Array.from(new Set((initialData ?? []).map((c) => c.category))),
@@ -151,8 +156,8 @@ export function CoursesTable({ initialData }: CoursesTableProps) {
   );
 
   const columns = React.useMemo(
-    () => getCourseColumns({ onDelete: handleDelete, onDuplicate: handleDuplicate, t }),
-    [handleDelete, handleDuplicate, t],
+    () => getCourseColumns({ onDelete: handleDelete, onDuplicate: handleDuplicate, t, emailGroups }),
+    [handleDelete, handleDuplicate, t, emailGroups],
   );
 
   const RANGES: { key: RangeKey; label: string }[] = [

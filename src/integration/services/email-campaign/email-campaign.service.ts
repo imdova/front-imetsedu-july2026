@@ -7,7 +7,7 @@ import {
   API_EMAIL_BRAND_BLOCKS, apiEmailBrandBlock,
   API_EMAIL_SUBSCRIBERS, apiEmailSubscriber, API_EMAIL_SUBSCRIBERS_BULK_DELETE,
   API_EMAIL_SUBSCRIBERS_ASSIGN, API_EMAIL_SUBSCRIBERS_UNASSIGN,
-  API_EMAIL_SUBSCRIBER_GROUPS, apiEmailSubscriberGroup,
+  API_EMAIL_SUBSCRIBER_GROUPS, apiEmailSubscriberGroup, API_EMAIL_SUBSCRIBER_GROUP_LINKS,
 } from "@integration/constants/api/email";
 import type {
   CampaignDto, TemplateDto, AutomationDto, BrandBlockDto, EmailStatsDto, SegmentDto,
@@ -74,6 +74,7 @@ export const listSubscriberGroups = () => api.get<SubscriberGroupDto[]>(API_EMAI
 export const createSubscriberGroup = (name: string) => api.post<SubscriberGroupDto>(API_EMAIL_SUBSCRIBER_GROUPS, { name });
 export const renameSubscriberGroup = (oldName: string, name: string) => api.patch<SubscriberGroupDto>(apiEmailSubscriberGroup(oldName), { name });
 export const setSubscriberGroupPaths = (name: string, paths: string[]) => api.patch<SubscriberGroupDto>(`${apiEmailSubscriberGroup(name)}/paths`, { paths });
+export const linkPathToGroups = (path: string, groups: string[]) => api.patch<{ path: string; groups: string[] }>(API_EMAIL_SUBSCRIBER_GROUP_LINKS, { path, groups });
 export const deleteSubscriberGroup = (name: string) => api.delete<{ success: boolean }>(apiEmailSubscriberGroup(name));
 
 export type { Result };

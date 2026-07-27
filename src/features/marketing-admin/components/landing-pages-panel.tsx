@@ -9,6 +9,8 @@ import { toast } from "sonner";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
+import { EmailGroupSelect } from "./email-group-select";
+import type { SubscriberGroup } from "@/lib/db/email-marketing";
 import type {
   MarketingLandingPage, LandingPageInput, LandingStats, LandingStatus, LandingSort, LandingLanguage,
 } from "@/lib/db/landing";
@@ -63,6 +65,10 @@ export function LandingPagesPanel({
   const langOf = (p: MarketingLandingPage) => p.language ?? "en";
   const langCount = (l: LandingLanguage) => rows.filter((r) => langOf(r) === l).length;
   const visibleRows = React.useMemo(() => rows.filter((r) => langOf(r) === lang), [rows, lang]);
+  const [emailGroups, setEmailGroups] = React.useState<SubscriberGroup[]>([]);
+  React.useEffect(() => {
+    dal.emailMarketing.fetchSubscriberGroups().then((r) => { if (r.ok) setEmailGroups(r.data); });
+  }, []);
   const totalRegistrations = React.useMemo(
     () => rows.reduce((s, r) => s + (r.registrations ?? 0), 0),
     [rows],
@@ -255,6 +261,11 @@ export function LandingPagesPanel({
           {row.original.ctr}%
         </span>
       ),
+    },
+    {
+      id: "emailGroup",
+      header: "Email group",
+      cell: ({ row }) => <EmailGroupSelect path={row.original.path} groups={emailGroups} />,
     },
     {
       accessorKey: "updatedAt",

@@ -28,3 +28,4 @@ export const API_EMAIL_SUBSCRIBERS_ASSIGN = `${B}/subscribers/assign`;
 export const API_EMAIL_SUBSCRIBERS_UNASSIGN = `${B}/subscribers/unassign`;
 export const API_EMAIL_SUBSCRIBER_GROUPS = `${B}/subscriber-groups`;
 export const apiEmailSubscriberGroup = (name: string) => `${B}/subscriber-groups/${encodeURIComponent(name)}`;
+export const API_EMAIL_SUBSCRIBER_GROUP_LINKS = `${B}/subscriber-group-links`;
