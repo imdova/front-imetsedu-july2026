@@ -40,11 +40,18 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
   const enrollRef = React.useRef<HTMLDivElement>(null);
   const [passed, setPassed] = React.useState(false);
   const [firstName, setFirstName] = React.useState("");
+  const [returning, setReturning] = React.useState(false);
 
   React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- read the stored lead name on mount
+    /* eslint-disable react-hooks/set-state-in-effect -- read the stored lead + first/return visit on mount */
     setFirstName(getLeadFirstName());
-  }, []);
+    try {
+      const key = `imets_visited_${program.slug}`;
+      if (localStorage.getItem(key)) setReturning(true);
+      localStorage.setItem(key, "1");
+    } catch { /* ignore */ }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [program.slug]);
 
   const onPassed = () => {
     setPassed(true);
@@ -63,13 +70,27 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
       {/* Personalized welcome for registered visitors */}
       {firstName && (
         <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.08] to-transparent p-4 sm:p-5">
-          <p className="font-bold">
-            👋 {tr(locale, `Hi ${firstName},`, `أهلاً ${firstName}،`)}{" "}
-            <span className="text-primary">{tr(locale, "you've reached your first free lesson! 🎉", "وصلت لأول درس مجاني! 🎉")}</span>
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {tr(locale, `After this lesson you'll know whether the ${name} program is the right fit for you.`, `بعد ما تخلّص الدرس ده هتعرف إذا كان برنامج ${name} مناسب ليك.`)}
-          </p>
+          {returning ? (
+            <>
+              <p className="font-bold">
+                👋 {tr(locale, `Welcome back, ${firstName}!`, `أهلاً بعودتك يا ${firstName}!`)}{" "}
+                <span className="text-primary">{tr(locale, "Pick up where you left off.", "أكمل من حيث وقفت.")}</span>
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {tr(locale, `The full ${name} program is just one step away.`, `البرنامج الكامل «${name}» على بُعد خطوة واحدة.`)}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-bold">
+                👋 {tr(locale, `Hi ${firstName},`, `أهلاً ${firstName}،`)}{" "}
+                <span className="text-primary">{tr(locale, "you've reached your first free lesson! 🎉", "وصلت لأول درس مجاني! 🎉")}</span>
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {tr(locale, `After this lesson you'll know whether the ${name} program is the right fit for you.`, `بعد ما تخلّص الدرس ده هتعرف إذا كان برنامج ${name} مناسب ليك.`)}
+              </p>
+            </>
+          )}
         </div>
       )}
 
