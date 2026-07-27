@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MetaPixel } from "@/components/analytics/meta-pixel";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
 import { SiteSettingsProvider } from "@/components/providers/site-settings-provider";
 import { dal } from "@/lib/dal";
 import { getTheme, getSiteSettings } from "@/lib/db/site-settings";
@@ -135,6 +136,7 @@ export default async function LocaleLayout({
       >
         <MetaPixel pixelId={publicSettings?.integrations?.metaPixelId} />
         <GoogleAnalytics measurementId={publicSettings?.integrations?.gaMeasurementId} />
+        <MicrosoftClarity />
         <NextIntlClientProvider>
           <ApiBootstrap />
           <SiteSettingsProvider value={{
