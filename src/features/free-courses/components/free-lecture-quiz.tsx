@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, XCircle, Trophy, Award, RotateCcw, Clock, ListChecks, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, Trophy, Award, RotateCcw, Clock, ListChecks, AlertTriangle, Lock, ChevronRight } from "lucide-react";
 
 import type { QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
 import { Button } from "@/components/ui/button";
@@ -86,6 +86,17 @@ export function FreeLectureQuiz({
           <div className="mx-auto mt-2 h-2 max-w-xs overflow-hidden rounded-full bg-muted">
             <div className={cn("h-full rounded-full transition-all", passed ? "bg-emerald-500" : "bg-amber-500")} style={{ width: `${pct}%` }} />
           </div>
+        </div>
+      )}
+
+      {/* Locked upsell — the rest of the assessments live in the diploma. */}
+      {submitted && (
+        <div className="mx-5 mb-4 rounded-xl border border-primary/30 bg-primary/[0.06] p-4 text-center">
+          <p className="inline-flex items-center gap-1.5 text-sm font-bold"><Lock className="size-4 text-primary" /> {tr(locale, "Unlock the full assessment bank", "افتح بنك الأسئلة الكامل")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{tr(locale, "Mock exams, timed finals and hundreds of practice questions — inside the diploma.", "امتحانات تجريبية ونهائية ومئات الأسئلة التدريبية — جوه الدبلومة.")}</p>
+          <a href="#enroll-offer" className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:bg-primary/90">
+            {tr(locale, "Join the diploma", "انضم للدبلومة")} <ChevronRight className="size-3.5 rtl:rotate-180" />
+          </a>
         </div>
       )}
 

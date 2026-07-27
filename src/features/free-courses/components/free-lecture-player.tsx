@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, Play, Lock } from "lucide-react";
+import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, Play, Lock, Trophy, MessageCircle } from "lucide-react";
 
 import type { FreeLecture } from "@/lib/dal/free-courses";
 import type { QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
@@ -28,13 +28,14 @@ const LOCKED_TEASERS = [
  * the quiz screen. Next/Back walk through lectures → quiz.
  */
 export function FreeLecturePlayer({
-  locale, lectures, quiz = [], onQuizPassed, programName = "",
+  locale, lectures, quiz = [], onQuizPassed, programName = "", advisorWhatsapp,
 }: {
   locale: string;
   lectures: FreeLecture[];
   quiz?: QuizQuestion[];
   onQuizPassed?: () => void;
   programName?: string;
+  advisorWhatsapp?: string;
 }) {
   const hasQuiz = quiz.length > 0;
   const order = React.useMemo(
@@ -43,6 +44,9 @@ export function FreeLecturePlayer({
   );
   const [activeId, setActiveId] = React.useState(order[0] ?? "");
   const [watched, setWatched] = React.useState<Set<string>>(() => new Set());
+  const [completed, setCompleted] = React.useState<Set<string>>(() => new Set());
+  const [ended, setEnded] = React.useState(false);
+  const progressPct = lectures.length ? Math.round((completed.size / lectures.length) * 100) : 0;
 
   const isQuiz = activeId === QUIZ_ID;
   const active = lectures.find((l) => l.id === activeId);
@@ -54,9 +58,14 @@ export function FreeLecturePlayer({
 
   const select = (id: string) => {
     setActiveId(id);
+    setEnded(false);
     if (id !== QUIZ_ID) setWatched((prev) => new Set(prev).add(id));
   };
   const go = (dir: -1 | 1) => { const n = order[idx + dir]; if (n) select(n); };
+  const onVideoEnded = () => {
+    setEnded(true);
+    if (active) setCompleted((prev) => new Set(prev).add(active.id));
+  };
 
   const youTubeId = active && active.videoProvider === "youtube" ? extractYouTubeVideoId(active.videoUrl) : null;
 
@@ -64,6 +73,17 @@ export function FreeLecturePlayer({
     <div className="grid gap-5 lg:grid-cols-[1fr_20rem] lg:items-start">
       {/* Stage */}
       <div className="space-y-3">
+        {/* Course progress (completion bias) */}
+        <div className="rounded-xl border border-border/60 bg-card px-4 py-2.5">
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span>{tr(locale, "Course progress", "تقدّمك في الكورس")}</span>
+            <span className="tabular-nums text-primary">{progressPct}% · {tr(locale, `${completed.size} of ${lectures.length}`, `${completed.size} من ${lectures.length}`)}</span>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progressPct}%` }} />
+          </div>
+        </div>
+
         {isQuiz ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
@@ -103,7 +123,7 @@ export function FreeLecturePlayer({
 
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-black shadow-sm">
               {youTubeId ? (
-                <YouTubePlayer key={active.id} videoId={youTubeId} autoPlay={false} hideYouTubeChrome />
+                <YouTubePlayer key={active.id} videoId={youTubeId} autoPlay={false} hideYouTubeChrome onEnded={onVideoEnded} />
               ) : active.videoProvider === "vdocipher" ? (
                 <div className="relative aspect-video">
                   <iframe
@@ -125,6 +145,38 @@ export function FreeLecturePlayer({
                 <span className="pointer-events-none absolute start-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-white shadow backdrop-blur">
                   <Play className="size-3 fill-current" /> {tr(locale, "Free lesson", "درس مجاني")} {lessonIdx + 1} / {lectures.length}
                 </span>
+              )}
+
+              {/* End-of-video conversion overlay */}
+              {ended && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 overflow-y-auto bg-gradient-to-br from-primary/95 to-[#082a6b]/95 p-5 text-center text-white sm:gap-4 sm:p-6">
+                  <Trophy className="size-9 text-[#f4c430]" />
+                  <div>
+                    <p className="text-lg font-extrabold">{tr(locale, `Lesson ${lessonIdx + 1} completed! 🎉`, `انتهى الدرس ${lessonIdx + 1}! 🎉`)}</p>
+                    <p className="mt-0.5 text-sm text-white/85">{tr(locale, "Enjoyed the content? Get the full program:", "عجبك المحتوى؟ احصل على البرنامج الكامل:")}</p>
+                  </div>
+                  <ul className="grid gap-1.5 text-start text-sm">
+                    {[["The rest of the lessons", "باقي الدروس"], ["Live sessions", "جلسات مباشرة"], ["Accredited certificate", "شهادة معتمدة"], ["Question bank", "بنك أسئلة"]].map(([en, ar]) => (
+                      <li key={en} className="flex items-center gap-2"><CheckCircle2 className="size-4 shrink-0 text-[#f4c430]" /> {tr(locale, en, ar)}</li>
+                    ))}
+                  </ul>
+                  <div className="flex flex-wrap justify-center gap-2 pt-1">
+                    <a href="#enroll-offer" className="inline-flex items-center gap-1.5 rounded-xl bg-[#f4c430] px-4 py-2.5 text-sm font-extrabold text-[#0a1424] transition hover:bg-[#f4c430]/90">
+                      {tr(locale, "Continue Learning", "أكمل التعلّم")} <ChevronRight className="size-4 rtl:rotate-180" />
+                    </a>
+                    <a
+                      href={advisorWhatsapp ? `https://wa.me/${advisorWhatsapp}?text=${encodeURIComponent(tr(locale, `Hi, I finished the free ${programName} lesson and want to know about the full program.`, `مرحبًا، خلّصت الدرس المجاني من ${programName} وحابب أعرف عن البرنامج الكامل.`))}` : "#enroll-offer"}
+                      target={advisorWhatsapp ? "_blank" : undefined}
+                      rel={advisorWhatsapp ? "noopener noreferrer" : undefined}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-[#25D366]/90"
+                    >
+                      <MessageCircle className="size-4" /> {tr(locale, "WhatsApp Advisor", "مستشار واتساب")}
+                    </a>
+                  </div>
+                  <button onClick={() => setEnded(false)} className="text-xs text-white/70 underline underline-offset-2 hover:text-white">
+                    {tr(locale, "Re-watch", "إعادة المشاهدة")}
+                  </button>
+                </div>
               )}
             </div>
             <div>

@@ -20,10 +20,13 @@ export function YouTubePlayer({
   autoPlay = true,
   unmuteOnStart = true,
   hideYouTubeChrome = false,
+  onEnded,
   className,
 }: {
   videoId: string;
   unmuteLabel?: string;
+  /** Fires once when the video finishes playing (state ENDED). */
+  onEnded?: () => void;
   /** Overlay the top strip so the video title + "Watch on YouTube" link aren't
    * clickable (keeps the centre play button and bottom controls usable). */
   hideYouTubeChrome?: boolean;
@@ -40,6 +43,8 @@ export function YouTubePlayer({
   const playerRef = React.useRef<any>(null);
   const [muted, setMuted] = React.useState(true);
   const [ready, setReady] = React.useState(false);
+  const onEndedRef = React.useRef(onEnded);
+  React.useEffect(() => { onEndedRef.current = onEnded; });
 
   React.useEffect(() => {
     let cancelled = false;
@@ -83,6 +88,8 @@ export function YouTubePlayer({
           onStateChange: (e: any) => {
             if (e.data === YT.PlayerState.PLAYING) {
               try { setMuted(!!e.target.isMuted()); } catch { /* ignore */ }
+            } else if (e.data === YT.PlayerState.ENDED) {
+              onEndedRef.current?.();
             }
           },
         },

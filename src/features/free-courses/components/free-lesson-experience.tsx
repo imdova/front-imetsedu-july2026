@@ -42,7 +42,7 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
           {tr(locale, "Lectures are being uploaded — try the quiz meanwhile.", "يجري رفع المحاضرات — جرّب الاختبار لحد ما تنزل.")}
         </p>
       )}
-      <FreeLecturePlayer locale={locale} lectures={playable} quiz={quiz} onQuizPassed={onPassed} programName={name} />
+      <FreeLecturePlayer locale={locale} lectures={playable} quiz={quiz} onQuizPassed={onPassed} programName={name} advisorWhatsapp={advisorWhatsapp} />
 
       {/* 2 · Enroll in the next live cohort */}
       <section id="enroll-offer" ref={enrollRef} className={cn("scroll-mt-24 overflow-hidden rounded-3xl border shadow-lg transition", passed ? "border-[#f4c430] ring-2 ring-[#f4c430]/30" : "border-border/70")}>
@@ -54,17 +54,17 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
                 <CalendarClock className="size-3.5 text-[#f4c430]" /> {tr(locale, "Next live cohort", "الدفعة المباشرة القادمة")}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4c430] px-3 py-1 text-xs font-extrabold text-[#0a1424]">
-                <Flame className="size-3.5" /> {tr(locale, `${DISCOUNT} OFF this cohort`, `خصم ${DISCOUNT} للدفعة القادمة`)}
+                <Flame className="size-3.5" /> {tr(locale, `${DISCOUNT} OFF`, `خصم ${DISCOUNT}`)}
               </span>
             </div>
             <h2 className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-[1.7rem]">
-              {tr(locale, `Join the next ${name} live group`, `انضم لدفعة «${name}» المباشرة القادمة`)}
+              {tr(locale, `${name} — Live Preparation`, `${name} — التحضير المباشر`)}
             </h2>
             <p className="mt-2 text-sm text-white/85">
               {tr(
                 locale,
-                "These free lectures are just the start. Attend live sessions, unlock all resources and earn your accredited certificate.",
-                "المحاضرات المجانية دي البداية بس. احضر الجلسات المباشرة، افتح كل المصادر، واحصل على شهادتك المعتمدة.",
+                `Get ${DISCOUNT} off the full ${name} Live Preparation program — live sessions, all resources and an accredited certificate.`,
+                `احصل على خصم ${DISCOUNT} على برنامج ${name} للتحضير المباشر — جلسات مباشرة، كل المصادر، وشهادة معتمدة.`,
               )}
             </p>
             <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
@@ -96,16 +96,16 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
               <div className="space-y-4 text-center">
                 <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[#25D366]/10 text-[#25D366]"><MessageCircle className="size-8" /></span>
                 <div>
-                  <p className="font-bold">{tr(locale, `Claim your ${DISCOUNT} cohort discount`, `احصل على خصم الدفعة ${DISCOUNT}`)}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{tr(locale, "Message a course advisor to reserve your seat in the next live group — before the offer ends.", "كلّم مستشار الكورس واحجز مكانك في الدفعة المباشرة القادمة — قبل ما العرض يخلص.")}</p>
+                  <p className="font-bold">{tr(locale, "Want to understand the program?", "عايز تفهم البرنامج أكتر؟")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{tr(locale, `Talk to a course advisor about ${name} Live Preparation — dates, content and the ${DISCOUNT} offer.`, `كلّم مستشار الكورس عن برنامج ${name} للتحضير المباشر — المواعيد والمحتوى وعرض الخصم ${DISCOUNT}.`)}</p>
                 </div>
                 <a
-                  href={`https://wa.me/${advisorWhatsapp}?text=${encodeURIComponent(tr(locale, `Hi, I watched the free ${name} lectures and want to join the next live cohort with the ${DISCOUNT} discount.`, `مرحبًا، شاهدت محاضرات ${name} المجانية وحابب أنضم للدفعة المباشرة القادمة بخصم ${DISCOUNT}.`))}`}
+                  href={`https://wa.me/${advisorWhatsapp}?text=${encodeURIComponent(tr(locale, `Hi, I watched the free ${name} lectures and want to know about the ${name} Live Preparation program.`, `مرحبًا، شاهدت محاضرات ${name} المجانية وحابب أعرف عن برنامج ${name} للتحضير المباشر.`))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3.5 text-sm font-extrabold text-white transition hover:bg-[#25D366]/90"
                 >
-                  <MessageCircle className="size-5" /> {tr(locale, "Claim my discount on WhatsApp", "احجز مكاني بالخصم عبر واتساب")}
+                  <MessageCircle className="size-5" /> {tr(locale, "Talk to an Advisor", "كلّم مستشار الكورس")}
                 </a>
                 <p className="text-[11px] text-muted-foreground">{tr(locale, "Instant reply during working hours.", "رد فوري خلال ساعات العمل.")}</p>
               </div>
