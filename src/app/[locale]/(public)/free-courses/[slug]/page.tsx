@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { Sparkles, PlayCircle, ChevronRight, Clock, ListVideo, BadgeCheck, Award, BrainCircuit, GraduationCap } from "lucide-react";
+import { Sparkles, ChevronRight, Clock, ListVideo, BadgeCheck } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
@@ -87,14 +87,6 @@ export default async function FreeCourseDetailPage({
     { icon: ListVideo, text: `${count} ${count === 1 ? tr(locale, "lecture", "محاضرة") : tr(locale, "lectures", "محاضرة")}` },
     ...(totalMin > 0 ? [{ icon: Clock, text: durLabel }] : []),
     { icon: BadgeCheck, text: tr(locale, "100% free", "مجاني ١٠٠٪") },
-    { icon: Award, text: tr(locale, "Certificate of attendance", "شهادة حضور") },
-  ];
-  const STEPS = [
-    { icon: PlayCircle, t: tr(locale, "Watch the lectures", "شاهد المحاضرات") },
-    { icon: BrainCircuit, t: tr(locale, "Take a quick quiz", "اختبر معلوماتك") },
-    ADVISOR_WHATSAPP[slug]
-      ? { icon: GraduationCap, t: tr(locale, "Chat with an advisor", "كلّم مستشار الكورس") }
-      : { icon: GraduationCap, t: tr(locale, "Join the live cohort", "انضم للدفعة المباشرة") },
   ];
 
   return (
@@ -180,75 +172,10 @@ export default async function FreeCourseDetailPage({
           </div>
         </header>
 
-        {/* Learning path — orients the visitor before the gate. */}
-        <div className="mb-8 grid gap-3 sm:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <div key={s.t} className="relative flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><s.icon className="size-5" /></span>
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{tr(locale, `Step ${i + 1}`, `خطوة ${i + 1}`)}</div>
-                <div className="text-sm font-semibold">{s.t}</div>
-              </div>
-              {i < STEPS.length - 1 && <ChevronRight className="absolute -end-2 top-1/2 hidden size-4 -translate-y-1/2 text-muted-foreground/40 sm:block rtl:rotate-180" />}
-            </div>
-          ))}
-        </div>
-
         {/* The gate only covers the PLAYER. Advisor-mode slugs skip the form
             and offer a WhatsApp course advisor instead. */}
         <FreeCourseGate locale={locale} program={program} advisorWhatsapp={ADVISOR_WHATSAPP[slug]} quiz={quiz} />
 
-        {/* Curriculum in server HTML — indexable whether or not the gate is open,
-            which is the whole point of gating the player and not the page. */}
-        {program.lectures.length > 0 && (
-          <section className="mt-10">
-            <h2 className="font-heading text-xl font-semibold">
-              {tr(locale, "What's included", "ماذا يتضمّن")}
-            </h2>
-            <ol className="mt-4 divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/70 bg-card">
-              {program.lectures.map((l, i) => (
-                <li key={l.id} className="flex items-start gap-3 p-4">
-                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold tabular-nums text-primary">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-foreground">{lectureTitle(l)}</h3>
-                    {(locale === "ar" ? l.descriptionAr : l.descriptionEn) && (
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {locale === "ar" ? l.descriptionAr : l.descriptionEn}
-                      </p>
-                    )}
-                  </div>
-                  {l.durationMinutes > 0 && (
-                    <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="size-3.5" /> {l.durationMinutes} {tr(locale, "min", "د")}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
-
-        <section className="mt-10 rounded-2xl border border-border/70 bg-muted/30 p-6 text-center">
-          <p className="font-heading text-lg font-bold">
-            {tr(locale, "Want the full program?", "تريد البرنامج الكامل؟")}
-          </p>
-          <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
-            {tr(
-              locale,
-              "Our accredited diplomas go far beyond these free lectures — live sessions, assignments and a certificate.",
-              "دبلوماتنا المعتمدة تتجاوز هذه المحاضرات المجانية بكثير — جلسات مباشرة وواجبات وشهادة.",
-            )}
-          </p>
-          <Link
-            href="/courses"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            {tr(locale, "Explore diplomas", "استكشف الدبلومات")}
-            <ChevronRight className="size-4 rtl:rotate-180" />
-          </Link>
-        </section>
       </div>
     </>
   );
