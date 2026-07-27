@@ -34,20 +34,31 @@ export function RegistrationCountdown({ hours = 24, storageKey = "imets_reg_dead
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div className="inline-flex items-center gap-3 rounded-xl border border-[#f4c430]/40 bg-[#f4c430]/10 px-4 py-2.5">
-      <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#8a6d00]">
-        <Clock className="size-4" /> {label}
+    <div className="inline-flex flex-col gap-2 rounded-2xl border border-[#f4c430]/50 bg-[#f4c430]/10 px-4 py-3">
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8a6d00]">
+        <Clock className="size-3.5" /> {label}
       </span>
-      <span dir="ltr" className="flex items-center gap-1 font-mono text-2xl font-extrabold tabular-nums text-[#0a1424]">
-        <Box>{pad(hh)}</Box><Colon /><Box>{pad(mm)}</Box><Colon /><Box>{pad(ss)}</Box>
+      <span dir="ltr" className="flex items-end gap-1.5">
+        <Unit value={pad(hh)} label="Hrs" />
+        <Sep />
+        <Unit value={pad(mm)} label="Min" />
+        <Sep />
+        <Unit value={pad(ss)} label="Sec" />
       </span>
     </div>
   );
 }
 
-function Box({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-md bg-[#0a1424] px-2.5 py-1 text-white">{children}</span>;
+function Unit({ value, label }: { value: string; label: string }) {
+  return (
+    <span className="flex flex-col items-center">
+      <span className="grid min-w-[42px] place-items-center rounded-lg bg-white px-2 py-1.5 font-mono text-xl font-extrabold tabular-nums text-primary shadow-sm ring-1 ring-black/5">
+        {value}
+      </span>
+      <span className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-[#8a6d00]/80">{label}</span>
+    </span>
+  );
 }
-function Colon() {
-  return <span className="text-[#0a1424]">:</span>;
+function Sep() {
+  return <span className="pb-5 font-mono text-lg font-extrabold text-[#8a6d00]/50">:</span>;
 }
