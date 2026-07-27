@@ -169,7 +169,7 @@ export default async function FreeLectureCphqPage({
 
           {/* Registration form (2-step) */}
           <div id="register" className="lg:sticky lg:top-6">
-            <div className="rounded-2xl border border-border/70 bg-card p-1 shadow-xl shadow-primary/5">
+            <div className="rounded-2xl border border-border/70 bg-card p-1 text-foreground shadow-xl shadow-primary/5">
               <div className="rounded-xl bg-gradient-to-b from-primary/[0.05] to-transparent p-4 sm:p-5">
                 <p className="mb-1 text-center text-base font-bold text-primary">احجز مقعدي المجاني الآن</p>
                 <p className="mb-4 text-center text-xs text-muted-foreground">خطوتان فقط — ويوصلك رابط الحضور على الإيميل والواتساب</p>
