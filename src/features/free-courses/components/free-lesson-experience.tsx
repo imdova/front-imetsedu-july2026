@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { GraduationCap, CalendarClock, CheckCircle2, Award, Users, BrainCircuit, Radio } from "lucide-react";
+import { GraduationCap, CalendarClock, CheckCircle2, Award, Users, BrainCircuit, Radio, MessageCircle } from "lucide-react";
 
 import type { FreeProgram } from "@/lib/dal/free-courses";
 import { FreeLecturePlayer } from "./free-lecture-player";
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
 
 /** Full lesson experience: watch recorded lectures → quiz → enroll in the next live cohort. */
-export function FreeLessonExperience({ locale, program }: { locale: string; program: FreeProgram }) {
+export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { locale: string; program: FreeProgram; advisorWhatsapp?: string }) {
   const playable = program.lectures.filter((l) => l.videoUrl);
   const quiz = getFreeQuiz(program.slug);
   const name = (locale === "ar" ? program.titleAr : program.titleEn) || program.titleEn;
@@ -85,21 +85,42 @@ export function FreeLessonExperience({ locale, program }: { locale: string; prog
             </p>
           </div>
 
-          {/* form */}
-          <div className="bg-card p-6 sm:p-8">
-            <div className="mb-4 flex items-center gap-2">
-              <GraduationCap className="size-5 text-primary" />
-              <div>
-                <p className="font-bold">{tr(locale, "Reserve your seat", "احجز مقعدك")}</p>
-                <p className="text-xs text-muted-foreground">{tr(locale, "We'll contact you with the next dates & offer.", "هنتواصل معاك بمواعيد الدفعة والعرض.")}</p>
-              </div>
-            </div>
+          {/* action: WhatsApp advisor OR lead form */}
+          <div className="flex flex-col justify-center bg-card p-6 sm:p-8">
             {passed && (
-              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <p className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                 <CheckCircle2 className="size-3.5" /> {tr(locale, "You passed the quiz — you're ready!", "نجحت في الاختبار — إنت جاهز!")}
               </p>
             )}
-            <SimpleLeadForm path={`/free-courses/${program.slug}`} courseName={`${name} — Live cohort`} />
+            {advisorWhatsapp ? (
+              <div className="space-y-4 text-center">
+                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[#25D366]/10 text-[#25D366]"><MessageCircle className="size-8" /></span>
+                <div>
+                  <p className="font-bold">{tr(locale, "Talk to a course advisor", "كلّم مستشار الكورس")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{tr(locale, "Ask about the next live cohort, dates and offers — no forms.", "اسأل عن الدفعة المباشرة القادمة والمواعيد والعروض — من غير فورمات.")}</p>
+                </div>
+                <a
+                  href={`https://wa.me/${advisorWhatsapp}?text=${encodeURIComponent(tr(locale, `Hi, I watched the free ${name} lectures and want to know about the next live cohort.`, `مرحبًا، شاهدت محاضرات ${name} المجانية وحابب أعرف تفاصيل الدفعة المباشرة القادمة.`))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3.5 text-sm font-extrabold text-white transition hover:bg-[#25D366]/90"
+                >
+                  <MessageCircle className="size-5" /> {tr(locale, "Chat on WhatsApp", "تواصل عبر واتساب")}
+                </a>
+                <p className="text-[11px] text-muted-foreground">{tr(locale, "Instant reply during working hours.", "رد فوري خلال ساعات العمل.")}</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 flex items-center gap-2">
+                  <GraduationCap className="size-5 text-primary" />
+                  <div>
+                    <p className="font-bold">{tr(locale, "Reserve your seat", "احجز مقعدك")}</p>
+                    <p className="text-xs text-muted-foreground">{tr(locale, "We'll contact you with the next dates & offer.", "هنتواصل معاك بمواعيد الدفعة والعرض.")}</p>
+                  </div>
+                </div>
+                <SimpleLeadForm path={`/free-courses/${program.slug}`} courseName={`${name} — Live cohort`} />
+              </>
+            )}
           </div>
         </div>
       </section>

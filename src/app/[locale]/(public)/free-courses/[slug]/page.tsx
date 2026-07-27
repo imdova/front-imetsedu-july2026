@@ -13,6 +13,11 @@ import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
 
 const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
 
+/** Free programs (by slug) that skip the email gate and offer a WhatsApp advisor. */
+const ADVISOR_WHATSAPP: Record<string, string> = {
+  "cphq-preparation": "201142293143",
+};
+
 export const revalidate = 120;
 
 export async function generateMetadata({
@@ -69,7 +74,9 @@ export default async function FreeCourseDetailPage({
   const STEPS = [
     { icon: PlayCircle, t: tr(locale, "Watch the lectures", "شاهد المحاضرات") },
     { icon: BrainCircuit, t: tr(locale, "Take a quick quiz", "اختبر معلوماتك") },
-    { icon: GraduationCap, t: tr(locale, "Join the live cohort", "انضم للدفعة المباشرة") },
+    ADVISOR_WHATSAPP[slug]
+      ? { icon: GraduationCap, t: tr(locale, "Chat with an advisor", "كلّم مستشار الكورس") }
+      : { icon: GraduationCap, t: tr(locale, "Join the live cohort", "انضم للدفعة المباشرة") },
   ];
 
   return (
@@ -169,8 +176,9 @@ export default async function FreeCourseDetailPage({
           ))}
         </div>
 
-        {/* The gate only covers the PLAYER. */}
-        <FreeCourseGate locale={locale} program={program} />
+        {/* The gate only covers the PLAYER. Advisor-mode slugs skip the form
+            and offer a WhatsApp course advisor instead. */}
+        <FreeCourseGate locale={locale} program={program} advisorWhatsapp={ADVISOR_WHATSAPP[slug]} />
 
         {/* Curriculum in server HTML — indexable whether or not the gate is open,
             which is the whole point of gating the player and not the page. */}

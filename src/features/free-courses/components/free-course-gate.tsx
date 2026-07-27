@@ -15,10 +15,15 @@ const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : e
 export function FreeCourseGate({
   locale,
   program,
+  advisorWhatsapp,
 }: {
   locale: string;
   program: FreeProgram;
+  /** When set, the email form is skipped entirely — lectures open directly and
+   *  the enroll step becomes a "chat with a course advisor" WhatsApp CTA. */
+  advisorWhatsapp?: string;
 }) {
+
   // null on the server AND the first client render, so the markup matches and
   // there's no hydration mismatch; the real value is read in the effect.
   // (Same pattern as discount-countdown.tsx.)
@@ -35,6 +40,11 @@ export function FreeCourseGate({
       setUnlocked(false);
     }
   }, []);
+
+  // Advisor mode: no gate, no form — go straight to the lessons.
+  if (advisorWhatsapp) {
+    return <FreeLessonExperience locale={locale} program={program} advisorWhatsapp={advisorWhatsapp} />;
+  }
 
   if (unlocked === null) {
     return (
