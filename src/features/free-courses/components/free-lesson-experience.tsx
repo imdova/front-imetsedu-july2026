@@ -1,16 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { GraduationCap, CalendarClock, CheckCircle2, Award, Users, BrainCircuit, Radio, MessageCircle } from "lucide-react";
+import { GraduationCap, CalendarClock, CheckCircle2, Award, Users, BrainCircuit, Radio, MessageCircle, Layers, Flame } from "lucide-react";
 
 import type { FreeProgram } from "@/lib/dal/free-courses";
 import { FreeLecturePlayer } from "./free-lecture-player";
 import { FreeLectureQuiz } from "./free-lecture-quiz";
 import { getFreeQuiz } from "@/features/free-courses/lib/free-quiz-data";
 import { SimpleLeadForm } from "@/features/marketing/components/simple-lead-form";
+import { RegistrationCountdown } from "@/features/marketing/components/registration-countdown";
 import { cn } from "@/lib/utils";
 
 const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
+/** Cohort discount shown on the offer (edit to match the running promo). */
+const DISCOUNT = "30%";
 
 /** Full lesson experience: watch recorded lectures → quiz → enroll in the next live cohort. */
 export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { locale: string; program: FreeProgram; advisorWhatsapp?: string }) {
@@ -26,10 +29,10 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { loc
   };
 
   const BENEFITS = [
-    { icon: Radio, t: tr(locale, "Live interactive sessions", "جلسات مباشرة تفاعلية") },
+    { icon: Radio, t: tr(locale, "Attend live interactive sessions", "احضر الجلسات المباشرة التفاعلية") },
+    { icon: Layers, t: tr(locale, "Access to ALL resources & materials", "وصول لكل المصادر والمرفقات") },
     { icon: Award, t: tr(locale, "Accredited certificate", "شهادة معتمدة") },
     { icon: BrainCircuit, t: tr(locale, "Full exam preparation", "تحضير كامل للامتحان") },
-    { icon: Users, t: tr(locale, "Mentor + peer community", "مرشد + مجتمع زملاء") },
   ];
 
   return (
@@ -60,17 +63,22 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { loc
         <div className="grid lg:grid-cols-2">
           {/* pitch */}
           <div className="bg-gradient-to-br from-primary to-[#082a6b] p-7 text-primary-foreground sm:p-9">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4c430] px-3 py-1 text-xs font-bold text-[#0a1424]">
-              <CalendarClock className="size-3.5" /> {tr(locale, "Next live cohort", "الدفعة المباشرة القادمة")}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold">
+                <CalendarClock className="size-3.5 text-[#f4c430]" /> {tr(locale, "Next live cohort", "الدفعة المباشرة القادمة")}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4c430] px-3 py-1 text-xs font-extrabold text-[#0a1424]">
+                <Flame className="size-3.5" /> {tr(locale, `${DISCOUNT} OFF this cohort`, `خصم ${DISCOUNT} للدفعة القادمة`)}
+              </span>
+            </div>
             <h2 className="mt-3 font-heading text-2xl font-extrabold leading-tight sm:text-[1.7rem]">
-              {tr(locale, `Ready for the full ${name} program?`, `جاهز للبرنامج الكامل «${name}»؟`)}
+              {tr(locale, `Join the next ${name} live group`, `انضم لدفعة «${name}» المباشرة القادمة`)}
             </h2>
             <p className="mt-2 text-sm text-white/85">
               {tr(
                 locale,
-                "These free lectures are just the start. Join the next live group and earn your accredited certificate.",
-                "المحاضرات المجانية دي البداية بس. انضم للدفعة المباشرة القادمة واحصل على شهادتك المعتمدة.",
+                "These free lectures are just the start. Attend live sessions, unlock all resources and earn your accredited certificate.",
+                "المحاضرات المجانية دي البداية بس. احضر الجلسات المباشرة، افتح كل المصادر، واحصل على شهادتك المعتمدة.",
               )}
             </p>
             <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
@@ -80,7 +88,13 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { loc
                 </li>
               ))}
             </ul>
-            <p className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium">
+            <div className="mt-5">
+              <RegistrationCountdown
+                storageKey={`imets_offer_${program.slug}`}
+                label={tr(locale, "Offer ends in:", "ينتهي العرض خلال:")}
+              />
+            </div>
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium">
               <Users className="size-3.5 text-[#f4c430]" /> {tr(locale, "Seats are limited — cohorts fill fast.", "الأماكن محدودة — الدفعات بتخلص بسرعة.")}
             </p>
           </div>
@@ -96,16 +110,16 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { loc
               <div className="space-y-4 text-center">
                 <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[#25D366]/10 text-[#25D366]"><MessageCircle className="size-8" /></span>
                 <div>
-                  <p className="font-bold">{tr(locale, "Talk to a course advisor", "كلّم مستشار الكورس")}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{tr(locale, "Ask about the next live cohort, dates and offers — no forms.", "اسأل عن الدفعة المباشرة القادمة والمواعيد والعروض — من غير فورمات.")}</p>
+                  <p className="font-bold">{tr(locale, `Claim your ${DISCOUNT} cohort discount`, `احصل على خصم الدفعة ${DISCOUNT}`)}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{tr(locale, "Message a course advisor to reserve your seat in the next live group — before the offer ends.", "كلّم مستشار الكورس واحجز مكانك في الدفعة المباشرة القادمة — قبل ما العرض يخلص.")}</p>
                 </div>
                 <a
-                  href={`https://wa.me/${advisorWhatsapp}?text=${encodeURIComponent(tr(locale, `Hi, I watched the free ${name} lectures and want to know about the next live cohort.`, `مرحبًا، شاهدت محاضرات ${name} المجانية وحابب أعرف تفاصيل الدفعة المباشرة القادمة.`))}`}
+                  href={`https://wa.me/${advisorWhatsapp}?text=${encodeURIComponent(tr(locale, `Hi, I watched the free ${name} lectures and want to join the next live cohort with the ${DISCOUNT} discount.`, `مرحبًا، شاهدت محاضرات ${name} المجانية وحابب أنضم للدفعة المباشرة القادمة بخصم ${DISCOUNT}.`))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3.5 text-sm font-extrabold text-white transition hover:bg-[#25D366]/90"
                 >
-                  <MessageCircle className="size-5" /> {tr(locale, "Chat on WhatsApp", "تواصل عبر واتساب")}
+                  <MessageCircle className="size-5" /> {tr(locale, "Claim my discount on WhatsApp", "احجز مكاني بالخصم عبر واتساب")}
                 </a>
                 <p className="text-[11px] text-muted-foreground">{tr(locale, "Instant reply during working hours.", "رد فوري خلال ساعات العمل.")}</p>
               </div>
@@ -114,8 +128,8 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp }: { loc
                 <div className="mb-4 flex items-center gap-2">
                   <GraduationCap className="size-5 text-primary" />
                   <div>
-                    <p className="font-bold">{tr(locale, "Reserve your seat", "احجز مقعدك")}</p>
-                    <p className="text-xs text-muted-foreground">{tr(locale, "We'll contact you with the next dates & offer.", "هنتواصل معاك بمواعيد الدفعة والعرض.")}</p>
+                    <p className="font-bold">{tr(locale, `Reserve your seat — ${DISCOUNT} off`, `احجز مقعدك — بخصم ${DISCOUNT}`)}</p>
+                    <p className="text-xs text-muted-foreground">{tr(locale, "We'll contact you with the next dates & your discount.", "هنتواصل معاك بمواعيد الدفعة والخصم.")}</p>
                   </div>
                 </div>
                 <SimpleLeadForm path={`/free-courses/${program.slug}`} courseName={`${name} — Live cohort`} />

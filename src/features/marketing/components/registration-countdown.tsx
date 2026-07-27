@@ -9,7 +9,7 @@ import { Clock } from "lucide-react";
  * re-arms when it hits zero. Renders nothing on the server to avoid a hydration
  * mismatch (the value depends on the client clock).
  */
-export function RegistrationCountdown({ hours = 24, storageKey = "imets_reg_deadline_cphq" }: { hours?: number; storageKey?: string }) {
+export function RegistrationCountdown({ hours = 24, storageKey = "imets_reg_deadline_cphq", label = "ينتهي التسجيل خلال:" }: { hours?: number; storageKey?: string; label?: string }) {
   const [remaining, setRemaining] = React.useState<number | null>(null);
 
   React.useEffect(() => {
@@ -36,7 +36,7 @@ export function RegistrationCountdown({ hours = 24, storageKey = "imets_reg_dead
   return (
     <div className="inline-flex items-center gap-3 rounded-xl border border-[#f4c430]/40 bg-[#f4c430]/10 px-4 py-2.5">
       <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#8a6d00]">
-        <Clock className="size-4" /> ينتهي التسجيل خلال:
+        <Clock className="size-4" /> {label}
       </span>
       <span dir="ltr" className="flex items-center gap-1 font-mono text-2xl font-extrabold tabular-nums text-[#0a1424]">
         <Box>{pad(hh)}</Box><Colon /><Box>{pad(mm)}</Box><Colon /><Box>{pad(ss)}</Box>
