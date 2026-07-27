@@ -14,6 +14,14 @@ import { FreeLectureQuiz } from "./free-lecture-quiz";
 const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
 const QUIZ_ID = "__quiz__";
 
+/** Paid-course teasers shown locked in the playlist (drive the unlock intent). */
+const LOCKED_TEASERS = [
+  { en: "Live Sessions", ar: "جلسات مباشرة" },
+  { en: "Mock Exams", ar: "امتحانات تجريبية" },
+  { en: "Practice Questions", ar: "أسئلة تدريبية" },
+  { en: "Final Assessment", ar: "التقييم النهائي" },
+];
+
 /**
  * Public LMS: watch lectures, then take the quiz — all from one playlist. The
  * quiz is the last playlist item; selecting it replaces the video stage with
@@ -190,6 +198,24 @@ export function FreeLecturePlayer({
               </button>
             </li>
           )}
+
+          {/* Locked paid-course teasers */}
+          <li>
+            <div className="mb-1 mt-2 flex items-center gap-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+              <Lock className="size-3" /> {tr(locale, "Full course", "الكورس الكامل")}
+            </div>
+          </li>
+          {LOCKED_TEASERS.map((item) => (
+            <li key={item.en}>
+              <a href="#enroll-offer" className="group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-start opacity-80 transition hover:bg-muted/60 hover:opacity-100">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary">
+                  <Lock className="size-3.5" />
+                </span>
+                <span className="min-w-0 flex-1 text-sm leading-snug text-foreground/70">{tr(locale, item.en, item.ar)}</span>
+                <span className="shrink-0 text-[11px] font-bold text-primary opacity-0 transition group-hover:opacity-100">{tr(locale, "Unlock", "افتح")}</span>
+              </a>
+            </li>
+          ))}
         </ol>
       </aside>
     </div>
