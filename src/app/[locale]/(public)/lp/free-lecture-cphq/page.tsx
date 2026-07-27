@@ -128,23 +128,23 @@ export default async function FreeLectureCphqPage({
   return (
     <div dir="rtl" className="bg-background text-foreground">
       {/* ── 1 · Hero (pain headline + countdown + form) ── */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-primary/[0.06] to-background">
-        <div className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-24 top-40 size-72 rounded-full bg-[#f4c430]/10 blur-3xl" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-[#082a6b] text-primary-foreground">
+        <div className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 top-40 size-72 rounded-full bg-[#f4c430]/20 blur-3xl" />
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
           <div className="space-y-5">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
               <Sparkles className="size-3.5" /> 🎓 محاضرة مجانية أونلاين · Live Session
             </span>
             <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl lg:text-[2.6rem]">
-              عايز تنتقل لقسم <span className="text-primary">الجودة الصحية</span>…
+              عايز تنتقل لقسم <span className="text-[#f4c430]">الجودة الصحية</span>…
               <br />
               بس مش عارف تبدأ منين؟
             </h1>
-            <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-              سمعت عن <strong className="text-foreground">CPHQ</strong> بس مش متأكد إذا كانت تستاهل الاستثمار؟
-              احضر المحاضرة المجانية دي وتعرف <strong className="text-foreground">الطريق الصحيح</strong> قبل ما تدفع في أي دورة.
-              <span className="mt-2 block font-medium text-foreground">90 دقيقة تشرح لك:</span>
+            <p className="text-base leading-relaxed text-white/85 sm:text-lg">
+              سمعت عن <strong className="text-white">CPHQ</strong> بس مش متأكد إذا كانت تستاهل الاستثمار؟
+              احضر المحاضرة المجانية دي وتعرف <strong className="text-white">الطريق الصحيح</strong> قبل ما تدفع في أي دورة.
+              <span className="mt-2 block font-medium text-white">90 دقيقة تشرح لك:</span>
             </p>
             <ul className="grid gap-2.5 sm:grid-cols-2">
               {HERO_BULLETS.map((b) => (
@@ -155,11 +155,11 @@ export default async function FreeLectureCphqPage({
             </ul>
             <div className="pt-1"><RegistrationCountdown /></div>
             <div className="flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" className="gap-2">
+              <Button asChild size="lg" variant="secondary" className="gap-2 bg-[#f4c430] text-[#0a1424] hover:bg-[#f4c430]/90">
                 <a href="#register">احجز مقعدي المجاني <ArrowLeft className="size-4" /></a>
               </Button>
-              <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                <CalendarClock className="size-4 text-primary" /> الأماكن محدودة
+              <span className="inline-flex items-center gap-1.5 text-sm text-white/80">
+                <CalendarClock className="size-4 text-[#f4c430]" /> الأماكن محدودة
               </span>
             </div>
             <LandingHeroVideo path={PATH} />
