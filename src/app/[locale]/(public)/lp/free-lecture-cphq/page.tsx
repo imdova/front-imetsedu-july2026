@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import {
   ArrowLeft, Sparkles, CheckCircle2, Users, Star, Award,
@@ -100,10 +101,10 @@ const BENEFITS = [
 ];
 
 const SPEAKER_POINTS = [
-  "استشاري جودة معتمد CPHQ بخبرة عملية في المستشفيات",
-  "درّب آلاف المتخصصين الصحيين في مصر والخليج",
-  "خبرة في معايير JCI · CBAHI · GAHAR",
-  "أسلوب شرح بالعربي يبسّط المفاهيم الصعبة",
+  "CPHQ Certified",
+  "12 Years Experience",
+  "5,000+ Students Trained",
+  "Healthcare Consultant",
 ];
 
 const FAQS = [
@@ -328,13 +329,13 @@ export default async function FreeLectureCphqPage({
       <section className="bg-gradient-to-br from-primary to-[#082a6b] py-16 text-primary-foreground">
         <div className="mx-auto max-w-5xl px-4">
           <div className="grid items-center gap-8 lg:grid-cols-[290px_1fr]">
-            {/* Portrait (swap the placeholder for a real photo) */}
+            {/* Portrait */}
             <div className="mx-auto w-full max-w-[280px]">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-white/15 bg-white/10 shadow-2xl">
-                <div className="grid h-full place-items-center text-white/30"><GraduationCap className="size-28" /></div>
-                <div className="absolute inset-x-0 bottom-0 bg-black/30 p-3 text-center backdrop-blur-sm">
-                  <div className="text-sm font-bold">استشاري الجودة الصحية</div>
-                  <div className="text-xs text-white/70">IMETS Faculty</div>
+              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-white/15 shadow-2xl">
+                <Image src="/instructor-cphq.jpg" alt="محاضر CPHQ — استشاري الجودة الصحية في IMETS" fill sizes="280px" className="object-cover object-top" priority />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-3 pt-8 text-center">
+                  <div className="text-sm font-bold text-white">استشاري الجودة الصحية</div>
+                  <div className="text-xs text-white/75">IMETS Faculty · CPHQ</div>
                 </div>
               </div>
             </div>
@@ -353,7 +354,7 @@ export default async function FreeLectureCphqPage({
               </ul>
               <div className="flex flex-wrap gap-3 pt-1">
                 <SpeakerStat value="12+" label="سنوات خبرة" />
-                <SpeakerStat value="17,000+" label="متدرب" />
+                <SpeakerStat value="5,000+" label="طالب درّبهم" />
                 <SpeakerStat value="4.9★" label="تقييم" />
               </div>
               <div className="flex flex-wrap items-center gap-4 pt-1">
