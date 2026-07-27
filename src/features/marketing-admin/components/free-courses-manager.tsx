@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {
-  Plus, Trash2, Pencil, Loader2, GraduationCap, ExternalLink,
+  Plus, Trash2, Pencil, Loader2, GraduationCap, ExternalLink, Wand2,
   ChevronDown, Eye, EyeOff, Video, ShieldCheck, GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -48,6 +48,31 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
   const [pForm, setPForm] = React.useState(EMPTY_PROGRAM);
   const [saving, setSaving] = React.useState(false);
   const [slugTouched, setSlugTouched] = React.useState(false);
+  const [generating, setGenerating] = React.useState(false);
+
+  /** Create a draft free program for each real published course (same title + image). */
+  const generateFromCourses = async () => {
+    setGenerating(true);
+    const res = await dal.courses.fetchCourses();
+    if (!res.ok) { setGenerating(false); toast.error(res.error); return; }
+    const existing = new Set(programs.map((p) => p.slug));
+    const toCreate = res.data.filter((c) => c.status === "published" && c.slug && !existing.has(slugify(c.slug)));
+    if (toCreate.length === 0) { setGenerating(false); toast("Every course already has a free program"); return; }
+    const created: FreeProgram[] = [];
+    for (const c of toCreate) {
+      const r = await dal.freeCourses.createFreeProgram({
+        titleEn: c.titleEn,
+        titleAr: c.titleAr || c.titleEn,
+        slug: slugify(c.slug || c.titleEn),
+        thumbnailUrl: c.thumbnailUrl || "",
+        isPublished: false,
+      });
+      if (r.ok) created.push(r.data);
+    }
+    setPrograms((prev) => [...prev, ...created]);
+    setGenerating(false);
+    toast.success(`Created ${created.length} free program${created.length === 1 ? "" : "s"} from courses (as drafts)`);
+  };
 
   const openCreate = () => {
     setEditing(null); setPForm(EMPTY_PROGRAM); setSlugTouched(false); setProgOpen(true);
@@ -110,7 +135,13 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
           {programs.length} {programs.length === 1 ? "program" : "programs"} ·{" "}
           {programs.filter((p) => p.isPublished).length} published
         </p>
-        <Button className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> New program</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={generateFromCourses} disabled={generating}>
+            {generating ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
+            {generating ? "Generating…" : "Generate from courses"}
+          </Button>
+          <Button className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> New program</Button>
+        </div>
       </div>
 
       {programs.length === 0 ? (
