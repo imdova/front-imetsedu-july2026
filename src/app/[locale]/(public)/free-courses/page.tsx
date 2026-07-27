@@ -8,6 +8,7 @@ import { mergeSeo } from "@/lib/public-seo";
 import { seoAlternates, socialMeta, localeUrl, SITE_NAME } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { FreeCoursesExplorer } from "@/features/free-courses/components/free-courses-explorer";
+import { CourseLectureCard } from "@/features/free-courses/components/course-lecture-card";
 
 const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
 
@@ -48,11 +49,19 @@ export default async function FreeCoursesPage({
   const res = await dal.freeCourses.fetchFreePrograms();
   const programs = res.ok ? res.data : [];
 
+  // Real platform courses → each opens its free-lecture landing page.
+  const coursesRes = await dal.courses.fetchCourses();
+  const courses = (coursesRes.ok ? coursesRes.data : []).filter((c) => c.status === "published");
+  // Map a course slug to its free-lecture landing page; default to the CPHQ LP.
+  const FREE_LECTURE_LP: Record<string, string> = {};
+  const lpFor = (slug: string) => FREE_LECTURE_LP[slug] ?? "/lp/free-lecture-cphq";
+
   const totalLectures = programs.reduce((s, p) => s + (p.lectureCount || p.lectures.length), 0);
   const totalHours = Math.round(programs.reduce((s, p) => s + p.lectures.reduce((a, l) => a + (l.durationMinutes || 0), 0), 0) / 60);
+  const programCount = courses.length || programs.length;
   const STATS = [
-    { icon: GraduationCap, value: `${programs.length}`, label: tr(locale, "Programs", "برنامج") },
-    { icon: Video, value: `${totalLectures}`, label: tr(locale, "Free lectures", "محاضرة مجانية") },
+    { icon: GraduationCap, value: `${programCount}`, label: tr(locale, "Programs", "برنامج") },
+    { icon: Video, value: `${totalLectures || programCount}+`, label: tr(locale, "Free lectures", "محاضرة مجانية") },
     { icon: Clock, value: totalHours > 0 ? `${totalHours}+` : "—", label: tr(locale, "Hours", "ساعة") },
     { icon: BadgeCheck, value: "100%", label: tr(locale, "Free", "مجاني") },
   ];
@@ -121,28 +130,48 @@ export default async function FreeCoursesPage({
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        {programs.length === 0 ? (
-          <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-2xl border border-dashed border-border/70 py-16 text-center">
-            <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-              <GraduationCap className="size-7" />
-            </span>
-            <p className="font-medium">{tr(locale, "Free courses are coming soon", "الكورسات المجانية قريبًا")}</p>
-            <p className="max-w-xs text-sm text-muted-foreground">
-              {tr(
-                locale,
-                "We're putting the finishing touches on our free lectures. Check back shortly.",
-                "نضع اللمسات الأخيرة على محاضراتنا المجانية. تابعنا قريبًا.",
-              )}
+      {/* ── Free lecture per real course ── */}
+      {courses.length > 0 && (
+        <section className="mx-auto w-full max-w-7xl px-4 pt-12 sm:px-6 sm:pt-16 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-sm font-bold uppercase tracking-wide text-primary">{tr(locale, "By program", "حسب البرنامج")}</span>
+            <h2 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">{tr(locale, "Pick a course, watch a free lecture", "اختر كورس وشاهد محاضرة مجانية")}</h2>
+            <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+              {tr(locale, "Every program starts with a free introductory lecture — no payment, no card.", "كل برنامج بيبدأ بمحاضرة تعريفية مجانية — بدون دفع أو بطاقة.")}
             </p>
           </div>
-        ) : (
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((c) => (
+              <CourseLectureCard key={c.id} locale={locale} course={c} href={lpFor(c.slug)} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {programs.length > 0 && (
+        <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="mx-auto mb-2 max-w-2xl text-center">
+            <span className="text-sm font-bold uppercase tracking-wide text-primary">{tr(locale, "Watch on-site", "شاهد على المنصّة")}</span>
+            <h2 className="mt-1 font-heading text-2xl font-bold sm:text-3xl">{tr(locale, "Recorded free lecture series", "سلاسل محاضرات مجانية مسجّلة")}</h2>
+          </div>
           <FreeCoursesExplorer locale={locale} programs={programs} />
-        )}
-      </div>
+        </div>
+      )}
+
+      {programs.length === 0 && courses.length === 0 && (
+        <div className="mx-auto my-14 flex max-w-md flex-col items-center gap-3 rounded-2xl border border-dashed border-border/70 py-16 text-center">
+          <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <GraduationCap className="size-7" />
+          </span>
+          <p className="font-medium">{tr(locale, "Free courses are coming soon", "الكورسات المجانية قريبًا")}</p>
+          <p className="max-w-xs text-sm text-muted-foreground">
+            {tr(locale, "We're putting the finishing touches on our free lectures. Check back shortly.", "نضع اللمسات الأخيرة على محاضراتنا المجانية. تابعنا قريبًا.")}
+          </p>
+        </div>
+      )}
 
       {/* ── How it works ── */}
-      {programs.length > 0 && (
+      {(programs.length > 0 || courses.length > 0) && (
         <section className="bg-muted/30 py-14">
           <div className="mx-auto max-w-5xl px-4">
             <h2 className="text-center font-heading text-2xl font-bold sm:text-3xl">{tr(locale, "How it works", "إزاي بيشتغل")}</h2>
