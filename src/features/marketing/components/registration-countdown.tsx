@@ -38,7 +38,7 @@ export function RegistrationCountdown({ hours = 24, storageKey = "imets_reg_dead
       <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#8a6d00]">
         <Clock className="size-4" /> ينتهي التسجيل خلال:
       </span>
-      <span dir="ltr" className="flex items-center gap-1 font-mono text-lg font-extrabold tabular-nums text-[#0a1424]">
+      <span dir="ltr" className="flex items-center gap-1 font-mono text-2xl font-extrabold tabular-nums text-[#0a1424]">
         <Box>{pad(hh)}</Box><Colon /><Box>{pad(mm)}</Box><Colon /><Box>{pad(ss)}</Box>
       </span>
     </div>
@@ -46,7 +46,7 @@ export function RegistrationCountdown({ hours = 24, storageKey = "imets_reg_dead
 }
 
 function Box({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-md bg-[#0a1424] px-2 py-1 text-white">{children}</span>;
+  return <span className="rounded-md bg-[#0a1424] px-2.5 py-1 text-white">{children}</span>;
 }
 function Colon() {
   return <span className="text-[#0a1424]">:</span>;
