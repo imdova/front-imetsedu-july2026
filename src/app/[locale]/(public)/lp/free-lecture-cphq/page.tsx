@@ -31,10 +31,9 @@ export const metadata: Metadata = {
 };
 
 const HERO_BULLETS = [
-  "من أين تبدأ في مجال الجودة الصحية",
-  "هل شهادة CPHQ مناسبة لك أصلًا؟",
-  "كم رواتب المجال في مصر والخليج",
-  "كيف تستعد للاختبار وتنجح من أول مرة",
+  "هل CPHQ مناسبة لك؟",
+  "كيف تبدأ؟",
+  "وما هي فرص العمل؟",
 ];
 
 const TRUST = [
@@ -136,20 +135,18 @@ export default async function FreeLectureCphqPage({
             <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
               <Sparkles className="size-3.5" /> 🎓 محاضرة مجانية أونلاين · Live Session
             </span>
-            <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl lg:text-[2.6rem]">
-              عايز تنتقل لقسم <span className="text-[#f4c430]">الجودة الصحية</span>…
+            <h1 className="text-2xl font-extrabold leading-snug sm:text-[1.75rem] lg:text-[2rem]">
+              عايز تنتقل لقسم <span className="text-[#f4c430]">الجودة الصحية؟</span>
               <br />
-              بس مش عارف تبدأ منين؟
+              لكن مش عارف تبدأ؟
             </h1>
-            <p className="text-base leading-relaxed text-white/85 sm:text-lg">
-              سمعت عن <strong className="text-white">CPHQ</strong> بس مش متأكد إذا كانت تستاهل الاستثمار؟
-              احضر المحاضرة المجانية دي وتعرف <strong className="text-white">الطريق الصحيح</strong> قبل ما تدفع في أي دورة.
-              <span className="mt-2 block font-medium text-white">90 دقيقة تشرح لك:</span>
+            <p className="text-base font-medium text-white/90">
+              احضر محاضرة مجانية تساعدك على معرفة:
             </p>
-            <ul className="grid gap-2.5 sm:grid-cols-2">
+            <ul className="space-y-2">
               {HERO_BULLETS.map((b) => (
-                <li key={b} className="flex items-start gap-2 text-sm font-medium sm:text-[0.95rem]">
-                  <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-500" /> {b}
+                <li key={b} className="flex items-center gap-2 text-[0.95rem] font-medium">
+                  <CheckCircle2 className="size-5 shrink-0 text-[#f4c430]" /> {b}
                 </li>
               ))}
             </ul>
