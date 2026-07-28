@@ -112,6 +112,7 @@ const SPEAKER_POINTS = [
 ];
 
 const FAQS = [
+  { q: "هل سيتم إرسال رابط المحاضرة عبر الواتساب؟", a: "نعم — يصلك رابط المحاضرة والتذكيرات على الواتساب والبريد الإلكتروني قبل موعدها، فلا تقلق بشأن نسيان الموعد." },
   { q: "هل المحاضرة مجانية فعلًا؟", a: "نعم، مجانية 100% — لكن الأماكن محدودة لضمان جودة التفاعل وجلسة الأسئلة." },
   { q: "هل يوجد بث مباشر؟", a: "نعم، المحاضرة مباشرة عبر الإنترنت على Zoom في موعد محدد — وليست فيديو مسجّلًا." },
   { q: "هل المحاضرة مسجّلة؟ وهل يمكن الرجوع إليها؟", a: "نعم، نسجّل المحاضرة ويصل المشتركين رابط التسجيل بعدها للمراجعة." },
@@ -231,7 +232,7 @@ export default async function FreeLectureCphqArabPage({
       <section className="py-12">
         <div className="mx-auto max-w-4xl px-4">
           <div className="rounded-2xl border border-[#f4c430]/40 bg-[#f4c430]/[0.06] p-6">
-            <p className="mb-5 text-center text-base font-extrabold text-[#8a6d00]">🔥 نتائج آخر محاضرة · In the last session</p>
+            <p className="mb-5 text-center text-base font-extrabold text-[#8a6d00]">🔥 نتائج آخر محاضرة مجانية</p>
             <div className="grid grid-cols-3 gap-3">
               {LAST_COHORT.map((c, i) => (
                 <div key={c.label} className="relative text-center">
@@ -307,7 +308,7 @@ export default async function FreeLectureCphqArabPage({
       </section>
 
       {/* Audience */}
-      <Section eyebrow="لمن هذه المحاضرة؟" title="هي مناسبة لك إن كنت واحدًا من هؤلاء">
+      <Section eyebrow="لمن هذه المحاضرة؟" title="هذه المحاضرة مناسبة لك إذا كنت:">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {AUDIENCE.map((a) => (
             <div key={a.label} className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4">
@@ -436,14 +437,18 @@ export default async function FreeLectureCphqArabPage({
           <p className="text-sm opacity-90 sm:text-base">
             احجز مقعدك المجاني قبل اكتمال العدد — محاضرة مباشرة عبر الإنترنت، 90 دقيقة، وبشهادة حضور.
           </p>
-          <div className="flex flex-col items-center gap-1.5">
-            <span className="flex text-[#f4c430]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-5 fill-current" />)}</span>
-            <span className="text-sm font-semibold">انضم إلى أكثر من 17,000 متخصص صحي</span>
-          </div>
           <div className="flex justify-center"><RegistrationCountdown storageKey={COUNTDOWN_KEY} /></div>
           <Button asChild size="lg" variant="secondary" className="gap-2 bg-[#f4c430] text-[#0a1424] hover:bg-[#f4c430]/90">
-            <a href="#register">احجز مقعدي المجاني الآن <ArrowLeft className="size-4" /></a>
+            <a href="#register">ابدأ رحلتي في الجودة الصحية <ArrowLeft className="size-4" /></a>
           </Button>
+          {/* Micro social proof + reassurance right under the CTA */}
+          <div className="flex flex-col items-center gap-1.5 pt-1">
+            <span className="flex text-[#f4c430]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-5 fill-current" />)}</span>
+            <span className="text-sm font-semibold">انضم إلى أكثر من 17,000 متخصص صحي بدأوا رحلتهم مع IMETS</span>
+          </div>
+          <p className="inline-flex items-center justify-center gap-1.5 text-xs text-white/80">
+            🔒 بياناتك آمنة ولن تتم مشاركتها مع أي جهة.
+          </p>
         </div>
       </section>
 
