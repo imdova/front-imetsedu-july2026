@@ -300,6 +300,12 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
       </>}
       {block.type === "divider" && <F label="Color">{color("color")}</F>}
       {block.type === "spacer" && <F label="Height (px)">{num("height")}</F>}
+      {block.type === "html" && <>
+        <F label="HTML">
+          <Textarea rows={14} className="font-mono text-xs" value={String(x.html ?? "")} onChange={(e) => onChange({ html: e.target.value })} />
+        </F>
+        <p className="text-xs text-muted-foreground">Rendered exactly as written. Use inline styles and table layout for email compatibility.</p>
+      </>}
       {block.type === "hero" && <>
         <F label="Title">{text("title")}{tokens("title")}</F>
         <F label="Subtitle">{area("subtitle")}{tokens("subtitle")}</F>

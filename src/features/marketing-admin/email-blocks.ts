@@ -47,7 +47,8 @@ export type BlockType =
   | "product"
   | "countdown"
   | "spotlight"
-  | "coursesList";
+  | "coursesList"
+  | "html";
 
 export interface Block {
   id: string;
@@ -95,6 +96,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   countdown: "Countdown",
   spotlight: "Spotlight card",
   coursesList: "Courses list",
+  html: "Custom HTML",
 };
 
 let seq = 0;
@@ -180,6 +182,8 @@ export function defaultProps(type: BlockType): Record<string, string | number> {
         c2img: "", c2title: "CIC Certification", c2subtitle: "Infection Control", c2btn: "View course", c2url: `${BRAND.site}/courses`,
         c3img: "", c3title: "Hospital Management", c3subtitle: "Diploma", c3btn: "View course", c3url: `${BRAND.site}/courses`,
       };
+    case "html":
+      return { html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:24px 28px;font-family:Arial,sans-serif;color:#374151;font-size:15px;line-height:1.7;">Paste or write your HTML here. This block is rendered exactly as-is — use it for fully custom sections.</td></tr></table>` };
   }
 }
 
@@ -190,7 +194,7 @@ export function makeBlock(type: BlockType): Block {
 /* ── Preset library ── */
 export type PresetCategory = "Text" | "Content" | "Media" | "Buttons" | "Commerce" | "Interactive" | "Layout";
 /** Display order of the classified library groups. */
-export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Text", "Content", "Media", "Buttons", "Commerce", "Interactive"];
+export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Text", "Content", "Media", "Buttons", "Commerce", "Interactive", "Layout"];
 
 export interface Preset { id: string; label: string; category: PresetCategory; make: () => Block }
 const p = (type: BlockType, label: string, category: PresetCategory, overrides: Record<string, string | number> = {}): Preset => ({
@@ -226,6 +230,8 @@ export const PRESETS: Preset[] = [
   p("product", "Product card", "Commerce"),
   // Interactive
   p("countdown", "Countdown timer", "Interactive"),
+  // Layout
+  p("html", "Custom HTML", "Layout"),
 ];
 
 /**
@@ -528,11 +534,15 @@ export function renderBlock(b: Block): string {
         ${items}
       </div>`;
     }
+    case "html":
+      // Rendered verbatim — the block IS raw HTML. Full-bleed so the author
+      // controls all spacing.
+      return String(x.html ?? "");
   }
 }
 
 /** A block that paints its own full-width band (no side padding around it). */
-const isFullBleed = (t: BlockType) => t === "header" || t === "footer" || t === "hero";
+const isFullBleed = (t: BlockType) => t === "header" || t === "footer" || t === "hero" || t === "html";
 
 export function renderDesign(design: Design): string {
   const { blocks, settings } = design;
