@@ -298,6 +298,65 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
         <div className="grid grid-cols-2 gap-3"><F label="Wordmark — part 1">{text("wordTop")}</F><F label="Wordmark — part 2">{text("wordSub")}</F></div>
         <div className="grid grid-cols-2 gap-3"><F label="Part 1 colour">{color("topColor")}</F><F label="Part 2 colour">{color("subColor")}</F></div>
       </>}
+
+      {/* ── RTL newsletter sections ── */}
+      {block.type === "emailImageLogo" && <>
+        <F label="Logo image"><ImageUpload value={String(x.logoSrc ?? "")} onChange={(url) => onChange({ logoSrc: url })} label="Upload logo" hint="Hosted PNG/JPG" /></F>
+        <F label="…or paste a logo URL">{text("logoSrc")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Background">{color("bg")}</F><F label="Width (px)">{num("width")}</F></div>
+        <F label="Alt text">{text("logoAlt")}</F>
+      </>}
+      {block.type === "emailHero" && <>
+        <F label="Emoji">{text("emoji")}</F>
+        <F label="Title">{text("title")}{tokens("title")}</F>
+        <F label="Pill / eyebrow">{text("pill")}</F>
+        <div className="grid grid-cols-3 gap-2"><F label="Grad. from">{color("gradFrom")}</F><F label="Grad. to">{color("gradTo")}</F><F label="Fallback">{color("gradFallback")}</F></div>
+      </>}
+      {block.type === "emailStepper" && <>
+        <F label="Step label (eyebrow)">{text("stepLabel")}</F>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="grid grid-cols-[1fr_130px] gap-2">
+            <F label={`Step ${i} text`}>{text(`s${i}text`)}</F>
+            <F label="State">{pick(`s${i}state`, [["done", "✔ Done"], ["current", "▶ Current"], ["upcoming", "◻ Upcoming"]])}</F>
+          </div>
+        ))}
+      </>}
+      {block.type === "emailText" && <>
+        <F label="Greeting (optional)">{text("greeting")}{tokens("greeting")}</F>
+        <F label="Body — blank line = new paragraph, **bold**">{area("body")}{tokens("body")}</F>
+        <F label="Lead-in line before a list (optional)">{text("leadIn")}</F>
+      </>}
+      {block.type === "emailList" && <>
+        <F label="Style">{pick("variant", [["check", "✓ Checklist"], ["number", "1️⃣ Numbered"]])}</F>
+        <F label="Items — one per line">{area("items")}</F>
+      </>}
+      {block.type === "emailCallout" && <>
+        <F label="Text">{area("text")}</F>
+        <div className="grid grid-cols-3 gap-2"><F label="Background">{color("bg")}</F><F label="Border">{color("border")}</F><F label="Text colour">{color("color")}</F></div>
+      </>}
+      {block.type === "emailCta" && <>
+        <F label="Style">{pick("variant", [["yellow", "Yellow button"], ["whatsapp", "WhatsApp (green)"]])}</F>
+        <F label="Label">{text("label")}</F>
+        <F label="URL">{text("url")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Show 👇 above">{pick("showArrow", [["1", "Yes"], ["0", "No"]], true)}</F><F label="Show “doesn’t work?” link">{pick("showFallback", [["1", "Yes"], ["0", "No"]], true)}</F></div>
+        {Number(x.showFallback ?? 1) === 1 && <div className="grid grid-cols-2 gap-3"><F label="Fallback prompt">{text("fallbackPrompt")}</F><F label="Fallback link text">{text("fallbackLink")}</F></div>}
+      </>}
+      {block.type === "emailSignature" && <>
+        <F label="Avatar image"><ImageUpload value={String(x.avatarUrl ?? "")} onChange={(url) => onChange({ avatarUrl: url })} label="Upload photo" hint="Square image works best" /></F>
+        <F label="…or paste an image URL">{text("avatarUrl")}</F>
+        <F label="Sign-off line">{text("signoff")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Name">{text("name")}</F><F label="Role">{text("role")}</F></div>
+      </>}
+      {block.type === "emailFooter" && <>
+        <F label="Help prompt">{text("helpPrompt")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="WhatsApp URL">{text("waUrl")}</F><F label="WhatsApp button label">{text("waLabel")}</F></div>
+        <div className="grid grid-cols-2 gap-3"><F label="Brand name">{text("brandName")}</F><F label="Tagline">{text("brandTagline")}</F></div>
+        <div className="grid grid-cols-2 gap-3"><F label="Site URL">{text("siteUrl")}</F><F label="Site label">{text("siteLabel")}</F></div>
+        <F label="Email">{text("email")}</F>
+        <F label="Disclaimer line">{area("disclaimer")}</F>
+        <F label="Unsubscribe label">{text("unsubLabel")}</F>
+      </>}
+
       {block.type === "heading" && <>
         <F label="Text">{area("text")}{tokens("text")}</F>
         <F label="Level"><Select value={String(x.level ?? 2)} onValueChange={(v) => onChange({ level: Number(v) })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">H1</SelectItem><SelectItem value="2">H2</SelectItem><SelectItem value="3">H3</SelectItem></SelectContent></Select></F>

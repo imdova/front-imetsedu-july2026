@@ -49,6 +49,16 @@ export type BlockType =
   | "countdown"
   | "spotlight"
   | "coursesList"
+  // ── RTL newsletter sections (editable equivalents of the hand-authored HTML) ──
+  | "emailImageLogo"
+  | "emailHero"
+  | "emailStepper"
+  | "emailText"
+  | "emailList"
+  | "emailCallout"
+  | "emailCta"
+  | "emailSignature"
+  | "emailFooter"
   | "html";
 
 export interface Block {
@@ -98,6 +108,15 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   countdown: "Countdown",
   spotlight: "Spotlight card",
   coursesList: "Courses list",
+  emailImageLogo: "Logo image (RTL)",
+  emailHero: "Gradient hero (RTL)",
+  emailStepper: "Progress stepper",
+  emailText: "Rich text (RTL)",
+  emailList: "Checklist / list",
+  emailCallout: "Note callout",
+  emailCta: "CTA button (RTL)",
+  emailSignature: "Instructor signature",
+  emailFooter: "WhatsApp footer",
   html: "Custom HTML",
 };
 
@@ -190,6 +209,32 @@ export function defaultProps(type: BlockType): Record<string, string | number> {
       };
     case "html":
       return { html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:24px 28px;font-family:Arial,sans-serif;color:#374151;font-size:15px;line-height:1.7;">Paste or write your HTML here. This block is rendered exactly as-is — use it for fully custom sections.</td></tr></table>` };
+
+    /* ── RTL newsletter sections ── */
+    case "emailImageLogo":
+      return { logoSrc: `${BRAND.site}/logo-email.png`, logoAlt: "IMETS Medical School", bg: "#ffffff", width: 180 };
+    case "emailHero":
+      return { emoji: "🎉", title: "عنوان رئيسي", pill: "نص صغير أسفل العنوان", gradFrom: "#1111D4", gradTo: "#082a6b", gradFallback: "#132a7a" };
+    case "emailStepper":
+      return { stepLabel: "الخطوة 2 من 3", s1text: "التسجيل", s1state: "done", s2text: "مشاهدة المحاضرة المجانية", s2state: "current", s3text: "متابعة رحلتك", s3state: "upcoming" };
+    case "emailText":
+      return { greeting: "مرحبًا {{FirstName}}،", body: "اكتب فقرتك هنا. اترك سطرًا فارغًا لبدء فقرة جديدة، واستخدم **النص** للخط العريض.", leadIn: "" };
+    case "emailList":
+      return { variant: "check", items: "العنصر الأول\nالعنصر الثاني\nالعنصر الثالث" };
+    case "emailCallout":
+      return { text: "⏳ ملاحظة مهمة تظهر داخل صندوق ملوّن", bg: "#fff8e6", border: "#f6e4b0", color: "#8a6d00" };
+    case "emailCta":
+      return { label: "▶ ابدأ الآن", url: `${BRAND.site}/free-courses/cphq-preparation`, variant: "yellow", showArrow: 1, showFallback: 1, fallbackPrompt: "لا يعمل الزر؟", fallbackLink: "اضغط هنا" };
+    case "emailSignature":
+      return { avatarUrl: `${BRAND.site}/instructor-cphq.webp`, signoff: "نتمنى لك رحلة موفقة،", name: "Dr. Ahmed Habib", role: "CPHQ Instructor · IMETS Medical School" };
+    case "emailFooter":
+      return {
+        helpPrompt: "هل تحتاج مساعدة في اختيار المسار المناسب؟",
+        waUrl: "https://wa.me/201142293143", waLabel: "تحدث مع أحد مستشاري IMETS",
+        brandName: "IMETS Medical School", brandTagline: "المعهد الأمريكي لجودة الرعاية الصحية وإدارة المستشفيات",
+        siteUrl: BRAND.site, siteLabel: "imetsedu.com", email: "hello@imetsedu.com",
+        disclaimer: "لقد تلقيت هذا البريد لأنك سجّلت في المحاضرة المجانية على موقع IMETS.", unsubLabel: "إلغاء الاشتراك",
+      };
   }
 }
 
@@ -198,9 +243,9 @@ export function makeBlock(type: BlockType): Block {
 }
 
 /* ── Preset library ── */
-export type PresetCategory = "Headers" | "Text" | "Content" | "Media" | "Buttons" | "Commerce" | "Interactive" | "Layout";
+export type PresetCategory = "Headers" | "Newsletter (RTL)" | "Text" | "Content" | "Media" | "Buttons" | "Commerce" | "Interactive" | "Layout";
 /** Display order of the classified library groups. */
-export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Headers", "Text", "Content", "Media", "Buttons", "Commerce", "Interactive", "Layout"];
+export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Headers", "Newsletter (RTL)", "Text", "Content", "Media", "Buttons", "Commerce", "Interactive", "Layout"];
 
 export interface Preset { id: string; label: string; category: PresetCategory; make: () => Block }
 const p = (type: BlockType, label: string, category: PresetCategory, overrides: Record<string, string | number> = {}): Preset => ({
@@ -213,6 +258,18 @@ export const PRESETS: Preset[] = [
   // Headers — logo on an editable solid band (change the logo image + bg colour).
   p("logoHeader", "White header + logo", "Headers", { bg: "#ffffff", logoSrc: "", topColor: BRAND.blue, subColor: BRAND.ink }),
   p("logoHeader", "Blue header + logo", "Headers", { bg: BRAND.blue, logoSrc: `${BRAND.site}/logo-email.png`, topColor: BRAND.gold, subColor: "#ffffff" }),
+  // Newsletter (RTL) — Arabic email sections, each editable via fields.
+  p("emailImageLogo", "Logo image", "Newsletter (RTL)"),
+  p("emailHero", "Gradient hero", "Newsletter (RTL)"),
+  p("emailStepper", "Progress stepper", "Newsletter (RTL)"),
+  p("emailText", "Rich text", "Newsletter (RTL)"),
+  p("emailList", "Checklist", "Newsletter (RTL)"),
+  p("emailList", "Numbered list", "Newsletter (RTL)", { variant: "number", items: "الخطوة الأولى\nالخطوة الثانية\nالخطوة الثالثة" }),
+  p("emailCallout", "Note callout", "Newsletter (RTL)"),
+  p("emailCta", "CTA button (yellow)", "Newsletter (RTL)"),
+  p("emailCta", "WhatsApp button", "Newsletter (RTL)", { variant: "whatsapp", label: "تحدث مع مستشار البرنامج", url: "https://wa.me/201142293143", showFallback: 0 }),
+  p("emailSignature", "Instructor signature", "Newsletter (RTL)"),
+  p("emailFooter", "WhatsApp footer", "Newsletter (RTL)"),
   // Text
   p("heading", "Title", "Text", { text: "Welcome to IMETS", level: 1, align: "center", color: BRAND.blue }),
   p("heading", "Subtitle", "Text", { text: "Professional diplomas & courses", level: 3, align: "center", color: "#6b7280" }),
@@ -277,6 +334,13 @@ const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 /** Preserve line breaks from textarea input in HTML output. */
 const nl2br = (v: unknown) => esc(v).replace(/\n/g, "<br>");
+/** Escaped text with a light **bold** → <strong> convention (used by RTL blocks). */
+const mdBold = (v: unknown) =>
+  esc(v).replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#0f172a;">$1</strong>');
+/** Font stack shared by every RTL newsletter section. */
+const RTL_FONT = "'Segoe UI',Tahoma,Arial,sans-serif";
+/** Number-emoji markers for the ordered-list variant. */
+const NUM_EMOJI = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"];
 
 /* ── Rich-block render helpers (table-safe, inline-styled) ── */
 const pad2 = (n: number) => String(Math.max(0, Math.floor(n))).padStart(2, "0");
@@ -550,6 +614,62 @@ export function renderBlock(b: Block): string {
         ${items}
       </div>`;
     }
+    /* ── RTL newsletter sections (byte-compatible with the hand-authored HTML) ── */
+    case "emailImageLogo":
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td align="center" style="padding:22px 24px 14px;background:${esc(x.bg)};"><img src="${esc(x.logoSrc)}" alt="${esc(x.logoAlt)}" width="${esc(x.width)}" style="display:block;height:auto;border:0;"></td></tr></table>`;
+
+    case "emailHero":
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,${esc(x.gradFrom)} 0%,${esc(x.gradTo)} 100%);background-color:${esc(x.gradFallback)};font-family:${RTL_FONT};direction:rtl;"><tr><td align="center" style="padding:34px 28px 30px;"><div style="font-size:44px;line-height:1;margin-bottom:10px;">${esc(x.emoji)}</div><div style="color:#ffffff;font-size:24px;font-weight:800;line-height:1.35;">${esc(x.title)}</div><div style="display:inline-block;margin-top:12px;background:rgba(255,255,255,0.14);color:#ffffff;font-size:13px;font-weight:600;padding:7px 16px;border-radius:999px;">${esc(x.pill)}</div></td></tr></table>`;
+
+    case "emailStepper": {
+      const st = (s: unknown) => s === "done" ? { i: "✔", c: "#16a34a", w: 700 } : s === "upcoming" ? { i: "◻", c: "#94a3b8", w: 600 } : { i: "▶", c: "#1111D4", w: 800 };
+      const row = (t: unknown, s: unknown) => { const { i, c, w } = st(s); return `<div style="color:${c};font-size:14px;font-weight:${w};padding:3px 0;">${i}&nbsp;&nbsp;${esc(t)}</div>`; };
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td style="padding:22px 30px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fd;border:1px solid #e2e8f5;border-radius:12px;"><tr><td style="padding:14px 18px;"><div style="color:#1111D4;font-size:11px;font-weight:800;letter-spacing:.4px;margin-bottom:9px;">${esc(x.stepLabel)}</div>${row(x.s1text, x.s1state)}${row(x.s2text, x.s2state)}${row(x.s3text, x.s3state)}</td></tr></table></td></tr></table>`;
+    }
+
+    case "emailText": {
+      const greeting = x.greeting ? `<p style="margin:0 0 6px;color:#0f172a;font-size:17px;font-weight:800;">${esc(x.greeting)}</p>` : "";
+      const paras = String(x.body ?? "").split(/\n{2,}/).map((t) => t.trim()).filter(Boolean)
+        .map((t) => `<p style="margin:0 0 12px;color:#334155;font-size:15px;line-height:1.9;">${mdBold(t).replace(/\n/g, "<br>")}</p>`).join("");
+      const leadIn = x.leadIn ? `<p style="margin:0 0 12px;color:#0f172a;font-size:15px;font-weight:700;">${esc(x.leadIn)}</p>` : "";
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td style="padding:20px 30px 2px;">${greeting}${paras}${leadIn}</td></tr></table>`;
+    }
+
+    case "emailList": {
+      const items = String(x.items ?? "").split("\n").map((s) => s.trim()).filter(Boolean);
+      const isNum = x.variant === "number";
+      const rows = items.map((it, i) => {
+        const border = i > 0 ? "border-top:1px solid #e7edf8;" : "";
+        return isNum
+          ? `<tr><td style="padding:11px 12px;color:#1e293b;font-size:14.5px;line-height:1.75;${border}"><span style="font-size:16px;">${NUM_EMOJI[i] ?? `${i + 1}.`}</span>&nbsp;&nbsp;${mdBold(it)}</td></tr>`
+          : `<tr><td style="padding:9px 12px;color:#1e293b;font-size:14.5px;line-height:1.7;${border}"><span style="color:#16a34a;font-weight:800;">✓</span>&nbsp;&nbsp;${mdBold(it)}</td></tr>`;
+      }).join("");
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td style="padding:10px 30px 2px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fd;border:1px solid #e2e8f5;border-radius:14px;padding:6px 8px;">${rows}</table></td></tr></table>`;
+    }
+
+    case "emailCallout":
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td style="padding:16px 30px 2px;"><div style="background:${esc(x.bg ?? "#fff8e6")};border:1px solid ${esc(x.border ?? "#f6e4b0")};border-radius:10px;padding:11px 14px;color:${esc(x.color ?? "#8a6d00")};font-size:13px;font-weight:700;text-align:center;line-height:1.6;">${esc(x.text)}</div></td></tr></table>`;
+
+    case "emailCta": {
+      const isWa = x.variant === "whatsapp";
+      const bg = isWa ? "#25D366" : "#f4c430";
+      const color = isWa ? "#ffffff" : "#0a1424";
+      const pad = isWa ? "15px 34px" : "15px 40px";
+      const shadow = isWa ? "0 6px 16px rgba(37,211,102,0.35)" : "0 6px 16px rgba(244,196,48,0.35)";
+      const icon = isWa ? `<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/48px-WhatsApp.svg.png" width="20" height="20" alt="WhatsApp" style="vertical-align:middle;border:0;margin-left:8px;">` : "";
+      const arrow = Number(x.showArrow ?? 1) ? `<div style="color:#64748b;font-size:22px;line-height:1;margin-bottom:8px;">👇</div>` : "";
+      const fallback = Number(x.showFallback ?? (isWa ? 0 : 1))
+        ? `<p style="margin:14px 0 0;text-align:center;color:#cbd5e1;font-size:11px;line-height:1.6;">${esc(x.fallbackPrompt ?? "لا يعمل الزر؟")} <a href="${esc(x.url)}" target="_blank" style="color:#94a3b8;text-decoration:underline;">${esc(x.fallbackLink ?? "اضغط هنا")}</a></p>`
+        : "";
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td align="center" style="padding:18px 30px 8px;">${arrow}<a href="${esc(x.url)}" target="_blank" style="display:inline-block;background:${bg};color:${color};font-size:16px;font-weight:800;text-decoration:none;padding:${pad};border-radius:12px;box-shadow:${shadow};">${icon}${esc(x.label)}</a>${fallback}</td></tr></table>`;
+    }
+
+    case "emailSignature":
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td style="padding:16px 30px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eef2f9;"><tr><td width="60" valign="middle" style="padding-top:16px;width:60px;"><img src="${esc(x.avatarUrl)}" width="52" height="52" alt="${esc(x.name)}" style="display:block;width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid #e2e8f5;"></td><td valign="middle" style="padding-top:16px;padding-right:12px;"><div style="color:#334155;font-size:13px;line-height:1.5;">${esc(x.signoff)}</div><div style="color:#0f172a;font-size:15px;font-weight:800;line-height:1.4;">${esc(x.name)}</div><div style="color:#64748b;font-size:12px;line-height:1.5;">${esc(x.role)}</div></td></tr></table></td></tr></table>`;
+
+    case "emailFooter":
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td style="padding:16px 30px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f1fd;border:1px solid #d3e2fb;border-radius:14px;"><tr><td align="center" style="padding:24px 24px 22px;"><div style="color:#334155;font-size:13px;font-weight:600;margin-bottom:10px;">${esc(x.helpPrompt)}</div><a href="${esc(x.waUrl)}" target="_blank" style="display:inline-block;background:#25D366;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:11px 24px;border-radius:10px;box-shadow:0 4px 12px rgba(37,211,102,0.35);"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/48px-WhatsApp.svg.png" width="18" height="18" alt="WhatsApp" style="vertical-align:middle;border:0;margin-left:8px;">${esc(x.waLabel)}</a><div style="margin-top:20px;color:#0f172a;font-size:15px;font-weight:800;">${esc(x.brandName)}</div><div style="color:#64748b;font-size:12px;line-height:1.8;">${esc(x.brandTagline)}</div><div style="margin-top:10px;"><a href="${esc(x.siteUrl)}" style="color:#1111D4;font-size:12px;text-decoration:none;font-weight:700;">${esc(x.siteLabel)}</a><span style="color:#94a3b8;">&nbsp;•&nbsp;</span><a href="mailto:${esc(x.email)}" style="color:#475569;font-size:12px;text-decoration:none;">${esc(x.email)}</a></div><div style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.8;">${esc(x.disclaimer)}<br><a href="{{UnsubscribeURL}}" style="color:#94a3b8;text-decoration:underline;">${esc(x.unsubLabel)}</a></div></td></tr></table></td></tr></table>`;
+
     case "html":
       // Rendered verbatim — the block IS raw HTML. Full-bleed so the author
       // controls all spacing.
@@ -558,7 +678,9 @@ export function renderBlock(b: Block): string {
 }
 
 /** A block that paints its own full-width band (no side padding around it). */
-const isFullBleed = (t: BlockType) => t === "header" || t === "logoHeader" || t === "footer" || t === "hero" || t === "html";
+const RTL_SECTIONS: BlockType[] = ["emailImageLogo", "emailHero", "emailStepper", "emailText", "emailList", "emailCallout", "emailCta", "emailSignature", "emailFooter"];
+const isFullBleed = (t: BlockType) =>
+  t === "header" || t === "logoHeader" || t === "footer" || t === "hero" || t === "html" || RTL_SECTIONS.includes(t);
 
 export function renderDesign(design: Design): string {
   const { blocks, settings } = design;
