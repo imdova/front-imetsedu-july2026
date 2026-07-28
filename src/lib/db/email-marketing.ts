@@ -78,11 +78,13 @@ export interface EmailTemplate {
   name: string;
   subject: string;
   previewText: string;
+  category?: string;
   design?: string;
   body?: string;
   createdAt: string;
 }
-export type TemplateInput = { name: string; subject: string; previewText: string };
+export type TemplateInput = { name: string; subject: string; previewText: string; category?: string };
+export interface TemplateCategory { name: string; count: number }
 
 export interface BrandBlock {
   id: string;

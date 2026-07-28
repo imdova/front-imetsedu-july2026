@@ -47,10 +47,12 @@ export interface TemplateDto {
   name: string;
   subject: string;
   previewText: string;
+  category?: string;
   design?: string;
   body?: string;
   createdAt: string;
 }
+export interface TemplateCategoryDto { name: string; count: number }
 
 export interface AutomationDto {
   _id: string;

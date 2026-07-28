@@ -13,6 +13,8 @@ export const apiEmailCampaignAction = (id: string, action: string) => `${B}/camp
 export const API_EMAIL_TEMPLATES = `${B}/templates`;
 export const apiEmailTemplate = (id: string) => `${B}/templates/${id}`;
 export const apiEmailTemplateDesign = (id: string) => `${B}/templates/${id}/design`;
+export const API_EMAIL_TEMPLATE_CATEGORIES = `${B}/template-categories`;
+export const apiEmailTemplateCategory = (name: string) => `${B}/template-categories/${encodeURIComponent(name)}`;
 
 export const API_EMAIL_AUTOMATIONS = `${B}/automations`;
 export const apiEmailAutomation = (id: string) => `${B}/automations/${id}`;

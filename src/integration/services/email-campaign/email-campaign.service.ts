@@ -3,6 +3,7 @@ import {
   API_EMAIL_STATS, API_EMAIL_SEGMENTS, API_EMAIL_AUDIENCES, API_EMAIL_RECIPIENTS_PREVIEW,
   API_EMAIL_CAMPAIGNS, apiEmailCampaign, apiEmailCampaignAction,
   API_EMAIL_TEMPLATES, apiEmailTemplate, apiEmailTemplateDesign,
+  API_EMAIL_TEMPLATE_CATEGORIES, apiEmailTemplateCategory,
   API_EMAIL_AUTOMATIONS, apiEmailAutomation, apiEmailAutomationToggle,
   API_EMAIL_BRAND_BLOCKS, apiEmailBrandBlock,
   API_EMAIL_SUBSCRIBERS, apiEmailSubscriber, API_EMAIL_SUBSCRIBERS_BULK_DELETE,
@@ -10,7 +11,7 @@ import {
   API_EMAIL_SUBSCRIBER_GROUPS, apiEmailSubscriberGroup, API_EMAIL_SUBSCRIBER_GROUP_LINKS,
 } from "@integration/constants/api/email";
 import type {
-  CampaignDto, TemplateDto, AutomationDto, BrandBlockDto, EmailStatsDto, SegmentDto,
+  CampaignDto, TemplateDto, TemplateCategoryDto, AutomationDto, BrandBlockDto, EmailStatsDto, SegmentDto,
   AudienceDto, RecipientsPreviewDto, ManualRecipientDto, SubscriberDto, SubscriberGroupDto,
 } from "./types";
 
@@ -41,6 +42,12 @@ export const createTemplate = (input: Record<string, unknown>) => api.post<Templ
 export const updateTemplate = (id: string, patch: Record<string, unknown>) => api.patch<TemplateDto>(apiEmailTemplate(id), patch);
 export const deleteTemplate = (id: string) => api.delete<{ success: boolean }>(apiEmailTemplate(id));
 export const saveTemplateDesign = (id: string, design: string, body: string) => api.patch<TemplateDto>(apiEmailTemplateDesign(id), { design, body });
+
+/* Template categories */
+export const listTemplateCategories = () => api.get<TemplateCategoryDto[]>(API_EMAIL_TEMPLATE_CATEGORIES);
+export const createTemplateCategory = (name: string) => api.post<TemplateCategoryDto>(API_EMAIL_TEMPLATE_CATEGORIES, { name });
+export const renameTemplateCategory = (oldName: string, name: string) => api.patch<TemplateCategoryDto>(apiEmailTemplateCategory(oldName), { name });
+export const deleteTemplateCategory = (name: string) => api.delete<{ success: boolean }>(apiEmailTemplateCategory(name));
 
 /* Automations */
 export const listAutomations = () => api.get<AutomationDto[]>(API_EMAIL_AUTOMATIONS);

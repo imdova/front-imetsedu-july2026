@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type {
-  Campaign, CampaignInput, CampaignStatus, EmailTemplate, TemplateInput,
+  Campaign, CampaignInput, CampaignStatus, EmailTemplate, TemplateInput, TemplateCategory,
   AudienceSegment, Automation, EmailStats,
 } from "@/lib/db/email-marketing";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ const STATUS_BADGE: Record<CampaignStatus, "default" | "secondary" | "outline"> 
 const emptyCampaign: CampaignInput = {
   subject: "", previewText: "", fromName: "IMETS School", replyTo: "hello@imetsedu.com", audience: "all", status: "DRAFT",
 };
-const emptyTemplate: TemplateInput = { name: "", subject: "", previewText: "" };
+const emptyTemplate: TemplateInput = { name: "", subject: "", previewText: "", category: "" };
 
 export function EmailMarketing({
   initialCampaigns, initialTemplates, initialAutomations, initialSegments, initialStats,
@@ -134,7 +134,29 @@ export function EmailMarketing({
   const [tplEditing, setTplEditing] = React.useState<EmailTemplate | null>(null);
   const [tplForm, setTplForm] = React.useState<TemplateInput>(emptyTemplate);
   const openCreateTpl = () => { setTplEditing(null); setTplForm(emptyTemplate); setTplOpen(true); };
-  const openEditTpl = (t: EmailTemplate) => { setTplEditing(t); setTplForm({ name: t.name, subject: t.subject, previewText: t.previewText }); setTplOpen(true); };
+  const openEditTpl = (t: EmailTemplate) => { setTplEditing(t); setTplForm({ name: t.name, subject: t.subject, previewText: t.previewText, category: t.category ?? "" }); setTplOpen(true); };
+  const [previewTpl, setPreviewTpl] = React.useState<EmailTemplate | null>(null);
+  const [tplCats, setTplCats] = React.useState<TemplateCategory[]>([]);
+  const refreshTplCats = React.useCallback(async () => {
+    const res = await dal.emailMarketing.fetchTemplateCategories();
+    if (res.ok) setTplCats(res.data);
+  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- setState runs after an await, not synchronously
+  React.useEffect(() => { refreshTplCats(); }, [refreshTplCats]);
+  const addTplCat = async (name: string) => {
+    const res = await dal.emailMarketing.createTemplateCategory(name);
+    if (res.ok) { await refreshTplCats(); toast.success("Category added"); } else toast.error(res.error);
+  };
+  const renameTplCat = async (oldName: string, name: string) => {
+    const res = await dal.emailMarketing.renameTemplateCategory(oldName, name);
+    if (res.ok) { await refreshTplCats(); const r2 = await dal.emailMarketing.fetchTemplates(); if (r2.ok) setTemplates(r2.data); toast.success("Category renamed"); } else toast.error(res.error);
+  };
+  const deleteTplCat = async (name: string) => {
+    const okConfirm = await confirm({ title: "Delete category", description: `“${name}” will be removed. Its templates become uncategorized.`, confirmText: "Delete", variant: "destructive" });
+    if (!okConfirm) return;
+    const res = await dal.emailMarketing.deleteTemplateCategory(name);
+    if (res.ok) { await refreshTplCats(); const r2 = await dal.emailMarketing.fetchTemplates(); if (r2.ok) setTemplates(r2.data); toast.success("Category deleted"); } else toast.error(res.error);
+  };
   const saveTpl = async () => {
     if (!tplForm.name.trim()) return;
     const res = tplEditing
@@ -142,6 +164,7 @@ export function EmailMarketing({
       : await dal.emailMarketing.createTemplate(tplForm);
     if (res.ok && res.data) {
       setTemplates((p) => (p.some((x) => x.id === res.data!.id) ? p.map((x) => (x.id === res.data!.id ? res.data! : x)) : [res.data!, ...p]));
+      refreshTplCats();
       toast.success(tplEditing ? "Template updated" : "Template created"); setTplOpen(false);
     } else toast.error(res.ok ? "Not found" : res.error);
   };
@@ -228,29 +251,6 @@ export function EmailMarketing({
           </div>
         );
       },
-    },
-  ];
-
-  const templateColumns: ColumnDef<EmailTemplate>[] = [
-    { accessorKey: "name", header: "Template", cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
-    { accessorKey: "subject", header: "Subject", cell: ({ row }) => <span className="text-sm">{row.original.subject}</span> },
-    { accessorKey: "createdAt", header: "Created", cell: ({ row }) => <span className="text-sm text-muted-foreground">{timeAgo(row.original.createdAt)}</span> },
-    {
-      id: "actions", header: "",
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => applyTpl(row.original)}>Use</Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" size="sm"><MoreHorizontal className="size-4" /></Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => openEditTpl(row.original)}>Edit</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(`/admin/marketing/email/builder?templateId=${row.original.id}`)}>Design</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => removeTpl(row.original)}>Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
     },
   ];
 
@@ -380,11 +380,19 @@ export function EmailMarketing({
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-4">
-          <div className="flex justify-end">
-            <Button className="gap-1.5" onClick={openCreateTpl}><Plus className="size-4" /> New template</Button>
-          </div>
-          <DataTable columns={templateColumns} data={templates} pageSize={8}
-            emptyState={<div className="flex flex-col items-center gap-2 text-muted-foreground"><FileText className="size-8 opacity-50" /><p className="text-sm font-medium">No templates yet</p></div>} />
+          <TemplatesGallery
+            templates={templates}
+            categories={tplCats}
+            onNew={openCreateTpl}
+            onEdit={openEditTpl}
+            onDelete={removeTpl}
+            onPreview={setPreviewTpl}
+            onUse={applyTpl}
+            onOpenDesign={(t) => router.push(`/admin/marketing/email/builder?templateId=${t.id}`)}
+            onAddCategory={addTplCat}
+            onRenameCategory={renameTplCat}
+            onDeleteCategory={deleteTplCat}
+          />
         </TabsContent>
 
         <TabsContent value="automations" className="space-y-4">
@@ -410,11 +418,44 @@ export function EmailMarketing({
             <Editor label="Name" required value={tplForm.name} onChange={(v) => setTplForm((f) => ({ ...f, name: v }))} />
             <Editor label="Subject" value={tplForm.subject} onChange={(v) => setTplForm((f) => ({ ...f, subject: v }))} />
             <Editor label="Preview text" value={tplForm.previewText} onChange={(v) => setTplForm((f) => ({ ...f, previewText: v }))} />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">Category</Label>
+              <Input
+                list="tpl-cat-options"
+                value={tplForm.category ?? ""}
+                onChange={(e) => setTplForm((f) => ({ ...f, category: e.target.value }))}
+                placeholder="Uncategorized — type or pick a category"
+              />
+              <datalist id="tpl-cat-options">
+                {tplCats.map((c) => <option key={c.name} value={c.name} />)}
+              </datalist>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTplOpen(false)}>Cancel</Button>
             <Button onClick={saveTpl} disabled={!tplForm.name.trim()}>{tplEditing ? "Save changes" : "Create template"}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template preview */}
+      <Dialog open={!!previewTpl} onOpenChange={(o) => !o && setPreviewTpl(null)}>
+        <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="border-b border-border/60 p-4">
+            <DialogTitle className="truncate">{previewTpl?.name}</DialogTitle>
+            {previewTpl?.subject && <DialogDescription className="truncate">{previewTpl.subject}</DialogDescription>}
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-auto bg-muted/30">
+            {previewTpl?.body ? (
+              <iframe title="Template preview" srcDoc={previewTpl.body} className="h-[70vh] w-full border-0 bg-white" sandbox="" />
+            ) : (
+              <div className="flex flex-col items-center gap-2 p-16 text-center text-muted-foreground">
+                <FileText className="size-8 opacity-40" />
+                <p className="text-sm">This template has no design yet.</p>
+                {previewTpl && <Button size="sm" className="mt-1 gap-1.5" onClick={() => { const t = previewTpl; setPreviewTpl(null); router.push(`/admin/marketing/email/builder?templateId=${t.id}`); }}><Pencil className="size-4" /> Design it</Button>}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -700,5 +741,171 @@ function StatusPill({ active }: { active: boolean }) {
       <span className={cn("size-1.5 rounded-full", active ? "bg-emerald-500" : "bg-muted-foreground/50")} />
       {active ? "Running" : "Paused"}
     </span>
+  );
+}
+
+/* ────────────────────────── Templates gallery ────────────────────────── */
+
+const UNCATEGORIZED = "__uncat__";
+
+function TemplatesGallery({
+  templates, categories, onNew, onEdit, onDelete, onPreview, onUse, onOpenDesign,
+  onAddCategory, onRenameCategory, onDeleteCategory,
+}: {
+  templates: EmailTemplate[]; categories: TemplateCategory[];
+  onNew: () => void; onEdit: (t: EmailTemplate) => void; onDelete: (t: EmailTemplate) => void;
+  onPreview: (t: EmailTemplate) => void; onUse: (t: EmailTemplate) => void; onOpenDesign: (t: EmailTemplate) => void;
+  onAddCategory: (name: string) => void; onRenameCategory: (oldName: string, name: string) => void; onDeleteCategory: (name: string) => void;
+}) {
+  const [active, setActive] = React.useState<string | null>(null); // null = All
+  const [catDlg, setCatDlg] = React.useState<{ mode: "new" | "rename"; original?: string; value: string } | null>(null);
+
+  const uncatCount = templates.filter((t) => !t.category).length;
+  const visible = React.useMemo(() => {
+    if (active === null) return templates;
+    if (active === UNCATEGORIZED) return templates.filter((t) => !t.category);
+    return templates.filter((t) => t.category === active);
+  }, [templates, active]);
+
+  const submitCat = () => {
+    const v = catDlg?.value.trim();
+    if (!v) return;
+    if (catDlg!.mode === "new") onAddCategory(v);
+    else if (catDlg!.original && catDlg!.original !== v) onRenameCategory(catDlg!.original, v);
+    setCatDlg(null);
+  };
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+      {/* Category sidebar */}
+      <aside className="lg:sticky lg:top-20 lg:self-start">
+        <div className="rounded-2xl border border-border/60 bg-card">
+          <div className="flex items-center justify-between gap-2 border-b border-border/60 p-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</span>
+            <button onClick={() => setCatDlg({ mode: "new", value: "" })} title="Add category" className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Plus className="size-4" /></button>
+          </div>
+          <div className="space-y-0.5 p-2">
+            <CatRow label="All templates" count={templates.length} active={active === null} onClick={() => setActive(null)} />
+            {categories.map((c) => (
+              <CatRow
+                key={c.name} label={c.name} count={c.count} active={active === c.name}
+                onClick={() => setActive(c.name)}
+                onRename={() => setCatDlg({ mode: "rename", original: c.name, value: c.name })}
+                onDelete={() => onDeleteCategory(c.name)}
+              />
+            ))}
+            {uncatCount > 0 && (
+              <CatRow label="Uncategorized" count={uncatCount} active={active === UNCATEGORIZED} onClick={() => setActive(UNCATEGORIZED)} />
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* Cards */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {visible.length} {visible.length === 1 ? "template" : "templates"}{active && active !== UNCATEGORIZED ? ` in “${active}”` : ""}
+          </p>
+          <Button className="gap-1.5" onClick={onNew}><Plus className="size-4" /> New template</Button>
+        </div>
+
+        {visible.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border/70 bg-card p-12 text-center">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><FileText className="size-6" /></div>
+            <p className="text-sm font-medium">No templates here yet</p>
+            <Button className="mt-4 gap-1.5" onClick={onNew}><Plus className="size-4" /> New template</Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+            {visible.map((t) => (
+              <TemplateCard key={t.id} t={t} onEdit={onEdit} onDelete={onDelete} onPreview={onPreview} onUse={onUse} onOpenDesign={onOpenDesign} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add / rename category */}
+      <Dialog open={!!catDlg} onOpenChange={(o) => !o && setCatDlg(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>{catDlg?.mode === "new" ? "New category" : "Rename category"}</DialogTitle></DialogHeader>
+          <Input value={catDlg?.value ?? ""} autoFocus onChange={(e) => setCatDlg((d) => (d ? { ...d, value: e.target.value } : d))} onKeyDown={(e) => e.key === "Enter" && submitCat()} placeholder="e.g. CIC offers" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCatDlg(null)}>Cancel</Button>
+            <Button onClick={submitCat} disabled={!catDlg?.value.trim()}>{catDlg?.mode === "new" ? "Add" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function CatRow({ label, count, active, onClick, onRename, onDelete }: {
+  label: string; count: number; active: boolean; onClick: () => void; onRename?: () => void; onDelete?: () => void;
+}) {
+  return (
+    <div className={cn("group flex items-center gap-1 rounded-lg pr-1 transition", active ? "bg-primary/10" : "hover:bg-muted/60")}>
+      <button onClick={onClick} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2.5 py-1.5 text-left">
+        <span className={cn("truncate text-sm", active ? "font-semibold text-primary" : "text-foreground")}>{label}</span>
+        <span className={cn("shrink-0 rounded-full px-1.5 text-[11px] font-semibold tabular-nums", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>{count}</span>
+      </button>
+      {(onRename || onDelete) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted group-hover:opacity-100" title="Category options"><MoreHorizontal className="size-3.5" /></button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            {onRename && <DropdownMenuItem onClick={onRename}><Pencil className="size-4" /> Rename</DropdownMenuItem>}
+            {onDelete && <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </div>
+  );
+}
+
+function TemplateCard({ t, onEdit, onDelete, onPreview, onUse, onOpenDesign }: {
+  t: EmailTemplate; onEdit: (t: EmailTemplate) => void; onDelete: (t: EmailTemplate) => void;
+  onPreview: (t: EmailTemplate) => void; onUse: (t: EmailTemplate) => void; onOpenDesign: (t: EmailTemplate) => void;
+}) {
+  return (
+    <div className="group overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition hover:shadow-md">
+      {/* Thumbnail */}
+      <div className="relative h-52 overflow-hidden border-b border-border/60 bg-muted/40">
+        {t.body ? (
+          <div className="pointer-events-none absolute left-0 top-0 origin-top-left" style={{ width: 600, transform: "scale(0.417)" }}>
+            <iframe title={t.name} srcDoc={t.body} className="h-[520px] w-[600px] border-0 bg-white" scrolling="no" sandbox="" />
+          </div>
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+            <FileText className="size-7 opacity-40" />
+            <span className="text-[11px]">No design yet</span>
+          </div>
+        )}
+        {/* Hover overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-foreground/40 opacity-0 backdrop-blur-[1px] transition group-hover:opacity-100">
+          <Button size="sm" className="w-32 gap-1.5" onClick={() => onPreview(t)}><Eye className="size-4" /> Preview</Button>
+          <Button size="sm" variant="secondary" className="w-32 gap-1.5" onClick={() => onOpenDesign(t)}><Pencil className="size-4" /> Design</Button>
+        </div>
+      </div>
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-2 p-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{t.name}</p>
+          {t.category ? <span className="mt-0.5 inline-block rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{t.category}</span> : null}
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><button className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted"><MoreHorizontal className="size-4" /></button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={() => onPreview(t)}><Eye className="size-4" /> Preview</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onOpenDesign(t)}><Pencil className="size-4" /> Edit design</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(t)}><FileText className="size-4" /> Details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onUse(t)}><Send className="size-4" /> Use in campaign</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onDelete(t)} className="text-destructive focus:text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 }

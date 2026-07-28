@@ -10,7 +10,7 @@
 import { ok, type Result } from "@integration/lib/api-client";
 import * as svc from "@integration/services/email-campaign";
 import type {
-  Campaign, CampaignInput, EmailTemplate, TemplateInput,
+  Campaign, CampaignInput, EmailTemplate, TemplateInput, TemplateCategory,
   AudienceSegment, Automation, AutomationInput, EmailStats, BrandBlock,
   AudienceOption, RecipientsPreview, ManualRecipient,
   Subscriber, SubscriberInput, SubscriberGroup,
@@ -30,7 +30,7 @@ const mapCampaign = (d: svc.CampaignDto): Campaign => ({
 });
 const mapTemplate = (d: svc.TemplateDto): EmailTemplate => ({
   id: d._id, name: d.name, subject: d.subject, previewText: d.previewText,
-  design: d.design, body: d.body, createdAt: d.createdAt,
+  category: d.category ?? "", design: d.design, body: d.body, createdAt: d.createdAt,
 });
 const mapAutomation = (d: svc.AutomationDto): Automation => ({
   id: d._id, name: d.name, trigger: d.trigger as Automation["trigger"], triggerTag: d.triggerTag,
@@ -123,6 +123,24 @@ export async function updateTemplate(id: string, patch: Partial<TemplateInput>):
 }
 export async function deleteTemplate(id: string): Promise<Result<boolean>> {
   const res = await svc.deleteTemplate(id);
+  return res.ok ? ok(true) : res;
+}
+
+/* ── Template categories ── */
+export async function fetchTemplateCategories(): Promise<Result<TemplateCategory[]>> {
+  const res = await svc.listTemplateCategories();
+  return res.ok ? ok(res.data.map((c) => ({ name: c.name, count: c.count }))) : res;
+}
+export async function createTemplateCategory(name: string): Promise<Result<TemplateCategory>> {
+  const res = await svc.createTemplateCategory(name);
+  return res.ok ? ok({ name: res.data.name, count: res.data.count }) : res;
+}
+export async function renameTemplateCategory(oldName: string, name: string): Promise<Result<TemplateCategory>> {
+  const res = await svc.renameTemplateCategory(oldName, name);
+  return res.ok ? ok({ name: res.data.name, count: res.data.count }) : res;
+}
+export async function deleteTemplateCategory(name: string): Promise<Result<boolean>> {
+  const res = await svc.deleteTemplateCategory(name);
   return res.ok ? ok(true) : res;
 }
 export async function saveTemplateDesign(id: string, design: string, body: string): Promise<Result<EmailTemplate | null>> {
