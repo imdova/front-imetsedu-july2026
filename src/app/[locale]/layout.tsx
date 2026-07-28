@@ -62,7 +62,9 @@ export async function generateMetadata({
     title: { default: seoTitle, template: `%s · ${siteName}` },
     description,
     ...(keywords ? { keywords } : {}),
-    ...(faviconUrl ? { icons: { icon: faviconUrl, shortcut: faviconUrl } } : {}),
+    // When a branding favicon is set it is authoritative (icon + apple + shortcut).
+    // When absent, the file-based app/icon.tsx + apple-icon.tsx defaults apply.
+    ...(faviconUrl ? { icons: { icon: faviconUrl, shortcut: faviconUrl, apple: faviconUrl } } : {}),
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://imetsedu.com"),
     // Google Search Console site verification (rendered site-wide in <head>).
     verification: {
