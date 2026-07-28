@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import {
   type Step, type StepType, type EmailStep, type DelayStep, type ConditionStep,
   type ActionStep, type FlowSettings, type DelayUnit, type ConditionOn,
-  type ActionKind, parseFlow, serializeFlow, makeStep, formatDelay,
+  type ActionKind, type EmailLanguage, parseFlow, serializeFlow, makeStep, formatDelay,
   CONDITION_LABEL, ACTION_LABEL, triggerSummary,
 } from "@/features/marketing-admin/lib/automation-steps";
 
@@ -547,18 +547,29 @@ function EmailFields({ step, templates, onChange }: {
 }) {
   return (
     <>
-      <Field label="Subject line">
-        <Input value={step.subject} onChange={(e) => onChange({ subject: e.target.value })} placeholder="Welcome to IMETS 👋" />
+      <Field label="Email name">
+        <Input value={step.name ?? ""} onChange={(e) => onChange({ name: e.target.value })} placeholder="Internal name (not shown to recipients)" />
+      </Field>
+      <Field label="Email subject">
+        <Input value={step.subject} onChange={(e) => onChange({ subject: e.target.value })} placeholder="Welcome to IMETS 👋  ·  use {$last_name} to personalize" />
       </Field>
       <Field label="Preview text">
         <Textarea rows={2} value={step.previewText ?? ""} onChange={(e) => onChange({ previewText: e.target.value })} placeholder="Shown after the subject in the inbox" />
       </Field>
-      <Field label="From name">
-        <Input value={step.fromName ?? ""} onChange={(e) => onChange({ fromName: e.target.value })} placeholder="IMETS School" />
-      </Field>
-      <Field label="Email design">
+
+      {/* Who is it from? */}
+      <Section label="Who is it from?">
+        <Input value={step.fromName ?? ""} onChange={(e) => onChange({ fromName: e.target.value })} placeholder="IMETS Academy" />
+        <Input type="email" value={step.fromEmail ?? ""} onChange={(e) => onChange({ fromEmail: e.target.value })} placeholder="info@imetsacademy.com" dir="ltr" />
+        <p className="text-[11px] leading-relaxed text-amber-600">
+          To comply with Google &amp; Yahoo requirements and ensure deliverability, authenticate your sending domain.
+        </p>
+      </Section>
+
+      {/* Email content */}
+      <Field label="Email content">
         <Select value={step.templateId ?? "none"} onValueChange={(v) => onChange({ templateId: v === "none" ? undefined : v })}>
-          <SelectTrigger><SelectValue placeholder="Pick a template" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder="Pick a design" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="none">No design</SelectItem>
             {templates.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -570,12 +581,64 @@ function EmailFields({ step, templates, onChange }: {
           href={`/admin/marketing/email/builder?templateId=${step.templateId}`}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
         >
-          <Pencil className="size-3.5" /> Edit this design in the builder
+          <Pencil className="size-3.5" /> Edit email content in the builder
         </Link>
       ) : (
-        <p className="text-xs text-muted-foreground">Pick a saved template, or design new ones in the Email builder.</p>
+        <p className="text-xs text-muted-foreground">Pick a saved design, or create new ones in the Email builder.</p>
       )}
+
+      {/* Tracking options */}
+      <Section label="Tracking options">
+        <CheckRow
+          checked={!!step.trackClicks}
+          onChange={(v) => onChange({ trackClicks: v })}
+          title="Google Analytics link tracking"
+          desc="Track clicks from this email (requires GA on your website)."
+        />
+        <CheckRow
+          checked={step.trackOpens ?? true}
+          onChange={(v) => onChange({ trackOpens: v })}
+          title="Opens metric tracking"
+          desc="Track opens with an invisible beacon embedded in the email."
+        />
+      </Section>
+
+      {/* Language */}
+      <Field label="Language">
+        <Select value={step.language ?? "ar"} onValueChange={(v) => onChange({ language: v as EmailLanguage })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="ar">العربية (Arabic)</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
     </>
+  );
+}
+
+/** Labelled block that groups several controls under one heading. */
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+/** A checkbox-style row (title + description + switch) for tracking toggles. */
+function CheckRow({ checked, onChange, title, desc }: {
+  checked: boolean; onChange: (v: boolean) => void; title: string; desc: string;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-border/60 bg-muted/20 p-2.5">
+      <span>
+        <span className="block text-xs font-medium">{title}</span>
+        <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{desc}</span>
+      </span>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </label>
   );
 }
 

@@ -18,13 +18,23 @@ export type ActionKind =
   | "unsubscribe"
   | "notify";
 
+export type EmailLanguage = "en" | "ar";
+
 export interface EmailStep {
   id: string;
   type: "email";
+  /** Internal email name (not shown to recipients). */
+  name?: string;
   subject: string;
   previewText?: string;
   fromName?: string;
+  fromEmail?: string;
   templateId?: string;
+  /** Google-Analytics link (click) tracking. */
+  trackClicks?: boolean;
+  /** Invisible open-beacon tracking (on by default). */
+  trackOpens?: boolean;
+  language?: EmailLanguage;
 }
 export interface DelayStep {
   id: string;
@@ -73,7 +83,7 @@ export function makeStep(type: StepType): Step {
   const id = makeStepId();
   switch (type) {
     case "email":
-      return { id, type, subject: "New email", previewText: "", fromName: "" };
+      return { id, type, name: "", subject: "New email", previewText: "", fromName: "", fromEmail: "", trackClicks: false, trackOpens: true, language: "ar" };
     case "delay":
       return { id, type, amount: 1, unit: "days" };
     case "condition":
@@ -108,10 +118,15 @@ function migrateStep(raw: unknown): Step | null {
     return {
       id,
       type: "email",
+      name: typeof r.name === "string" ? r.name : "",
       subject: String(r.subject ?? "New email"),
       previewText: typeof r.previewText === "string" ? r.previewText : "",
       fromName: typeof r.fromName === "string" ? r.fromName : "",
+      fromEmail: typeof r.fromEmail === "string" ? r.fromEmail : "",
       templateId: typeof r.templateId === "string" ? r.templateId : undefined,
+      trackClicks: typeof r.trackClicks === "boolean" ? r.trackClicks : false,
+      trackOpens: typeof r.trackOpens === "boolean" ? r.trackOpens : true,
+      language: r.language === "en" || r.language === "ar" ? r.language : "ar",
     };
   if (r.type === "condition")
     return {
