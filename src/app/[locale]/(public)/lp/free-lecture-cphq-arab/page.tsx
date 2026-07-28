@@ -359,6 +359,9 @@ export default async function FreeLectureCphqArabPage({
                 نخبة من استشاريي الجودة المعتمدين بخبرة عملية داخل المستشفيات — لا تنظير. يشرحون بالعربية
                 ويركّزون على ما يفيدك في الامتحان وفي عملك من أول يوم.
               </p>
+              <p className="flex items-center gap-2 rounded-xl border border-[#f4c430]/40 bg-[#f4c430]/10 px-4 py-2.5 text-sm font-bold text-white">
+                <Users className="size-4 shrink-0 text-[#f4c430]" /> درّب أكثر من 5,000 متخصص صحي من مختلف الدول العربية.
+              </p>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {SPEAKER_POINTS.map((p) => (
                   <li key={p} className="flex items-start gap-2 text-sm"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#f4c430]" /> {p}</li>
