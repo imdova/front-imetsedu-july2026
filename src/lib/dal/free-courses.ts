@@ -4,8 +4,18 @@ import * as svc from "@integration/services/free-courses";
 
 export type VideoProvider = "youtube" | "vdocipher";
 
+export interface FreeModule {
+  id: string;
+  titleEn: string;
+  titleAr: string;
+  order: number;
+}
+
 export interface FreeLecture {
   id: string;
+  moduleId: string;
+  kind: "lesson" | "quiz";
+  quizId: string;
   titleEn: string;
   titleAr: string;
   descriptionEn: string;
@@ -16,6 +26,8 @@ export interface FreeLecture {
   resourceUrl: string;
   order: number;
   isPublished: boolean;
+  /** Derived: a lesson with no video / a quiz with no quiz selected is locked. */
+  locked: boolean;
 }
 
 export interface FreeProgram {
@@ -33,6 +45,7 @@ export interface FreeProgram {
   quizId: string;
   lectureCount: number;
   lectures: FreeLecture[];
+  modules: FreeModule[];
 }
 
 export type FreeProgramInput = {
@@ -49,7 +62,12 @@ export type FreeProgramInput = {
   quizId?: string;
 };
 
+export type FreeModuleInput = { titleEn: string; titleAr?: string; order?: number };
+
 export type FreeLectureInput = {
+  moduleId?: string;
+  kind?: "lesson" | "quiz";
+  quizId?: string;
   titleEn: string;
   titleAr: string;
   descriptionEn?: string;
@@ -62,8 +80,17 @@ export type FreeLectureInput = {
   isPublished?: boolean;
 };
 
+const mapModule = (d: svc.FreeModuleDto): FreeModule => ({
+  id: d._id, titleEn: d.titleEn, titleAr: d.titleAr ?? "", order: d.order ?? 0,
+});
+
 const mapLecture = (d: svc.FreeLectureDto): FreeLecture => ({
   id: d._id,
+  moduleId: d.moduleId ? String(d.moduleId) : "",
+  kind: d.kind === "quiz" ? "quiz" : "lesson",
+  quizId: d.quizId ?? "",
+  // A lesson with no video, or a quiz with no quiz picked, is locked in public.
+  locked: d.kind === "quiz" ? !d.quizId : !d.videoUrl,
   titleEn: d.titleEn,
   titleAr: d.titleAr,
   descriptionEn: d.descriptionEn ?? "",
@@ -91,6 +118,7 @@ const map = (d: svc.FreeProgramDto): FreeProgram => ({
   quizId: d.quizId ?? "",
   lectureCount: d.lectureCount ?? d.lectures?.length ?? 0,
   lectures: (d.lectures ?? []).map(mapLecture),
+  modules: (d.modules ?? []).map(mapModule),
 });
 
 /* ── Public ── */
@@ -144,5 +172,19 @@ export async function updateFreeLecture(lectureId: string, input: Partial<FreeLe
 
 export async function deleteFreeLecture(lectureId: string): Promise<Result<boolean>> {
   const res = await svc.removeLecture(lectureId);
+  return res.ok ? ok(true) : res;
+}
+
+/* ── Modules ── */
+export async function createFreeModule(programId: string, input: FreeModuleInput): Promise<Result<FreeModule>> {
+  const res = await svc.createModule(programId, input);
+  return res.ok ? ok(mapModule(res.data)) : res;
+}
+export async function updateFreeModule(moduleId: string, input: Partial<FreeModuleInput>): Promise<Result<FreeModule>> {
+  const res = await svc.updateModule(moduleId, input);
+  return res.ok ? ok(mapModule(res.data)) : res;
+}
+export async function deleteFreeModule(moduleId: string): Promise<Result<boolean>> {
+  const res = await svc.removeModule(moduleId);
   return res.ok ? ok(true) : res;
 }

@@ -1,5 +1,5 @@
 import { api, type Result } from "@integration/services/http/client";
-import type { FreeProgramDto, FreeLectureDto } from "./types";
+import type { FreeProgramDto, FreeLectureDto, FreeModuleDto } from "./types";
 
 const PUBLIC = "/free-courses";
 const ADMIN = "/admin/free-courses";
@@ -39,3 +39,13 @@ export const updateLecture = (lectureId: string, input: Record<string, unknown>)
 
 export const removeLecture = (lectureId: string): Promise<Result<{ success: boolean }>> =>
   api.delete(`${ADMIN}/lectures/${lectureId}`);
+
+/* ── Modules ── */
+export const createModule = (programId: string, input: Record<string, unknown>): Promise<Result<FreeModuleDto>> =>
+  api.post(`${ADMIN}/${programId}/modules`, input);
+
+export const updateModule = (moduleId: string, input: Record<string, unknown>): Promise<Result<FreeModuleDto>> =>
+  api.patch(`${ADMIN}/modules/${moduleId}`, input);
+
+export const removeModule = (moduleId: string): Promise<Result<{ success: boolean }>> =>
+  api.delete(`${ADMIN}/modules/${moduleId}`);

@@ -1,6 +1,17 @@
+export interface FreeModuleDto {
+  _id: string;
+  programId?: string;
+  titleEn: string;
+  titleAr?: string;
+  order?: number;
+}
+
 export interface FreeLectureDto {
   _id: string;
   programId?: string;
+  moduleId?: string | null;
+  kind?: "lesson" | "quiz";
+  quizId?: string;
   titleEn: string;
   titleAr: string;
   descriptionEn?: string;
@@ -30,6 +41,7 @@ export interface FreeProgramDto {
   lectureCount?: number;
   /** Present on the by-slug + admin detail endpoints. */
   lectures?: FreeLectureDto[];
+  modules?: FreeModuleDto[];
   createdAt?: string;
   updatedAt?: string;
 }
