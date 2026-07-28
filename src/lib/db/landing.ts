@@ -12,12 +12,15 @@ import { respond, clone } from "./delay";
 export type LandingStatus = "draft" | "published";
 export type LandingLanguage = "en" | "ar" | "mix";
 
+export interface LandingCategory { name: string; count: number }
+
 export interface MarketingLandingPage {
   id: string;
   name: string;
   path: string; // unique
   status: LandingStatus;
   language: LandingLanguage;
+  category?: string;
   campaign: string;
   audience: string;
   description: string;
@@ -37,6 +40,7 @@ export type LandingPageInput = {
   path: string;
   status: LandingStatus;
   language: LandingLanguage;
+  category?: string;
   campaign: string;
   audience: string;
   description: string;

@@ -12,8 +12,12 @@ import { dal } from "@/lib/dal";
 import { EmailGroupSelect } from "./email-group-select";
 import type { SubscriberGroup } from "@/lib/db/email-marketing";
 import type {
-  MarketingLandingPage, LandingPageInput, LandingStats, LandingStatus, LandingSort, LandingLanguage,
+  MarketingLandingPage, LandingPageInput, LandingStats, LandingStatus, LandingSort, LandingLanguage, LandingCategory,
 } from "@/lib/db/landing";
+import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,8 +36,9 @@ import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils/time-ago";
 
 const emptyForm: LandingPageInput = {
-  name: "", path: "", status: "draft", language: "en", campaign: "", audience: "", description: "", whatsappNumber: "", heroVideoUrl: "",
+  name: "", path: "", status: "draft", language: "en", category: "", campaign: "", audience: "", description: "", whatsappNumber: "", heroVideoUrl: "",
 };
+const UNCAT = "__uncat__";
 const LANG_TABS: { key: LandingLanguage; label: string }[] = [
   { key: "en", label: "English" },
   { key: "ar", label: "Arabic" },
@@ -61,10 +66,14 @@ export function LandingPagesPanel({
   const [sort, setSort] = React.useState<LandingSort>("newest");
   const [lang, setLang] = React.useState<LandingLanguage>("en");
   const [loading, setLoading] = React.useState(false);
+  const [activeCat, setActiveCat] = React.useState<string | null>(null); // null = all categories
 
   const langOf = (p: MarketingLandingPage) => p.language ?? "en";
   const langCount = (l: LandingLanguage) => rows.filter((r) => langOf(r) === l).length;
-  const visibleRows = React.useMemo(() => rows.filter((r) => langOf(r) === lang), [rows, lang]);
+  const inCat = React.useCallback((r: MarketingLandingPage) =>
+    activeCat === null ? true : activeCat === UNCAT ? !r.category : r.category === activeCat, [activeCat]);
+  const visibleRows = React.useMemo(() => rows.filter((r) => langOf(r) === lang && inCat(r)), [rows, lang, inCat]);
+  const uncatCount = rows.filter((r) => !r.category).length;
   const [emailGroups, setEmailGroups] = React.useState<SubscriberGroup[]>([]);
   React.useEffect(() => {
     dal.emailMarketing.fetchSubscriberGroups().then((r) => { if (r.ok) setEmailGroups(r.data); });
@@ -77,6 +86,29 @@ export function LandingPagesPanel({
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<MarketingLandingPage | null>(null);
   const [form, setForm] = React.useState<LandingPageInput>(emptyForm);
+
+  // Categories
+  const [cats, setCats] = React.useState<LandingCategory[]>([]);
+  const refreshCats = React.useCallback(async () => {
+    const res = await dal.landing.fetchLandingCategories();
+    if (res.ok) setCats(res.data);
+  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- setState runs after an await, not synchronously
+  React.useEffect(() => { refreshCats(); }, [refreshCats]);
+  const addCat = async (name: string) => {
+    const res = await dal.landing.createLandingCategory(name);
+    if (res.ok) { await refreshCats(); toast.success("Category added"); } else toast.error(res.error);
+  };
+  const renameCat = async (oldName: string, name: string) => {
+    const res = await dal.landing.renameLandingCategory(oldName, name);
+    if (res.ok) { await refreshCats(); refresh(); if (activeCat === oldName) setActiveCat(name); toast.success("Category renamed"); } else toast.error(res.error);
+  };
+  const removeCat = async (name: string) => {
+    const okc = await confirm({ title: "Delete category", description: `“${name}” will be removed. Its landing pages become uncategorized.`, confirmText: "Delete", variant: "destructive" });
+    if (!okc) return;
+    const res = await dal.landing.deleteLandingCategory(name);
+    if (res.ok) { await refreshCats(); refresh(); if (activeCat === name) setActiveCat(null); toast.success("Category deleted"); } else toast.error(res.error);
+  };
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
@@ -99,7 +131,7 @@ export function LandingPagesPanel({
   const openEdit = (p: MarketingLandingPage) => {
     setEditing(p);
     setForm({
-      name: p.name, path: p.path, status: p.status, language: p.language ?? "en", campaign: p.campaign,
+      name: p.name, path: p.path, status: p.status, language: p.language ?? "en", category: p.category ?? "", campaign: p.campaign,
       audience: p.audience, description: p.description, thumbnailUrl: p.thumbnailUrl, whatsappNumber: p.whatsappNumber ?? "",
       heroVideoUrl: p.heroVideoUrl ?? "",
     });
@@ -115,6 +147,7 @@ export function LandingPagesPanel({
       toast.success(editing ? "Landing page updated" : "Landing page created");
       setOpen(false);
       refresh();
+      refreshCats();
     } else {
       toast.error(res.ok ? "Not found" : res.error);
     }
@@ -308,6 +341,18 @@ export function LandingPagesPanel({
         <KpiCard label="Avg CTR" value={`${stats.ctr}%`} icon={Percent} intent="primary" helperText="clicks ÷ views" className="transition-shadow hover:shadow-md" />
       </div>
 
+      <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <LandingCatSidebar
+          categories={cats}
+          all={rows.length}
+          uncat={uncatCount}
+          active={activeCat}
+          onSelect={setActiveCat}
+          onAdd={addCat}
+          onRename={renameCat}
+          onDelete={removeCat}
+        />
+        <div className="min-w-0 space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
           <Input
@@ -363,7 +408,9 @@ export function LandingPagesPanel({
         })}
       </div>
 
-      <DataTable columns={columns} data={visibleRows} isLoading={loading} pageSize={8} />
+          <DataTable columns={columns} data={visibleRows} isLoading={loading} pageSize={8} />
+        </div>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -382,6 +429,17 @@ export function LandingPagesPanel({
                 <Input value={form.path} onChange={(e) => setForm((f) => ({ ...f, path: e.target.value }))} placeholder="/lp/my-campaign" />
               </Field>
             </div>
+            <Field label="Category">
+              <Input
+                list="landing-cat-options"
+                value={form.category ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                placeholder="Uncategorized — type or pick a category"
+              />
+              <datalist id="landing-cat-options">
+                {cats.map((c) => <option key={c.name} value={c.name} />)}
+              </datalist>
+            </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Status">
                 <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as LandingStatus }))}>
@@ -506,6 +564,78 @@ function Field({ label, required, children }: { label: string; required?: boolea
         {required && <span className="text-destructive"> *</span>}
       </Label>
       {children}
+    </div>
+  );
+}
+
+/* ── Category sidebar ── */
+function LandingCatSidebar({ categories, all, uncat, active, onSelect, onAdd, onRename, onDelete }: {
+  categories: LandingCategory[]; all: number; uncat: number; active: string | null;
+  onSelect: (c: string | null) => void; onAdd: (n: string) => void; onRename: (o: string, n: string) => void; onDelete: (n: string) => void;
+}) {
+  const [dlg, setDlg] = React.useState<{ mode: "new" | "rename"; original?: string; value: string } | null>(null);
+  const submit = () => {
+    const v = dlg?.value.trim();
+    if (!v) return;
+    if (dlg!.mode === "new") onAdd(v);
+    else if (dlg!.original && dlg!.original !== v) onRename(dlg!.original, v);
+    setDlg(null);
+  };
+  return (
+    <aside className="lg:sticky lg:top-20 lg:self-start">
+      <div className="rounded-2xl border border-border/60 bg-card">
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 p-3">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</span>
+          <button onClick={() => setDlg({ mode: "new", value: "" })} title="Add category" className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Plus className="size-4" /></button>
+        </div>
+        <div className="space-y-0.5 p-2">
+          <LandingCatRow label="All pages" count={all} active={active === null} onClick={() => onSelect(null)} />
+          {categories.map((c) => (
+            <LandingCatRow
+              key={c.name} label={c.name} count={c.count} active={active === c.name}
+              onClick={() => onSelect(c.name)}
+              onRename={() => setDlg({ mode: "rename", original: c.name, value: c.name })}
+              onDelete={() => onDelete(c.name)}
+            />
+          ))}
+          {uncat > 0 && <LandingCatRow label="Uncategorized" count={uncat} active={active === UNCAT} onClick={() => onSelect(UNCAT)} />}
+        </div>
+      </div>
+
+      <Dialog open={!!dlg} onOpenChange={(o) => !o && setDlg(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>{dlg?.mode === "new" ? "New category" : "Rename category"}</DialogTitle></DialogHeader>
+          <Input value={dlg?.value ?? ""} autoFocus onChange={(e) => setDlg((d) => (d ? { ...d, value: e.target.value } : d))} onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="e.g. CPHQ Funnel" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDlg(null)}>Cancel</Button>
+            <Button onClick={submit} disabled={!dlg?.value.trim()}>{dlg?.mode === "new" ? "Add" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </aside>
+  );
+}
+
+function LandingCatRow({ label, count, active, onClick, onRename, onDelete }: {
+  label: string; count: number; active: boolean; onClick: () => void; onRename?: () => void; onDelete?: () => void;
+}) {
+  return (
+    <div className={cn("group flex items-center gap-1 rounded-lg pr-1 transition", active ? "bg-primary/10" : "hover:bg-muted/60")}>
+      <button onClick={onClick} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2.5 py-1.5 text-left">
+        <span className={cn("truncate text-sm", active ? "font-semibold text-primary" : "text-foreground")}>{label}</span>
+        <span className={cn("shrink-0 rounded-full px-1.5 text-[11px] font-semibold tabular-nums", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>{count}</span>
+      </button>
+      {(onRename || onDelete) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted group-hover:opacity-100" title="Category options"><MoreHorizontal className="size-3.5" /></button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            {onRename && <DropdownMenuItem onClick={onRename}><Pencil className="size-4" /> Rename</DropdownMenuItem>}
+            {onDelete && <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }

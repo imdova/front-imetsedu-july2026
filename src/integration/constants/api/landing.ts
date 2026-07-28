@@ -2,6 +2,8 @@
 export const API_LANDING_PAGES = "/admin/landing/pages";
 export const API_LANDING_PAGES_STATS = "/admin/landing/pages/stats";
 export const apiLandingPage = (id: string) => `/admin/landing/pages/${id}`;
+export const API_LANDING_CATEGORIES = "/admin/landing/categories";
+export const apiLandingCategory = (name: string) => `/admin/landing/categories/${encodeURIComponent(name)}`;
 
 // Admin — free-exam leads
 export const API_EXAM_LEADS = "/admin/free-exam/leads";

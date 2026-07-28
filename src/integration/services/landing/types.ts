@@ -1,10 +1,13 @@
 /** Raw backend shapes from the NestJS `landing` module. */
+export interface LandingCategoryDto { name: string; count: number }
+
 export interface LandingPageDto {
   _id: string;
   name: string;
   path: string;
   status: string;
   language?: string;
+  category?: string;
   campaign: string;
   audience: string;
   description: string;

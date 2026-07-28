@@ -10,7 +10,7 @@
  */
 import { ok, type Result } from "@integration/lib/api-client";
 import * as svc from "@integration/services/landing";
-import type { MarketingLandingPage, LandingPageInput, LandingStats, ExamLead } from "@/lib/db/landing";
+import type { MarketingLandingPage, LandingPageInput, LandingStats, ExamLead, LandingCategory } from "@/lib/db/landing";
 import type * as cms from "@/lib/db/landing-cms";
 
 const ctrOf = (clicks: number, views: number) => (views > 0 ? Math.round((clicks / views) * 1000) / 10 : 0);
@@ -41,6 +41,7 @@ export async function fetchLandingHeroVideo(path: string): Promise<string> {
 const mapPage = (d: svc.LandingPageDto): MarketingLandingPage => ({
   id: d._id, name: d.name, path: d.path, status: d.status as MarketingLandingPage["status"],
   language: (d.language as MarketingLandingPage["language"]) ?? "en",
+  category: d.category ?? "",
   campaign: d.campaign, audience: d.audience, description: d.description, thumbnailUrl: d.thumbnailUrl,
   whatsappNumber: d.whatsappNumber ?? "",
   heroVideoUrl: d.heroVideoUrl ?? "",
@@ -76,6 +77,24 @@ export async function updateLandingPage(id: string, patch: Partial<LandingPageIn
 }
 export async function deleteLandingPage(id: string): Promise<Result<boolean>> {
   const res = await svc.deletePage(id);
+  return res.ok ? ok(true) : res;
+}
+
+/* ── Landing-page categories ── */
+export async function fetchLandingCategories(): Promise<Result<LandingCategory[]>> {
+  const res = await svc.listLandingCategories();
+  return res.ok ? ok(res.data.map((c) => ({ name: c.name, count: c.count }))) : res;
+}
+export async function createLandingCategory(name: string): Promise<Result<LandingCategory>> {
+  const res = await svc.createLandingCategory(name);
+  return res.ok ? ok({ name: res.data.name, count: res.data.count }) : res;
+}
+export async function renameLandingCategory(oldName: string, name: string): Promise<Result<LandingCategory>> {
+  const res = await svc.renameLandingCategory(oldName, name);
+  return res.ok ? ok({ name: res.data.name, count: res.data.count }) : res;
+}
+export async function deleteLandingCategory(name: string): Promise<Result<boolean>> {
+  const res = await svc.deleteLandingCategory(name);
   return res.ok ? ok(true) : res;
 }
 

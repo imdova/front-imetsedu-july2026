@@ -1,6 +1,7 @@
 import { api, type Result } from "@integration/services/http/client";
 import {
   API_LANDING_PAGES, API_LANDING_PAGES_STATS, apiLandingPage,
+  API_LANDING_CATEGORIES, apiLandingCategory,
   API_EXAM_LEADS, API_EXAM_LEADS_STATS, API_EXAM_LEADS_EMAIL, apiExamLead,
   API_LANDING_TRACK, API_LANDING_PUBLIC_CONFIG, API_FREE_EXAM_CAPTURE, API_LANDING_SUBSCRIBE,
   API_LANDING_TESTIMONIALS, apiLandingTestimonial, API_LANDING_SPONSORS, apiLandingSponsor,
@@ -8,7 +9,7 @@ import {
   API_LANDING_CONTACT, apiLandingMessage,
 } from "@integration/constants/api/landing";
 import type {
-  LandingPageDto, ExamLeadDto, LandingStatsDto, ExamLeadStatsDto, EmailLeadsResultDto,
+  LandingPageDto, LandingCategoryDto, ExamLeadDto, LandingStatsDto, ExamLeadStatsDto, EmailLeadsResultDto,
   TestimonialDto, SponsorDto, InsightDto, SubscriberDto, MessageDto,
 } from "./types";
 
@@ -29,6 +30,12 @@ export const getPage = (id: string) => api.get<LandingPageDto>(apiLandingPage(id
 export const createPage = (input: Record<string, unknown>) => api.post<LandingPageDto>(API_LANDING_PAGES, input);
 export const updatePage = (id: string, patch: Record<string, unknown>) => api.patch<LandingPageDto>(apiLandingPage(id), patch);
 export const deletePage = (id: string) => api.delete<{ success: boolean }>(apiLandingPage(id));
+
+/* ── Landing-page categories (admin) ── */
+export const listLandingCategories = () => api.get<LandingCategoryDto[]>(API_LANDING_CATEGORIES);
+export const createLandingCategory = (name: string) => api.post<LandingCategoryDto>(API_LANDING_CATEGORIES, { name });
+export const renameLandingCategory = (oldName: string, name: string) => api.patch<LandingCategoryDto>(apiLandingCategory(oldName), { name });
+export const deleteLandingCategory = (name: string) => api.delete<{ success: boolean }>(apiLandingCategory(name));
 
 /* ── Exam leads (admin) ── */
 export function listLeads(params: { search?: string; path?: string } = {}): Promise<Result<ExamLeadDto[]>> {
