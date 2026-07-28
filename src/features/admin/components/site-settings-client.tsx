@@ -58,7 +58,7 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
   const checklist = [
     { ok: !!form.general.siteName, todo: "Add site name", section: "general" as SectionId },
     { ok: !!form.general.tagline, todo: "Add tagline", section: "general" as SectionId },
-    { ok: !!form.branding.logoUrl, todo: "Add navbar logo", section: "branding" as SectionId },
+    { ok: !!form.branding.logoUrl, todo: "Add light navbar logo", section: "branding" as SectionId },
     { ok: !!form.branding.faviconUrl, todo: "Add favicon", section: "branding" as SectionId },
     { ok: !!form.branding.ogImage, todo: "Add social share image", section: "branding" as SectionId },
     { ok: !!form.contact.supportEmail, todo: "Add support email", section: "contact" as SectionId },
@@ -175,8 +175,8 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
             </>}
 
             {active === "branding" && <div className="grid gap-5 sm:grid-cols-2">
-              <F label="Navbar logo"><ImageUpload value={form.branding.logoUrl} onChange={(url) => patch("branding", { logoUrl: url })} /></F>
-              <F label="Dark-mode logo"><ImageUpload value={form.branding.darkLogoUrl} onChange={(url) => patch("branding", { darkLogoUrl: url })} /></F>
+              <F label="Light navbar logo"><ImageUpload value={form.branding.logoUrl} onChange={(url) => patch("branding", { logoUrl: url })} hint="Shown on the light/white navbar" /></F>
+              <F label="Blue navbar logo"><ImageUpload value={form.branding.darkLogoUrl} onChange={(url) => patch("branding", { darkLogoUrl: url })} hint="Shown on the blue hero navbar" /></F>
               <F label="Footer logo"><ImageUpload value={form.branding.footerLogoUrl} onChange={(url) => patch("branding", { footerLogoUrl: url })} /></F>
               <F label="Favicon"><ImageUpload value={form.branding.faviconUrl} onChange={(url) => patch("branding", { faviconUrl: url })} hint="Square icon" /></F>
               <F label="Default social (OG) image"><ImageUpload value={form.branding.ogImage} onChange={(url) => patch("branding", { ogImage: url })} hint="1200×630" /></F>

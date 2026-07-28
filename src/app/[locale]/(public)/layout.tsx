@@ -25,7 +25,10 @@ export default async function PublicLayout({
     getTheme().catch(() => null),
     dal.siteSettings.fetchPublicSettings().then((r) => (r.ok ? r.data : null)).catch(() => null),
   ]);
-  const logoLight = theme?.logoLight;
+  // Navbar logos come from Site Settings → Branding (admin-editable); fall back
+  // to the legacy theme for the light one.
+  const logoLight = settings?.branding?.logoUrl || theme?.logoLight;
+  const logoBlue = settings?.branding?.darkLogoUrl;
 
   // Maintenance gate — when enabled, the public site shows the maintenance
   // screen. (Admins reach /admin via the protected area, which is unaffected.)
@@ -86,7 +89,7 @@ export default async function PublicLayout({
     <div className="flex min-h-svh flex-col">
       <JsonLd data={[organizationLd(), websiteLd()]} />
       <PublicBannerBar />
-      <PublicHeader logoLight={logoLight} locale={locale} megaCategories={megaCategories} megaCourses={megaCourses} />
+      <PublicHeader logoLight={logoLight} logoBlue={logoBlue} locale={locale} megaCategories={megaCategories} megaCourses={megaCourses} />
       <main className="flex-1">{children}</main>
       <PublicFooter logoLight={logoLight} />
     </div>

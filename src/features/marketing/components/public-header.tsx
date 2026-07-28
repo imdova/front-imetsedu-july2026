@@ -20,11 +20,13 @@ import {
 
 export function PublicHeader({
   logoLight,
+  logoBlue,
   locale = "en",
   megaCategories = [],
   megaCourses = [],
 }: {
   logoLight?: string;
+  logoBlue?: string;
   locale?: string;
   megaCategories?: MegaCategory[];
   megaCourses?: MegaCourse[];
@@ -68,10 +70,11 @@ export function PublicHeader({
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
           {isHome ? (
-            // White + gold brand logo for the blue hero header.
+            // Logo for the blue hero navbar (admin-configurable), falling back
+            // to the packaged white+gold mark.
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src="/logo-white.svg"
+              src={logoBlue || "/logo-white.svg"}
               alt={BRAND.fullName}
               className="h-9 w-auto max-w-[190px] object-contain"
             />
