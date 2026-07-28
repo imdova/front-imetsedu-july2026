@@ -66,6 +66,9 @@ export interface FlowSettings {
    * change; `triggerTag` mirrors a comma-joined copy for legacy display.
    */
   triggerGroups?: string[];
+  /** Sender identity applied to EVERY email in the flow (set once on the trigger). */
+  fromName?: string;
+  fromEmail?: string;
 }
 
 export interface Flow {
@@ -73,7 +76,12 @@ export interface Flow {
   steps: Step[];
 }
 
-export const DEFAULT_SETTINGS: FlowSettings = { repeat: false, triggerGroups: [] };
+export const DEFAULT_FROM_NAME = "IMETS Medical School";
+export const DEFAULT_FROM_EMAIL = "hello@imetsedu.com";
+
+export const DEFAULT_SETTINGS: FlowSettings = {
+  repeat: false, triggerGroups: [], fromName: DEFAULT_FROM_NAME, fromEmail: DEFAULT_FROM_EMAIL,
+};
 
 let seq = 0;
 export const makeStepId = () =>
@@ -163,6 +171,8 @@ export function parseFlow(raw?: string | null): Flow {
         triggerGroups: Array.isArray(settings.triggerGroups)
           ? settings.triggerGroups.filter((g): g is string => typeof g === "string")
           : [],
+        fromName: typeof settings.fromName === "string" && settings.fromName ? settings.fromName : DEFAULT_FROM_NAME,
+        fromEmail: typeof settings.fromEmail === "string" && settings.fromEmail ? settings.fromEmail : DEFAULT_FROM_EMAIL,
       },
       steps: rawSteps.map(migrateStep).filter(Boolean) as Step[],
     };

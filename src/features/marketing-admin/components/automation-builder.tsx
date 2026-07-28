@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -26,7 +25,7 @@ import {
   type Step, type StepType, type EmailStep, type DelayStep, type ConditionStep,
   type ActionStep, type FlowSettings, type DelayUnit, type ConditionOn,
   type ActionKind, type EmailLanguage, parseFlow, serializeFlow, makeStep, formatDelay,
-  CONDITION_LABEL, ACTION_LABEL, triggerSummary,
+  CONDITION_LABEL, ACTION_LABEL, triggerSummary, DEFAULT_FROM_NAME, DEFAULT_FROM_EMAIL,
 } from "@/features/marketing-admin/lib/automation-steps";
 
 /* ── Visual tokens per step type ── */
@@ -476,6 +475,24 @@ function WorkflowSettings({
             </p>
           </Field>
         )}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground">Who is it from?</Label>
+          <Input
+            value={settings.fromName ?? DEFAULT_FROM_NAME}
+            onChange={(e) => setSettings({ ...settings, fromName: e.target.value })}
+            placeholder={DEFAULT_FROM_NAME}
+          />
+          <Input
+            type="email" dir="ltr"
+            value={settings.fromEmail ?? DEFAULT_FROM_EMAIL}
+            onChange={(e) => setSettings({ ...settings, fromEmail: e.target.value })}
+            placeholder={DEFAULT_FROM_EMAIL}
+          />
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Applied to every email in this automation.
+          </p>
+        </div>
+
         <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-border/60 bg-muted/30 p-3">
           <span>
             <span className="block text-sm font-medium">Repeat for re-joins</span>
@@ -553,18 +570,6 @@ function EmailFields({ step, templates, onChange }: {
       <Field label="Email subject">
         <Input value={step.subject} onChange={(e) => onChange({ subject: e.target.value })} placeholder="Welcome to IMETS 👋  ·  use {$last_name} to personalize" />
       </Field>
-      <Field label="Preview text">
-        <Textarea rows={2} value={step.previewText ?? ""} onChange={(e) => onChange({ previewText: e.target.value })} placeholder="Shown after the subject in the inbox" />
-      </Field>
-
-      {/* Who is it from? */}
-      <Section label="Who is it from?">
-        <Input value={step.fromName ?? ""} onChange={(e) => onChange({ fromName: e.target.value })} placeholder="IMETS Academy" />
-        <Input type="email" value={step.fromEmail ?? ""} onChange={(e) => onChange({ fromEmail: e.target.value })} placeholder="info@imetsacademy.com" dir="ltr" />
-        <p className="text-[11px] leading-relaxed text-amber-600">
-          To comply with Google &amp; Yahoo requirements and ensure deliverability, authenticate your sending domain.
-        </p>
-      </Section>
 
       {/* Email content */}
       <Field label="Email content">
