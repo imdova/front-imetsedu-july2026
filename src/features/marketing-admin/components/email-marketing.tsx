@@ -257,7 +257,7 @@ export function EmailMarketing({
   return (
     <div className="space-y-6">
       <Tabs value={tab} onValueChange={setTab} className="space-y-5">
-        <TabsList className="h-auto flex-wrap gap-1 rounded-xl bg-muted/60 p-1">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-none border-b border-border bg-transparent p-0">
           <TabTrigger value="dashboard" icon={LayoutDashboard} label="Dashboard" />
           <TabTrigger value="subscribers" icon={Users} label="Subscribers" />
           <TabTrigger value="campaigns" icon={Send} label="Campaigns" />
@@ -449,7 +449,13 @@ export function EmailMarketing({
 
 function TabTrigger({ value, icon: Icon, label }: { value: string; icon: React.ElementType; label: string }) {
   return (
-    <TabsTrigger value={value} className="gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+    <TabsTrigger
+      value={value}
+      className={cn(
+        "-mb-px gap-1.5 rounded-none border-b-2 border-transparent bg-transparent px-3 py-2.5 text-sm font-medium text-muted-foreground shadow-none transition hover:text-foreground",
+        "data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none",
+      )}
+    >
       <Icon className="size-4" /> <span>{label}</span>
     </TabsTrigger>
   );
