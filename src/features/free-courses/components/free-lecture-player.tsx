@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, Play, Lock, Trophy, MessageCircle, X, ListChecks } from "lucide-react";
+import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, ChevronDown, Play, Lock, Trophy, MessageCircle, X, ListChecks } from "lucide-react";
 
 import type { FreeLecture, FreeModule } from "@/lib/dal/free-courses";
 import type { QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
@@ -79,6 +79,8 @@ export function FreeLecturePlayer({
   const [ended, setEnded] = React.useState(false);
   const [showEnjoy, setShowEnjoy] = React.useState(false);
   const [show80, setShow80] = React.useState(false);
+  // Accordion: only one module open at a time — defaults to the active item's module.
+  const [openModule, setOpenModule] = React.useState<string>(() => unlocked[0]?.moduleId || "");
   const funnelRef = React.useRef({ enjoy: false, near: false });
 
   const completedLessons = lessons.filter((l) => completed.has(l.id)).length;
@@ -103,7 +105,11 @@ export function FreeLecturePlayer({
     setActiveId(id);
     setEnded(false); setShow80(false); setShowEnjoy(false);
     funnelRef.current = { enjoy: false, near: false };
-    if (id !== QUIZ_ID) setWatched((prev) => new Set(prev).add(id));
+    if (id !== QUIZ_ID) {
+      setWatched((prev) => new Set(prev).add(id));
+      const it = lectures.find((l) => l.id === id);
+      if (it?.moduleId) setOpenModule(it.moduleId); // keep the played item's module open
+    }
   };
   const go = (dir: -1 | 1) => { const n = order[idx + dir]; if (n) select(n); };
   const onVideoEnded = () => {
@@ -354,24 +360,47 @@ export function FreeLecturePlayer({
           {quizCountTotal > 0 ? tr(locale, ` · ${quizCountTotal} quiz${quizCountTotal === 1 ? "" : "zes"}`, ` · ${quizCountTotal} اختبار`) : ""}
         </p>
         <ol className="max-h-[32rem] space-y-1 overflow-y-auto">
-          {/* Modules */}
+          {/* Modules — collapsible accordion, only one open at a time */}
           {sortedModules.map((m) => {
             const items = orderedLectures.filter((l) => l.moduleId === m.id);
-            if (items.length === 0) return null;
+            const isOpen = openModule === m.id;
+            const mTitle = (locale === "ar" ? m.titleAr : m.titleEn) || m.titleEn;
+            const unlockedCount = items.filter(isUnlocked).length;
+            const doneCount = items.filter((l) => completed.has(l.id)).length;
             return (
-              <React.Fragment key={m.id}>
-                <li className="px-2 pb-0.5 pt-2 text-[10px] font-bold uppercase tracking-wider text-primary/70">
-                  {(locale === "ar" ? m.titleAr : m.titleEn) || m.titleEn}
-                </li>
-                {items.map((l) => <Row key={l.id} l={l} n={rowNumber(l)} />)}
-              </React.Fragment>
+              <li key={m.id} className="rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setOpenModule(isOpen ? "" : m.id)}
+                  aria-expanded={isOpen}
+                  className={cn("flex w-full items-center gap-2 rounded-xl px-2.5 py-2.5 text-start transition-colors", isOpen ? "bg-muted/50" : "hover:bg-muted/60")}
+                >
+                  <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", !isOpen && (locale === "ar" ? "rotate-90" : "-rotate-90"))} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold leading-snug text-foreground">{mTitle}</span>
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                      {items.length === 0
+                        ? tr(locale, "Coming soon", "قريبًا")
+                        : tr(locale, `${unlockedCount} ${unlockedCount === 1 ? "item" : "items"}${doneCount ? ` · ${doneCount} done` : ""}`, `${unlockedCount} ${unlockedCount === 1 ? "عنصر" : "عناصر"}${doneCount ? ` · ${doneCount} مكتمل` : ""}`)}
+                    </span>
+                  </span>
+                </button>
+                {isOpen && items.length > 0 && (
+                  <ol className="mt-1 space-y-1 ps-3">
+                    {items.map((l) => <Row key={l.id} l={l} n={rowNumber(l)} />)}
+                  </ol>
+                )}
+                {isOpen && items.length === 0 && (
+                  <p className="px-3 pb-2 pt-1 text-[11px] text-muted-foreground">{tr(locale, "Lessons are being added — check back soon.", "يجري إضافة الدروس — تابعنا قريبًا.")}</p>
+                )}
+              </li>
             );
           })}
 
           {/* Ungrouped (legacy) items */}
           {ungroupedLectures.length > 0 && (
             <>
-              {sortedModules.some((m) => orderedLectures.some((l) => l.moduleId === m.id)) && (
+              {sortedModules.length > 0 && (
                 <li className="px-2 pb-0.5 pt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
                   {tr(locale, "Lectures", "المحاضرات")}
                 </li>
