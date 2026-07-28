@@ -31,7 +31,7 @@ export const saveSiteSettings = (site: SiteSettings): Promise<Result<db.SiteSett
 /** Sane defaults so the editor/site render before an admin ever saves. */
 export const DEFAULT_FULL_SETTINGS: FullSiteSettings = {
   general: { siteName: "IMETS Medical School", tagline: "", defaultLocale: "en", timezone: "Africa/Cairo", currency: "EGP" },
-  branding: { logoUrl: "", darkLogoUrl: "", footerLogoUrl: "", faviconUrl: "", primaryColor: "#1111D4", ogImage: "" },
+  branding: { logoUrl: "", darkLogoUrl: "", footerLogoUrl: "", emailLogoUrl: "", faviconUrl: "", primaryColor: "#1111D4", ogImage: "" },
   theme: { primaryColor: "#1111D4", accentColor: "#FBBF24", mode: "light", allowUserToggle: true, radius: "soft" },
   contact: { supportEmail: "", phone: "", address: "", businessHours: "" },
   social: { facebook: "", x: "", linkedin: "", instagram: "", youtube: "" },

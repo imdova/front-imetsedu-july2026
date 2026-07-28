@@ -21,6 +21,10 @@ export default async function EmailBuilderPage({
   const brandBlocksRes = await dal.emailMarketing.fetchBrandBlocks();
   const brandBlocks = brandBlocksRes.ok ? brandBlocksRes.data : [];
 
+  // Admin-configured email header logo (Site Settings → Branding).
+  const settingsRes = await dal.siteSettings.fetchPublicSettings();
+  const emailLogo = settingsRes.ok ? settingsRes.data.branding?.emailLogoUrl ?? "" : "";
+
   let entityType: "campaign" | "template" | null = null;
   let entityId = "";
   let entityName = "";
@@ -52,6 +56,7 @@ export default async function EmailBuilderPage({
           entityName={entityName}
           initialDesign={design}
           initialBrandBlocks={brandBlocks}
+          emailLogo={emailLogo}
         />
       </Suspense>
     </div>

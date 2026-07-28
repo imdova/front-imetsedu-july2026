@@ -25,14 +25,22 @@ import { cn } from "@/lib/utils";
 const BLOCK_TYPES: BlockType[] = ["header", "heading", "text", "button", "image", "divider", "spacer", "hero", "footer"];
 
 export function EmailBuilder({
-  entityType, entityId, entityName, initialDesign, initialBrandBlocks,
+  entityType, entityId, entityName, initialDesign, initialBrandBlocks, emailLogo,
 }: {
   entityType: "campaign" | "template";
   entityId: string;
   entityName: string;
   initialDesign: string | null;
   initialBrandBlocks: BrandBlock[];
+  /** Admin-configured email header logo (Site Settings → Branding). */
+  emailLogo?: string;
 }) {
+  // A fresh block, with the configured logo applied to header blocks.
+  const freshBlock = React.useCallback((type: BlockType): Block => {
+    const b = makeBlock(type);
+    if (type === "header" && emailLogo) b.props.logoSrc = emailLogo;
+    return b;
+  }, [emailLogo]);
   const [design, setDesign] = React.useState<Design>(() => parseDesign(initialDesign));
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [showSettings, setShowSettings] = React.useState(false);
@@ -101,7 +109,11 @@ export function EmailBuilder({
             className="gap-1.5"
             onClick={() => {
               if (design.blocks.length && !window.confirm("Replace the current design with the IMETS brand template?")) return;
-              setDesign(brandStarter());
+              setDesign(() => {
+                const d = brandStarter();
+                if (emailLogo) d.blocks.forEach((b) => { if (b.type === "header") b.props.logoSrc = emailLogo; });
+                return d;
+              });
               setSelectedId(null);
             }}
           >
@@ -124,7 +136,7 @@ export function EmailBuilder({
               <p className="mb-2 text-xs font-semibold text-muted-foreground">Quick blocks</p>
               <div className="grid grid-cols-2 gap-1.5">
                 {BLOCK_TYPES.map((t) => (
-                  <Button key={t} variant="outline" size="sm" className="justify-start gap-1" onClick={() => addBlock(makeBlock(t))}>
+                  <Button key={t} variant="outline" size="sm" className="justify-start gap-1" onClick={() => addBlock(freshBlock(t))}>
                     <Plus className="size-3" /> {BLOCK_LABELS[t]}
                   </Button>
                 ))}

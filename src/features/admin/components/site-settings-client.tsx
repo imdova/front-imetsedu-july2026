@@ -178,6 +178,7 @@ export function SiteSettingsClient({ initial }: { initial: SiteSettings }) {
               <F label="Light navbar logo"><ImageUpload value={form.branding.logoUrl} onChange={(url) => patch("branding", { logoUrl: url })} hint="Shown on the light/white navbar" /></F>
               <F label="Blue navbar logo"><ImageUpload value={form.branding.darkLogoUrl} onChange={(url) => patch("branding", { darkLogoUrl: url })} hint="Shown on the blue hero navbar" /></F>
               <F label="Footer logo"><ImageUpload value={form.branding.footerLogoUrl} onChange={(url) => patch("branding", { footerLogoUrl: url })} /></F>
+              <F label="Email header logo"><ImageUpload value={form.branding.emailLogoUrl} onChange={(url) => patch("branding", { emailLogoUrl: url })} hint="Used as the default logo in email templates" /></F>
               <F label="Favicon"><ImageUpload value={form.branding.faviconUrl} onChange={(url) => patch("branding", { faviconUrl: url })} hint="Square icon" /></F>
               <F label="Default social (OG) image"><ImageUpload value={form.branding.ogImage} onChange={(url) => patch("branding", { ogImage: url })} hint="1200×630" /></F>
               <F label="Primary color"><ColorInput value={form.branding.primaryColor} onChange={(v) => patch("branding", { primaryColor: v })} /></F>
