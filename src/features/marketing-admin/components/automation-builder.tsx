@@ -20,6 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MultiSelect, type Option } from "@/components/shared/multi-select";
 import { cn } from "@/lib/utils";
 import {
   type Step, type StepType, type EmailStep, type DelayStep, type ConditionStep,
@@ -55,13 +56,27 @@ export function AutomationBuilder({
   automation: Automation;
   templates?: EmailTemplate[];
 }) {
-  const initial = React.useMemo(() => parseFlow(automation.steps), [automation.steps]);
+  const initial = React.useMemo(() => {
+    const flow = parseFlow(automation.steps);
+    // Legacy automations stored a single group name in `triggerTag`; seed the
+    // new multi-group array from it when the envelope has none yet.
+    if ((!flow.settings.triggerGroups || flow.settings.triggerGroups.length === 0) && automation.triggerTag) {
+      flow.settings.triggerGroups = automation.triggerTag.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    return flow;
+  }, [automation.steps, automation.triggerTag]);
 
   const [name, setName] = React.useState(automation.name);
   const [trigger, setTrigger] = React.useState<AutomationTrigger>(automation.trigger);
-  const [triggerTag, setTriggerTag] = React.useState(automation.triggerTag ?? "");
   const [active, setActive] = React.useState(automation.active);
   const [settings, setSettings] = React.useState<FlowSettings>(initial.settings);
+  const [groupOptions, setGroupOptions] = React.useState<Option[]>([]);
+
+  React.useEffect(() => {
+    dal.emailMarketing.fetchSubscriberGroups().then((res) => {
+      if (res.ok) setGroupOptions(res.data.map((g) => ({ value: g.name, label: g.name, hint: `${g.count} subscribers` })));
+    });
+  }, []);
   const [steps, setSteps] = React.useState<Step[]>(initial.steps);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -119,7 +134,9 @@ export function AutomationBuilder({
     const res = await dal.emailMarketing.updateAutomation(automation.id, {
       name,
       trigger,
-      triggerTag: trigger === "tag_added" ? triggerTag : undefined,
+      // Mirror the selected groups into triggerTag (comma-joined) for legacy
+      // list-view display; the array is the source of truth in `steps`.
+      triggerTag: trigger === "tag_added" ? (settings.triggerGroups ?? []).join(", ") || undefined : undefined,
       active,
       steps: serializeFlow({ settings, steps }),
     });
@@ -163,7 +180,7 @@ export function AutomationBuilder({
           <div className="mx-auto flex max-w-md flex-col items-center px-4 py-10">
             {/* Trigger node */}
             <TriggerNode
-              summary={triggerSummary(trigger, triggerTag)}
+              summary={triggerSummary(trigger, settings.triggerGroups)}
               selected={selectedId === "__trigger__"}
               onClick={() => setSelectedId(null)}
             />
@@ -218,7 +235,7 @@ export function AutomationBuilder({
               <WorkflowSettings
                 name={name} setName={(v) => { setName(v); markDirty(); }}
                 trigger={trigger} setTrigger={(v) => { setTrigger(v); markDirty(); }}
-                triggerTag={triggerTag} setTriggerTag={(v) => { setTriggerTag(v); markDirty(); }}
+                groupOptions={groupOptions}
                 settings={settings} setSettings={(s) => { setSettings(s); markDirty(); }}
                 emailCount={emailCount}
                 sentCount={automation.sentCount}
@@ -415,12 +432,12 @@ function describeStep(step: Step, template?: EmailTemplate): { title: string; su
 /* ────────────────────────── Inspector rail ────────────────────────── */
 
 function WorkflowSettings({
-  name, setName, trigger, setTrigger, triggerTag, setTriggerTag,
+  name, setName, trigger, setTrigger, groupOptions,
   settings, setSettings, emailCount, sentCount,
 }: {
   name: string; setName: (v: string) => void;
   trigger: AutomationTrigger; setTrigger: (v: AutomationTrigger) => void;
-  triggerTag: string; setTriggerTag: (v: string) => void;
+  groupOptions: Option[];
   settings: FlowSettings; setSettings: (s: FlowSettings) => void;
   emailCount: number; sentCount: number;
 }) {
@@ -440,13 +457,23 @@ function WorkflowSettings({
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="subscriber_created">New subscriber joins</SelectItem>
-              <SelectItem value="tag_added">Tag / group is added</SelectItem>
+              <SelectItem value="tag_added">When a subscriber joins a group</SelectItem>
             </SelectContent>
           </Select>
         </Field>
         {trigger === "tag_added" && (
-          <Field label="Trigger tag / group">
-            <Input value={triggerTag} onChange={(e) => setTriggerTag(e.target.value)} placeholder="e.g. lead, CPHQ-2026" />
+          <Field label="Groups">
+            <MultiSelect
+              options={groupOptions}
+              value={settings.triggerGroups ?? []}
+              onChange={(v) => setSettings({ ...settings, triggerGroups: v })}
+              placeholder="Select one or more groups…"
+              searchPlaceholder="Search groups…"
+              emptyText="No subscriber groups yet."
+            />
+            <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+              A subscriber enters this flow when they join <span className="font-medium">any</span> of the selected groups.
+            </p>
           </Field>
         )}
         <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-border/60 bg-muted/30 p-3">

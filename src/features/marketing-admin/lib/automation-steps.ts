@@ -49,6 +49,13 @@ export type Step = EmailStep | DelayStep | ConditionStep | ActionStep;
 export interface FlowSettings {
   /** Re-enter the same subscriber if the trigger fires again (max once/day). */
   repeat: boolean;
+  /**
+   * For the `tag_added` trigger: the subscriber group(s) whose members enter the
+   * flow. Multiple groups = enter when the subscriber joins ANY of them. Stored
+   * here (in the steps envelope) so it round-trips as an array without a schema
+   * change; `triggerTag` mirrors a comma-joined copy for legacy display.
+   */
+  triggerGroups?: string[];
 }
 
 export interface Flow {
@@ -56,7 +63,7 @@ export interface Flow {
   steps: Step[];
 }
 
-export const DEFAULT_SETTINGS: FlowSettings = { repeat: false };
+export const DEFAULT_SETTINGS: FlowSettings = { repeat: false, triggerGroups: [] };
 
 let seq = 0;
 export const makeStepId = () =>
@@ -136,7 +143,12 @@ export function parseFlow(raw?: string | null): Flow {
     const rawSteps = Array.isArray(obj.steps) ? obj.steps : [];
     const settings = (obj.settings && typeof obj.settings === "object" ? obj.settings : {}) as Partial<FlowSettings>;
     return {
-      settings: { repeat: Boolean(settings.repeat) },
+      settings: {
+        repeat: Boolean(settings.repeat),
+        triggerGroups: Array.isArray(settings.triggerGroups)
+          ? settings.triggerGroups.filter((g): g is string => typeof g === "string")
+          : [],
+      },
       steps: rawSteps.map(migrateStep).filter(Boolean) as Step[],
     };
   }
@@ -183,8 +195,12 @@ export const ACTION_LABEL: Record<ActionKind, string> = {
 };
 
 /** Human summary of the trigger row (top of the flow). */
-export function triggerSummary(trigger: string, tag?: string): string {
-  if (trigger === "tag_added")
-    return tag ? `When tag “${tag}” is added` : "When a tag is added";
+export function triggerSummary(trigger: string, groups?: string[]): string {
+  if (trigger === "tag_added") {
+    const g = (groups ?? []).filter(Boolean);
+    if (g.length === 0) return "When a subscriber joins a group";
+    if (g.length === 1) return `When a subscriber joins “${g[0]}”`;
+    return `When a subscriber joins any of ${g.length} groups`;
+  }
   return "When a new subscriber is created";
 }
