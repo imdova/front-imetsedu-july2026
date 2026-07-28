@@ -106,7 +106,7 @@ export function CphqLectureForm({
             <SelectTrigger className="w-[104px] shrink-0">
               <span className="flex items-center gap-1.5"><Flag iso={selIso} /> {form.code}</span>
             </SelectTrigger>
-            <SelectContent className="max-h-64">
+            <SelectContent position="popper" align="start" sideOffset={4} className="max-h-64">
               {COUNTRIES.map((c) => (
                 <SelectItem key={c.code} value={c.code}>
                   <span className="flex items-center gap-2"><Flag iso={c.iso} /> {c.name} <span className="text-muted-foreground">{c.code}</span></span>
