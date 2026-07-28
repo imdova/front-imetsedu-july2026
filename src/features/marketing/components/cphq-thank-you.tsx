@@ -17,8 +17,33 @@ const WIZARD = [
 
 type Lead = { name?: string; email?: string; whatsapp?: string; path?: string; courseName?: string };
 
+/** Dialect-specific copy — Egyptian (default) vs. simplified MSA for the Arab audience. */
+const COPY = {
+  eg: {
+    seatBooked: "مقعدك في المحاضرة المجانية اتحجز.",
+    congrats: (n: string) => `مبروك يا ${n}! `,
+    waSub: "عشان يوصلك رابط الحضور والتذكيرات، وتقدر تسأل أي سؤال.",
+    bulletLink: "رابط الحضور بيوصلك على واتساب والإيميل",
+  },
+  arab: {
+    seatBooked: "تم حجز مقعدك في المحاضرة المجانية.",
+    congrats: (n: string) => `تهانينا يا ${n}! `,
+    waSub: "ليصلك رابط الحضور والتذكيرات، ولتتمكّن من طرح أي سؤال.",
+    bulletLink: "رابط الحضور يصلك على واتساب والبريد الإلكتروني",
+  },
+} as const;
+
 /** Full-page thank-you: celebration → qualification wizard → Join-WhatsApp step. */
-export function CphqThankYou({ whatsappNumber = "201142293143" }: { whatsappNumber?: string }) {
+export function CphqThankYou({
+  whatsappNumber = "201142293143", dialect = "eg", region = "Egypt",
+}: {
+  whatsappNumber?: string;
+  /** Copy variant (default Egyptian). */
+  dialect?: keyof typeof COPY;
+  /** Region tag stored on the qualified lead. */
+  region?: string;
+}) {
+  const copy = COPY[dialect];
   const [lead, setLead] = React.useState<Lead | null>(null);
   const [ready, setReady] = React.useState(false);
   const [qIndex, setQIndex] = React.useState(0);
@@ -53,7 +78,7 @@ export function CphqThankYou({ whatsappNumber = "201142293143" }: { whatsappNumb
       dal.landing.captureLead({
         name: lead.name ?? "", email: lead.email, whatsapp: lead.whatsapp ?? "",
         profession: next["التخصص"] ?? "", interest: `${lead.courseName ?? "CPHQ Free Lecture"} — ${summary}`,
-        region: "Egypt", path: lead.path ?? "/lp/free-lecture-cphq",
+        region, path: lead.path ?? "/lp/free-lecture-cphq",
       }).catch(() => {});
     }
     setPhase("whatsapp");
@@ -71,7 +96,7 @@ export function CphqThankYou({ whatsappNumber = "201142293143" }: { whatsappNumb
           </div>
           <h1 className="text-2xl font-extrabold sm:text-3xl">تم تسجيلك بنجاح 🎉</h1>
           <p className="mt-2 text-muted-foreground">
-            {firstName ? `مبروك يا ${firstName}! ` : ""}مقعدك في المحاضرة المجانية اتحجز.
+            {firstName ? copy.congrats(firstName) : ""}{copy.seatBooked}
           </p>
         </div>
 
@@ -101,7 +126,7 @@ export function CphqThankYou({ whatsappNumber = "201142293143" }: { whatsappNumb
               <div>
                 <p className="text-sm font-bold uppercase tracking-wide text-primary">الخطوة التالية</p>
                 <h2 className="mt-1 text-xl font-extrabold">تواصل معنا على واتساب</h2>
-                <p className="mt-1 text-sm text-muted-foreground">عشان يوصلك رابط الحضور والتذكيرات، وتقدر تسأل أي سؤال.</p>
+                <p className="mt-1 text-sm text-muted-foreground">{copy.waSub}</p>
               </div>
               <Button asChild size="lg" className="w-full gap-2 bg-[#25D366] text-white hover:bg-[#25D366]/90">
                 <a href={`https://wa.me/${whatsappNumber}?text=${waText}`} target="_blank" rel="noopener noreferrer">
@@ -109,7 +134,7 @@ export function CphqThankYou({ whatsappNumber = "201142293143" }: { whatsappNumb
                 </a>
               </Button>
               <ul className="space-y-2 pt-1 text-right text-sm">
-                <li className="flex items-center gap-2"><CheckCircle2 className="size-4 shrink-0 text-emerald-500" /> رابط الحضور بيوصلك على واتساب والإيميل</li>
+                <li className="flex items-center gap-2"><CheckCircle2 className="size-4 shrink-0 text-emerald-500" /> {copy.bulletLink}</li>
                 <li className="flex items-center gap-2"><Mail className="size-4 shrink-0 text-primary" /> تأكيد التسجيل في بريدك الإلكتروني</li>
                 <li className="flex items-center gap-2"><CalendarClock className="size-4 shrink-0 text-primary" /> تذكير قبل المحاضرة بوقت كافٍ</li>
               </ul>

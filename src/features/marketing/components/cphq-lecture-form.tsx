@@ -49,11 +49,16 @@ const COUNTRIES = [
  */
 export function CphqLectureForm({
   path, courseName, thankYouPath = "/lp/free-lecture-cphq/thank-you",
+  region = "Egypt", defaultCode = "+20",
 }: {
   path: string; courseName: string; whatsappNumber?: string; thankYouPath?: string;
+  /** Region tag stored on the captured lead (default "Egypt"). */
+  region?: string;
+  /** Pre-selected dialing code (default Egypt "+20"). */
+  defaultCode?: string;
 }) {
   const router = useRouter();
-  const [form, setForm] = React.useState({ name: "", email: "", code: "+20", whatsapp: "" });
+  const [form, setForm] = React.useState({ name: "", email: "", code: defaultCode, whatsapp: "" });
   const [submitting, setSubmitting] = React.useState(false);
   const startedRef = React.useRef(false);
 
@@ -72,7 +77,7 @@ export function CphqLectureForm({
     setSubmitting(true);
     const fb = fbLeadContext();
     const lead = { name: form.name.trim(), email: form.email.trim(), whatsapp: fullPhone() };
-    const res = await dal.landing.captureLead({ ...lead, interest: courseName, region: "Egypt", path, ...fb });
+    const res = await dal.landing.captureLead({ ...lead, interest: courseName, region, path, ...fb });
     if (res.ok) {
       fireBrowserLead(fb.eventId, { content_name: courseName });
       dal.landing.trackLanding(path, "click").catch(() => {});
