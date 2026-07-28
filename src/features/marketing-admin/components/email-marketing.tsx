@@ -4,7 +4,7 @@ import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Plus, MoreHorizontal, Users, Send, Mail, MousePointerClick, Percent, FileText, Zap,
-  LayoutDashboard, ArrowRight, Eye, Sparkles,
+  LayoutDashboard, ArrowRight, Eye, Sparkles, GitBranch, Pencil, Trash2, Play, Pause, ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -30,8 +29,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { KpiCard } from "@/components/shared/kpi-card";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useConfirm } from "@/hooks/use-confirm";
 import { timeAgo } from "@/lib/utils/time-ago";
+import { cn } from "@/lib/utils";
+import { parseFlow, triggerSummary } from "@/features/marketing-admin/lib/automation-steps";
 
 const STATUS_BADGE: Record<CampaignStatus, "default" | "secondary" | "outline"> = {
   SENT: "default", SCHEDULED: "outline", DRAFT: "secondary",
@@ -383,31 +387,14 @@ export function EmailMarketing({
             emptyState={<div className="flex flex-col items-center gap-2 text-muted-foreground"><FileText className="size-8 opacity-50" /><p className="text-sm font-medium">No templates yet</p></div>} />
         </TabsContent>
 
-        <TabsContent value="automations" className="space-y-3">
-          <div className="flex justify-end">
-            <Button className="gap-1.5" onClick={createAut}><Plus className="size-4" /> New automation</Button>
-          </div>
-          {automations.length === 0 ? (
-            <div className="rounded-xl border border-border/70 bg-card p-10 text-center text-sm text-muted-foreground">No automations yet</div>
-          ) : automations.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Zap className="size-5" /></div>
-                <div>
-                  <p className="font-medium">{a.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Trigger: {a.trigger === "subscriber_created" ? "New subscriber" : `Tag added${a.triggerTag ? ` (${a.triggerTag})` : ""}`} · {a.sentCount.toLocaleString()} sent
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Switch checked={a.active} onCheckedChange={() => toggleAut(a)} />
-                <Button variant="outline" size="sm" onClick={() => router.push(`/admin/marketing/email/automation?automationId=${a.id}`)}>Edit</Button>
-                <Button variant="ghost" size="sm" onClick={() => removeAut(a)}>Delete</Button>
-              </div>
-            </div>
-          ))}
-          <p className="text-xs text-muted-foreground">Use “Edit” to open the visual step builder (wait / email) for each automation.</p>
+        <TabsContent value="automations" className="space-y-4">
+          <AutomationsPanel
+            automations={automations}
+            onCreate={createAut}
+            onToggle={toggleAut}
+            onDelete={removeAut}
+            onEdit={(a) => router.push(`/admin/marketing/email/automation?automationId=${a.id}`)}
+          />
         </TabsContent>
 
         <TabsContent value="system" className="space-y-4">
@@ -510,5 +497,202 @@ function Editor({
       </Label>
       <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
+  );
+}
+
+/* ────────────────────────── Automations list ────────────────────────── */
+
+type AutFilter = "all" | "active" | "paused";
+type AutSort = "newest" | "name" | "sent";
+
+/** Gradient tiles cycled by card index (mirrors the reference design). */
+const AUT_TILES = [
+  "from-orange-500 to-orange-600",
+  "from-sky-500 to-sky-600",
+  "from-violet-500 to-violet-600",
+  "from-emerald-500 to-emerald-600",
+  "from-rose-500 to-rose-600",
+  "from-indigo-500 to-indigo-600",
+];
+
+function AutomationsPanel({
+  automations, onCreate, onToggle, onDelete, onEdit,
+}: {
+  automations: Automation[];
+  onCreate: () => void;
+  onToggle: (a: Automation) => void;
+  onDelete: (a: Automation) => void;
+  onEdit: (a: Automation) => void;
+}) {
+  const [filter, setFilter] = React.useState<AutFilter>("all");
+  const [sort, setSort] = React.useState<AutSort>("newest");
+
+  const counts = React.useMemo(() => ({
+    all: automations.length,
+    active: automations.filter((a) => a.active).length,
+    paused: automations.filter((a) => !a.active).length,
+  }), [automations]);
+
+  const visible = React.useMemo(() => {
+    const list = automations.filter((a) =>
+      filter === "all" ? true : filter === "active" ? a.active : !a.active);
+    const sorted = [...list];
+    if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
+    else if (sort === "sent") sorted.sort((a, b) => b.sentCount - a.sentCount);
+    else sorted.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    return sorted;
+  }, [automations, filter, sort]);
+
+  return (
+    <div className="space-y-4">
+      {/* Filter / sort bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex items-center gap-1 rounded-xl border border-border/60 bg-muted/40 p-1">
+          {(["all", "active", "paused"] as AutFilter[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition",
+                filter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {f}
+              <span className={cn(
+                "rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
+                filter === f ? "bg-primary/10 text-primary" : "bg-muted-foreground/10 text-muted-foreground",
+              )}>{counts[f]}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={sort} onValueChange={(v) => setSort(v as AutSort)}>
+            <SelectTrigger className="h-9 w-[168px] gap-1.5">
+              <ArrowUpDown className="size-3.5 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Sort by: Newest</SelectItem>
+              <SelectItem value="name">Sort by: Name</SelectItem>
+              <SelectItem value="sent">Sort by: Most sent</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button className="gap-1.5" onClick={onCreate}><Plus className="size-4" /> New automation</Button>
+        </div>
+      </div>
+
+      {/* Cards */}
+      {visible.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border/70 bg-card p-10 text-center">
+          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Zap className="size-6" /></div>
+          <p className="text-sm font-medium">{filter === "all" ? "No automations yet" : `No ${filter} automations`}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Create a smart drip sequence that runs on autopilot.</p>
+          <Button className="mt-4 gap-1.5" onClick={onCreate}><Plus className="size-4" /> New automation</Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {visible.map((a, i) => (
+            <AutomationCard key={a.id} a={a} index={i} onToggle={onToggle} onDelete={onDelete} onEdit={onEdit} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AutomationCard({
+  a, index, onToggle, onDelete, onEdit,
+}: {
+  a: Automation; index: number;
+  onToggle: (a: Automation) => void; onDelete: (a: Automation) => void; onEdit: (a: Automation) => void;
+}) {
+  const flow = React.useMemo(() => parseFlow(a.steps), [a.steps]);
+  const emails = flow.steps.filter((s) => s.type === "email").length;
+  const stepCount = flow.steps.length;
+  const groups = flow.settings.triggerGroups ?? [];
+  const desc = triggerSummary(a.trigger, groups);
+  const tags = groups.length ? groups : [a.trigger === "subscriber_created" ? "New subscriber" : "Group trigger"];
+  const tile = AUT_TILES[index % AUT_TILES.length];
+
+  return (
+    <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition hover:shadow-md sm:p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {/* Identity */}
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span className={cn("grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm", tile)}>
+            <Zap className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <button onClick={() => onEdit(a)} className="truncate text-left text-base font-bold hover:text-primary">{a.name || "Untitled automation"}</button>
+            <p className="mt-0.5 truncate text-sm text-muted-foreground">{desc}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {tags.slice(0, 3).map((t) => (
+                <span key={t} className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{t}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Metrics + status + menu */}
+        <div className="flex items-center justify-between gap-4 lg:justify-end lg:gap-6">
+          <div className="flex items-center gap-5 sm:gap-7">
+            <AutMetric value={a.sentCount.toLocaleString()} label="Sent" sub="All time" />
+            <AutMetric value={emails} label="Emails" sub="In flow" />
+            <AutMetric value={stepCount} label="Steps" sub="In flow" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden items-center gap-1.5 sm:inline-flex">
+              <CountChip icon={Mail} n={emails} />
+              <CountChip icon={GitBranch} n={stepCount} />
+            </span>
+            <StatusPill active={a.active} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8 rounded-full"><MoreHorizontal className="size-4" /></Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={() => onEdit(a)}><Pencil className="size-4" /> Edit</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onToggle(a)}>
+                  {a.active ? <><Pause className="size-4" /> Pause</> : <><Play className="size-4" /> Activate</>}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onDelete(a)} className="text-destructive focus:text-destructive"><Trash2 className="size-4" /> Delete</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AutMetric({ value, label, sub }: { value: React.ReactNode; label: string; sub: string }) {
+  return (
+    <div className="text-center lg:text-left">
+      <div className="text-2xl font-extrabold leading-none tabular-nums">{value}</div>
+      <div className="mt-1 text-[11px] font-semibold">{label}</div>
+      <div className="text-[10px] text-muted-foreground">{sub}</div>
+    </div>
+  );
+}
+
+function CountChip({ icon: Icon, n }: { icon: React.ElementType; n: number }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-lg border border-border/70 px-2 py-1 text-xs font-medium text-muted-foreground">
+      <Icon className="size-3.5" /> {String(n).padStart(2, "0")}
+    </span>
+  );
+}
+
+function StatusPill({ active }: { active: boolean }) {
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold",
+      active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-border bg-muted text-muted-foreground",
+    )}>
+      <span className={cn("size-1.5 rounded-full", active ? "bg-emerald-500" : "bg-muted-foreground/50")} />
+      {active ? "Running" : "Paused"}
+    </span>
   );
 }
