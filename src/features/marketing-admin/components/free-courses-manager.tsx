@@ -3,12 +3,12 @@
 import * as React from "react";
 import {
   Plus, Trash2, Pencil, Loader2, GraduationCap, ExternalLink, Wand2,
-  ChevronDown, Eye, EyeOff, Video, ShieldCheck, GripVertical,
+  ChevronDown, Eye, EyeOff, Video, ShieldCheck, ListChecks, Lock, Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
-import type { FreeProgram, FreeLecture, VideoProvider } from "@/lib/dal/free-courses";
+import type { FreeProgram, FreeLecture, FreeModule, VideoProvider } from "@/lib/dal/free-courses";
 import type { QuizRow, QuizCategoryOption } from "@/lib/dal/quizzes";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ const EMPTY_LECTURE = {
   titleEn: "", titleAr: "", descriptionEn: "", descriptionAr: "",
   videoProvider: "youtube" as VideoProvider, videoUrl: "", durationMinutes: "",
   resourceUrl: "", isPublished: true,
+  kind: "lesson" as "lesson" | "quiz", quizId: "", moduleId: "",
 };
 
 export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
@@ -138,6 +139,8 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
 
   const setLectures = (programId: string, fn: (l: FreeLecture[]) => FreeLecture[]) =>
     setPrograms((prev) => prev.map((p) => (p.id === programId ? { ...p, lectures: fn(p.lectures) } : p)));
+  const setModules = (programId: string, fn: (m: FreeModule[]) => FreeModule[]) =>
+    setPrograms((prev) => prev.map((p) => (p.id === programId ? { ...p, modules: fn(p.modules) } : p)));
 
   return (
     <div className="space-y-5">
@@ -176,6 +179,9 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
               onDelete={() => removeProgram(p)}
               onTogglePublish={() => togglePublish(p)}
               setLectures={(fn) => setLectures(p.id, fn)}
+              setModules={(fn) => setModules(p.id, fn)}
+              quizCats={quizCats}
+              quizzes={quizzes}
               confirm={confirm}
             />
           ))}
@@ -301,7 +307,7 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
 /* ─────────────────────────── Program row ─────────────────────────── */
 
 function ProgramRow({
-  program, expanded, onToggle, onEdit, onDelete, onTogglePublish, setLectures, confirm,
+  program, expanded, onToggle, onEdit, onDelete, onTogglePublish, setLectures, setModules, quizCats, quizzes, confirm,
 }: {
   program: FreeProgram;
   expanded: boolean;
@@ -310,21 +316,31 @@ function ProgramRow({
   onDelete: () => void;
   onTogglePublish: () => void;
   setLectures: (fn: (l: FreeLecture[]) => FreeLecture[]) => void;
+  setModules: (fn: (m: FreeModule[]) => FreeModule[]) => void;
+  quizCats: QuizCategoryOption[];
+  quizzes: QuizRow[];
   confirm: ReturnType<typeof useConfirm>["confirm"];
 }) {
   const [lecOpen, setLecOpen] = React.useState(false);
   const [editingLec, setEditingLec] = React.useState<FreeLecture | null>(null);
   const [form, setForm] = React.useState(EMPTY_LECTURE);
+  const [quizCat, setQuizCat] = React.useState("");
   const [saving, setSaving] = React.useState(false);
+  const [modDlg, setModDlg] = React.useState<{ id?: string; titleEn: string; titleAr: string } | null>(null);
+  const [modSaving, setModSaving] = React.useState(false);
 
-  const openCreate = () => { setEditingLec(null); setForm(EMPTY_LECTURE); setLecOpen(true); };
+  const openCreate = (kind: "lesson" | "quiz", moduleId: string) => {
+    setEditingLec(null); setQuizCat(""); setForm({ ...EMPTY_LECTURE, kind, moduleId }); setLecOpen(true);
+  };
   const openEdit = (l: FreeLecture) => {
     setEditingLec(l);
+    setQuizCat(l.kind === "quiz" ? (quizzes.find((q) => q.id === l.quizId)?.categoryId ?? "") : "");
     setForm({
       titleEn: l.titleEn, titleAr: l.titleAr, descriptionEn: l.descriptionEn, descriptionAr: l.descriptionAr,
       videoProvider: l.videoProvider, videoUrl: l.videoUrl,
       durationMinutes: l.durationMinutes ? String(l.durationMinutes) : "",
       resourceUrl: l.resourceUrl, isPublished: l.isPublished,
+      kind: l.kind, quizId: l.quizId, moduleId: l.moduleId,
     });
     setLecOpen(true);
   };
@@ -332,10 +348,15 @@ function ProgramRow({
   const save = async () => {
     if (!form.titleEn.trim() || !form.titleAr.trim()) { toast.error("Both titles are required"); return; }
     setSaving(true);
+    const inModule = program.lectures.filter((l) => l.moduleId === form.moduleId).length;
     const payload = {
-      ...form,
+      titleEn: form.titleEn, titleAr: form.titleAr, descriptionEn: form.descriptionEn, descriptionAr: form.descriptionAr,
+      kind: form.kind, moduleId: form.moduleId || undefined,
+      quizId: form.kind === "quiz" ? form.quizId : "",
+      videoProvider: form.videoProvider, videoUrl: form.kind === "quiz" ? "" : form.videoUrl,
       durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : 0,
-      order: editingLec?.order ?? program.lectures.length,
+      resourceUrl: form.resourceUrl, isPublished: form.isPublished,
+      order: editingLec?.order ?? inModule,
     };
     const res = editingLec
       ? await dal.freeCourses.updateFreeLecture(editingLec.id, payload)
@@ -343,18 +364,45 @@ function ProgramRow({
     setSaving(false);
     if (!res.ok) { toast.error(res.error); return; }
     setLectures((prev) => (editingLec ? prev.map((x) => (x.id === res.data.id ? res.data : x)) : [...prev, res.data]));
-    toast.success(editingLec ? "Lecture updated" : "Lecture added");
+    toast.success(editingLec ? "Saved" : "Added");
     setLecOpen(false);
   };
 
   const removeLecture = async (l: FreeLecture) => {
-    if (!(await confirm({ title: "Delete lecture", description: `“${l.titleEn}”?`, confirmText: "Delete", variant: "destructive" }))) return;
+    if (!(await confirm({ title: `Delete ${l.kind}`, description: `“${l.titleEn}”?`, confirmText: "Delete", variant: "destructive" }))) return;
     const res = await dal.freeCourses.deleteFreeLecture(l.id);
     if (res.ok) { setLectures((prev) => prev.filter((x) => x.id !== l.id)); toast.success("Deleted"); }
     else toast.error(res.error);
   };
 
-  const playable = program.lectures.filter((l) => l.videoUrl).length;
+  /* ── Modules ── */
+  const submitModule = async () => {
+    const titleEn = modDlg?.titleEn.trim();
+    if (!titleEn) return;
+    setModSaving(true);
+    const input = { titleEn, titleAr: modDlg?.titleAr?.trim() ?? "" };
+    const res = modDlg?.id
+      ? await dal.freeCourses.updateFreeModule(modDlg.id, input)
+      : await dal.freeCourses.createFreeModule(program.id, { ...input, order: program.modules.length });
+    setModSaving(false);
+    if (!res.ok) { toast.error(res.error); return; }
+    setModules((prev) => (modDlg?.id ? prev.map((m) => (m.id === res.data.id ? res.data : m)) : [...prev, res.data]));
+    toast.success(modDlg?.id ? "Module renamed" : "Module added");
+    setModDlg(null);
+  };
+  const deleteModule = async (m: FreeModule) => {
+    if (!(await confirm({ title: "Delete module", description: `“${m.titleEn}” and its lessons/quizzes will be deleted.`, confirmText: "Delete", variant: "destructive" }))) return;
+    const res = await dal.freeCourses.deleteFreeModule(m.id);
+    if (res.ok) {
+      setModules((prev) => prev.filter((x) => x.id !== m.id));
+      setLectures((prev) => prev.filter((x) => x.moduleId !== m.id));
+      toast.success("Module deleted");
+    } else toast.error(res.error);
+  };
+
+  const itemsOf = (moduleId: string) => program.lectures.filter((l) => l.moduleId === moduleId).sort((a, b) => a.order - b.order);
+  const ungrouped = program.lectures.filter((l) => !l.moduleId);
+  const lockedCount = program.lectures.filter((l) => l.locked).length;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
@@ -377,9 +425,9 @@ function ProgramRow({
           <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="font-mono">/free-courses/{program.slug}</span>
             <span>·</span>
-            <span>{program.lectures.length} lectures</span>
-            {program.lectures.length > 0 && playable < program.lectures.length && (
-              <span className="text-amber-600 dark:text-amber-400">· {program.lectures.length - playable} without video</span>
+            <span>{program.modules.length} {program.modules.length === 1 ? "module" : "modules"} · {program.lectures.length} items</span>
+            {lockedCount > 0 && (
+              <span className="text-amber-600 dark:text-amber-400">· {lockedCount} locked</span>
             )}
           </p>
         </div>
@@ -397,44 +445,84 @@ function ProgramRow({
       </div>
 
       {expanded && (
-        <div className="border-t border-border/60 bg-muted/20 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold">Lectures</p>
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={openCreate}><Plus className="size-3.5" /> Add lecture</Button>
+        <div className="space-y-3 border-t border-border/60 bg-muted/20 p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">Modules</p>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setModDlg({ titleEn: "", titleAr: "" })}><Plus className="size-3.5" /> Add module</Button>
           </div>
 
-          {program.lectures.length === 0 ? (
+          {program.modules.length === 0 && ungrouped.length === 0 ? (
             <p className="rounded-xl border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
-              No lectures yet. Add one — a program with no playable lectures still shows publicly, but with nothing to watch.
+              No modules yet. Add a module, then add lessons and quizzes inside it.
             </p>
           ) : (
-            <ol className="space-y-2">
-              {program.lectures.map((l, i) => (
-                <li key={l.id} className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5">
-                  <GripVertical className="size-4 shrink-0 text-muted-foreground/40" />
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold tabular-nums text-primary">{i + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{l.titleEn}</p>
-                    <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      {l.videoProvider === "vdocipher" ? <ShieldCheck className="size-3" /> : <Video className="size-3" />}
-                      {l.videoUrl ? l.videoProvider : <span className="text-amber-600 dark:text-amber-400">no video</span>}
-                      {l.durationMinutes > 0 && <>· {l.durationMinutes} min</>}
-                      {!l.isPublished && <>· <span className="text-muted-foreground">draft</span></>}
-                    </p>
+            <div className="space-y-3">
+              {program.modules.map((m) => {
+                const items = itemsOf(m.id);
+                return (
+                  <div key={m.id} className="overflow-hidden rounded-xl border border-border/70 bg-card">
+                    <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2.5">
+                      <Layers className="size-4 shrink-0 text-primary" />
+                      <p className="min-w-0 flex-1 truncate text-sm font-semibold">{m.titleEn}</p>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">{items.length} {items.length === 1 ? "item" : "items"}</span>
+                      <Button variant="ghost" size="icon" className="size-7" title="Rename module" onClick={() => setModDlg({ id: m.id, titleEn: m.titleEn, titleAr: m.titleAr })}><Pencil className="size-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="size-7" title="Delete module" onClick={() => deleteModule(m)}><Trash2 className="size-3.5 text-destructive" /></Button>
+                    </div>
+                    <div className="space-y-1.5 p-2">
+                      {items.length === 0
+                        ? <p className="px-2 py-2 text-center text-xs text-muted-foreground">No lessons or quizzes yet.</p>
+                        : items.map((l, i) => <ItemLine key={l.id} l={l} index={i} onEdit={() => openEdit(l)} onDelete={() => removeLecture(l)} />)}
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openCreate("lesson", m.id)}><Video className="size-3.5" /> Add lesson</Button>
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openCreate("quiz", m.id)}><ListChecks className="size-3.5" /> Add quiz</Button>
+                      </div>
+                    </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="size-7" title="Edit" onClick={() => openEdit(l)}><Pencil className="size-3.5" /></Button>
-                  <Button variant="ghost" size="icon" className="size-7" title="Delete" onClick={() => removeLecture(l)}><Trash2 className="size-3.5 text-destructive" /></Button>
-                </li>
-              ))}
-            </ol>
+                );
+              })}
+
+              {ungrouped.length > 0 && (
+                <div className="overflow-hidden rounded-xl border border-dashed border-border/70 bg-card">
+                  <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold text-muted-foreground">Ungrouped (legacy)</div>
+                  <div className="space-y-1.5 p-2">
+                    {ungrouped.map((l, i) => <ItemLine key={l.id} l={l} index={i} onEdit={() => openEdit(l)} onDelete={() => removeLecture(l)} />)}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
 
-      {/* Lecture dialog */}
+      {/* Module add / rename dialog */}
+      <Dialog open={!!modDlg} onOpenChange={(o) => !o && setModDlg(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>{modDlg?.id ? "Rename module" : "New module"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="space-y-1.5">
+              <Label>Title (English) <span className="text-destructive">*</span></Label>
+              <Input autoFocus value={modDlg?.titleEn ?? ""} onChange={(e) => setModDlg((d) => (d ? { ...d, titleEn: e.target.value } : d))} onKeyDown={(e) => e.key === "Enter" && submitModule()} placeholder="e.g. Module 1 — Foundations" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Title (Arabic)</Label>
+              <Input dir="rtl" value={modDlg?.titleAr ?? ""} onChange={(e) => setModDlg((d) => (d ? { ...d, titleAr: e.target.value } : d))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModDlg(null)} disabled={modSaving}>Cancel</Button>
+            <Button onClick={submitModule} disabled={modSaving || !modDlg?.titleEn.trim()} className="gap-1.5">{modSaving && <Loader2 className="size-4 animate-spin" />}{modDlg?.id ? "Save" : "Add module"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lecture / quiz dialog */}
       <Dialog open={lecOpen} onOpenChange={setLecOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader><DialogTitle>{editingLec ? "Edit lecture" : "Add lecture"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {editingLec ? "Edit" : "Add"} {form.kind === "quiz" ? "quiz" : "lesson"}
+            </DialogTitle>
+          </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -447,27 +535,56 @@ function ProgramRow({
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
-              <div className="space-y-1.5">
-                <Label>Video source</Label>
-                <Select value={form.videoProvider} onValueChange={(v) => setForm((f) => ({ ...f, videoProvider: v as VideoProvider }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="youtube">YouTube</SelectItem>
-                    <SelectItem value="vdocipher">VdoCipher</SelectItem>
-                  </SelectContent>
-                </Select>
+            {form.kind === "quiz" ? (
+              /* Quiz: pick from the Quiz Bank (category → quiz). No video/quiz selected = locked. */
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Quiz category</Label>
+                  <Select value={quizCat} onValueChange={(v) => { setQuizCat(v); setForm((f) => ({ ...f, quizId: "" })); }}>
+                    <SelectTrigger><SelectValue placeholder="Choose a category" /></SelectTrigger>
+                    <SelectContent position="popper">
+                      {quizCats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Quiz</Label>
+                  <Select value={form.quizId} onValueChange={(v) => setForm((f) => ({ ...f, quizId: v }))} disabled={!quizCat}>
+                    <SelectTrigger><SelectValue placeholder={quizCat ? "Choose a quiz" : "Pick a category first"} /></SelectTrigger>
+                    <SelectContent position="popper">
+                      {quizzes.filter((q) => q.categoryId === quizCat).map((q) => (
+                        <SelectItem key={q.id} value={q.id}>{q.titleEn}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!form.quizId && <p className="text-[11px] text-amber-600 dark:text-amber-400">No quiz picked → shows as 🔒 locked publicly.</p>}
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>{form.videoProvider === "vdocipher" ? "VdoCipher video ID" : "YouTube URL"}</Label>
-                <Input
-                  value={form.videoUrl}
-                  onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
-                  placeholder={form.videoProvider === "vdocipher" ? "1a2b3c4d…" : "https://youtube.com/watch?v=…"}
-                  className="font-mono text-sm"
-                />
+            ) : (
+              /* Lesson: video source. No video = locked. */
+              <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
+                <div className="space-y-1.5">
+                  <Label>Video source</Label>
+                  <Select value={form.videoProvider} onValueChange={(v) => setForm((f) => ({ ...f, videoProvider: v as VideoProvider }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent position="popper">
+                      <SelectItem value="youtube">YouTube</SelectItem>
+                      <SelectItem value="vdocipher">VdoCipher</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{form.videoProvider === "vdocipher" ? "VdoCipher video ID" : "YouTube URL"}</Label>
+                  <Input
+                    value={form.videoUrl}
+                    onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
+                    placeholder={form.videoProvider === "vdocipher" ? "1a2b3c4d…" : "https://youtube.com/watch?v=…"}
+                    className="font-mono text-sm"
+                  />
+                  {!form.videoUrl && <p className="text-[11px] text-amber-600 dark:text-amber-400">No video → shows as 🔒 locked publicly.</p>}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -480,21 +597,23 @@ function ProgramRow({
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Duration (minutes)</Label>
-                <Input type="number" min={0} value={form.durationMinutes} onChange={(e) => setForm((f) => ({ ...f, durationMinutes: e.target.value }))} placeholder="12" />
+            {form.kind === "lesson" && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Duration (minutes)</Label>
+                  <Input type="number" min={0} value={form.durationMinutes} onChange={(e) => setForm((f) => ({ ...f, durationMinutes: e.target.value }))} placeholder="12" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Resource URL (optional)</Label>
+                  <Input value={form.resourceUrl} onChange={(e) => setForm((f) => ({ ...f, resourceUrl: e.target.value }))} placeholder="Slides / PDF link" />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Resource URL (optional)</Label>
-                <Input value={form.resourceUrl} onChange={(e) => setForm((f) => ({ ...f, resourceUrl: e.target.value }))} placeholder="Slides / PDF link" />
-              </div>
-            </div>
+            )}
 
             <div className="flex items-center justify-between rounded-xl border border-border/70 p-3">
               <div>
                 <p className="text-sm font-medium">Published</p>
-                <p className="text-xs text-muted-foreground">Unpublished lectures stay hidden from the public page.</p>
+                <p className="text-xs text-muted-foreground">Unpublished items stay hidden from the public page.</p>
               </div>
               <Switch checked={form.isPublished} onCheckedChange={(v) => setForm((f) => ({ ...f, isPublished: v }))} />
             </div>
@@ -507,6 +626,33 @@ function ProgramRow({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/* ─────────────────────────── Item line ─────────────────────────── */
+
+function ItemLine({ l, index, onEdit, onDelete }: {
+  l: FreeLecture; index: number; onEdit: () => void; onDelete: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background px-3 py-2">
+      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold tabular-nums text-primary">{index + 1}</span>
+      {l.kind === "quiz"
+        ? <ListChecks className="size-4 shrink-0 text-muted-foreground" />
+        : (l.videoProvider === "vdocipher" ? <ShieldCheck className="size-4 shrink-0 text-muted-foreground" /> : <Video className="size-4 shrink-0 text-muted-foreground" />)}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{l.titleEn}</p>
+        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className="uppercase tracking-wide">{l.kind}</span>
+          {l.locked
+            ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"><Lock className="size-3" /> locked · {l.kind === "quiz" ? "no quiz" : "no video"}</span>
+            : l.kind === "lesson" && l.durationMinutes > 0 ? <>· {l.durationMinutes} min</> : null}
+          {!l.isPublished && <>· <span>draft</span></>}
+        </p>
+      </div>
+      <Button variant="ghost" size="icon" className="size-7" title="Edit" onClick={onEdit}><Pencil className="size-3.5" /></Button>
+      <Button variant="ghost" size="icon" className="size-7" title="Delete" onClick={onDelete}><Trash2 className="size-3.5 text-destructive" /></Button>
     </div>
   );
 }

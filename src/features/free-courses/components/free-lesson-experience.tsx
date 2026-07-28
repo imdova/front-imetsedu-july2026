@@ -33,8 +33,11 @@ function getLeadFirstName(): string {
 }
 
 /** Full lesson experience: watch recorded lectures → quiz → enroll in the next live cohort. */
-export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: quizProp }: { locale: string; program: FreeProgram; advisorWhatsapp?: string; quiz?: QuizQuestion[] }) {
-  const playable = program.lectures.filter((l) => l.videoUrl);
+export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: quizProp, quizzesById }: { locale: string; program: FreeProgram; advisorWhatsapp?: string; quiz?: QuizQuestion[]; quizzesById?: Record<string, QuizQuestion[]> }) {
+  // Every published item (lessons + quizzes); the player renders the ones with
+  // no video / no quiz as 🔒 locked rows and lays them out by module.
+  const lectures = program.lectures;
+  const hasPlayable = lectures.some((l) => (l.kind === "quiz" ? (quizzesById?.[l.id]?.length ?? 0) > 0 : !!l.videoUrl));
   const quiz = quizProp && quizProp.length ? quizProp : getFreeQuiz(program.slug);
   const name = (locale === "ar" ? program.titleAr : program.titleEn) || program.titleEn;
   const enrollRef = React.useRef<HTMLDivElement>(null);
@@ -94,13 +97,13 @@ export function FreeLessonExperience({ locale, program, advisorWhatsapp, quiz: q
         </div>
       )}
 
-      {/* 1 · Watch lectures + take the quiz (one playlist) */}
-      {playable.length === 0 && (
+      {/* 1 · Watch lectures + take the quiz (one playlist, grouped by module) */}
+      {!hasPlayable && quiz.length === 0 && (
         <p className="rounded-xl border border-dashed border-border/70 p-4 text-center text-sm text-muted-foreground">
-          {tr(locale, "Lectures are being uploaded — try the quiz meanwhile.", "يجري رفع المحاضرات — جرّب الاختبار لحد ما تنزل.")}
+          {tr(locale, "Lectures are being uploaded — check back soon.", "يجري رفع المحاضرات — تابعنا قريبًا.")}
         </p>
       )}
-      <FreeLecturePlayer locale={locale} lectures={playable} quiz={quiz} onQuizPassed={onPassed} programName={name} advisorWhatsapp={advisorWhatsapp} />
+      <FreeLecturePlayer locale={locale} lectures={lectures} modules={program.modules} quizzesById={quizzesById} quiz={quiz} onQuizPassed={onPassed} programName={name} advisorWhatsapp={advisorWhatsapp} />
 
       {/* 2 · Enroll in the next live cohort */}
       <section id="enroll-offer" ref={enrollRef} className={cn("scroll-mt-24 overflow-hidden rounded-3xl border shadow-lg transition", passed ? "border-[#f4c430] ring-2 ring-[#f4c430]/30" : "border-border/70")}>

@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, Play, Lock, Trophy, MessageCircle, X } from "lucide-react";
+import { PlayCircle, FileDown, CheckCircle2, AlertTriangle, BrainCircuit, ChevronLeft, ChevronRight, Play, Lock, Trophy, MessageCircle, X, ListChecks } from "lucide-react";
 
-import type { FreeLecture } from "@/lib/dal/free-courses";
+import type { FreeLecture, FreeModule } from "@/lib/dal/free-courses";
 import type { QuizQuestion } from "@/features/free-courses/lib/free-quiz-data";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,25 +23,56 @@ const LOCKED_TEASERS = [
 ];
 
 /**
- * Public LMS: watch lectures, then take the quiz — all from one playlist. The
- * quiz is the last playlist item; selecting it replaces the video stage with
- * the quiz screen. Next/Back walk through lectures → quiz.
+ * Public LMS: watch lectures + take quizzes, grouped into modules.
+ *
+ * An item is **unlocked** when it has playable content — a lesson with a video,
+ * or a quiz with a resolved question set. Anything else (a lesson with no video,
+ * a quiz with no bank quiz picked) renders in the playlist as a 🔒 locked row
+ * that can't be opened, matching the admin's "no video / no quiz = locked" rule.
+ *
+ * The trailing `quiz` prop is the legacy program-level knowledge check; it still
+ * appears as the last playlist item and drives the enroll funnel via onQuizPassed.
  */
 export function FreeLecturePlayer({
-  locale, lectures, quiz = [], onQuizPassed, programName = "", advisorWhatsapp,
+  locale, lectures, modules = [], quizzesById = {}, quiz = [], onQuizPassed, programName = "", advisorWhatsapp,
 }: {
   locale: string;
+  /** ALL published items (lessons + quizzes), locked ones included. */
   lectures: FreeLecture[];
+  modules?: FreeModule[];
+  /** Resolved question sets for quiz-kind items, keyed by lecture id. */
+  quizzesById?: Record<string, QuizQuestion[]>;
+  /** Legacy program-level knowledge check (trailing playlist item). */
   quiz?: QuizQuestion[];
   onQuizPassed?: () => void;
   programName?: string;
   advisorWhatsapp?: string;
 }) {
   const hasQuiz = quiz.length > 0;
-  const order = React.useMemo(
-    () => [...lectures.map((l) => l.id), ...(hasQuiz ? [QUIZ_ID] : [])],
-    [lectures, hasQuiz],
+
+  const isUnlocked = React.useCallback(
+    (l: FreeLecture) => (l.kind === "quiz" ? (quizzesById[l.id]?.length ?? 0) > 0 : !!l.videoUrl),
+    [quizzesById],
   );
+
+  // Display order: module by order → its items by order → ungrouped.
+  const orderedLectures = React.useMemo(() => {
+    const mods = [...modules].sort((a, b) => a.order - b.order);
+    const inMod = (mid: string) => lectures.filter((l) => l.moduleId === mid).sort((a, b) => a.order - b.order);
+    const grouped = mods.flatMap((m) => inMod(m.id));
+    const ungrouped = lectures.filter((l) => !l.moduleId).sort((a, b) => a.order - b.order);
+    return [...grouped, ...ungrouped];
+  }, [lectures, modules]);
+
+  const unlocked = React.useMemo(() => orderedLectures.filter(isUnlocked), [orderedLectures, isUnlocked]);
+  const lessons = React.useMemo(() => unlocked.filter((l) => l.kind === "lesson"), [unlocked]);
+
+  // Nav sequence (Next/Back + progress) is unlocked items, then the trailing quiz.
+  const order = React.useMemo(
+    () => [...unlocked.map((l) => l.id), ...(hasQuiz ? [QUIZ_ID] : [])],
+    [unlocked, hasQuiz],
+  );
+
   const [activeId, setActiveId] = React.useState(order[0] ?? "");
   const [watched, setWatched] = React.useState<Set<string>>(() => new Set());
   const [completed, setCompleted] = React.useState<Set<string>>(() => new Set());
@@ -49,12 +80,21 @@ export function FreeLecturePlayer({
   const [showEnjoy, setShowEnjoy] = React.useState(false);
   const [show80, setShow80] = React.useState(false);
   const funnelRef = React.useRef({ enjoy: false, near: false });
-  const progressPct = lectures.length ? Math.round((completed.size / lectures.length) * 100) : 0;
 
-  const isQuiz = activeId === QUIZ_ID;
+  const completedLessons = lessons.filter((l) => completed.has(l.id)).length;
+  const progressPct = lessons.length ? Math.round((completedLessons / lessons.length) * 100) : 0;
+
+  const isProgramQuiz = activeId === QUIZ_ID;
   const active = lectures.find((l) => l.id === activeId);
   const idx = Math.max(0, order.indexOf(activeId));
-  const lessonIdx = lectures.findIndex((l) => l.id === activeId);
+  const lessonIdx = lessons.findIndex((l) => l.id === activeId);
+
+  // The quiz to show in the stage: program-level, or a per-item quiz.
+  const stageQuiz: QuizQuestion[] | null = isProgramQuiz
+    ? quiz
+    : active && active.kind === "quiz"
+      ? (quizzesById[active.id] ?? [])
+      : null;
 
   const title = (l: FreeLecture) => (locale === "ar" ? l.titleAr : l.titleEn) || l.titleEn;
   const desc = (l: FreeLecture) => (locale === "ar" ? l.descriptionAr : l.descriptionEn) || "";
@@ -83,7 +123,62 @@ export function FreeLecturePlayer({
     }
   };
 
-  const youTubeId = active && active.videoProvider === "youtube" ? extractYouTubeVideoId(active.videoUrl) : null;
+  const youTubeId = active && active.kind === "lesson" && active.videoProvider === "youtube"
+    ? extractYouTubeVideoId(active.videoUrl)
+    : null;
+
+  const quizCountTotal = unlocked.filter((l) => l.kind === "quiz").length + (hasQuiz ? 1 : 0);
+
+  /* One playlist row (lesson or quiz), locked or not. */
+  const Row = ({ l, n }: { l: FreeLecture; n: number }) => {
+    const isOn = l.id === activeId;
+    const unlockedRow = isUnlocked(l);
+    const isQuizRow = l.kind === "quiz";
+    if (!unlockedRow) {
+      return (
+        <li>
+          <div className="flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-start opacity-70" aria-disabled>
+            <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+              <Lock className="size-3.5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm leading-snug text-foreground/70">{title(l)}</span>
+              <span className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                {isQuizRow ? <ListChecks className="size-3" /> : <PlayCircle className="size-3" />}
+                {tr(locale, "Coming soon", "قريبًا")}
+              </span>
+            </span>
+          </div>
+        </li>
+      );
+    }
+    return (
+      <li>
+        <button type="button" onClick={() => select(l.id)} aria-current={isOn}
+          className={cn("flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-start transition-colors", isOn ? "bg-primary/10 ring-1 ring-primary/20" : "hover:bg-muted/60")}>
+          <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold tabular-nums", isOn ? "bg-primary text-primary-foreground" : isQuizRow ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+            {isQuizRow ? <BrainCircuit className="size-3.5" /> : watched.has(l.id) && !isOn ? <CheckCircle2 className="size-3.5" /> : n}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className={cn("block text-sm leading-snug", isOn ? "font-semibold text-foreground" : "text-foreground/80")}>{title(l)}</span>
+            <span className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+              {isQuizRow ? <BrainCircuit className="size-3" /> : <PlayCircle className="size-3" />}
+              {isQuizRow
+                ? tr(locale, `${quizzesById[l.id]?.length ?? 0} questions`, `${quizzesById[l.id]?.length ?? 0} أسئلة`)
+                : l.durationMinutes > 0 ? tr(locale, `${l.durationMinutes} min`, `${l.durationMinutes} دقيقة`) : tr(locale, "Video", "فيديو")}
+            </span>
+          </span>
+        </button>
+      </li>
+    );
+  };
+
+  const sortedModules = [...modules].sort((a, b) => a.order - b.order);
+  const ungroupedLectures = orderedLectures.filter((l) => !l.moduleId);
+
+  // Global lesson numbering across the whole playlist (only lessons are numbered).
+  let lessonNo = 0;
+  const rowNumber = (l: FreeLecture) => (l.kind === "lesson" ? ++lessonNo : 0);
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_20rem] lg:items-start">
@@ -93,23 +188,25 @@ export function FreeLecturePlayer({
         <div className="rounded-xl border border-border/60 bg-card px-4 py-2.5">
           <div className="flex items-center justify-between text-xs font-semibold">
             <span>{tr(locale, "Course progress", "تقدّمك في الكورس")}</span>
-            <span className="tabular-nums text-primary">{progressPct}% · {tr(locale, `${completed.size} of ${lectures.length}`, `${completed.size} من ${lectures.length}`)}</span>
+            <span className="tabular-nums text-primary">{progressPct}% · {tr(locale, `${completedLessons} of ${lessons.length}`, `${completedLessons} من ${lessons.length}`)}</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
-        {isQuiz ? (
+        {stageQuiz ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
               <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><BrainCircuit className="size-5" /></span>
               <div>
-                <h2 className="font-heading text-lg font-bold">{tr(locale, "Test your knowledge", "اختبر معلوماتك")}</h2>
-                <p className="text-xs text-muted-foreground">{tr(locale, `${quiz.length} quick questions`, `${quiz.length} أسئلة سريعة`)}</p>
+                <h2 className="font-heading text-lg font-bold">
+                  {active && active.kind === "quiz" && !isProgramQuiz ? title(active) : tr(locale, "Test your knowledge", "اختبر معلوماتك")}
+                </h2>
+                <p className="text-xs text-muted-foreground">{tr(locale, `${stageQuiz.length} quick questions`, `${stageQuiz.length} أسئلة سريعة`)}</p>
               </div>
             </div>
-            <FreeLectureQuiz locale={locale} quiz={quiz} onPassed={onQuizPassed} />
+            <FreeLectureQuiz key={activeId} locale={locale} quiz={stageQuiz} onPassed={onQuizPassed} />
           </div>
         ) : active ? (
           <>
@@ -157,9 +254,9 @@ export function FreeLecturePlayer({
                   {tr(locale, "This lecture has no video yet.", "لا يوجد فيديو لهذه المحاضرة بعد.")}
                 </div>
               )}
-              {lessonIdx >= 0 && lectures.length > 0 && (
+              {lessonIdx >= 0 && lessons.length > 0 && (
                 <span className="pointer-events-none absolute start-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide text-white shadow backdrop-blur">
-                  <Play className="size-3 fill-current" /> {tr(locale, "Free lesson", "درس مجاني")} {lessonIdx + 1} / {lectures.length}
+                  <Play className="size-3 fill-current" /> {tr(locale, "Free lesson", "درس مجاني")} {lessonIdx + 1} / {lessons.length}
                 </span>
               )}
 
@@ -230,7 +327,11 @@ export function FreeLecturePlayer({
               )}
             </div>
           </>
-        ) : null}
+        ) : (
+          <p className="rounded-xl border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
+            {tr(locale, "Content is being uploaded — check back soon.", "يجري رفع المحتوى — تابعنا قريبًا.")}
+          </p>
+        )}
 
         {/* Next / Back */}
         {order.length > 1 && (
@@ -249,40 +350,47 @@ export function FreeLecturePlayer({
       {/* Playlist */}
       <aside className="rounded-2xl border border-border/70 bg-card p-3 shadow-sm lg:sticky lg:top-24">
         <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          {tr(locale, `${lectures.length} lectures`, `${lectures.length} محاضرة`)}{hasQuiz ? tr(locale, " + quiz", " + اختبار") : ""}
+          {tr(locale, `${lessons.length} lessons`, `${lessons.length} درس`)}
+          {quizCountTotal > 0 ? tr(locale, ` · ${quizCountTotal} quiz${quizCountTotal === 1 ? "" : "zes"}`, ` · ${quizCountTotal} اختبار`) : ""}
         </p>
-        <ol className="max-h-[28rem] space-y-1 overflow-y-auto">
-          {lectures.map((l, i) => {
-            const isOn = l.id === activeId;
+        <ol className="max-h-[32rem] space-y-1 overflow-y-auto">
+          {/* Modules */}
+          {sortedModules.map((m) => {
+            const items = orderedLectures.filter((l) => l.moduleId === m.id);
+            if (items.length === 0) return null;
             return (
-              <li key={l.id}>
-                <button type="button" onClick={() => select(l.id)} aria-current={isOn}
-                  className={cn("flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-start transition-colors", isOn ? "bg-primary/10 ring-1 ring-primary/20" : "hover:bg-muted/60")}>
-                  <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold tabular-nums", isOn ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
-                    {watched.has(l.id) && !isOn ? <CheckCircle2 className="size-3.5" /> : i + 1}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className={cn("block text-sm leading-snug", isOn ? "font-semibold text-foreground" : "text-foreground/80")}>{title(l)}</span>
-                    <span className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <PlayCircle className="size-3" />
-                      {l.durationMinutes > 0 ? tr(locale, `${l.durationMinutes} min`, `${l.durationMinutes} دقيقة`) : tr(locale, "Video", "فيديو")}
-                    </span>
-                  </span>
-                </button>
-              </li>
+              <React.Fragment key={m.id}>
+                <li className="px-2 pb-0.5 pt-2 text-[10px] font-bold uppercase tracking-wider text-primary/70">
+                  {(locale === "ar" ? m.titleAr : m.titleEn) || m.titleEn}
+                </li>
+                {items.map((l) => <Row key={l.id} l={l} n={rowNumber(l)} />)}
+              </React.Fragment>
             );
           })}
 
+          {/* Ungrouped (legacy) items */}
+          {ungroupedLectures.length > 0 && (
+            <>
+              {sortedModules.some((m) => orderedLectures.some((l) => l.moduleId === m.id)) && (
+                <li className="px-2 pb-0.5 pt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  {tr(locale, "Lectures", "المحاضرات")}
+                </li>
+              )}
+              {ungroupedLectures.map((l) => <Row key={l.id} l={l} n={rowNumber(l)} />)}
+            </>
+          )}
+
+          {/* Trailing program-level knowledge check */}
           {hasQuiz && (
             <li>
-              {lectures.length > 0 && <div className="my-1 px-2 text-[10px] font-bold uppercase tracking-wider text-primary/70">{tr(locale, "Quiz", "الاختبار")}</div>}
-              <button type="button" onClick={() => select(QUIZ_ID)} aria-current={isQuiz}
-                className={cn("flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-start transition-colors", isQuiz ? "bg-primary/10 ring-1 ring-primary/20" : "hover:bg-muted/60")}>
-                <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-full", isQuiz ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>
+              <div className="my-1 px-2 text-[10px] font-bold uppercase tracking-wider text-primary/70">{tr(locale, "Quiz", "الاختبار")}</div>
+              <button type="button" onClick={() => select(QUIZ_ID)} aria-current={isProgramQuiz}
+                className={cn("flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-start transition-colors", isProgramQuiz ? "bg-primary/10 ring-1 ring-primary/20" : "hover:bg-muted/60")}>
+                <span className={cn("mt-0.5 grid size-6 shrink-0 place-items-center rounded-full", isProgramQuiz ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>
                   <BrainCircuit className="size-3.5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className={cn("block text-sm leading-snug", isQuiz ? "font-semibold text-foreground" : "text-foreground/80")}>{tr(locale, "Knowledge check quiz", "اختبار قصير")}</span>
+                  <span className={cn("block text-sm leading-snug", isProgramQuiz ? "font-semibold text-foreground" : "text-foreground/80")}>{tr(locale, "Knowledge check quiz", "اختبار قصير")}</span>
                   <span className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
                     <BrainCircuit className="size-3" /> {tr(locale, `${quiz.length} questions`, `${quiz.length} أسئلة`)}
                   </span>

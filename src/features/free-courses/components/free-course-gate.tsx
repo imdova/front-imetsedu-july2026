@@ -18,6 +18,7 @@ export function FreeCourseGate({
   program,
   advisorWhatsapp,
   quiz,
+  quizzesById,
 }: {
   locale: string;
   program: FreeProgram;
@@ -26,6 +27,8 @@ export function FreeCourseGate({
   advisorWhatsapp?: string;
   /** The resolved quiz (admin-selected from the bank, or the bundled default). */
   quiz?: QuizQuestion[];
+  /** Resolved question sets for module quiz items, keyed by lecture id. */
+  quizzesById?: Record<string, QuizQuestion[]>;
 }) {
 
   // null on the server AND the first client render, so the markup matches and
@@ -47,7 +50,7 @@ export function FreeCourseGate({
 
   // Advisor mode: no gate, no form — go straight to the lessons.
   if (advisorWhatsapp) {
-    return <FreeLessonExperience locale={locale} program={program} advisorWhatsapp={advisorWhatsapp} quiz={quiz} />;
+    return <FreeLessonExperience locale={locale} program={program} advisorWhatsapp={advisorWhatsapp} quiz={quiz} quizzesById={quizzesById} />;
   }
 
   if (unlocked === null) {
@@ -94,7 +97,7 @@ export function FreeCourseGate({
         <CheckCircle2 className="size-3.5" />
         {tr(locale, "Access unlocked — enjoy!", "تم فتح الوصول — استمتع!")}
       </p>
-      <FreeLessonExperience locale={locale} program={program} quiz={quiz} />
+      <FreeLessonExperience locale={locale} program={program} quiz={quiz} quizzesById={quizzesById} />
     </div>
   );
 }

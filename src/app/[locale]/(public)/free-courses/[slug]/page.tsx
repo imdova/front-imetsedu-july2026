@@ -55,22 +55,29 @@ export default async function FreeCourseDetailPage({
   if (!res.ok) notFound();
   const program = res.data;
 
-  // Admin-selected quiz from the quiz bank (public GET) → mapped to the lesson
-  // quiz shape; falls back to the bundled default inside the experience.
-  let quiz: QuizQuestion[] | undefined;
-  if (program.quizId) {
-    const qr = await dal.quizzes.fetchQuizDetail(program.quizId);
-    if (qr.ok) {
-      const mapped = qr.data.questions
-        .filter((q) => ["single", "true-false", "multiple"].includes(q.type) && q.choices.length >= 2)
-        .map((q) => ({
-          q: { en: q.prompt, ar: q.prompt },
-          options: q.choices.map((c) => ({ en: c.text, ar: c.text })),
-          correct: Math.max(0, q.choices.findIndex((c) => c.isCorrect)),
-        }));
-      if (mapped.length) quiz = mapped;
-    }
-  }
+  // Resolve a quiz-bank quiz (public GET) → the lightweight lesson-quiz shape.
+  const resolveQuiz = async (quizId: string): Promise<QuizQuestion[] | undefined> => {
+    const qr = await dal.quizzes.fetchQuizDetail(quizId);
+    if (!qr.ok) return undefined;
+    const mapped = qr.data.questions
+      .filter((q) => ["single", "true-false", "multiple"].includes(q.type) && q.choices.length >= 2)
+      .map((q) => ({
+        q: { en: q.prompt, ar: q.prompt },
+        options: q.choices.map((c) => ({ en: c.text, ar: c.text })),
+        correct: Math.max(0, q.choices.findIndex((c) => c.isCorrect)),
+      }));
+    return mapped.length ? mapped : undefined;
+  };
+
+  // Program-level quiz (legacy single knowledge check) → falls back to bundled.
+  const quiz: QuizQuestion[] | undefined = program.quizId ? await resolveQuiz(program.quizId) : undefined;
+
+  // Per-item quizzes for module "quiz" lessons → keyed by lecture id. Items with
+  // no bank quiz picked stay out of the map, so the player shows them as locked.
+  const quizLectures = program.lectures.filter((l) => l.kind === "quiz" && l.quizId);
+  const resolved = await Promise.all(quizLectures.map((l) => resolveQuiz(l.quizId)));
+  const quizzesById: Record<string, QuizQuestion[]> = {};
+  quizLectures.forEach((l, i) => { const q = resolved[i]; if (q) quizzesById[l.id] = q; });
 
   const name = (locale === "ar" ? program.titleAr : program.titleEn) || program.titleEn;
   const body = (locale === "ar" ? program.descriptionAr : program.descriptionEn) || "";
@@ -78,11 +85,13 @@ export default async function FreeCourseDetailPage({
   const lectureTitle = (l: (typeof program.lectures)[number]) =>
     (locale === "ar" ? l.titleAr : l.titleEn) || l.titleEn;
 
-  const totalMin = program.lectures.reduce((s, l) => s + (l.durationMinutes || 0), 0);
+  // Only real lessons (not quiz items) count toward "N lectures" / duration.
+  const lessonList = program.lectures.filter((l) => l.kind !== "quiz");
+  const totalMin = lessonList.reduce((s, l) => s + (l.durationMinutes || 0), 0);
   const durLabel = totalMin >= 60
     ? `${Math.floor(totalMin / 60)}${tr(locale, "h", "س")}${totalMin % 60 ? ` ${totalMin % 60}${tr(locale, "m", "د")}` : ""}`
     : `${totalMin} ${tr(locale, "min", "د")}`;
-  const count = program.lectures.length;
+  const count = lessonList.length;
   const FACTS = [
     { icon: ListVideo, text: `${count} ${count === 1 ? tr(locale, "lecture", "محاضرة") : tr(locale, "lectures", "محاضرة")}` },
     ...(totalMin > 0 ? [{ icon: Clock, text: durLabel }] : []),
@@ -105,9 +114,9 @@ export default async function FreeCourseDetailPage({
             // Zero-price offer: required for a free course to qualify for
             // Google's course rich results.
             offers: { "@type": "Offer", price: 0, priceCurrency: "EGP", category: "Free", url },
-            ...(program.lectures.length
+            ...(lessonList.length
               ? {
-                  hasPart: program.lectures.map((l) => ({
+                  hasPart: lessonList.map((l) => ({
                     "@type": "Course",
                     name: lectureTitle(l),
                     description: (locale === "ar" ? l.descriptionAr : l.descriptionEn) || undefined,
@@ -174,7 +183,7 @@ export default async function FreeCourseDetailPage({
 
         {/* The gate only covers the PLAYER. Advisor-mode slugs skip the form
             and offer a WhatsApp course advisor instead. */}
-        <FreeCourseGate locale={locale} program={program} advisorWhatsapp={ADVISOR_WHATSAPP[slug]} quiz={quiz} />
+        <FreeCourseGate locale={locale} program={program} advisorWhatsapp={ADVISOR_WHATSAPP[slug]} quiz={quiz} quizzesById={quizzesById} />
 
       </div>
     </>
