@@ -216,8 +216,8 @@ export function FreeLecturePlayer({
           </div>
         ) : active ? (
           <>
-            {/* Free-vs-paid teaser: what the full program adds beyond this lesson. */}
-            <div className="rounded-2xl border border-[#f4c430]/40 bg-gradient-to-br from-[#f4c430]/[0.12] to-transparent p-4 sm:p-5">
+            {/* Free-vs-paid teaser: what the full program adds beyond this lesson. Hidden on mobile. */}
+            <div className="hidden rounded-2xl border border-[#f4c430]/40 bg-gradient-to-br from-[#f4c430]/[0.12] to-transparent p-4 sm:block sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-extrabold">🎁 {tr(locale, "You're watching the first lesson — free", "أنت تشاهد أول درس مجاناً")}</p>
