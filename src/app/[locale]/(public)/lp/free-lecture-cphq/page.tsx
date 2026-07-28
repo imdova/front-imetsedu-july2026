@@ -434,14 +434,32 @@ export default async function FreeLectureCphqPage({
         </div>
       </section>
 
-      {/* Sticky mobile CTA (mobile only) */}
-      <div className="h-16 md:hidden" />
-      <a
-        href="#register"
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 bg-[#f4c430] px-4 py-3.5 text-center text-sm font-extrabold text-[#0a1424] shadow-[0_-4px_20px_rgba(0,0,0,0.18)] md:hidden"
+      {/* Sticky mobile CTA (mobile only) — matches the course-details bar:
+          bordered/blurred bar, info block + solid CTA, safe-area padding. */}
+      <div className="h-20 lg:hidden" />
+      <div
+        dir="rtl"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 px-4 py-3 shadow-[0_-4px_20px_rgba(15,23,42,0.12)] backdrop-blur lg:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
-        📅 احجز مقعدي المجاني
-      </a>
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] leading-tight text-muted-foreground">
+              محاضرة CPHQ التمهيدية
+            </p>
+            <p className="flex items-center gap-1.5 text-base font-extrabold text-primary">
+              مجانية بالكامل
+              <span className="rounded-md bg-[#f4c430]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#8a6d00]">FREE</span>
+            </p>
+          </div>
+          <Button
+            asChild
+            size="lg"
+            className="h-12 shrink-0 gap-1.5 px-6 text-base font-semibold"
+          >
+            <a href="#register">احجز مقعدي</a>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
