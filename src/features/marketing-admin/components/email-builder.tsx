@@ -20,6 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { SortableList } from "@/components/shared/sortable/sortable-list";
+import { ImageUpload } from "@/components/shared/image-upload";
 import { cn } from "@/lib/utils";
 
 const BLOCK_TYPES: BlockType[] = ["header", "heading", "text", "button", "image", "divider", "spacer", "hero", "footer"];
@@ -286,6 +287,16 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
         <p className="-mt-2 text-[11px] leading-snug text-muted-foreground">Leave blank to use the IMETS wordmark. Use a hosted PNG/JPG — SVG may not render in email clients.</p>
         <div className="grid grid-cols-2 gap-3"><F label="Brand (gold)">{text("brandTop")}</F><F label="Brand (white)">{text("brandSub")}</F></div>
         <F label="Background">{color("bg")}</F>
+      </>}
+      {block.type === "logoHeader" && <>
+        <F label="Logo image">
+          <ImageUpload value={String(x.logoSrc ?? "")} onChange={(url) => onChange({ logoSrc: url })} label="Upload logo" hint="PNG with a transparent background works best" />
+        </F>
+        <F label="…or paste a logo URL">{text("logoSrc")}</F>
+        <div className="grid grid-cols-2 gap-3"><F label="Section background">{color("bg")}</F><F label="Vertical padding (px)">{num("padding")}</F></div>
+        <p className="-mt-1 text-[11px] leading-snug text-muted-foreground">No logo image? A text wordmark shows instead — set its words and colours below.</p>
+        <div className="grid grid-cols-2 gap-3"><F label="Wordmark — part 1">{text("wordTop")}</F><F label="Wordmark — part 2">{text("wordSub")}</F></div>
+        <div className="grid grid-cols-2 gap-3"><F label="Part 1 colour">{color("topColor")}</F><F label="Part 2 colour">{color("subColor")}</F></div>
       </>}
       {block.type === "heading" && <>
         <F label="Text">{area("text")}{tokens("text")}</F>

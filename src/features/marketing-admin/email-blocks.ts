@@ -26,6 +26,7 @@ export const PERSONALIZATION_TOKENS: { token: string; label: string }[] = [
 
 export type BlockType =
   | "header"
+  | "logoHeader"
   | "heading"
   | "text"
   | "button"
@@ -75,6 +76,7 @@ export const DEFAULT_SETTINGS: DesignSettings = {
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
   header: "Brand header",
+  logoHeader: "Logo header",
   heading: "Heading",
   text: "Text",
   button: "Button",
@@ -107,6 +109,10 @@ export function defaultProps(type: BlockType): Record<string, string | number> {
   switch (type) {
     case "header":
       return { logoSrc: `${BRAND.site}/logo-email.png`, brandTop: "IMETS", brandSub: "Medical School", bg: BRAND.blue };
+    case "logoHeader":
+      // A clean centered logo on a solid, fully editable background. Falls back
+      // to a text wordmark when no logo image is set.
+      return { logoSrc: `${BRAND.site}/logo-email.png`, bg: BRAND.blue, padding: 26, wordTop: "IMETS", wordSub: "Medical School", topColor: BRAND.gold, subColor: "#ffffff" };
     case "heading":
       return { text: "Your heading", level: 2, align: "left", color: BRAND.ink };
     case "text":
@@ -192,9 +198,9 @@ export function makeBlock(type: BlockType): Block {
 }
 
 /* ── Preset library ── */
-export type PresetCategory = "Text" | "Content" | "Media" | "Buttons" | "Commerce" | "Interactive" | "Layout";
+export type PresetCategory = "Headers" | "Text" | "Content" | "Media" | "Buttons" | "Commerce" | "Interactive" | "Layout";
 /** Display order of the classified library groups. */
-export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Text", "Content", "Media", "Buttons", "Commerce", "Interactive", "Layout"];
+export const PRESET_CATEGORY_ORDER: PresetCategory[] = ["Headers", "Text", "Content", "Media", "Buttons", "Commerce", "Interactive", "Layout"];
 
 export interface Preset { id: string; label: string; category: PresetCategory; make: () => Block }
 const p = (type: BlockType, label: string, category: PresetCategory, overrides: Record<string, string | number> = {}): Preset => ({
@@ -204,6 +210,9 @@ const p = (type: BlockType, label: string, category: PresetCategory, overrides: 
   make: () => ({ id: makeBlockId(), type, props: { ...defaultProps(type), ...overrides } }),
 });
 export const PRESETS: Preset[] = [
+  // Headers — logo on an editable solid band (change the logo image + bg colour).
+  p("logoHeader", "White header + logo", "Headers", { bg: "#ffffff", logoSrc: "", topColor: BRAND.blue, subColor: BRAND.ink }),
+  p("logoHeader", "Blue header + logo", "Headers", { bg: BRAND.blue, logoSrc: `${BRAND.site}/logo-email.png`, topColor: BRAND.gold, subColor: "#ffffff" }),
   // Text
   p("heading", "Title", "Text", { text: "Welcome to IMETS", level: 1, align: "center", color: BRAND.blue }),
   p("heading", "Subtitle", "Text", { text: "Professional diplomas & courses", level: 3, align: "center", color: "#6b7280" }),
@@ -295,6 +304,13 @@ export function renderBlock(b: Block): string {
         ? `<img src="${esc(x.logoSrc)}" alt="${esc(x.brandTop)} ${esc(x.brandSub)}" style="max-height:44px;" />`
         : `<span style="font-family:Arial,sans-serif;font-weight:800;font-size:22px;letter-spacing:.5px;"><span style="color:${BRAND.gold};">${esc(x.brandTop)}</span> <span style="color:#ffffff;">${esc(x.brandSub)}</span></span>`;
       return `<div style="background:${esc(x.bg)};padding:22px 24px 18px;text-align:center;border-radius:10px 10px 0 0;">${logo}<div style="height:3px;width:56px;margin:14px auto 0;background:${BRAND.gold};border-radius:2px;"></div></div>`;
+    }
+    case "logoHeader": {
+      const pad = Number(x.padding ?? 26);
+      const logo = x.logoSrc
+        ? `<img src="${esc(x.logoSrc)}" alt="${esc(x.wordTop)} ${esc(x.wordSub)}" style="max-height:48px;display:inline-block;" />`
+        : `<span style="font-family:Arial,sans-serif;font-weight:800;font-size:22px;letter-spacing:.5px;"><span style="color:${esc(x.topColor ?? BRAND.gold)};">${esc(x.wordTop)}</span> <span style="color:${esc(x.subColor ?? "#ffffff")};">${esc(x.wordSub)}</span></span>`;
+      return `<div style="background:${esc(x.bg)};padding:${pad}px 24px;text-align:center;">${logo}</div>`;
     }
     case "heading": {
       const size = x.level === 1 ? 28 : x.level === 3 ? 18 : 22;
@@ -542,7 +558,7 @@ export function renderBlock(b: Block): string {
 }
 
 /** A block that paints its own full-width band (no side padding around it). */
-const isFullBleed = (t: BlockType) => t === "header" || t === "footer" || t === "hero" || t === "html";
+const isFullBleed = (t: BlockType) => t === "header" || t === "logoHeader" || t === "footer" || t === "hero" || t === "html";
 
 export function renderDesign(design: Design): string {
   const { blocks, settings } = design;
