@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 
 import { PublicHeader } from "@/features/marketing/components/public-header";
 import { PublicFooter } from "@/features/marketing/components/public-footer";
+import { FooterGate } from "@/features/marketing/components/footer-gate";
 import { PublicBannerBar } from "@/features/marketing/components/public-banner-bar";
 import { getTheme } from "@/lib/db/site-settings";
 import { dal } from "@/lib/dal";
@@ -91,7 +92,7 @@ export default async function PublicLayout({
       <PublicBannerBar />
       <PublicHeader logoLight={logoLight} logoBlue={logoBlue} locale={locale} megaCategories={megaCategories} megaCourses={megaCourses} />
       <main className="flex-1">{children}</main>
-      <PublicFooter logoLight={logoLight} />
+      <FooterGate><PublicFooter logoLight={logoLight} /></FooterGate>
     </div>
   );
 }
