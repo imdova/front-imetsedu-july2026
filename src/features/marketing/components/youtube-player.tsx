@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Volume2 } from "lucide-react";
+import { Volume2, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { loadYouTubeApi } from "@/features/marketing/lib/youtube";
 
@@ -46,6 +46,10 @@ export function YouTubePlayer({
   const playerRef = React.useRef<any>(null);
   const [muted, setMuted] = React.useState(true);
   const [ready, setReady] = React.useState(false);
+  // Track playback so we can cover YouTube's paused-screen chrome (title +
+  // "Watch on YouTube" pill) with our own overlay whenever it isn't playing.
+  const [playing, setPlaying] = React.useState(false);
+  const [everPlayed, setEverPlayed] = React.useState(false);
   const onEndedRef = React.useRef(onEnded);
   const onProgressRef = React.useRef(onProgress);
   React.useEffect(() => { onEndedRef.current = onEnded; onProgressRef.current = onProgress; });
@@ -104,8 +108,12 @@ export function YouTubePlayer({
           onStateChange: (e: any) => {
             if (e.data === YT.PlayerState.PLAYING) {
               try { setMuted(!!e.target.isMuted()); } catch { /* ignore */ }
+              setPlaying(true); setEverPlayed(true);
             } else if (e.data === YT.PlayerState.ENDED) {
+              setPlaying(false);
               onEndedRef.current?.();
+            } else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.CUED) {
+              setPlaying(false);
             }
           },
         },
@@ -123,6 +131,11 @@ export function YouTubePlayer({
     if (!p) return;
     try { p.unMute(); p.setVolume(100); p.playVideo(); setMuted(false); } catch { /* ignore */ }
   };
+  const startPlay = () => {
+    const p = playerRef.current;
+    if (!p) return;
+    try { p.playVideo(); } catch { /* ignore */ }
+  };
 
   return (
     <div className={cn("relative aspect-video w-full overflow-hidden bg-black", className)}>
@@ -131,6 +144,25 @@ export function YouTubePlayer({
         // Blocks the top-bar title + "Watch on YouTube"/share links from being
         // clicked; the centre play button and bottom controls stay reachable.
         <div className="absolute inset-x-0 top-0 z-[5] h-14" aria-hidden />
+      )}
+      {hideYouTubeChrome && ready && !playing && (
+        // Covers YouTube's paused/poster screen — title + "Watch on YouTube"
+        // pill — with our own play button. Shows the video thumbnail before the
+        // first play, then a light veil on later pauses. Clicking resumes.
+        <button
+          type="button"
+          onClick={startPlay}
+          aria-label="Play video"
+          className={cn(
+            "group absolute inset-0 z-[6] flex items-center justify-center transition",
+            everPlayed ? "bg-black/45 backdrop-blur-[1px]" : "bg-black bg-cover bg-center",
+          )}
+          style={everPlayed ? undefined : { backgroundImage: `url(https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg)` }}
+        >
+          <span className="grid size-16 place-items-center rounded-full bg-black/55 text-white shadow-lg ring-1 ring-white/30 transition group-hover:scale-105">
+            <Play className="size-7 translate-x-0.5 fill-current" />
+          </span>
+        </button>
       )}
       {ready && autoPlay && muted && (
         <button
