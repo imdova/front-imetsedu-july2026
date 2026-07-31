@@ -36,6 +36,8 @@ export interface ArabLandingContent {
   heroTitle: ReactNode;            // full styled <h1> content
   heroLead: string;                // "احضر محاضرة مجانية تساعدك على معرفة:"
   heroBullets: string[];
+  /** Optional star-rated social proof rendered directly under the hero CTA. */
+  heroMicroProof?: string;
 
   /** Trust / accreditation badges (course-specific) */
   trust: { icon: LucideIcon; label: string }[];
@@ -176,6 +178,12 @@ export function FreeLectureArabLanding({ content: c }: { content: ArabLandingCon
                   <CalendarClock className="size-4 text-[#f4c430]" /> الأماكن محدودة
                 </span>
               </div>
+              {c.heroMicroProof && (
+                <div className="flex flex-col gap-1 pt-1">
+                  <span className="flex text-[#f4c430]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-4 fill-current" />)}</span>
+                  <span className="text-sm font-semibold text-white">{c.heroMicroProof}</span>
+                </div>
+              )}
             </div>
             <LandingHeroVideo path={c.path} />
           </div>
