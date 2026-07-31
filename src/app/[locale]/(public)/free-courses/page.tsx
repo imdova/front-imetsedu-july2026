@@ -49,12 +49,23 @@ export default async function FreeCoursesPage({
   const res = await dal.freeCourses.fetchFreePrograms();
   const programs = res.ok ? res.data : [];
 
-  // Real platform courses → each opens its free-lecture landing page.
+  // Real platform courses → each opens its own free-lecture landing page.
   const coursesRes = await dal.courses.fetchCourses();
   const courses = (coursesRes.ok ? coursesRes.data : []).filter((c) => c.status === "published");
   // Map a course slug to its free-lecture landing page; default to the CPHQ LP.
-  const FREE_LECTURE_LP: Record<string, string> = {};
-  const lpFor = (slug: string) => FREE_LECTURE_LP[slug] ?? "/lp/free-lecture-cphq";
+  const FREE_LECTURE_LP: Record<string, string> = {
+    "cphq-preparation": "/lp/free-lecture-cphq-arab",
+    "healthcare-quality-management-diploma": "/lp/free-lecture-quality-diploma-arab",
+    "cic-preparation": "/lp/free-lecture-cic-arab",
+    "infection-control-diploma": "/lp/free-lecture-infection-control-arab",
+    "hospital-management-diploma": "/lp/free-lecture-hospital-management-arab",
+    "healthcare-marketing-diploma": "/lp/free-lecture-healthcare-marketing-arab",
+    "healthcare-hr-management-diploma": "/lp/free-lecture-hr-management-arab",
+    "healthcare-strategic-management-diploma": "/lp/free-lecture-strategic-management-arab",
+    "healthcare-supply-chain-diploma": "/lp/free-lecture-supply-chain-arab",
+    "financial-management-course": "/lp/free-lecture-financial-management-arab",
+  };
+  const lpFor = (slug: string) => FREE_LECTURE_LP[slug] ?? "/lp/free-lecture-cphq-arab";
 
   const totalLectures = programs.reduce((s, p) => s + (p.lectureCount || p.lectures.length), 0);
   const totalHours = Math.round(programs.reduce((s, p) => s + p.lectures.reduce((a, l) => a + (l.durationMinutes || 0), 0), 0) / 60);
