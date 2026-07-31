@@ -430,15 +430,27 @@ export function LandingPagesPanel({
               </Field>
             </div>
             <Field label="Category">
-              <Input
-                list="landing-cat-options"
-                value={form.category ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                placeholder="Uncategorized — type or pick a category"
-              />
-              <datalist id="landing-cat-options">
-                {cats.map((c) => <option key={c.name} value={c.name} />)}
-              </datalist>
+              {(() => {
+                const NONE = "__uncat__";
+                const names = cats.map((c) => c.name);
+                // Keep the current value selectable even if it isn't in the registry.
+                const options = form.category && !names.includes(form.category) ? [form.category, ...names] : names;
+                return (
+                  <Select
+                    value={form.category ? form.category : NONE}
+                    onValueChange={(v) => setForm((f) => ({ ...f, category: v === NONE ? "" : v }))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Uncategorized" /></SelectTrigger>
+                    <SelectContent position="popper">
+                      <SelectItem value={NONE}>Uncategorized</SelectItem>
+                      {options.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                );
+              })()}
+              {cats.length === 0 && (
+                <p className="mt-1 text-[11px] text-muted-foreground">No categories yet — add them from the sidebar on the left.</p>
+              )}
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Status">
