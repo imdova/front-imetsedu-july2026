@@ -55,6 +55,8 @@ export interface ArabLandingContent {
 
   /** Agenda */
   agendaTitle: string;
+  /** Per-item label prefix (default "المحور"; e.g. "الدرس"). */
+  agendaLabel?: string;
   agenda: { icon: LucideIcon; t: string; b: string }[];
 
   /** Audience */
@@ -82,6 +84,8 @@ export interface ArabLandingContent {
 
   /** Final CTA + sticky bar */
   finalTitle: string; finalSub: string; finalCtaLabel: string;
+  /** Star-rated micro social-proof line under the final CTA button. */
+  finalMicroProof?: string;
   heroCtaLabel: string;
   stickyLabel: string;
 }
@@ -299,7 +303,7 @@ export function FreeLectureArabLanding({ content: c }: { content: ArabLandingCon
                 <CardContent className="flex gap-3 p-5">
                   <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><a.icon className="size-5" /></span>
                   <div>
-                    <div className="text-xs font-bold text-primary">المحور {String(i + 1).padStart(2, "0")}</div>
+                    <div className="text-xs font-bold text-primary">{c.agendaLabel ?? "المحور"} {String(i + 1).padStart(2, "0")}</div>
                     <h3 className="text-base font-bold">{a.t}</h3>
                     <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{a.b}</p>
                   </div>
@@ -431,7 +435,7 @@ export function FreeLectureArabLanding({ content: c }: { content: ArabLandingCon
           </Button>
           <div className="flex flex-col items-center gap-1.5 pt-1">
             <span className="flex text-[#f4c430]">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-5 fill-current" />)}</span>
-            <span className="text-sm font-semibold">انضم إلى أكثر من 17,000 متخصص صحي بدأوا رحلتهم مع IMETS</span>
+            <span className="text-sm font-semibold">{c.finalMicroProof ?? "انضم إلى أكثر من 17,000 متخصص صحي بدأوا رحلتهم مع IMETS"}</span>
           </div>
           <p className="inline-flex items-center justify-center gap-1.5 text-xs text-white/80">
             🔒 بياناتك آمنة ولن تتم مشاركتها مع أي جهة.
