@@ -38,6 +38,8 @@ export interface ArabLandingContent {
   heroBullets: string[];
   /** Optional star-rated social proof rendered directly under the hero CTA. */
   heroMicroProof?: string;
+  /** Optional reassurance line under the hero CTA (e.g. "watch now, no waiting"). */
+  heroNote?: string;
 
   /** Trust / accreditation badges (course-specific) */
   trust: { icon: LucideIcon; label: string }[];
@@ -184,6 +186,7 @@ export function FreeLectureArabLanding({ content: c }: { content: ArabLandingCon
                   <span className="text-sm font-semibold text-white">{c.heroMicroProof}</span>
                 </div>
               )}
+              {c.heroNote && <p className="pt-0.5 text-xs text-white/85">{c.heroNote}</p>}
             </div>
             <LandingHeroVideo path={c.path} />
           </div>
