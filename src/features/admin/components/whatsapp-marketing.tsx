@@ -252,7 +252,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
   return (
     <div className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70", cols)} style={{ height: "72vh" }}>
       {/* ── Conversation list ── */}
-      <div className={cn("flex flex-col border-e border-border/60 bg-card", active && "hidden lg:flex")}>
+      <div className={cn("flex min-h-0 flex-col border-e border-border/60 bg-card", active && "hidden lg:flex")}>
         <div className="space-y-2 border-b border-border/60 p-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">Conversations{convos.length ? ` · ${convos.length}` : ""}</p>
@@ -276,7 +276,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
             </div>
           )}
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">{convos.length === 0 ? (connected ? "No conversations yet — they appear when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages.") : "No conversations match."}</p>
           ) : filtered.map((c) => (
@@ -304,7 +304,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
       </div>
 
       {/* ── Thread ── */}
-      <div className={cn("flex flex-col bg-[#efeae2]/40 dark:bg-muted/20", !active && "hidden lg:flex")}>
+      <div className={cn("flex min-h-0 min-w-0 flex-col bg-[#efeae2]/40 dark:bg-muted/20", !active && "hidden lg:flex")}>
         {!active ? (
           <div className="grid flex-1 place-items-center p-8 text-center text-sm text-muted-foreground">
             <div><MessageSquare className="mx-auto mb-2 size-8 opacity-40" />Select a conversation to view the chat.</div>
@@ -327,7 +327,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
               <Button variant="ghost" size="icon" className="size-8" title="Client info" onClick={() => setShowInfo((s) => !s)}><Info className="size-4" /></Button>
             </div>
 
-            <div className="flex-1 space-y-1.5 overflow-y-auto p-4">
+            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-4">
               {thread?.messages.map((m) => {
                 const sep = daySep.get(m.id) || null;
                 if (m.direction === "note") {
