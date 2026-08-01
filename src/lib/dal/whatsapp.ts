@@ -33,6 +33,18 @@ const mapAuto = (d: svc.WaAutomationDto): WaAutomation => ({
 export async function fetchStatus(): Promise<Result<WaStatus>> { return svc.getStatus(); }
 export async function fetchGroups(): Promise<Result<WaGroup[]>> { return svc.getGroups(); }
 
+export type WaTemplateFolder = svc.WaTemplateFolderDto;
+export async function fetchTemplateFolders(): Promise<Result<WaTemplateFolder[]>> { return svc.listTemplateFolders(); }
+export async function createTemplateFolder(name: string): Promise<Result<boolean>> {
+  const r = await svc.createTemplateFolder(name); return r.ok ? ok(true) : r;
+}
+export async function renameTemplateFolder(name: string, to: string): Promise<Result<boolean>> {
+  const r = await svc.renameTemplateFolder(name, to); return r.ok ? ok(true) : r;
+}
+export async function deleteTemplateFolder(name: string): Promise<Result<boolean>> {
+  const r = await svc.deleteTemplateFolder(name); return r.ok ? ok(true) : r;
+}
+
 export async function fetchTemplates(): Promise<Result<WaTemplate[]>> {
   const r = await svc.listTemplates(); return r.ok ? ok(r.data.map(mapTpl)) : r;
 }

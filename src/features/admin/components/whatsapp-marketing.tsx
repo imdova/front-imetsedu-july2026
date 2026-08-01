@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
-import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread, WaList } from "@/lib/dal/whatsapp";
+import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread, WaList, WaTemplateFolder } from "@/lib/dal/whatsapp";
 import { WhatsappAutomationBuilder } from "@/features/admin/components/whatsapp-automation-builder";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -1005,15 +1005,34 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
   const [form, setForm] = React.useState(EMPTY_TPL);
   const [saving, setSaving] = React.useState(false);
   const [activeCat, setActiveCat] = React.useState<string | null>(null); // null = All
+  const [folders, setFolders] = React.useState<WaTemplateFolder[]>([]);
+  const [catDlg, setCatDlg] = React.useState<{ mode: "new" | "rename"; original?: string; value: string } | null>(null);
 
-  // Folders are derived from the templates themselves (a folder exists once a
-  // template is assigned to it), so there's no separate category store to manage.
-  const folders = React.useMemo(() => {
-    const m = new Map<string, number>();
-    for (const t of templates) { const f = (t.folder || "").trim(); if (f) m.set(f, (m.get(f) ?? 0) + 1); }
-    return [...m.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [templates]);
+  const refreshFolders = React.useCallback(async () => { const r = await dal.whatsapp.fetchTemplateFolders(); if (r.ok) setFolders(r.data); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- loader setState only after an await
+  React.useEffect(() => { refreshFolders(); }, [refreshFolders]);
+
   const uncatCount = templates.filter((t) => !(t.folder || "").trim()).length;
+
+  const submitCat = async () => {
+    const v = catDlg?.value.trim(); if (!v) return;
+    const r = catDlg!.mode === "new"
+      ? await dal.whatsapp.createTemplateFolder(v)
+      : (catDlg!.original && catDlg!.original !== v ? await dal.whatsapp.renameTemplateFolder(catDlg!.original, v) : { ok: true } as const);
+    if (!r.ok) { toast.error(r.error); return; }
+    if (catDlg!.mode === "rename" && activeCat === catDlg!.original) setActiveCat(v);
+    toast.success(catDlg!.mode === "new" ? "Category created" : "Category renamed");
+    setCatDlg(null); refreshFolders();
+    const tr = await dal.whatsapp.fetchTemplates(); if (tr.ok) setTemplates(tr.data);
+  };
+  const deleteCat = async (name: string) => {
+    if (!(await confirm({ title: "Delete category", description: `“${name}” will be removed. Its templates become uncategorized.`, confirmText: "Delete", variant: "destructive" }))) return;
+    const r = await dal.whatsapp.deleteTemplateFolder(name);
+    if (!r.ok) { toast.error(r.error); return; }
+    if (activeCat === name) setActiveCat(null);
+    toast.success("Category deleted"); refreshFolders();
+    const tr = await dal.whatsapp.fetchTemplates(); if (tr.ok) setTemplates(tr.data);
+  };
 
   const visible = React.useMemo(() => {
     if (activeCat === null) return templates;
@@ -1037,12 +1056,12 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
     if (!r.ok) { toast.error(r.error); return; }
     setTemplates((p) => editing ? p.map((x) => (x.id === r.data.id ? r.data : x)) : [r.data, ...p]);
     toast.success(editing ? "Saved" : "Template added");
-    setOpen(false);
+    setOpen(false); refreshFolders();
   };
   const del = async (t: WaTemplate) => {
     if (!(await confirm({ title: "Delete template", description: `“${t.name}”?`, confirmText: "Delete", variant: "destructive" }))) return;
     const r = await dal.whatsapp.deleteTemplate(t.id);
-    if (r.ok) { setTemplates((p) => p.filter((x) => x.id !== t.id)); toast.success("Deleted"); } else toast.error(r.error);
+    if (r.ok) { setTemplates((p) => p.filter((x) => x.id !== t.id)); toast.success("Deleted"); refreshFolders(); } else toast.error(r.error);
   };
 
   return (
@@ -1052,22 +1071,35 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
         <div className="rounded-2xl border border-border/60 bg-card">
           <div className="flex items-center justify-between gap-2 border-b border-border/60 p-3">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</span>
-            <button onClick={openNew} title="New template" className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Plus className="size-4" /></button>
+            <button onClick={() => setCatDlg({ mode: "new", value: "" })} title="New category" className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Plus className="size-4" /></button>
           </div>
           <div className="space-y-0.5 p-2">
             <WaCatRow label="All templates" count={templates.length} active={activeCat === null} onClick={() => setActiveCat(null)} />
             {folders.map((c) => (
-              <WaCatRow key={c.name} label={c.name} count={c.count} active={activeCat === c.name} onClick={() => setActiveCat(c.name)} />
+              <WaCatRow key={c.name} label={c.name} count={c.count} active={activeCat === c.name} onClick={() => setActiveCat(c.name)}
+                onRename={() => setCatDlg({ mode: "rename", original: c.name, value: c.name })} onDelete={() => deleteCat(c.name)} />
             ))}
             {uncatCount > 0 && (
               <WaCatRow label="Uncategorized" count={uncatCount} active={activeCat === WA_UNCAT} onClick={() => setActiveCat(WA_UNCAT)} />
             )}
           </div>
           <p className="border-t border-border/60 p-3 text-[11px] leading-relaxed text-muted-foreground">
-            Assign a template to a category by typing a name in its <span className="font-medium">Category</span> field.
+            Add a category here, or assign one by typing its name in a template’s <span className="font-medium">Category</span> field.
           </p>
         </div>
       </aside>
+
+      {/* Add / rename category */}
+      <Dialog open={!!catDlg} onOpenChange={(o) => !o && setCatDlg(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>{catDlg?.mode === "new" ? "New category" : "Rename category"}</DialogTitle></DialogHeader>
+          <Input value={catDlg?.value ?? ""} autoFocus onChange={(e) => setCatDlg((d) => (d ? { ...d, value: e.target.value } : d))} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitCat(); } }} placeholder="e.g. CPHQ, CIC offers" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCatDlg(null)}>Cancel</Button>
+            <Button onClick={submitCat} disabled={!catDlg?.value.trim()}>{catDlg?.mode === "new" ? "Add" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cards */}
       <div className="space-y-4">
@@ -1148,11 +1180,19 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
   );
 }
 
-function WaCatRow({ label, count, active, onClick }: { label: string; count: number; active: boolean; onClick: () => void }) {
+function WaCatRow({ label, count, active, onClick, onRename, onDelete }: { label: string; count: number; active: boolean; onClick: () => void; onRename?: () => void; onDelete?: () => void }) {
   return (
-    <button onClick={onClick} className={cn("flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition", active ? "bg-primary/10" : "hover:bg-muted/60")}>
-      <span className={cn("truncate text-sm", active ? "font-semibold text-primary" : "text-foreground")}>{label}</span>
-      <span className={cn("shrink-0 rounded-full px-1.5 text-[11px] font-semibold tabular-nums", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>{count}</span>
-    </button>
+    <div className={cn("group flex items-center gap-1 rounded-lg pe-1 transition", active ? "bg-primary/10" : "hover:bg-muted/60")}>
+      <button onClick={onClick} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2.5 py-1.5 text-left">
+        <span className={cn("truncate text-sm", active ? "font-semibold text-primary" : "text-foreground")}>{label}</span>
+        <span className={cn("shrink-0 rounded-full px-1.5 text-[11px] font-semibold tabular-nums", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>{count}</span>
+      </button>
+      {(onRename || onDelete) && (
+        <span className="flex shrink-0 items-center opacity-0 transition group-hover:opacity-100">
+          {onRename && <button type="button" title="Rename" onClick={onRename} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Pencil className="size-3" /></button>}
+          {onDelete && <button type="button" title="Delete" onClick={onDelete} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 className="size-3" /></button>}
+        </span>
+      )}
+    </div>
   );
 }

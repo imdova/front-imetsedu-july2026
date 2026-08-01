@@ -21,6 +21,12 @@ export interface WaSendResult { sent: number; failed: number; total: number; err
 export const getStatus = (): Promise<Result<WaStatusDto>> => api.get(`${BASE}/status`, { revalidate: false });
 export const getGroups = (): Promise<Result<WaGroupDto[]>> => api.get(`${BASE}/groups`, { revalidate: false });
 
+export interface WaTemplateFolderDto { name: string; count: number }
+export const listTemplateFolders = (): Promise<Result<WaTemplateFolderDto[]>> => api.get(`${BASE}/template-folders`, { revalidate: false });
+export const createTemplateFolder = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/template-folders`, { name });
+export const renameTemplateFolder = (name: string, to: string): Promise<Result<{ success: boolean; name: string }>> => api.patch(`${BASE}/template-folders`, { name, to });
+export const deleteTemplateFolder = (name: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/template-folders/${encodeURIComponent(name)}`);
+
 export const listTemplates = (): Promise<Result<WaTemplateDto[]>> => api.get(`${BASE}/templates`, { revalidate: false });
 export const createTemplate = (input: Record<string, unknown>): Promise<Result<WaTemplateDto>> => api.post(`${BASE}/templates`, input);
 export const updateTemplate = (id: string, input: Record<string, unknown>): Promise<Result<WaTemplateDto>> => api.patch(`${BASE}/templates/${id}`, input);
