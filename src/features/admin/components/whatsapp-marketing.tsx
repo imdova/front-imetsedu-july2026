@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   MessageSquare, Send, Plus, Trash2, Pencil, Loader2, Users, Zap,
   FileText, Megaphone, CheckCircle2, AlertTriangle, Clock, Inbox, CheckCheck, ArrowLeft,
+  Search, Info, StickyNote, Check, Mail, CalendarDays, Tag, X,
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
@@ -110,20 +111,46 @@ function fmtTime(at?: string) {
   return sameDay ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString([], { day: "2-digit", month: "short" });
 }
 
+function fmtDay(at?: string) {
+  if (!at) return "";
+  const d = new Date(at); const now = new Date();
+  const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((today.getTime() - day.getTime()) / 86_400_000);
+  if (diff === 0) return "اليوم";
+  if (diff === 1) return "أمس";
+  return d.toLocaleDateString([], { day: "2-digit", month: "long", year: "numeric" });
+}
+
+const QUICK_REPLIES = [
+  "مرحبًا! كيف يمكنني مساعدتك؟ 😊",
+  "شكرًا لتواصلك مع IMETS 🌟",
+  "سأتحقق من ذلك وأعود إليك فورًا.",
+  "يمكنك حجز مقعدك من هنا:\nhttps://imetsedu.com/free-courses/cphq-preparation",
+  "هل لديك أي استفسار آخر؟",
+];
+
+type InboxFilter = "open" | "unread" | "resolved";
+
 function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connected: boolean }) {
   const [convos, setConvos] = React.useState<WaConversation[]>([]);
   const [active, setActive] = React.useState<string | null>(null);
   const [thread, setThread] = React.useState<WaThread | null>(null);
   const [text, setText] = React.useState("");
+  const [note, setNote] = React.useState("");
+  const [mode, setMode] = React.useState<"reply" | "note">("reply");
   const [sending, setSending] = React.useState(false);
   const [tplName, setTplName] = React.useState(templates[0]?.name ?? "");
   const [tplParams, setTplParams] = React.useState<string[]>([]);
+  const [search, setSearch] = React.useState("");
+  const [filter, setFilter] = React.useState<InboxFilter>("open");
+  const [showInfo, setShowInfo] = React.useState(true);
+  const [quickOpen, setQuickOpen] = React.useState(false);
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
   const loadConvos = React.useCallback(async () => { const r = await dal.whatsapp.fetchConversations(); if (r.ok) setConvos(r.data); }, []);
   const loadThread = React.useCallback(async (phone: string) => { const r = await dal.whatsapp.fetchThread(phone); if (r.ok) setThread(r.data); }, []);
 
-  // Poll conversations (12s) + open thread (8s).
   React.useEffect(() => { loadConvos(); const id = window.setInterval(loadConvos, 12_000); return () => window.clearInterval(id); }, [loadConvos]);
   React.useEffect(() => {
     if (!active) return;
@@ -134,7 +161,17 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
   React.useEffect(() => { bottomRef.current?.scrollIntoView({ block: "end" }); }, [thread?.messages.length]);
 
   const tpl = templates.find((t) => t.name === tplName);
-  const send = async () => {
+  const q = search.trim().toLowerCase();
+  const filtered = convos.filter((c) => {
+    if (filter === "open" && c.status === "resolved") return false;
+    if (filter === "unread" && (!c.unread || c.status === "resolved")) return false;
+    if (filter === "resolved" && c.status !== "resolved") return false;
+    if (q && !`${c.name} ${c.phone} ${c.lastMessage}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const unreadCount = convos.filter((c) => c.unread > 0 && c.status !== "resolved").length;
+
+  const sendReply = async () => {
     if (!active) return;
     setSending(true);
     let r;
@@ -150,19 +187,51 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
     setText(""); setTplParams([]);
     loadThread(active); loadConvos();
   };
+  const saveNote = async () => {
+    if (!active || !note.trim()) return;
+    setSending(true);
+    const r = await dal.whatsapp.addNote(active, note.trim());
+    setSending(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    setNote(""); loadThread(active);
+  };
+  const toggleResolve = async () => {
+    if (!active || !thread) return;
+    const next = thread.status === "resolved" ? "open" : "resolved";
+    const r = await dal.whatsapp.setConversationStatus(active, next);
+    if (!r.ok) { toast.error(r.error); return; }
+    toast.success(next === "resolved" ? "Resolved" : "Reopened");
+    loadThread(active); loadConvos();
+  };
 
   const activeConvo = convos.find((c) => c.phone === active);
+  const contact = thread?.contact;
+
+  // Precompute which message starts a new day (for date separators).
+  const daySep = new Map<string, string>();
+  { let ld = ""; for (const m of thread?.messages ?? []) { const d = fmtDay(m.at); if (d && d !== ld) { ld = d; daySep.set(m.id, d); } } }
+  const cols = showInfo && active ? "lg:grid-cols-[300px_1fr_280px]" : "lg:grid-cols-[300px_1fr]";
 
   return (
-    <div className="grid gap-0 overflow-hidden rounded-2xl border border-border/70 lg:grid-cols-[320px_1fr]" style={{ height: "70vh" }}>
-      {/* Conversation list */}
+    <div className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70", cols)} style={{ height: "72vh" }}>
+      {/* ── Conversation list ── */}
       <div className={cn("flex flex-col border-e border-border/60 bg-card", active && "hidden lg:flex")}>
-        <div className="border-b border-border/60 px-4 py-3 text-sm font-semibold">Conversations{convos.length ? ` · ${convos.length}` : ""}</div>
+        <div className="space-y-2 border-b border-border/60 p-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name / number…" className="ps-8" />
+          </div>
+          <div className="flex gap-1">
+            {([["open", "Open"], ["unread", `Unread${unreadCount ? ` ${unreadCount}` : ""}`], ["resolved", "Resolved"]] as [InboxFilter, string][]).map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setFilter(k)} className={cn("rounded-full px-2.5 py-1 text-xs font-medium transition-colors", filter === k ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70")}>{l}</button>
+            ))}
+          </div>
+        </div>
         <div className="flex-1 overflow-y-auto">
-          {convos.length === 0 ? (
-            <p className="p-6 text-center text-sm text-muted-foreground">{connected ? "No conversations yet. They appear here when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages."}</p>
-          ) : convos.map((c) => (
-            <button key={c.phone} type="button" onClick={() => setActive(c.phone)}
+          {filtered.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">{convos.length === 0 ? (connected ? "No conversations yet — they appear when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages.") : "No conversations match."}</p>
+          ) : filtered.map((c) => (
+            <button key={c.phone} type="button" onClick={() => { setActive(c.phone); setMode("reply"); }}
               className={cn("flex w-full items-center gap-3 border-b border-border/40 px-3 py-3 text-start transition-colors", active === c.phone ? "bg-primary/10" : "hover:bg-muted/50")}>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(c.name || c.phone).charAt(0).toUpperCase()}</span>
               <span className="min-w-0 flex-1">
@@ -172,7 +241,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                 </span>
                 <span className="flex items-center justify-between gap-2">
                   <span className="truncate text-xs text-muted-foreground">{c.lastDirection === "out" ? "↩ " : ""}{c.lastMessage}</span>
-                  {c.unread > 0 && <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">{c.unread}</span>}
+                  {c.status === "resolved" ? <CheckCircle2 className="size-3.5 shrink-0 text-success" /> : c.unread > 0 ? <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">{c.unread}</span> : null}
                 </span>
               </span>
             </button>
@@ -180,47 +249,98 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
         </div>
       </div>
 
-      {/* Thread */}
-      <div className={cn("flex flex-col bg-muted/20", !active && "hidden lg:flex")}>
+      {/* ── Thread ── */}
+      <div className={cn("flex flex-col bg-[#efeae2]/40 dark:bg-muted/20", !active && "hidden lg:flex")}>
         {!active ? (
           <div className="grid flex-1 place-items-center p-8 text-center text-sm text-muted-foreground">
             <div><MessageSquare className="mx-auto mb-2 size-8 opacity-40" />Select a conversation to view the chat.</div>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3 border-b border-border/60 bg-card px-4 py-3">
+            <div className="flex items-center gap-3 border-b border-border/60 bg-card px-4 py-2.5">
               <button type="button" className="lg:hidden" onClick={() => { setActive(null); setThread(null); }}><ArrowLeft className="size-5" /></button>
               <span className="grid size-9 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(activeConvo?.name || active).charAt(0).toUpperCase()}</span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{activeConvo?.name || `+${active}`}</p>
+                <p className="truncate text-sm font-semibold">{activeConvo?.name || contact?.name || `+${active}`}</p>
                 <p className="text-[11px] text-muted-foreground">+{active}</p>
               </div>
               {thread && (thread.windowOpen
-                ? <Badge className="gap-1 bg-success/12 text-success"><CheckCircle2 className="size-3" /> can reply freely</Badge>
-                : <Badge variant="secondary" className="gap-1"><Clock className="size-3" /> 24h window closed</Badge>)}
+                ? <Badge className="gap-1 bg-success/12 text-success"><CheckCircle2 className="size-3" /> open window</Badge>
+                : <Badge variant="secondary" className="gap-1"><Clock className="size-3" /> 24h closed</Badge>)}
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleResolve}>
+                {thread?.status === "resolved" ? <><X className="size-3.5" /> Reopen</> : <><Check className="size-3.5" /> Resolve</>}
+              </Button>
+              <Button variant="ghost" size="icon" className="size-8" title="Client info" onClick={() => setShowInfo((s) => !s)}><Info className="size-4" /></Button>
             </div>
 
-            <div className="flex-1 space-y-2 overflow-y-auto p-4">
-              {thread?.messages.map((m) => (
-                <div key={m.id} className={cn("flex", m.direction === "out" ? "justify-end" : "justify-start")}>
-                  <div className={cn("max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm", m.direction === "out" ? "bg-[#dcf8c6] text-[#0a1424] dark:bg-[#005c4b] dark:text-white" : "bg-card")}>
-                    <p className="whitespace-pre-wrap break-words" dir="auto">{m.text}</p>
-                    <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[10px]", m.direction === "out" ? "text-[#0a1424]/50 dark:text-white/60" : "text-muted-foreground")}>
-                      {fmtTime(m.at)}
-                      {m.direction === "out" && <CheckCheck className={cn("size-3", m.status === "read" ? "text-sky-500" : "")} />}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="flex-1 space-y-1.5 overflow-y-auto p-4">
+              {thread?.messages.map((m) => {
+                const sep = daySep.get(m.id) || null;
+                if (m.direction === "note") {
+                  return (
+                    <React.Fragment key={m.id}>
+                      {sep && <DaySep label={sep} />}
+                      <div className="flex justify-center">
+                        <div className="max-w-[80%] rounded-lg border border-amber-300/50 bg-amber-50 px-3 py-1.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-300">
+                          <span className="inline-flex items-center gap-1 font-semibold"><StickyNote className="size-3" /> ملاحظة داخلية{m.author ? ` · ${m.author}` : ""}</span>
+                          <p className="mt-0.5 whitespace-pre-wrap" dir="auto">{m.text}</p>
+                        </div>
+                      </div>
+                    </React.Fragment>
+                  );
+                }
+                return (
+                  <React.Fragment key={m.id}>
+                    {sep && <DaySep label={sep} />}
+                    <div className={cn("flex", m.direction === "out" ? "justify-end" : "justify-start")}>
+                      <div className={cn("max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm", m.direction === "out" ? "bg-[#dcf8c6] text-[#0a1424] dark:bg-[#005c4b] dark:text-white" : "bg-card")}>
+                        <p className="whitespace-pre-wrap break-words" dir="auto">{m.text}</p>
+                        <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[10px]", m.direction === "out" ? "text-[#0a1424]/50 dark:text-white/60" : "text-muted-foreground")}>
+                          {fmtTime(m.at)}
+                          {m.direction === "out" && (m.status === "failed"
+                            ? <AlertTriangle className="size-3 text-destructive" />
+                            : <CheckCheck className={cn("size-3", m.status === "read" ? "text-sky-500" : "")} />)}
+                        </p>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                );
+              })}
               <div ref={bottomRef} />
             </div>
 
-            {/* Reply box */}
+            {/* Reply / Note composer */}
             <div className="border-t border-border/60 bg-card p-3">
-              {thread?.windowOpen ? (
+              <div className="mb-2 flex items-center gap-4">
+                {(["reply", "note"] as const).map((mk) => (
+                  <button key={mk} type="button" onClick={() => setMode(mk)} className={cn("relative pb-1 text-xs font-semibold transition-colors", mode === mk ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+                    {mk === "reply" ? "Reply" : "Internal note"}
+                    {mode === mk && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded bg-primary" />}
+                  </button>
+                ))}
+                {mode === "reply" && thread?.windowOpen && (
+                  <div className="relative ms-auto">
+                    <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => setQuickOpen((o) => !o)}><Zap className="size-3.5" /> Quick replies</Button>
+                    {quickOpen && (
+                      <div className="absolute bottom-9 end-0 z-10 w-72 space-y-1 rounded-xl border border-border/70 bg-card p-1.5 shadow-lg">
+                        {QUICK_REPLIES.map((qr, i) => (
+                          <button key={i} type="button" onClick={() => { setText((t) => (t ? t + "\n" : "") + qr); setQuickOpen(false); }} className="block w-full truncate rounded-lg px-2 py-1.5 text-start text-xs hover:bg-muted" dir="rtl">{qr}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {mode === "note" ? (
                 <div className="flex items-end gap-2">
-                  <Textarea rows={1} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Type a reply…" dir="auto" className="max-h-32 min-h-[42px] resize-none" />
-                  <Button onClick={send} disabled={sending || !text.trim()} className="size-10 shrink-0 rounded-full p-0">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
+                  <Textarea rows={1} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a private note (not sent to the customer)…" dir="auto" className="max-h-32 min-h-[42px] resize-none bg-amber-50/50 dark:bg-amber-950/10" />
+                  <Button onClick={saveNote} disabled={sending || !note.trim()} variant="secondary" className="shrink-0 gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <StickyNote className="size-4" />} Note</Button>
+                </div>
+              ) : thread?.windowOpen ? (
+                <div className="flex items-end gap-2">
+                  <Textarea rows={1} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }} placeholder="Type a reply…" dir="auto" className="max-h-32 min-h-[42px] resize-none" />
+                  <Button onClick={sendReply} disabled={sending || !text.trim()} className="size-10 shrink-0 rounded-full p-0">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -230,7 +350,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                       <SelectTrigger className="flex-1"><SelectValue placeholder={templates.length ? "Pick a template" : "No templates"} /></SelectTrigger>
                       <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
                     </Select>
-                    <Button onClick={send} disabled={sending || !tplName} className="shrink-0 gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
+                    <Button onClick={sendReply} disabled={sending || !tplName} className="shrink-0 gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
                   </div>
                   {(tpl?.variables ?? 0) > 0 && tplParams.map((p, i) => (
                     <Input key={i} value={p} onChange={(e) => setTplParams((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`{{${i + 1}}}`} />
@@ -241,6 +361,45 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
           </>
         )}
       </div>
+
+      {/* ── Client info panel ── */}
+      {showInfo && active && (
+        <aside className="hidden flex-col border-s border-border/60 bg-card lg:flex">
+          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+            <p className="text-sm font-semibold">Client info</p>
+            <button type="button" onClick={() => setShowInfo(false)}><X className="size-4 text-muted-foreground" /></button>
+          </div>
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 text-sm">
+            <div className="text-center">
+              <span className="mx-auto grid size-16 place-items-center rounded-full bg-[#25D366]/12 text-xl font-bold text-[#128C7E]">{(activeConvo?.name || contact?.name || active).charAt(0).toUpperCase()}</span>
+              <p className="mt-2 font-semibold">{activeConvo?.name || contact?.name || "Unknown"}</p>
+              <a href={`https://wa.me/${active}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#128C7E] hover:underline">+{active}</a>
+            </div>
+            <Field2 icon={Mail} label="Email" value={contact?.email || "—"} />
+            <Field2 icon={CalendarDays} label="Joined" value={contact?.createdAt ? new Date(contact.createdAt).toLocaleDateString() : "—"} />
+            <Field2 icon={Info} label="Source" value={contact?.source || "—"} />
+            <div>
+              <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Tag className="size-3.5" /> Groups / tags</p>
+              {contact?.tags?.length ? (
+                <div className="flex flex-wrap gap-1">{contact.tags.map((t) => <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>)}</div>
+              ) : <p className="text-xs text-muted-foreground">{contact ? "None" : "Not in subscribers"}</p>}
+            </div>
+          </div>
+        </aside>
+      )}
+    </div>
+  );
+}
+
+function DaySep({ label }: { label: string }) {
+  return <div className="my-2 flex justify-center"><span className="rounded-full bg-card px-3 py-0.5 text-[11px] font-medium text-muted-foreground shadow-sm">{label}</span></div>;
+}
+
+function Field2({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
+  return (
+    <div>
+      <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Icon className="size-3.5" /> {label}</p>
+      <p className="mt-0.5 break-words text-sm">{value}</p>
     </div>
   );
 }

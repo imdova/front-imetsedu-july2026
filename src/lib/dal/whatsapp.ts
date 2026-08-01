@@ -71,6 +71,12 @@ export async function fetchThread(phone: string): Promise<Result<WaThread>> { re
 export async function markConversationRead(phone: string): Promise<Result<boolean>> {
   const r = await svc.markRead(phone); return r.ok ? ok(true) : r;
 }
+export async function setConversationStatus(phone: string, status: "open" | "resolved"): Promise<Result<boolean>> {
+  const r = await svc.setConversationStatus(phone, status); return r.ok ? ok(true) : r;
+}
+export async function addNote(phone: string, text: string, author?: string): Promise<Result<boolean>> {
+  const r = await svc.addNote(phone, text, author); return r.ok ? ok(true) : r;
+}
 export async function replyText(phone: string, text: string): Promise<Result<boolean>> {
   const r = await svc.replyText(phone, text); return r.ok ? ok(true) : r;
 }
