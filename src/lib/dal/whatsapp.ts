@@ -32,6 +32,9 @@ const mapAuto = (d: svc.WaAutomationDto): WaAutomation => ({
 
 export async function fetchStatus(): Promise<Result<WaStatus>> { return svc.getStatus(); }
 export async function fetchGroups(): Promise<Result<WaGroup[]>> { return svc.getGroups(); }
+export async function createGroup(name: string): Promise<Result<boolean>> {
+  const r = await svc.createGroup(name); return r.ok ? ok(true) : r;
+}
 
 export type WaTemplateFolder = svc.WaTemplateFolderDto;
 export async function fetchTemplateFolders(): Promise<Result<WaTemplateFolder[]>> { return svc.listTemplateFolders(); }

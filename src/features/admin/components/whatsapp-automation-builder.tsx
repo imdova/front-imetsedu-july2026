@@ -76,10 +76,18 @@ export function WhatsappAutomationBuilder({
   const [saving, setSaving] = React.useState(false);
   const [dirty, setDirty] = React.useState(false);
 
+  const [groupList, setGroupList] = React.useState<WaGroup[]>(groups);
   const groupOptions: Option[] = React.useMemo(
-    () => groups.map((g) => ({ value: g.name, label: g.name, hint: `${g.phoneCount} with phone` })),
-    [groups],
+    () => groupList.map((g) => ({ value: g.name, label: g.name, hint: `${g.phoneCount} with phone` })),
+    [groupList],
   );
+  const createGroup = async (name: string) => {
+    const r = await dal.whatsapp.createGroup(name);
+    if (!r.ok) { toast.error(r.error); return; }
+    const gr = await dal.whatsapp.fetchGroups();
+    if (gr.ok) setGroupList(gr.data);
+    toast.success(`Group “${name}” created`);
+  };
   const templateByName = React.useMemo(
     () => Object.fromEntries(templates.map((t) => [t.name, t])),
     [templates],
@@ -238,6 +246,7 @@ export function WhatsappAutomationBuilder({
               <WorkflowSettings
                 name={name} setName={(v) => { setName(v); markDirty(); }}
                 groupOptions={groupOptions}
+                onCreateGroup={createGroup}
                 settings={settings} setSettings={(s) => { setSettings(s); markDirty(); }}
                 messageCount={messageCount}
                 sentCount={automation?.sentCount ?? 0}
@@ -443,10 +452,11 @@ function describeStep(step: WaStep, template?: WaTemplate): { title: string; sub
 /* ────────────────────────── Inspector rail ────────────────────────── */
 
 function WorkflowSettings({
-  name, setName, groupOptions, settings, setSettings, messageCount, sentCount,
+  name, setName, groupOptions, onCreateGroup, settings, setSettings, messageCount, sentCount,
 }: {
   name: string; setName: (v: string) => void;
   groupOptions: Option[];
+  onCreateGroup: (name: string) => void;
   settings: WaFlowSettings; setSettings: (s: WaFlowSettings) => void;
   messageCount: number; sentCount: number;
 }) {
@@ -466,12 +476,14 @@ function WorkflowSettings({
             options={groupOptions}
             value={settings.triggerGroups}
             onChange={(v) => setSettings({ ...settings, triggerGroups: v })}
-            placeholder="Select one or more groups…"
-            searchPlaceholder="Search groups…"
-            emptyText="No subscriber groups yet."
+            placeholder="Select or create groups…"
+            searchPlaceholder="Search or type a new group…"
+            emptyText="Type a name to create a group."
+            creatable
+            onCreate={onCreateGroup}
           />
           <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
-            A contact enters this flow when they join <span className="font-medium">any</span> of the selected groups (must have a phone number).
+            A contact enters this flow when they join <span className="font-medium">any</span> of the selected groups. Type a new name to create an empty group you can tag contacts into later.
           </p>
         </Field>
       </div>

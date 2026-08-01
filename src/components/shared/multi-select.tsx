@@ -34,11 +34,17 @@ interface MultiSelectProps {
   searchPlaceholder?: string;
   emptyText?: string;
   className?: string;
+  /** Allow creating a new value by typing a name that isn't in the options. */
+  creatable?: boolean;
+  /** Optional callback when a brand-new value is created (e.g. to persist it). */
+  onCreate?: (value: string) => void;
 }
 
 /**
  * Searchable multi-select with selected items shown as removable chips. Powers
  * the course form's Instructors and Tags relations (search + multi-select).
+ * With `creatable`, a typed value that matches no option can be added on the fly
+ * (used for WhatsApp trigger groups so an empty/new group can be selected).
  */
 export function MultiSelect({
   options,
@@ -48,18 +54,36 @@ export function MultiSelect({
   searchPlaceholder = "Search…",
   emptyText = "No results.",
   className,
+  creatable = false,
+  onCreate,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState("");
 
   const toggle = (val: string) =>
     onChange(
       value.includes(val) ? value.filter((v) => v !== val) : [...value, val],
     );
 
-  const selected = options.filter((o) => value.includes(o.value));
+  const labelFor = (v: string) => options.find((o) => o.value === v)?.label ?? v;
+
+  const q = query.trim();
+  const ql = q.toLowerCase();
+  const filtered = q
+    ? options.filter((o) => o.label.toLowerCase().includes(ql) || o.value.toLowerCase().includes(ql))
+    : options;
+  const exists = options.some((o) => o.value.toLowerCase() === ql || o.label.toLowerCase() === ql);
+  const showCreate = creatable && !!q && !exists;
+
+  const create = () => {
+    if (!q) return;
+    if (!value.includes(q)) onChange([...value, q]);
+    onCreate?.(q);
+    setQuery("");
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -72,20 +96,20 @@ export function MultiSelect({
           )}
         >
           <div className="flex flex-wrap items-center gap-1">
-            {selected.length === 0 && (
+            {value.length === 0 && (
               <span className="text-muted-foreground">{placeholder}</span>
             )}
-            {selected.map((o) => (
+            {value.map((v) => (
               <Badge
-                key={o.value}
+                key={v}
                 variant="secondary"
                 className="gap-1 ps-2.5"
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggle(o.value);
+                  toggle(v);
                 }}
               >
-                {o.label}
+                {labelFor(v)}
                 <X className="size-3 opacity-60 hover:opacity-100" />
               </Badge>
             ))}
@@ -97,15 +121,24 @@ export function MultiSelect({
         className="w-[--radix-popover-trigger-width] p-0"
         align="start"
       >
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+        <Command shouldFilter={false}>
+          <CommandInput placeholder={searchPlaceholder} value={query} onValueChange={setQuery} />
           <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
+            {filtered.length === 0 && !showCreate && <CommandEmpty>{emptyText}</CommandEmpty>}
+            {showCreate && (
+              <CommandGroup>
+                <CommandItem value={`__create__${q}`} onSelect={create}>
+                  <span className="flex items-center gap-1 text-primary">
+                    <span className="text-lg leading-none">+</span> Create “{q}”
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+            )}
             <CommandGroup>
-              {options.map((o) => (
+              {filtered.map((o) => (
                 <CommandItem
                   key={o.value}
-                  value={o.label}
+                  value={o.value}
                   onSelect={() => toggle(o.value)}
                 >
                   <Check
