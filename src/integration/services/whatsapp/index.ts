@@ -65,7 +65,7 @@ export const listLists = (): Promise<Result<WaListDto[]>> => api.get(`${BASE}/li
 export const createList = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/lists`, { name });
 export const renameList = (name: string, to: string): Promise<Result<{ success: boolean; name: string }>> => api.patch(`${BASE}/lists`, { name, to });
 export const deleteList = (name: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/lists/${encodeURIComponent(name)}`);
-export const sendListMessage = (name: string, text: string): Promise<Result<WaListSendResult>> => api.post(`${BASE}/lists/${encodeURIComponent(name)}/message`, { text });
+export const sendListMessage = (name: string, payload: { text?: string; templateName?: string; language?: string; params?: string[] }): Promise<Result<WaListSendResult>> => api.post(`${BASE}/lists/${encodeURIComponent(name)}/message`, payload);
 export const setConversationLists = (phone: string, lists: string[]): Promise<Result<{ success: boolean; lists: string[] }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/lists`, { lists });
 export const replyTemplate = (phone: string, input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/reply-template`, input);
 

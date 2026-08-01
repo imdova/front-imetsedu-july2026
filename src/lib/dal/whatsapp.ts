@@ -100,7 +100,7 @@ export async function renameList(name: string, to: string): Promise<Result<boole
 export async function deleteList(name: string): Promise<Result<boolean>> {
   const r = await svc.deleteList(name); return r.ok ? ok(true) : r;
 }
-export async function sendListMessage(name: string, text: string): Promise<Result<WaListSendResult>> { return svc.sendListMessage(name, text); }
+export async function sendListMessage(name: string, payload: { text?: string; templateName?: string; language?: string; params?: string[] }): Promise<Result<WaListSendResult>> { return svc.sendListMessage(name, payload); }
 export async function setConversationLists(phone: string, lists: string[]): Promise<Result<boolean>> {
   const r = await svc.setConversationLists(phone, lists); return r.ok ? ok(true) : r;
 }

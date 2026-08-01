@@ -171,7 +171,8 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const [lists, setLists] = React.useState<WaList[]>([]);
   const [listFilter, setListFilter] = React.useState<string | null>(null);
   const [manageOpen, setManageOpen] = React.useState(false);
-  const [listMsg, setListMsg] = React.useState<{ name: string; text: string } | null>(null);
+  const [listMsg, setListMsg] = React.useState<{ name: string; mode: "text" | "template"; text: string; templateName: string; params: string[] } | null>(null);
+  const openListMsg = (name: string) => setListMsg({ name, mode: "text", text: "", templateName: templates[0]?.name ?? "", params: Array.from({ length: templates[0]?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")) });
   const [newListName, setNewListName] = React.useState("");
   const [selected, setSelected] = React.useState<string[]>([]);
   const [bulkList, setBulkList] = React.useState("");
@@ -338,9 +339,14 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
     toast.success("List deleted"); refreshLists(); loadConvos(); if (active) loadThread(active);
   };
   const sendToList = async () => {
-    if (!listMsg || !listMsg.text.trim()) return;
+    if (!listMsg) return;
+    if (listMsg.mode === "text" && !listMsg.text.trim()) return;
+    if (listMsg.mode === "template" && !listMsg.templateName) { toast.error("Pick a template"); return; }
+    const payload = listMsg.mode === "template"
+      ? { templateName: listMsg.templateName, language: templates.find((t) => t.name === listMsg.templateName)?.language ?? "ar", params: listMsg.params }
+      : { text: listMsg.text.trim() };
     setSending(true);
-    const r = await dal.whatsapp.sendListMessage(listMsg.name, listMsg.text.trim());
+    const r = await dal.whatsapp.sendListMessage(listMsg.name, payload);
     setSending(false);
     if (!r.ok) { toast.error(r.error); return; }
     const { sent, skipped, failed } = r.data;
@@ -430,7 +436,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
           {listFilter && (
             <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-2.5 py-1.5">
               <span className="truncate text-[11px] font-medium text-primary">Filtering “{listFilter}”</span>
-              <Button size="sm" className="h-7 gap-1.5 px-2 text-[11px]" onClick={() => setListMsg({ name: listFilter, text: "" })}><Send className="size-3" /> Message list</Button>
+              <Button size="sm" className="h-7 gap-1.5 px-2 text-[11px]" onClick={() => openListMsg(listFilter)}><Send className="size-3" /> Message list</Button>
             </div>
           )}
         </div>
@@ -704,7 +710,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
               <p className="rounded-lg border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">No lists yet.</p>
             ) : (
               <div className="max-h-72 space-y-1 overflow-y-auto">
-                {lists.map((l) => <ManageListRow key={l.name} list={l} onRename={renameListFn} onDelete={deleteListFn} />)}
+                {lists.map((l) => <ManageListRow key={l.name} list={l} onRename={renameListFn} onDelete={deleteListFn} onMessage={() => { setManageOpen(false); openListMsg(l.name); }} />)}
               </div>
             )}
           </div>
@@ -715,13 +721,45 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
       <Dialog open={!!listMsg} onOpenChange={(o) => !o && setListMsg(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Message “{listMsg?.name}”</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">Sends a custom message to everyone in this list whose 24-hour window is open. Contacts outside the window are skipped (use a Campaign template to reach them).</p>
-            <Textarea rows={5} value={listMsg?.text ?? ""} onChange={(e) => setListMsg((m) => (m ? { ...m, text: e.target.value } : m))} placeholder="Type your message…" dir="auto" />
-          </div>
+          {listMsg && (() => {
+            const ltpl = templates.find((t) => t.name === listMsg.templateName);
+            const varCount = ltpl?.variables ?? 0;
+            return (
+              <div className="space-y-3">
+                {/* Text vs Template toggle */}
+                <div className="flex gap-1 rounded-lg bg-muted p-1 text-xs">
+                  {(["text", "template"] as const).map((mk) => (
+                    <button key={mk} type="button" onClick={() => setListMsg((m) => (m ? { ...m, mode: mk } : m))}
+                      className={cn("flex-1 rounded-md px-2 py-1.5 font-medium transition-colors", listMsg.mode === mk ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                      {mk === "text" ? "Free text (open windows)" : "Template (reaches all)"}
+                    </button>
+                  ))}
+                </div>
+
+                {listMsg.mode === "text" ? (
+                  <>
+                    <p className="text-[11px] text-muted-foreground">Sends to everyone in this list whose 24-hour window is open. Contacts outside the window are skipped — use a template to reach them.</p>
+                    <Textarea rows={5} value={listMsg.text} onChange={(e) => setListMsg((m) => (m ? { ...m, text: e.target.value } : m))} placeholder="Type your message…" dir="auto" />
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[11px] text-muted-foreground">Sends an approved template to <span className="font-medium">every</span> member of the list (works even outside the 24h window). <code className="rounded bg-muted px-1">{"{{name}}"}</code> is replaced with each contact’s name.</p>
+                    <Select value={listMsg.templateName || undefined} onValueChange={(v) => { const t = templates.find((x) => x.name === v); setListMsg((m) => (m ? { ...m, templateName: v, params: Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")) } : m)); }}>
+                      <SelectTrigger><SelectValue placeholder={templates.length ? "Pick a template" : "No templates"} /></SelectTrigger>
+                      <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
+                    </Select>
+                    {ltpl?.body && <p dir={ltpl.language.startsWith("ar") ? "rtl" : "ltr"} className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">{fillPreview(ltpl.body, listMsg.params)}</p>}
+                    {varCount > 0 && Array.from({ length: varCount }).map((_, i) => (
+                      <Input key={i} value={listMsg.params[i] ?? ""} onChange={(e) => setListMsg((m) => (m ? { ...m, params: Array.from({ length: varCount }, (_, j) => (j === i ? e.target.value : m.params[j] ?? "")) } : m))} placeholder={`{{${i + 1}}}${i === 0 ? " — {{name}} allowed" : ""}`} />
+                    ))}
+                  </>
+                )}
+              </div>
+            );
+          })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setListMsg(null)} disabled={sending}>Cancel</Button>
-            <Button onClick={sendToList} disabled={sending || !listMsg?.text.trim()} className="gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
+            <Button onClick={sendToList} disabled={sending || (listMsg?.mode === "text" ? !listMsg?.text.trim() : !listMsg?.templateName)} className="gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -761,7 +799,7 @@ function DaySep({ label }: { label: string }) {
   return <div className="my-2 flex justify-center"><span className="rounded-full bg-card px-3 py-0.5 text-[11px] font-medium text-muted-foreground shadow-sm">{label}</span></div>;
 }
 
-function ManageListRow({ list, onRename, onDelete }: { list: WaList; onRename: (oldName: string, to: string) => void; onDelete: (name: string) => void }) {
+function ManageListRow({ list, onRename, onDelete, onMessage }: { list: WaList; onRename: (oldName: string, to: string) => void; onDelete: (name: string) => void; onMessage: () => void }) {
   const [editing, setEditing] = React.useState(false);
   const [val, setVal] = React.useState(list.name);
   return (
@@ -775,6 +813,7 @@ function ManageListRow({ list, onRename, onDelete }: { list: WaList; onRename: (
         <>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{list.name}</span>
           <span className="shrink-0 rounded-full bg-muted px-1.5 text-[11px] font-semibold tabular-nums text-muted-foreground">{list.count}</span>
+          <Button size="sm" variant="outline" className="h-7 shrink-0 gap-1 px-2 text-[11px]" disabled={!list.count} onClick={onMessage}><Send className="size-3" /> Message</Button>
           <button type="button" title="Rename" onClick={() => { setVal(list.name); setEditing(true); }} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted"><Pencil className="size-3.5" /></button>
           <button type="button" title="Delete" onClick={() => onDelete(list.name)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 className="size-3.5" /></button>
         </>
