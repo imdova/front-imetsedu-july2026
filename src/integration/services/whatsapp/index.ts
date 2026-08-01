@@ -67,6 +67,7 @@ export const renameList = (name: string, to: string): Promise<Result<{ success: 
 export const deleteList = (name: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/lists/${encodeURIComponent(name)}`);
 export const sendListMessage = (name: string, payload: { text?: string; templateName?: string; language?: string; params?: string[] }): Promise<Result<WaListSendResult>> => api.post(`${BASE}/lists/${encodeURIComponent(name)}/message`, payload);
 export const setConversationLists = (phone: string, lists: string[]): Promise<Result<{ success: boolean; lists: string[] }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/lists`, { lists });
+export const setContactGroup = (phone: string, group: string, add: boolean): Promise<Result<{ success: boolean; tags: string[]; created?: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/group`, { group, add });
 export const replyTemplate = (phone: string, input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/reply-template`, input);
 
 export const listAutomations = (): Promise<Result<WaAutomationDto[]>> => api.get(`${BASE}/automations`, { revalidate: false });

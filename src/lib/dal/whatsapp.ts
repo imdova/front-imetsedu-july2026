@@ -104,6 +104,9 @@ export async function sendListMessage(name: string, payload: { text?: string; te
 export async function setConversationLists(phone: string, lists: string[]): Promise<Result<boolean>> {
   const r = await svc.setConversationLists(phone, lists); return r.ok ? ok(true) : r;
 }
+export async function setContactGroup(phone: string, group: string, add: boolean): Promise<Result<{ tags: string[]; created?: boolean }>> {
+  const r = await svc.setContactGroup(phone, group, add); return r.ok ? ok({ tags: r.data.tags, created: r.data.created }) : r;
+}
 export async function markConversationRead(phone: string): Promise<Result<boolean>> {
   const r = await svc.markRead(phone); return r.ok ? ok(true) : r;
 }

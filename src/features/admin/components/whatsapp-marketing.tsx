@@ -176,6 +176,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const [newListName, setNewListName] = React.useState("");
   const [selected, setSelected] = React.useState<string[]>([]);
   const [bulkList, setBulkList] = React.useState("");
+  const [groups, setGroups] = React.useState<WaGroup[]>([]);
   const [newOpen, setNewOpen] = React.useState(false);
   const [nc, setNc] = React.useState<{ phone: string; name: string; tplName: string; params: string[] }>({ phone: "", name: "", tplName: templates[0]?.name ?? "", params: [] });
   const [uploading, setUploading] = React.useState(false);
@@ -295,6 +296,14 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const addLabel = (l: string) => { const v = l.trim(); if (v && !(thread?.labels || []).includes(v)) applyLabels([...(thread?.labels || []), v]); setLabelInput(""); };
 
   const refreshLists = async () => { const ls = await dal.whatsapp.fetchLists(); if (ls.ok) setLists(ls.data); };
+  React.useEffect(() => { dal.whatsapp.fetchGroups().then((r) => { if (r.ok) setGroups(r.data); }); }, []);
+  const setContactGroupFn = async (group: string, add: boolean) => {
+    if (!active) return;
+    const r = await dal.whatsapp.setContactGroup(active, group, add);
+    if (!r.ok) { toast.error(r.error); return; }
+    toast.success(add ? `Added to “${group}” — drip will start` : `Removed from “${group}”`);
+    loadThread(active); loadConvos();
+  };
   const toggleSelect = (phone: string) => setSelected((s) => (s.includes(phone) ? s.filter((x) => x !== phone) : [...s, phone]));
   const addSelectedToList = async () => {
     if (!bulkList || selected.length === 0) return;
@@ -647,10 +656,22 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
             <Field2 icon={CalendarDays} label="Joined" value={contact?.createdAt ? new Date(contact.createdAt).toLocaleDateString() : "—"} />
             <Field2 icon={Info} label="Source" value={contact?.source || "—"} />
             <div>
-              <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Tag className="size-3.5" /> Groups / tags</p>
-              {contact?.tags?.length ? (
-                <div className="flex flex-wrap gap-1">{contact.tags.map((t) => <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>)}</div>
-              ) : <p className="text-xs text-muted-foreground">{contact ? "None" : "Not in subscribers"}</p>}
+              <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Zap className="size-3.5 text-emerald-600" /> Groups · start drip</p>
+              <div className="flex flex-wrap gap-1">
+                {(contact?.tags || []).length === 0 && <span className="text-xs text-muted-foreground">Not in any group yet.</span>}
+                {(contact?.tags || []).map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">{t}<button type="button" title="Remove from group" onClick={() => setContactGroupFn(t, false)}><X className="size-2.5" /></button></span>
+                ))}
+              </div>
+              <div className="mt-1.5">
+                <Select value="" onValueChange={(v) => v && setContactGroupFn(v, true)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="➕ Add to a group…" /></SelectTrigger>
+                  <SelectContent position="popper">
+                    {groups.filter((g) => !(contact?.tags || []).includes(g.name)).map((g) => <SelectItem key={g.name} value={g.name}>{g.name} <span className="text-muted-foreground">· {g.phoneCount}</span></SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">Adds this contact to a subscriber group — its WhatsApp &amp; email drip starts on the next cycle.</p>
             </div>
             <div className="border-t border-border/60 pt-3">
               <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Tag className="size-3.5" /> Labels</p>
