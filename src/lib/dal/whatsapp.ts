@@ -32,6 +32,8 @@ const mapAuto = (d: svc.WaAutomationDto): WaAutomation => ({
 
 export async function fetchStatus(): Promise<Result<WaStatus>> { return svc.getStatus(); }
 export async function fetchGroups(): Promise<Result<WaGroup[]>> { return svc.getGroups(); }
+export type WaAnalytics = svc.WaAnalyticsDto;
+export async function fetchAnalytics(): Promise<Result<WaAnalytics>> { return svc.getAnalytics(); }
 export async function createGroup(name: string): Promise<Result<boolean>> {
   const r = await svc.createGroup(name); return r.ok ? ok(true) : r;
 }

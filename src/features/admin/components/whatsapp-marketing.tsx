@@ -6,10 +6,11 @@ import {
   MessageSquare, Send, Plus, Trash2, Pencil, Loader2, Users, Zap,
   FileText, Megaphone, CheckCircle2, AlertTriangle, Clock, Inbox, CheckCheck, ArrowLeft,
   Search, Info, StickyNote, Check, Mail, CalendarDays, Tag, X, Paperclip, Mic, Download,
+  BarChart3, TrendingUp, Clock3, Flame,
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
-import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread, WaList, WaTemplateFolder } from "@/lib/dal/whatsapp";
+import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread, WaList, WaTemplateFolder, WaAnalytics } from "@/lib/dal/whatsapp";
 import { WhatsappAutomationBuilder } from "@/features/admin/components/whatsapp-automation-builder";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -23,7 +24,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type Tab = "inbox" | "templates" | "campaigns" | "automations";
+type Tab = "inbox" | "analytics" | "templates" | "campaigns" | "automations";
 
 /** "phone" or "phone,name" per line → recipients. */
 function parseRecipients(text: string): WaRecipient[] {
@@ -50,6 +51,7 @@ export function WhatsappMarketing({
 
   const TABS: { key: Tab; label: string; icon: typeof FileText }[] = [
     { key: "inbox", label: "Live Chat", icon: Inbox },
+    { key: "analytics", label: "Analytics", icon: BarChart3 },
     { key: "campaigns", label: "Campaigns", icon: Megaphone },
     { key: "automations", label: "Automations", icon: Zap },
     { key: "templates", label: "Templates", icon: FileText },
@@ -96,6 +98,7 @@ export function WhatsappMarketing({
       </div>
 
       {tab === "inbox" && <InboxPanel templates={templates} connected={!!status?.configured} confirm={confirm} />}
+      {tab === "analytics" && <AnalyticsPanel />}
       {tab === "campaigns" && <CampaignsPanel templates={templates} groups={groups} initial={initialCampaigns} confirm={confirm} />}
       {tab === "automations" && <AutomationsPanel templates={templates} groups={groups} initial={initialAutomations} confirm={confirm} />}
       {tab === "templates" && <TemplatesPanel templates={templates} setTemplates={setTemplates} confirm={confirm} />}
@@ -156,6 +159,101 @@ function fillPreview(body: string, params: string[]): string {
   let out = body;
   params.forEach((p, i) => { out = out.split(`{{${i + 1}}}`).join(p || `{{${i + 1}}}`); });
   return out;
+}
+
+/* ───────────────────────── Analytics ───────────────────────── */
+function AnalyticsPanel() {
+  const [data, setData] = React.useState<WaAnalytics | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => { dal.whatsapp.fetchAnalytics().then((r) => { if (r.ok) setData(r.data); setLoading(false); }); }, []);
+
+  if (loading) return <div className="grid h-64 place-items-center text-muted-foreground"><Loader2 className="size-6 animate-spin" /></div>;
+  if (!data) return <p className="rounded-xl border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">Couldn’t load analytics.</p>;
+
+  const c = data.conversations;
+  const maxDay = Math.max(1, ...data.messages.days.map((d) => d.in + d.out));
+  const tempTotal = Math.max(1, c.hot + c.warm + c.cold);
+  const fmtResp = data.responseMins == null ? "—" : data.responseMins < 60 ? `${data.responseMins}m` : `${Math.round(data.responseMins / 60)}h`;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi icon={MessageSquare} label="Conversations" value={c.total} sub={`${c.open} open · ${c.resolved} resolved`} tone="primary" />
+        <Kpi icon={Flame} label="Hot leads" value={c.hot} sub={`${c.warm} warm · ${c.cold} cold`} tone="red" />
+        <Kpi icon={Clock3} label="Avg response" value={fmtResp} sub="first reply time" tone="amber" />
+        <Kpi icon={Zap} label="Active drips" value={data.automations.active} sub={`${data.automations.enrolled} enrolled · ${data.automations.completionRate}% done`} tone="emerald" />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Card className="lg:col-span-2"><CardContent className="pt-5">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold"><TrendingUp className="size-4 text-primary" /> Messages · last 14 days</p>
+            <p className="text-xs text-muted-foreground">{data.messages.inbound} in · {data.messages.outbound} out</p>
+          </div>
+          <div className="flex h-40 items-end gap-1">
+            {data.messages.days.map((d) => (
+              <div key={d.day} className="flex flex-1 flex-col items-center gap-1" title={`${d.day}: ${d.in} in, ${d.out} out`}>
+                <div className="flex w-full flex-col-reverse" style={{ height: "100%" }}>
+                  <div className="w-full rounded-t-sm bg-[#25D366]" style={{ height: `${(d.out / maxDay) * 100}%` }} />
+                  <div className="w-full rounded-t-sm bg-primary/70" style={{ height: `${(d.in / maxDay) * 100}%` }} />
+                </div>
+                <span className="text-[8px] text-muted-foreground">{d.day.slice(3)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex gap-3 text-[10px] text-muted-foreground"><span className="inline-flex items-center gap-1"><span className="size-2 rounded bg-primary/70" /> Inbound</span><span className="inline-flex items-center gap-1"><span className="size-2 rounded bg-[#25D366]" /> Outbound</span></div>
+        </CardContent></Card>
+
+        <Card><CardContent className="pt-5">
+          <p className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold"><Flame className="size-4 text-red-500" /> Lead temperature</p>
+          {([["hot", "🔥 Hot", c.hot, "bg-red-500"], ["warm", "🌤️ Warm", c.warm, "bg-amber-500"], ["cold", "❄️ Cold", c.cold, "bg-sky-500"]] as [string, string, number, string][]).map(([k, label, val, cls]) => (
+            <div key={k} className="mb-2.5">
+              <div className="mb-0.5 flex justify-between text-xs"><span>{label}</span><span className="font-semibold tabular-nums">{val}</span></div>
+              <div className="h-2 rounded-full bg-muted"><div className={cn("h-full rounded-full", cls)} style={{ width: `${(val / tempTotal) * 100}%` }} /></div>
+            </div>
+          ))}
+          <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">Focus on 🔥 Hot first — filter them in Live Chat.</p>
+        </CardContent></Card>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card><CardContent className="pt-5">
+          <p className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold"><Megaphone className="size-4 text-primary" /> Campaigns</p>
+          <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+            <Mini label="Total" value={data.campaigns.count} />
+            <Mini label="Sent" value={data.campaigns.sent} />
+            <Mini label="Failed" value={data.campaigns.failed} />
+          </div>
+          {data.campaigns.recent.length ? data.campaigns.recent.map((c2, i) => (
+            <div key={i} className="flex items-center justify-between gap-2 border-t border-border/50 py-1.5 text-xs"><span className="truncate">{c2.name}</span><span className="shrink-0 text-muted-foreground">{c2.sent}/{c2.total}{c2.failed ? ` · ${c2.failed} failed` : ""}</span></div>
+          )) : <p className="text-xs text-muted-foreground">No campaigns yet.</p>}
+        </CardContent></Card>
+
+        <Card><CardContent className="pt-5">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold"><Users className="size-4 text-primary" /> Top groups · phone reach</p>
+            <span className="text-xs text-muted-foreground">{data.automations.sent} drip msgs sent</span>
+          </div>
+          {data.groups.length ? data.groups.map((g) => (
+            <div key={g.name} className="flex items-center justify-between gap-2 border-t border-border/50 py-1.5 text-xs"><span className="truncate">{g.name}</span><span className="shrink-0 font-semibold tabular-nums">{g.phoneCount}</span></div>
+          )) : <p className="text-xs text-muted-foreground">No groups.</p>}
+        </CardContent></Card>
+      </div>
+    </div>
+  );
+}
+
+function Kpi({ icon: Icon, label, value, sub, tone = "primary" }: { icon: React.ElementType; label: string; value: React.ReactNode; sub?: string; tone?: "red" | "amber" | "emerald" | "primary" }) {
+  const toneCls = tone === "red" ? "bg-red-500/10 text-red-600" : tone === "amber" ? "bg-amber-500/10 text-amber-600" : tone === "emerald" ? "bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary";
+  return (
+    <Card><CardContent className="flex items-center gap-3 py-4">
+      <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", toneCls)}><Icon className="size-5" /></span>
+      <div className="min-w-0"><p className="text-xl font-bold leading-none">{value}</p><p className="mt-1 truncate text-xs font-medium text-muted-foreground">{label}</p>{sub && <p className="truncate text-[10px] text-muted-foreground">{sub}</p>}</div>
+    </CardContent></Card>
+  );
+}
+function Mini({ label, value }: { label: string; value: number }) {
+  return <div className="rounded-lg bg-muted/50 py-2"><p className="text-base font-bold tabular-nums">{value}</p><p className="text-[10px] text-muted-foreground">{label}</p></div>;
 }
 
 function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]; connected: boolean; confirm: ReturnType<typeof useConfirm>["confirm"] }) {

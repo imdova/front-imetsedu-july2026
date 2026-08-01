@@ -23,6 +23,17 @@ export const getGroups = (): Promise<Result<WaGroupDto[]>> => api.get(`${BASE}/g
 
 export interface WaTemplateFolderDto { name: string; count: number }
 export const createGroup = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/groups`, { name });
+
+export interface WaAnalyticsDto {
+  conversations: { total: number; open: number; resolved: number; unread: number; hot: number; warm: number; cold: number };
+  responseMins: number | null;
+  messages: { inbound: number; outbound: number; days: { day: string; in: number; out: number }[] };
+  campaigns: { count: number; sent: number; failed: number; recent: { name: string; sent: number; failed: number; total: number; status: string }[] };
+  automations: { active: number; total: number; enrolled: number; sent: number; completed: number; completionRate: number };
+  templates: { total: number; approved: number };
+  groups: { name: string; count: number; phoneCount: number }[];
+}
+export const getAnalytics = (): Promise<Result<WaAnalyticsDto>> => api.get(`${BASE}/analytics`, { revalidate: false });
 export const listTemplateFolders = (): Promise<Result<WaTemplateFolderDto[]>> => api.get(`${BASE}/template-folders`, { revalidate: false });
 export const createTemplateFolder = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/template-folders`, { name });
 export const renameTemplateFolder = (name: string, to: string): Promise<Result<{ success: boolean; name: string }>> => api.patch(`${BASE}/template-folders`, { name, to });
