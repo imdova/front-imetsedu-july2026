@@ -133,6 +133,13 @@ const QUICK_REPLIES = [
 
 type InboxFilter = "open" | "unread" | "resolved";
 
+/** Fill {{1}}, {{2}}… in a template body with params (for the composer preview). */
+function fillPreview(body: string, params: string[]): string {
+  let out = body;
+  params.forEach((p, i) => { out = out.split(`{{${i + 1}}}`).join(p || `{{${i + 1}}}`); });
+  return out;
+}
+
 function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connected: boolean }) {
   const [convos, setConvos] = React.useState<WaConversation[]>([]);
   const [active, setActive] = React.useState<string | null>(null);
@@ -398,7 +405,11 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-[11px] text-muted-foreground">The 24-hour reply window is closed — you can only send an approved template.</p>
+                  {/* 24h window closed — Meta only allows an approved template until the customer replies. */}
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-300/50 bg-amber-50/60 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-300">
+                    <Clock className="mt-px size-3.5 shrink-0" />
+                    <span>The 24-hour free-reply window is closed. Send an approved <span className="font-semibold">template</span> below — once the customer replies you can chat freely.</span>
+                  </div>
                   <div className="flex items-end gap-2">
                     <Select value={tplName} onValueChange={(v) => { setTplName(v); const t = templates.find((x) => x.name === v); setTplParams(Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : ""))); }}>
                       <SelectTrigger className="flex-1"><SelectValue placeholder={templates.length ? "Pick a template" : "No templates"} /></SelectTrigger>
@@ -406,8 +417,9 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                     </Select>
                     <Button onClick={sendReply} disabled={sending || !tplName} className="shrink-0 gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
                   </div>
+                  {tpl?.body && <p dir={tpl.language.startsWith("ar") ? "rtl" : "ltr"} className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">{fillPreview(tpl.body, tplParams)}</p>}
                   {(tpl?.variables ?? 0) > 0 && tplParams.map((p, i) => (
-                    <Input key={i} value={p} onChange={(e) => setTplParams((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`{{${i + 1}}}`} />
+                    <Input key={i} value={p} onChange={(e) => setTplParams((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`{{${i + 1}}}${i === 0 ? " — {{name}} allowed" : ""}`} />
                   ))}
                 </div>
               )}
