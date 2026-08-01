@@ -1,25 +1,36 @@
-import { Plus } from "lucide-react";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
 import { PageHeader } from "@/components/shared/page-header";
-import { Button } from "@/components/ui/button";
-import { WhatsappTemplates } from "@/features/admin/components/whatsapp-templates";
+import { WhatsappMarketing } from "@/features/admin/components/whatsapp-marketing";
 
-export default async function AdminWhatsappTemplatesPage({ params }: { params: Promise<{ locale: string }> }) {
+export const metadata = { robots: { index: false } };
+
+export default async function AdminWhatsappPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("Admin");
-  const res = await dal.admin.fetchWhatsappTemplates();
+
+  const [statusRes, templatesRes, groupsRes, campaignsRes, automationsRes] = await Promise.all([
+    dal.whatsapp.fetchStatus(),
+    dal.whatsapp.fetchTemplates(),
+    dal.whatsapp.fetchGroups(),
+    dal.whatsapp.fetchCampaigns(),
+    dal.whatsapp.fetchAutomations(),
+  ]);
+
   return (
     <div className="mx-auto max-w-[1100px] space-y-6">
-      <PageHeader title={t("whatsappTitle")} description={t("whatsappSubtitle")}>
-        <Button className="gap-1.5">
-          <Plus className="size-4" />
-          {t("newTemplate")}
-        </Button>
-      </PageHeader>
-      <WhatsappTemplates items={res.ok ? res.data : []} />
+      <PageHeader
+        title="WhatsApp Marketing"
+        description="Send approved-template broadcasts to your subscribers and automate WhatsApp drips — via the Meta WhatsApp Cloud API."
+      />
+      <WhatsappMarketing
+        initialStatus={statusRes.ok ? statusRes.data : null}
+        initialTemplates={templatesRes.ok ? templatesRes.data : []}
+        initialGroups={groupsRes.ok ? groupsRes.data : []}
+        initialCampaigns={campaignsRes.ok ? campaignsRes.data : []}
+        initialAutomations={automationsRes.ok ? automationsRes.data : []}
+      />
     </div>
   );
 }
