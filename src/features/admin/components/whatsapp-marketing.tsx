@@ -173,6 +173,8 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const [manageOpen, setManageOpen] = React.useState(false);
   const [listMsg, setListMsg] = React.useState<{ name: string; text: string } | null>(null);
   const [newListName, setNewListName] = React.useState("");
+  const [selected, setSelected] = React.useState<string[]>([]);
+  const [bulkList, setBulkList] = React.useState("");
   const [newOpen, setNewOpen] = React.useState(false);
   const [nc, setNc] = React.useState<{ phone: string; name: string; tplName: string; params: string[] }>({ phone: "", name: "", tplName: templates[0]?.name ?? "", params: [] });
   const [uploading, setUploading] = React.useState(false);
@@ -292,6 +294,20 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const addLabel = (l: string) => { const v = l.trim(); if (v && !(thread?.labels || []).includes(v)) applyLabels([...(thread?.labels || []), v]); setLabelInput(""); };
 
   const refreshLists = async () => { const ls = await dal.whatsapp.fetchLists(); if (ls.ok) setLists(ls.data); };
+  const toggleSelect = (phone: string) => setSelected((s) => (s.includes(phone) ? s.filter((x) => x !== phone) : [...s, phone]));
+  const addSelectedToList = async () => {
+    if (!bulkList || selected.length === 0) return;
+    const results = await Promise.all(selected.map((phone) => {
+      const c = convos.find((x) => x.phone === phone);
+      const next = [...new Set([...(c?.lists || []), bulkList])];
+      return dal.whatsapp.setConversationLists(phone, next);
+    }));
+    const failed = results.filter((r) => !r.ok).length;
+    if (failed) toast.error(`${failed} of ${selected.length} failed`);
+    else toast.success(`Added ${selected.length} chat${selected.length === 1 ? "" : "s"} to “${bulkList}”`);
+    setSelected([]); setBulkList("");
+    loadConvos(); refreshLists(); if (active) loadThread(active);
+  };
   const toggleConvList = async (name: string) => {
     if (!active) return;
     const cur = thread?.lists || [];
@@ -418,31 +434,53 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
             </div>
           )}
         </div>
+        {/* Bulk add-to-list bar */}
+        {selected.length > 0 && (
+          <div className="flex items-center gap-2 border-b border-border/60 bg-primary/5 px-3 py-2">
+            <span className="whitespace-nowrap text-xs font-semibold text-primary">{selected.length} selected</span>
+            <Select value={bulkList} onValueChange={setBulkList}>
+              <SelectTrigger className="h-8 flex-1 text-xs"><SelectValue placeholder={lists.length ? "Add to list…" : "No lists yet — create one"} /></SelectTrigger>
+              <SelectContent position="popper">{lists.map((l) => <SelectItem key={l.name} value={l.name}>{l.name}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button size="sm" className="h-8 shrink-0" disabled={!bulkList} onClick={addSelectedToList}>Add</Button>
+            <button type="button" onClick={() => { setSelected([]); setBulkList(""); }} title="Clear selection" className="shrink-0 text-muted-foreground hover:text-foreground"><X className="size-4" /></button>
+          </div>
+        )}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
             <p className="p-6 text-center text-sm text-muted-foreground">{convos.length === 0 ? (connected ? "No conversations yet — they appear when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages.") : "No conversations match."}</p>
-          ) : filtered.map((c) => (
-            <button key={c.phone} type="button" onClick={() => { setActive(c.phone); setMode("reply"); }}
-              className={cn("flex w-full items-center gap-3 border-b border-border/40 px-3 py-3 text-start transition-colors", active === c.phone ? "bg-primary/10" : "hover:bg-muted/50")}>
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(c.name || c.phone).charAt(0).toUpperCase()}</span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-medium">{c.name || `+${c.phone}`}</span>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">{fmtTime(c.lastMessageAt)}</span>
-                </span>
-                <span className="flex items-center justify-between gap-2">
-                  <span className="truncate text-xs text-muted-foreground">{c.lastDirection === "out" ? "↩ " : ""}{c.lastMessage}</span>
-                  {c.status === "resolved" ? <CheckCircle2 className="size-3.5 shrink-0 text-success" /> : c.unread > 0 ? <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">{c.unread}</span> : null}
-                </span>
-                {((c.labels || []).length > 0 || (c.lists || []).length > 0) && (
-                  <span className="mt-1 flex flex-wrap gap-1">
-                    {(c.lists || []).slice(0, 3).map((l) => <span key={`li-${l}`} className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-400"><Users className="size-2" />{l}</span>)}
-                    {(c.labels || []).slice(0, 3).map((l) => <span key={`la-${l}`} className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">{l}</span>)}
+          ) : filtered.map((c) => {
+            const checked = selected.includes(c.phone);
+            return (
+            <div key={c.phone}
+              className={cn("group flex w-full items-center border-b border-border/40 transition-colors", active === c.phone ? "bg-primary/10" : checked ? "bg-primary/[0.04]" : "hover:bg-muted/50")}>
+              <button type="button" title="Select chat" onClick={() => toggleSelect(c.phone)}
+                className={cn("ms-3 grid size-5 shrink-0 place-items-center rounded border transition", checked ? "border-primary bg-primary text-primary-foreground opacity-100" : cn("border-border/60 text-transparent", selected.length > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"))}>
+                <Check className="size-3.5" />
+              </button>
+              <button type="button" onClick={() => { setActive(c.phone); setMode("reply"); }}
+                className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-start">
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(c.name || c.phone).charAt(0).toUpperCase()}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-medium">{c.name || `+${c.phone}`}</span>
+                    <span className="shrink-0 text-[10px] text-muted-foreground">{fmtTime(c.lastMessageAt)}</span>
                   </span>
-                )}
-              </span>
-            </button>
-          ))}
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs text-muted-foreground">{c.lastDirection === "out" ? "↩ " : ""}{c.lastMessage}</span>
+                    {c.status === "resolved" ? <CheckCircle2 className="size-3.5 shrink-0 text-success" /> : c.unread > 0 ? <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">{c.unread}</span> : null}
+                  </span>
+                  {((c.labels || []).length > 0 || (c.lists || []).length > 0) && (
+                    <span className="mt-1 flex flex-wrap gap-1">
+                      {(c.lists || []).slice(0, 3).map((l) => <span key={`li-${l}`} className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-400"><Users className="size-2" />{l}</span>)}
+                      {(c.labels || []).slice(0, 3).map((l) => <span key={`la-${l}`} className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">{l}</span>)}
+                    </span>
+                  )}
+                </span>
+              </button>
+            </div>
+            );
+          })}
         </div>
       </div>
 
