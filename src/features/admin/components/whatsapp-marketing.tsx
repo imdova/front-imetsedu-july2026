@@ -715,7 +715,8 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
 }
 
 /* ───────────────────────── Templates ───────────────────────── */
-const EMPTY_TPL = { name: "", language: "ar", category: "marketing", body: "", variables: 0, status: "approved" };
+const EMPTY_TPL = { name: "", language: "ar", category: "marketing", folder: "", body: "", variables: 0, status: "approved" };
+const WA_UNCAT = "__uncat__";
 
 function TemplatesPanel({ templates, setTemplates, confirm }: {
   templates: WaTemplate[]; setTemplates: React.Dispatch<React.SetStateAction<WaTemplate[]>>;
@@ -725,14 +726,35 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
   const [editing, setEditing] = React.useState<WaTemplate | null>(null);
   const [form, setForm] = React.useState(EMPTY_TPL);
   const [saving, setSaving] = React.useState(false);
+  const [activeCat, setActiveCat] = React.useState<string | null>(null); // null = All
 
-  const openNew = () => { setEditing(null); setForm(EMPTY_TPL); setOpen(true); };
-  const openEdit = (t: WaTemplate) => { setEditing(t); setForm({ name: t.name, language: t.language, category: t.category, body: t.body, variables: t.variables, status: t.status }); setOpen(true); };
+  // Folders are derived from the templates themselves (a folder exists once a
+  // template is assigned to it), so there's no separate category store to manage.
+  const folders = React.useMemo(() => {
+    const m = new Map<string, number>();
+    for (const t of templates) { const f = (t.folder || "").trim(); if (f) m.set(f, (m.get(f) ?? 0) + 1); }
+    return [...m.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [templates]);
+  const uncatCount = templates.filter((t) => !(t.folder || "").trim()).length;
+
+  const visible = React.useMemo(() => {
+    if (activeCat === null) return templates;
+    if (activeCat === WA_UNCAT) return templates.filter((t) => !(t.folder || "").trim());
+    return templates.filter((t) => (t.folder || "").trim() === activeCat);
+  }, [templates, activeCat]);
+
+  const openNew = () => {
+    setEditing(null);
+    setForm({ ...EMPTY_TPL, folder: activeCat && activeCat !== WA_UNCAT ? activeCat : "" });
+    setOpen(true);
+  };
+  const openEdit = (t: WaTemplate) => { setEditing(t); setForm({ name: t.name, language: t.language, category: t.category, folder: t.folder ?? "", body: t.body, variables: t.variables, status: t.status }); setOpen(true); };
 
   const save = async () => {
     if (!form.name.trim()) { toast.error("Template name is required (must match Meta)"); return; }
     setSaving(true);
-    const r = editing ? await dal.whatsapp.updateTemplate(editing.id, form) : await dal.whatsapp.createTemplate(form);
+    const payload = { ...form, folder: form.folder.trim() };
+    const r = editing ? await dal.whatsapp.updateTemplate(editing.id, payload) : await dal.whatsapp.createTemplate(payload);
     setSaving(false);
     if (!r.ok) { toast.error(r.error); return; }
     setTemplates((p) => editing ? p.map((x) => (x.id === r.data.id ? r.data : x)) : [r.data, ...p]);
@@ -746,43 +768,89 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Mirror your Meta-approved templates here so campaigns &amp; automations can use them.</p>
-        <Button className="gap-1.5" onClick={openNew}><Plus className="size-4" /> New template</Button>
-      </div>
-      {templates.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">No templates yet. Add one that matches an approved Meta template name.</p>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {templates.map((t) => (
-            <Card key={t.id}>
-              <CardContent className="space-y-3 pt-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="grid size-9 place-items-center rounded-lg bg-success/12 text-success"><MessageSquare className="size-[18px]" /></span>
-                    <div><p className="font-mono text-sm font-medium">{t.name}</p><div className="mt-1 flex items-center gap-1.5"><Badge variant="secondary" className="capitalize">{t.category}</Badge><Badge variant="outline" className="uppercase">{t.language}</Badge>{t.variables > 0 && <Badge variant="outline">{t.variables} vars</Badge>}</div></div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(t)}><Pencil className="size-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="size-7" onClick={() => del(t)}><Trash2 className="size-3.5 text-destructive" /></Button>
-                  </div>
-                </div>
-                {t.body && <p dir={t.language.startsWith("ar") ? "rtl" : "ltr"} className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">{t.body}</p>}
-              </CardContent>
-            </Card>
-          ))}
+    <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+      {/* Category sidebar */}
+      <aside className="lg:sticky lg:top-20 lg:self-start">
+        <div className="rounded-2xl border border-border/60 bg-card">
+          <div className="flex items-center justify-between gap-2 border-b border-border/60 p-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</span>
+            <button onClick={openNew} title="New template" className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Plus className="size-4" /></button>
+          </div>
+          <div className="space-y-0.5 p-2">
+            <WaCatRow label="All templates" count={templates.length} active={activeCat === null} onClick={() => setActiveCat(null)} />
+            {folders.map((c) => (
+              <WaCatRow key={c.name} label={c.name} count={c.count} active={activeCat === c.name} onClick={() => setActiveCat(c.name)} />
+            ))}
+            {uncatCount > 0 && (
+              <WaCatRow label="Uncategorized" count={uncatCount} active={activeCat === WA_UNCAT} onClick={() => setActiveCat(WA_UNCAT)} />
+            )}
+          </div>
+          <p className="border-t border-border/60 p-3 text-[11px] leading-relaxed text-muted-foreground">
+            Assign a template to a category by typing a name in its <span className="font-medium">Category</span> field.
+          </p>
         </div>
-      )}
+      </aside>
+
+      {/* Cards */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {visible.length} {visible.length === 1 ? "template" : "templates"}{activeCat && activeCat !== WA_UNCAT ? ` in “${activeCat}”` : ""}
+          </p>
+          <Button className="gap-1.5" onClick={openNew}><Plus className="size-4" /> New template</Button>
+        </div>
+
+        {visible.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border/70 bg-card p-12 text-center">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-success/12 text-success"><MessageSquare className="size-6" /></div>
+            <p className="text-sm font-medium">{templates.length === 0 ? "No templates yet" : "No templates here yet"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Add one that matches an approved Meta template name.</p>
+            <Button className="mt-4 gap-1.5" onClick={openNew}><Plus className="size-4" /> New template</Button>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {visible.map((t) => (
+              <Card key={t.id}>
+                <CardContent className="space-y-3 pt-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="grid size-9 place-items-center rounded-lg bg-success/12 text-success"><MessageSquare className="size-[18px]" /></span>
+                      <div>
+                        <p className="font-mono text-sm font-medium">{t.name}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          {(t.folder || "").trim() && <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/15"><Tag className="size-2.5" /> {t.folder}</Badge>}
+                          <Badge variant="secondary" className="capitalize">{t.category}</Badge>
+                          <Badge variant="outline" className="uppercase">{t.language}</Badge>
+                          {t.variables > 0 && <Badge variant="outline">{t.variables} vars</Badge>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(t)}><Pencil className="size-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="size-7" onClick={() => del(t)}><Trash2 className="size-3.5 text-destructive" /></Button>
+                    </div>
+                  </div>
+                  {t.body && <p dir={t.language.startsWith("ar") ? "rtl" : "ltr"} className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">{t.body}</p>}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>{editing ? "Edit template" : "New template"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5"><Label>Template name (must match Meta) <span className="text-destructive">*</span></Label><Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. cphq_welcome_ar" className="font-mono" /></div>
+            <div className="space-y-1.5">
+              <Label>Category <span className="font-normal text-muted-foreground">(for organizing — like email)</span></Label>
+              <Input list="wa-folders" value={form.folder} onChange={(e) => setForm((f) => ({ ...f, folder: e.target.value }))} placeholder="e.g. CPHQ, CIC offers — type or pick, optional" />
+              <datalist id="wa-folders">{folders.map((c) => <option key={c.name} value={c.name} />)}</datalist>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5"><Label>Language</Label><Input value={form.language} onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))} placeholder="ar / en_US" /></div>
-              <div className="space-y-1.5"><Label>Category</Label>
+              <div className="space-y-1.5"><Label>Type <span className="font-normal text-muted-foreground">(Meta)</span></Label>
                 <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent position="popper"><SelectItem value="marketing">Marketing</SelectItem><SelectItem value="utility">Utility</SelectItem><SelectItem value="authentication">Authentication</SelectItem></SelectContent>
@@ -799,5 +867,14 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function WaCatRow({ label, count, active, onClick }: { label: string; count: number; active: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className={cn("flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition", active ? "bg-primary/10" : "hover:bg-muted/60")}>
+      <span className={cn("truncate text-sm", active ? "font-semibold text-primary" : "text-foreground")}>{label}</span>
+      <span className={cn("shrink-0 rounded-full px-1.5 text-[11px] font-semibold tabular-nums", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>{count}</span>
+    </button>
   );
 }

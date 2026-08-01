@@ -5,7 +5,7 @@ const BASE = "/admin/whatsapp";
 export interface WaStatusDto { configured: boolean; phoneId: string; version: string }
 export interface WaGroupDto { name: string; count: number; phoneCount: number }
 export interface WaTemplateDto {
-  _id: string; name: string; language: string; category: string; body: string; variables: number; status: string;
+  _id: string; name: string; language: string; category: string; folder?: string; body: string; variables: number; status: string;
 }
 export interface WaRecipient { phone: string; name?: string; params?: string[] }
 export interface WaCampaignDto {
