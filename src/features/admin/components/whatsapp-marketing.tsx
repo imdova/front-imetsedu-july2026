@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
-import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread } from "@/lib/dal/whatsapp";
+import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread, WaList } from "@/lib/dal/whatsapp";
 import { WhatsappAutomationBuilder } from "@/features/admin/components/whatsapp-automation-builder";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -95,7 +95,7 @@ export function WhatsappMarketing({
         ))}
       </div>
 
-      {tab === "inbox" && <InboxPanel templates={templates} connected={!!status?.configured} />}
+      {tab === "inbox" && <InboxPanel templates={templates} connected={!!status?.configured} confirm={confirm} />}
       {tab === "campaigns" && <CampaignsPanel templates={templates} groups={groups} initial={initialCampaigns} confirm={confirm} />}
       {tab === "automations" && <AutomationsPanel templates={templates} groups={groups} initial={initialAutomations} confirm={confirm} />}
       {tab === "templates" && <TemplatesPanel templates={templates} setTemplates={setTemplates} confirm={confirm} />}
@@ -151,7 +151,7 @@ function fillPreview(body: string, params: string[]): string {
   return out;
 }
 
-function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connected: boolean }) {
+function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]; connected: boolean; confirm: ReturnType<typeof useConfirm>["confirm"] }) {
   const [convos, setConvos] = React.useState<WaConversation[]>([]);
   const [active, setActive] = React.useState<string | null>(null);
   const [thread, setThread] = React.useState<WaThread | null>(null);
@@ -168,6 +168,11 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
   const [allLabels, setAllLabels] = React.useState<string[]>([]);
   const [labelFilter, setLabelFilter] = React.useState<string | null>(null);
   const [labelInput, setLabelInput] = React.useState("");
+  const [lists, setLists] = React.useState<WaList[]>([]);
+  const [listFilter, setListFilter] = React.useState<string | null>(null);
+  const [manageOpen, setManageOpen] = React.useState(false);
+  const [listMsg, setListMsg] = React.useState<{ name: string; text: string } | null>(null);
+  const [newListName, setNewListName] = React.useState("");
   const [newOpen, setNewOpen] = React.useState(false);
   const [nc, setNc] = React.useState<{ phone: string; name: string; tplName: string; params: string[] }>({ phone: "", name: "", tplName: templates[0]?.name ?? "", params: [] });
   const [uploading, setUploading] = React.useState(false);
@@ -178,9 +183,10 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
   const recRef = React.useRef<{ rec: MediaRecorder; chunks: Blob[]; stream: MediaStream } | null>(null);
 
   const loadConvos = React.useCallback(async () => {
-    const [r, l] = await Promise.all([dal.whatsapp.fetchConversations(), dal.whatsapp.fetchLabels()]);
+    const [r, l, ls] = await Promise.all([dal.whatsapp.fetchConversations(), dal.whatsapp.fetchLabels(), dal.whatsapp.fetchLists()]);
     if (r.ok) setConvos(r.data);
     if (l.ok) setAllLabels(l.data);
+    if (ls.ok) setLists(ls.data);
   }, []);
   const loadThread = React.useCallback(async (phone: string) => { const r = await dal.whatsapp.fetchThread(phone); if (r.ok) setThread(r.data); }, []);
 
@@ -255,7 +261,8 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
     if (filter === "unread" && (!c.unread || c.status === "resolved")) return false;
     if (filter === "resolved" && c.status !== "resolved") return false;
     if (labelFilter && !(c.labels || []).includes(labelFilter)) return false;
-    if (q && !`${c.name} ${c.phone} ${c.lastMessage} ${(c.labels || []).join(" ")}`.toLowerCase().includes(q)) return false;
+    if (listFilter && !(c.lists || []).includes(listFilter)) return false;
+    if (q && !`${c.name} ${c.phone} ${c.lastMessage} ${(c.labels || []).join(" ")} ${(c.lists || []).join(" ")}`.toLowerCase().includes(q)) return false;
     return true;
   });
   const unreadCount = convos.filter((c) => c.unread > 0 && c.status !== "resolved").length;
@@ -283,6 +290,47 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
   };
   const removeLabel = (l: string) => applyLabels((thread?.labels || []).filter((x) => x !== l));
   const addLabel = (l: string) => { const v = l.trim(); if (v && !(thread?.labels || []).includes(v)) applyLabels([...(thread?.labels || []), v]); setLabelInput(""); };
+
+  const refreshLists = async () => { const ls = await dal.whatsapp.fetchLists(); if (ls.ok) setLists(ls.data); };
+  const toggleConvList = async (name: string) => {
+    if (!active) return;
+    const cur = thread?.lists || [];
+    const next = cur.includes(name) ? cur.filter((x) => x !== name) : [...cur, name];
+    const r = await dal.whatsapp.setConversationLists(active, next);
+    if (!r.ok) { toast.error(r.error); return; }
+    setThread((t) => (t ? { ...t, lists: next } : t));
+    refreshLists(); loadConvos();
+  };
+  const createList = async (name: string) => {
+    const v = name.trim(); if (!v) return;
+    const r = await dal.whatsapp.createList(v);
+    if (!r.ok) { toast.error(r.error); return; }
+    setNewListName(""); toast.success("List created"); refreshLists();
+  };
+  const renameListFn = async (oldName: string, to: string) => {
+    const v = to.trim(); if (!v || v === oldName) return;
+    const r = await dal.whatsapp.renameList(oldName, v);
+    if (!r.ok) { toast.error(r.error); return; }
+    if (listFilter === oldName) setListFilter(v);
+    toast.success("List renamed"); refreshLists(); loadConvos(); if (active) loadThread(active);
+  };
+  const deleteListFn = async (name: string) => {
+    if (!(await confirm({ title: "Delete list", description: `“${name}” will be removed from all conversations.`, confirmText: "Delete", variant: "destructive" }))) return;
+    const r = await dal.whatsapp.deleteList(name);
+    if (!r.ok) { toast.error(r.error); return; }
+    if (listFilter === name) setListFilter(null);
+    toast.success("List deleted"); refreshLists(); loadConvos(); if (active) loadThread(active);
+  };
+  const sendToList = async () => {
+    if (!listMsg || !listMsg.text.trim()) return;
+    setSending(true);
+    const r = await dal.whatsapp.sendListMessage(listMsg.name, listMsg.text.trim());
+    setSending(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    const { sent, skipped, failed } = r.data;
+    toast.success(`Sent to ${sent}${skipped ? ` · ${skipped} skipped (window closed)` : ""}${failed ? ` · ${failed} failed` : ""}`);
+    setListMsg(null);
+  };
 
   const sendReply = async () => {
     if (!active) return;
@@ -351,6 +399,24 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
               ))}
             </div>
           )}
+          {/* Lists (segments) */}
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"><Users className="size-3" /> Lists</span>
+            {lists.map((l) => (
+              <button key={l.name} type="button" onClick={() => setListFilter(listFilter === l.name ? null : l.name)}
+                className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-colors",
+                  listFilter === l.name ? "border-primary bg-primary/10 font-medium text-primary" : "border-border/70 text-muted-foreground hover:bg-muted")}>
+                {l.name} <span className="tabular-nums opacity-70">{l.count}</span>
+              </button>
+            ))}
+            <button type="button" onClick={() => setManageOpen(true)} title="Manage lists" className="grid size-5 place-items-center rounded-full border border-dashed border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground"><Plus className="size-3" /></button>
+          </div>
+          {listFilter && (
+            <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-2.5 py-1.5">
+              <span className="truncate text-[11px] font-medium text-primary">Filtering “{listFilter}”</span>
+              <Button size="sm" className="h-7 gap-1.5 px-2 text-[11px]" onClick={() => setListMsg({ name: listFilter, text: "" })}><Send className="size-3" /> Message list</Button>
+            </div>
+          )}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
@@ -368,9 +434,10 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                   <span className="truncate text-xs text-muted-foreground">{c.lastDirection === "out" ? "↩ " : ""}{c.lastMessage}</span>
                   {c.status === "resolved" ? <CheckCircle2 className="size-3.5 shrink-0 text-success" /> : c.unread > 0 ? <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">{c.unread}</span> : null}
                 </span>
-                {(c.labels || []).length > 0 && (
+                {((c.labels || []).length > 0 || (c.lists || []).length > 0) && (
                   <span className="mt-1 flex flex-wrap gap-1">
-                    {c.labels.slice(0, 3).map((l) => <span key={l} className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">{l}</span>)}
+                    {(c.lists || []).slice(0, 3).map((l) => <span key={`li-${l}`} className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-400"><Users className="size-2" />{l}</span>)}
+                    {(c.labels || []).slice(0, 3).map((l) => <span key={`la-${l}`} className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">{l}</span>)}
                   </span>
                 )}
               </span>
@@ -555,9 +622,71 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                 <Button size="sm" variant="outline" className="h-8 shrink-0" onClick={() => addLabel(labelInput)}>Add</Button>
               </div>
             </div>
+            {/* Lists membership */}
+            <div className="border-t border-border/60 pt-3">
+              <div className="mb-1.5 flex items-center justify-between">
+                <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Users className="size-3.5" /> Lists</p>
+                <button type="button" onClick={() => setManageOpen(true)} className="text-[10px] font-medium text-primary hover:underline">Manage</button>
+              </div>
+              {lists.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No lists yet — create one to segment contacts.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {lists.map((l) => {
+                    const on = (thread?.lists || []).includes(l.name);
+                    return (
+                      <button key={l.name} type="button" onClick={() => toggleConvList(l.name)}
+                        className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-colors",
+                          on ? "border-primary bg-primary/10 font-medium text-primary" : "border-border/70 text-muted-foreground hover:bg-muted")}>
+                        {on ? <Check className="size-2.5" /> : <Plus className="size-2.5" />} {l.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="mt-1.5 flex gap-1">
+                <Input value={newListName} onChange={(e) => setNewListName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const v = newListName.trim(); if (v) { createList(v).then(() => toggleConvList(v)); } } }} placeholder="New list… (adds this contact)" className="h-8 text-xs" />
+                <Button size="sm" variant="outline" className="h-8 shrink-0" onClick={() => { const v = newListName.trim(); if (v) createList(v).then(() => toggleConvList(v)); }}>Add</Button>
+              </div>
+            </div>
           </div>
         </aside>
       )}
+
+      {/* Manage lists */}
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Manage lists</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input value={newListName} onChange={(e) => setNewListName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); createList(newListName); } }} placeholder="New list name…" />
+              <Button className="gap-1.5 shrink-0" onClick={() => createList(newListName)}><Plus className="size-4" /> Add</Button>
+            </div>
+            {lists.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">No lists yet.</p>
+            ) : (
+              <div className="max-h-72 space-y-1 overflow-y-auto">
+                {lists.map((l) => <ManageListRow key={l.name} list={l} onRename={renameListFn} onDelete={deleteListFn} />)}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send message to list */}
+      <Dialog open={!!listMsg} onOpenChange={(o) => !o && setListMsg(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Message “{listMsg?.name}”</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">Sends a custom message to everyone in this list whose 24-hour window is open. Contacts outside the window are skipped (use a Campaign template to reach them).</p>
+            <Textarea rows={5} value={listMsg?.text ?? ""} onChange={(e) => setListMsg((m) => (m ? { ...m, text: e.target.value } : m))} placeholder="Type your message…" dir="auto" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setListMsg(null)} disabled={sending}>Cancel</Button>
+            <Button onClick={sendToList} disabled={sending || !listMsg?.text.trim()} className="gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* New conversation */}
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
@@ -592,6 +721,28 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
 
 function DaySep({ label }: { label: string }) {
   return <div className="my-2 flex justify-center"><span className="rounded-full bg-card px-3 py-0.5 text-[11px] font-medium text-muted-foreground shadow-sm">{label}</span></div>;
+}
+
+function ManageListRow({ list, onRename, onDelete }: { list: WaList; onRename: (oldName: string, to: string) => void; onDelete: (name: string) => void }) {
+  const [editing, setEditing] = React.useState(false);
+  const [val, setVal] = React.useState(list.name);
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-border/60 px-2.5 py-1.5">
+      {editing ? (
+        <>
+          <Input value={val} autoFocus onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { onRename(list.name, val); setEditing(false); } if (e.key === "Escape") { setEditing(false); setVal(list.name); } }} className="h-7 text-sm" />
+          <Button size="sm" className="h-7 shrink-0" onClick={() => { onRename(list.name, val); setEditing(false); }}>Save</Button>
+        </>
+      ) : (
+        <>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium">{list.name}</span>
+          <span className="shrink-0 rounded-full bg-muted px-1.5 text-[11px] font-semibold tabular-nums text-muted-foreground">{list.count}</span>
+          <button type="button" title="Rename" onClick={() => { setVal(list.name); setEditing(true); }} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted"><Pencil className="size-3.5" /></button>
+          <button type="button" title="Delete" onClick={() => onDelete(list.name)} className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 className="size-3.5" /></button>
+        </>
+      )}
+    </div>
+  );
 }
 
 /** Renders a message attachment inline — image / video / audio player / document link. */

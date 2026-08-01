@@ -35,10 +35,12 @@ export const sendBulk = (input: Record<string, unknown>): Promise<Result<WaSendR
 export const testSend = (input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/test`, input);
 
 /* ── Live-chat inbox ── */
-export interface WaConversationDto { phone: string; name: string; lastMessage: string; lastDirection: string; lastMessageAt?: string; unread: number; status: string; labels: string[]; windowOpen: boolean }
+export interface WaConversationDto { phone: string; name: string; lastMessage: string; lastDirection: string; lastMessageAt?: string; unread: number; status: string; labels: string[]; lists: string[]; windowOpen: boolean }
 export interface WaThreadMsg { id: string; direction: string; type: string; text: string; mediaUrl?: string; mime?: string; filename?: string; status: string; author?: string; at?: string }
 export interface WaContactDto { name: string; email: string; tags: string[]; createdAt?: string; source?: string }
-export interface WaThreadDto { phone: string; name: string; status: string; labels: string[]; windowOpen: boolean; lastInboundAt?: string; contact?: WaContactDto | null; messages: WaThreadMsg[] }
+export interface WaThreadDto { phone: string; name: string; status: string; labels: string[]; lists: string[]; windowOpen: boolean; lastInboundAt?: string; contact?: WaContactDto | null; messages: WaThreadMsg[] }
+export interface WaListDto { name: string; count: number }
+export interface WaListSendResult { total: number; sent: number; skipped: number; failed: number; errors: string[] }
 
 export const listConversations = (): Promise<Result<WaConversationDto[]>> => api.get(`${BASE}/conversations`, { revalidate: false });
 export const listLabels = (): Promise<Result<string[]>> => api.get(`${BASE}/labels`, { revalidate: false });
@@ -50,6 +52,14 @@ export const setConversationStatus = (phone: string, status: string): Promise<Re
 export const addNote = (phone: string, text: string, author?: string): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/note`, { text, author });
 export const replyText = (phone: string, text: string): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/reply`, { text });
 export const sendMedia = (phone: string, form: FormData): Promise<Result<{ success: boolean; mediaUrl: string; type: string }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/media`, form);
+
+/* ── Conversation lists / segments ── */
+export const listLists = (): Promise<Result<WaListDto[]>> => api.get(`${BASE}/lists`, { revalidate: false });
+export const createList = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/lists`, { name });
+export const renameList = (name: string, to: string): Promise<Result<{ success: boolean; name: string }>> => api.patch(`${BASE}/lists`, { name, to });
+export const deleteList = (name: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/lists/${encodeURIComponent(name)}`);
+export const sendListMessage = (name: string, text: string): Promise<Result<WaListSendResult>> => api.post(`${BASE}/lists/${encodeURIComponent(name)}/message`, { text });
+export const setConversationLists = (phone: string, lists: string[]): Promise<Result<{ success: boolean; lists: string[] }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/lists`, { lists });
 export const replyTemplate = (phone: string, input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/reply-template`, input);
 
 export const listAutomations = (): Promise<Result<WaAutomationDto[]>> => api.get(`${BASE}/automations`, { revalidate: false });

@@ -65,6 +65,8 @@ export async function testSend(input: { to: string; templateName: string; langua
 
 export type WaConversation = svc.WaConversationDto;
 export type WaThread = svc.WaThreadDto;
+export type WaList = svc.WaListDto;
+export type WaListSendResult = svc.WaListSendResult;
 
 export async function fetchConversations(): Promise<Result<WaConversation[]>> { return svc.listConversations(); }
 export async function fetchThread(phone: string): Promise<Result<WaThread>> { return svc.getThread(phone); }
@@ -72,6 +74,20 @@ export async function fetchLabels(): Promise<Result<string[]>> { return svc.list
 export async function startConversation(input: { phone: string; name?: string; templateName: string; language: string; params?: string[] }): Promise<Result<{ success: boolean; phone: string }>> { return svc.startConversation(input); }
 export async function setLabels(phone: string, labels: string[]): Promise<Result<boolean>> {
   const r = await svc.setLabels(phone, labels); return r.ok ? ok(true) : r;
+}
+export async function fetchLists(): Promise<Result<WaList[]>> { return svc.listLists(); }
+export async function createList(name: string): Promise<Result<boolean>> {
+  const r = await svc.createList(name); return r.ok ? ok(true) : r;
+}
+export async function renameList(name: string, to: string): Promise<Result<boolean>> {
+  const r = await svc.renameList(name, to); return r.ok ? ok(true) : r;
+}
+export async function deleteList(name: string): Promise<Result<boolean>> {
+  const r = await svc.deleteList(name); return r.ok ? ok(true) : r;
+}
+export async function sendListMessage(name: string, text: string): Promise<Result<WaListSendResult>> { return svc.sendListMessage(name, text); }
+export async function setConversationLists(phone: string, lists: string[]): Promise<Result<boolean>> {
+  const r = await svc.setConversationLists(phone, lists); return r.ok ? ok(true) : r;
 }
 export async function markConversationRead(phone: string): Promise<Result<boolean>> {
   const r = await svc.markRead(phone); return r.ok ? ok(true) : r;
