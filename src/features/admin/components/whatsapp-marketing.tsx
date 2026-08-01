@@ -131,7 +131,14 @@ const QUICK_REPLIES = [
   "هل لديك أي استفسار آخر؟",
 ];
 
-type InboxFilter = "open" | "unread" | "resolved";
+type InboxFilter = "open" | "unread" | "resolved" | "hot";
+
+/** Lead temperature → display tokens. */
+const TEMP: Record<string, { emoji: string; label: string; chip: string; bar: string; accent: string }> = {
+  hot: { emoji: "🔥", label: "Hot", chip: "bg-red-500/10 text-red-600 dark:text-red-400", bar: "bg-red-500", accent: "border-s-red-500" },
+  warm: { emoji: "🌤️", label: "Warm", chip: "bg-amber-500/10 text-amber-600 dark:text-amber-500", bar: "bg-amber-500", accent: "border-s-amber-400" },
+  cold: { emoji: "❄️", label: "Cold", chip: "bg-sky-500/10 text-sky-600 dark:text-sky-400", bar: "bg-sky-500", accent: "border-s-transparent" },
+};
 
 /** mm:ss for the voice-recording timer. */
 function fmtDur(s: number): string {
@@ -264,12 +271,16 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
     if (filter === "open" && c.status === "resolved") return false;
     if (filter === "unread" && (!c.unread || c.status === "resolved")) return false;
     if (filter === "resolved" && c.status !== "resolved") return false;
+    if (filter === "hot" && (c.temperature !== "hot" || c.status === "resolved")) return false;
     if (labelFilter && !(c.labels || []).includes(labelFilter)) return false;
     if (listFilter && !(c.lists || []).includes(listFilter)) return false;
     if (q && !`${c.name} ${c.phone} ${c.lastMessage} ${(c.labels || []).join(" ")} ${(c.lists || []).join(" ")}`.toLowerCase().includes(q)) return false;
     return true;
   });
   const unreadCount = convos.filter((c) => c.unread > 0 && c.status !== "resolved").length;
+  const hotCount = convos.filter((c) => c.temperature === "hot" && c.status !== "resolved").length;
+  // When viewing Hot leads, surface the highest score first.
+  const shown = filter === "hot" ? [...filtered].sort((a, b) => (b.score || 0) - (a.score || 0)) : filtered;
 
   const startNew = async () => {
     const phone = nc.phone.replace(/\D/g, "");
@@ -417,9 +428,9 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
             <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name / number / label…" className="ps-8" />
           </div>
-          <div className="flex gap-1">
-            {([["open", "Open"], ["unread", `Unread${unreadCount ? ` ${unreadCount}` : ""}`], ["resolved", "Resolved"]] as [InboxFilter, string][]).map(([k, l]) => (
-              <button key={k} type="button" onClick={() => setFilter(k)} className={cn("rounded-full px-2.5 py-1 text-xs font-medium transition-colors", filter === k ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70")}>{l}</button>
+          <div className="flex flex-wrap gap-1">
+            {([["open", "Open"], ["hot", `🔥 Hot${hotCount ? ` ${hotCount}` : ""}`], ["unread", `Unread${unreadCount ? ` ${unreadCount}` : ""}`], ["resolved", "Resolved"]] as [InboxFilter, string][]).map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setFilter(k)} className={cn("rounded-full px-2.5 py-1 text-xs font-medium transition-colors", filter === k ? (k === "hot" ? "bg-red-500 text-white" : "bg-primary text-primary-foreground") : k === "hot" && hotCount ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400" : "bg-muted text-muted-foreground hover:bg-muted/70")}>{l}</button>
             ))}
           </div>
           {allLabels.length > 0 && (
@@ -462,13 +473,13 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
           </div>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {filtered.length === 0 ? (
-            <p className="p-6 text-center text-sm text-muted-foreground">{convos.length === 0 ? (connected ? "No conversations yet — they appear when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages.") : "No conversations match."}</p>
-          ) : filtered.map((c) => {
+          {shown.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">{convos.length === 0 ? (connected ? "No conversations yet — they appear when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages.") : filter === "hot" ? "No hot leads right now." : "No conversations match."}</p>
+          ) : shown.map((c) => {
             const checked = selected.includes(c.phone);
             return (
             <div key={c.phone}
-              className={cn("group flex w-full items-center border-b border-border/40 transition-colors", active === c.phone ? "bg-primary/10" : checked ? "bg-primary/[0.04]" : "hover:bg-muted/50")}>
+              className={cn("group flex w-full items-center border-b border-s-2 border-border/40 transition-colors", (TEMP[c.temperature] ?? TEMP.cold).accent, active === c.phone ? "bg-primary/10" : checked ? "bg-primary/[0.04]" : "hover:bg-muted/50")}>
               <button type="button" title="Select chat" onClick={() => toggleSelect(c.phone)}
                 className={cn("ms-3 grid size-5 shrink-0 place-items-center rounded border transition", checked ? "border-primary bg-primary text-primary-foreground opacity-100" : cn("border-border/60 text-transparent", selected.length > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"))}>
                 <Check className="size-3.5" />
@@ -478,7 +489,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(c.name || c.phone).charAt(0).toUpperCase()}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium">{c.name || `+${c.phone}`}</span>
+                    <span className="truncate text-sm font-medium">{c.temperature === "hot" && <span title={`Hot lead · ${c.score}/100`}>🔥 </span>}{c.name || `+${c.phone}`}</span>
                     <span className="shrink-0 text-[10px] text-muted-foreground">{fmtTime(c.lastMessageAt)}</span>
                   </span>
                   <span className="flex items-center justify-between gap-2">
@@ -652,6 +663,19 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
               <p className="mt-2 font-semibold">{activeConvo?.name || contact?.name || "Unknown"}</p>
               <a href={`https://wa.me/${active}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#128C7E] hover:underline">+{active}</a>
             </div>
+            {typeof thread?.score === "number" && (() => {
+              const t = TEMP[thread.temperature || "cold"] ?? TEMP.cold;
+              return (
+                <div className="rounded-xl border border-border/60 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold", t.chip)}>{t.emoji} {t.label} lead</span>
+                    <span className="text-sm font-bold tabular-nums">{thread.score}<span className="text-[10px] font-normal text-muted-foreground">/100</span></span>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className={cn("h-full rounded-full", t.bar)} style={{ width: `${thread.score}%` }} /></div>
+                  <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">Auto-scored from buying intent, recency, engagement &amp; unread — higher means more likely to convert.</p>
+                </div>
+              );
+            })()}
             <Field2 icon={Mail} label="Email" value={contact?.email || "—"} />
             <Field2 icon={CalendarDays} label="Joined" value={contact?.createdAt ? new Date(contact.createdAt).toLocaleDateString() : "—"} />
             <Field2 icon={Info} label="Source" value={contact?.source || "—"} />
