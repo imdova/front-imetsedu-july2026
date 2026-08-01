@@ -374,7 +374,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const cols = showInfo && active ? "lg:grid-cols-[300px_1fr_280px]" : "lg:grid-cols-[300px_1fr]";
 
   return (
-    <div className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70", cols)} style={{ height: "72vh" }}>
+    <div className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70 h-[calc(100dvh_-_200px)] min-h-[380px]", cols)}>
       {/* ── Conversation list ── */}
       <div className={cn("flex min-h-0 flex-col border-e border-border/60 bg-card", active && "hidden lg:flex")}>
         <div className="space-y-2 border-b border-border/60 p-3">
