@@ -77,6 +77,10 @@ export function WhatsappAutomationBuilder({
   const [dirty, setDirty] = React.useState(false);
 
   const [groupList, setGroupList] = React.useState<WaGroup[]>(groups);
+  // Always pull the current full group list (incl. newly-registered empty ones) when the builder opens.
+  React.useEffect(() => {
+    dal.whatsapp.fetchGroups().then((r) => { if (r.ok) setGroupList(r.data); });
+  }, []);
   const groupOptions: Option[] = React.useMemo(
     () => groupList.map((g) => ({ value: g.name, label: g.name, hint: `${g.phoneCount} with phone` })),
     [groupList],
