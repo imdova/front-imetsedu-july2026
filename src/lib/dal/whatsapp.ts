@@ -63,6 +63,21 @@ export async function testSend(input: { to: string; templateName: string; langua
   const r = await svc.testSend(input); return r.ok ? ok(true) : r;
 }
 
+export type WaConversation = svc.WaConversationDto;
+export type WaThread = svc.WaThreadDto;
+
+export async function fetchConversations(): Promise<Result<WaConversation[]>> { return svc.listConversations(); }
+export async function fetchThread(phone: string): Promise<Result<WaThread>> { return svc.getThread(phone); }
+export async function markConversationRead(phone: string): Promise<Result<boolean>> {
+  const r = await svc.markRead(phone); return r.ok ? ok(true) : r;
+}
+export async function replyText(phone: string, text: string): Promise<Result<boolean>> {
+  const r = await svc.replyText(phone, text); return r.ok ? ok(true) : r;
+}
+export async function replyTemplate(phone: string, input: { templateName: string; language: string; params?: string[] }): Promise<Result<boolean>> {
+  const r = await svc.replyTemplate(phone, input); return r.ok ? ok(true) : r;
+}
+
 export async function fetchAutomations(): Promise<Result<WaAutomation[]>> {
   const r = await svc.listAutomations(); return r.ok ? ok(r.data.map(mapAuto)) : r;
 }

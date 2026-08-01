@@ -4,11 +4,11 @@ import * as React from "react";
 import { toast } from "sonner";
 import {
   MessageSquare, Send, Plus, Trash2, Pencil, Loader2, Users, Zap,
-  FileText, Megaphone, CheckCircle2, AlertTriangle, Clock,
+  FileText, Megaphone, CheckCircle2, AlertTriangle, Clock, Inbox, CheckCheck, ArrowLeft,
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
-import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient } from "@/lib/dal/whatsapp";
+import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread } from "@/lib/dal/whatsapp";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type Tab = "templates" | "campaigns" | "automations";
+type Tab = "inbox" | "templates" | "campaigns" | "automations";
 
 /** "phone" or "phone,name" per line → recipients. */
 function parseRecipients(text: string): WaRecipient[] {
@@ -40,13 +40,14 @@ export function WhatsappMarketing({
   initialCampaigns: WaCampaign[];
   initialAutomations: WaAutomation[];
 }) {
-  const [tab, setTab] = React.useState<Tab>("campaigns");
+  const [tab, setTab] = React.useState<Tab>("inbox");
   const [status] = React.useState(initialStatus);
   const [templates, setTemplates] = React.useState(initialTemplates);
   const [groups] = React.useState(initialGroups);
   const { confirm, Confirmation } = useConfirm();
 
   const TABS: { key: Tab; label: string; icon: typeof FileText }[] = [
+    { key: "inbox", label: "Live Chat", icon: Inbox },
     { key: "campaigns", label: "Campaigns", icon: Megaphone },
     { key: "automations", label: "Automations", icon: Zap },
     { key: "templates", label: "Templates", icon: FileText },
@@ -92,10 +93,154 @@ export function WhatsappMarketing({
         ))}
       </div>
 
+      {tab === "inbox" && <InboxPanel templates={templates} connected={!!status?.configured} />}
       {tab === "campaigns" && <CampaignsPanel templates={templates} groups={groups} initial={initialCampaigns} confirm={confirm} />}
       {tab === "automations" && <AutomationsPanel templates={templates} groups={groups} initial={initialAutomations} confirm={confirm} />}
       {tab === "templates" && <TemplatesPanel templates={templates} setTemplates={setTemplates} confirm={confirm} />}
       {Confirmation}
+    </div>
+  );
+}
+
+/* ───────────────────────── Live Chat (inbox) ───────────────────────── */
+function fmtTime(at?: string) {
+  if (!at) return "";
+  const d = new Date(at); const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  return sameDay ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString([], { day: "2-digit", month: "short" });
+}
+
+function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connected: boolean }) {
+  const [convos, setConvos] = React.useState<WaConversation[]>([]);
+  const [active, setActive] = React.useState<string | null>(null);
+  const [thread, setThread] = React.useState<WaThread | null>(null);
+  const [text, setText] = React.useState("");
+  const [sending, setSending] = React.useState(false);
+  const [tplName, setTplName] = React.useState(templates[0]?.name ?? "");
+  const [tplParams, setTplParams] = React.useState<string[]>([]);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
+
+  const loadConvos = React.useCallback(async () => { const r = await dal.whatsapp.fetchConversations(); if (r.ok) setConvos(r.data); }, []);
+  const loadThread = React.useCallback(async (phone: string) => { const r = await dal.whatsapp.fetchThread(phone); if (r.ok) setThread(r.data); }, []);
+
+  // Poll conversations (12s) + open thread (8s).
+  React.useEffect(() => { loadConvos(); const id = window.setInterval(loadConvos, 12_000); return () => window.clearInterval(id); }, [loadConvos]);
+  React.useEffect(() => {
+    if (!active) return;
+    loadThread(active); dal.whatsapp.markConversationRead(active).then(loadConvos);
+    const id = window.setInterval(() => loadThread(active), 8_000);
+    return () => window.clearInterval(id);
+  }, [active, loadThread, loadConvos]);
+  React.useEffect(() => { bottomRef.current?.scrollIntoView({ block: "end" }); }, [thread?.messages.length]);
+
+  const tpl = templates.find((t) => t.name === tplName);
+  const send = async () => {
+    if (!active) return;
+    setSending(true);
+    let r;
+    if (thread?.windowOpen) {
+      if (!text.trim()) { setSending(false); return; }
+      r = await dal.whatsapp.replyText(active, text.trim());
+    } else {
+      if (!tplName) { setSending(false); toast.error("Pick a template"); return; }
+      r = await dal.whatsapp.replyTemplate(active, { templateName: tplName, language: tpl?.language ?? "ar", params: tplParams });
+    }
+    setSending(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    setText(""); setTplParams([]);
+    loadThread(active); loadConvos();
+  };
+
+  const activeConvo = convos.find((c) => c.phone === active);
+
+  return (
+    <div className="grid gap-0 overflow-hidden rounded-2xl border border-border/70 lg:grid-cols-[320px_1fr]" style={{ height: "70vh" }}>
+      {/* Conversation list */}
+      <div className={cn("flex flex-col border-e border-border/60 bg-card", active && "hidden lg:flex")}>
+        <div className="border-b border-border/60 px-4 py-3 text-sm font-semibold">Conversations{convos.length ? ` · ${convos.length}` : ""}</div>
+        <div className="flex-1 overflow-y-auto">
+          {convos.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">{connected ? "No conversations yet. They appear here when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages."}</p>
+          ) : convos.map((c) => (
+            <button key={c.phone} type="button" onClick={() => setActive(c.phone)}
+              className={cn("flex w-full items-center gap-3 border-b border-border/40 px-3 py-3 text-start transition-colors", active === c.phone ? "bg-primary/10" : "hover:bg-muted/50")}>
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(c.name || c.phone).charAt(0).toUpperCase()}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm font-medium">{c.name || `+${c.phone}`}</span>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">{fmtTime(c.lastMessageAt)}</span>
+                </span>
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate text-xs text-muted-foreground">{c.lastDirection === "out" ? "↩ " : ""}{c.lastMessage}</span>
+                  {c.unread > 0 && <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">{c.unread}</span>}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Thread */}
+      <div className={cn("flex flex-col bg-muted/20", !active && "hidden lg:flex")}>
+        {!active ? (
+          <div className="grid flex-1 place-items-center p-8 text-center text-sm text-muted-foreground">
+            <div><MessageSquare className="mx-auto mb-2 size-8 opacity-40" />Select a conversation to view the chat.</div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-3 border-b border-border/60 bg-card px-4 py-3">
+              <button type="button" className="lg:hidden" onClick={() => { setActive(null); setThread(null); }}><ArrowLeft className="size-5" /></button>
+              <span className="grid size-9 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(activeConvo?.name || active).charAt(0).toUpperCase()}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{activeConvo?.name || `+${active}`}</p>
+                <p className="text-[11px] text-muted-foreground">+{active}</p>
+              </div>
+              {thread && (thread.windowOpen
+                ? <Badge className="gap-1 bg-success/12 text-success"><CheckCircle2 className="size-3" /> can reply freely</Badge>
+                : <Badge variant="secondary" className="gap-1"><Clock className="size-3" /> 24h window closed</Badge>)}
+            </div>
+
+            <div className="flex-1 space-y-2 overflow-y-auto p-4">
+              {thread?.messages.map((m) => (
+                <div key={m.id} className={cn("flex", m.direction === "out" ? "justify-end" : "justify-start")}>
+                  <div className={cn("max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm", m.direction === "out" ? "bg-[#dcf8c6] text-[#0a1424] dark:bg-[#005c4b] dark:text-white" : "bg-card")}>
+                    <p className="whitespace-pre-wrap break-words" dir="auto">{m.text}</p>
+                    <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[10px]", m.direction === "out" ? "text-[#0a1424]/50 dark:text-white/60" : "text-muted-foreground")}>
+                      {fmtTime(m.at)}
+                      {m.direction === "out" && <CheckCheck className={cn("size-3", m.status === "read" ? "text-sky-500" : "")} />}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Reply box */}
+            <div className="border-t border-border/60 bg-card p-3">
+              {thread?.windowOpen ? (
+                <div className="flex items-end gap-2">
+                  <Textarea rows={1} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Type a reply…" dir="auto" className="max-h-32 min-h-[42px] resize-none" />
+                  <Button onClick={send} disabled={sending || !text.trim()} className="size-10 shrink-0 rounded-full p-0">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-muted-foreground">The 24-hour reply window is closed — you can only send an approved template.</p>
+                  <div className="flex items-end gap-2">
+                    <Select value={tplName} onValueChange={(v) => { setTplName(v); const t = templates.find((x) => x.name === v); setTplParams(Array.from({ length: t?.variables ?? 0 }, () => "")); }}>
+                      <SelectTrigger className="flex-1"><SelectValue placeholder={templates.length ? "Pick a template" : "No templates"} /></SelectTrigger>
+                      <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Button onClick={send} disabled={sending || !tplName} className="shrink-0 gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
+                  </div>
+                  {(tpl?.variables ?? 0) > 0 && tplParams.map((p, i) => (
+                    <Input key={i} value={p} onChange={(e) => setTplParams((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`{{${i + 1}}}`} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

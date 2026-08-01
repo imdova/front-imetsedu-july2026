@@ -34,6 +34,17 @@ export const removeCampaign = (id: string): Promise<Result<{ success: boolean }>
 export const sendBulk = (input: Record<string, unknown>): Promise<Result<WaSendResult>> => api.post(`${BASE}/send-bulk`, input);
 export const testSend = (input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/test`, input);
 
+/* ── Live-chat inbox ── */
+export interface WaConversationDto { phone: string; name: string; lastMessage: string; lastDirection: string; lastMessageAt?: string; unread: number; windowOpen: boolean }
+export interface WaThreadMsg { id: string; direction: string; type: string; text: string; status: string; at?: string }
+export interface WaThreadDto { phone: string; name: string; windowOpen: boolean; lastInboundAt?: string; messages: WaThreadMsg[] }
+
+export const listConversations = (): Promise<Result<WaConversationDto[]>> => api.get(`${BASE}/conversations`, { revalidate: false });
+export const getThread = (phone: string): Promise<Result<WaThreadDto>> => api.get(`${BASE}/conversations/${encodeURIComponent(phone)}/messages`, { revalidate: false });
+export const markRead = (phone: string): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/read`, {});
+export const replyText = (phone: string, text: string): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/reply`, { text });
+export const replyTemplate = (phone: string, input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/reply-template`, input);
+
 export const listAutomations = (): Promise<Result<WaAutomationDto[]>> => api.get(`${BASE}/automations`, { revalidate: false });
 export const createAutomation = (input: Record<string, unknown>): Promise<Result<WaAutomationDto>> => api.post(`${BASE}/automations`, input);
 export const updateAutomation = (id: string, input: Record<string, unknown>): Promise<Result<WaAutomationDto>> => api.patch(`${BASE}/automations/${id}`, input);
