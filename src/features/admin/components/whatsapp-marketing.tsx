@@ -10,6 +10,7 @@ import {
 
 import { dal } from "@/lib/dal";
 import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread } from "@/lib/dal/whatsapp";
+import { WhatsappAutomationBuilder } from "@/features/admin/components/whatsapp-automation-builder";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
@@ -640,56 +641,16 @@ function CampaignsPanel({ templates, groups, initial, confirm }: {
 }
 
 /* ───────────────────────── Automations ───────────────────────── */
-type AStep = { id: string; type: "message" | "delay"; templateName?: string; language?: string; params?: string[]; amount?: number; unit?: string };
 
 function AutomationsPanel({ templates, groups, initial, confirm }: {
   templates: WaTemplate[]; groups: WaGroup[]; initial: WaAutomation[];
   confirm: ReturnType<typeof useConfirm>["confirm"];
 }) {
   const [items, setItems] = React.useState(initial);
-  const [editing, setEditing] = React.useState<WaAutomation | null>(null);
-  const [open, setOpen] = React.useState(false);
-
-  const [name, setName] = React.useState("");
-  const [triggerGroups, setTriggerGroups] = React.useState<string[]>([]);
-  const [steps, setSteps] = React.useState<AStep[]>([]);
-  const [active, setActive] = React.useState(true);
-  const [saving, setSaving] = React.useState(false);
+  // null = list view; { automation } = building (automation:null → new).
+  const [building, setBuilding] = React.useState<{ automation: WaAutomation | null } | null>(null);
 
   const refresh = async () => { const r = await dal.whatsapp.fetchAutomations(); if (r.ok) setItems(r.data); };
-
-  const openNew = () => {
-    setEditing(null); setName(""); setTriggerGroups([]); setActive(true);
-    setSteps([{ id: `s${Date.now()}`, type: "message", templateName: templates[0]?.name ?? "", language: templates[0]?.language ?? "ar", params: [] }]);
-    setOpen(true);
-  };
-  const openEdit = (a: WaAutomation) => {
-    setEditing(a); setName(a.name); setActive(a.active);
-    let flow: { settings?: { triggerGroups?: string[] }; steps?: AStep[] } = {};
-    try { flow = JSON.parse(a.steps || "{}"); } catch { /* ignore */ }
-    setTriggerGroups(flow.settings?.triggerGroups ?? []);
-    setSteps(flow.steps?.length ? flow.steps : [{ id: `s${Date.now()}`, type: "message", templateName: templates[0]?.name ?? "", language: "ar", params: [] }]);
-    setOpen(true);
-  };
-
-  const addStep = (type: "message" | "delay") => setSteps((s) => [...s, type === "message"
-    ? { id: `s${Date.now()}`, type, templateName: templates[0]?.name ?? "", language: templates[0]?.language ?? "ar", params: Array.from({ length: templates[0]?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")) }
-    : { id: `s${Date.now()}`, type, amount: 1, unit: "days" }]);
-  const setStep = (i: number, patch: Partial<AStep>) => setSteps((s) => s.map((x, j) => (j === i ? { ...x, ...patch } : x)));
-  const rmStep = (i: number) => setSteps((s) => s.filter((_, j) => j !== i));
-
-  const save = async () => {
-    if (!name.trim()) { toast.error("Name is required"); return; }
-    if (!triggerGroups.length) { toast.error("Pick at least one trigger group"); return; }
-    setSaving(true);
-    const stepsJson = JSON.stringify({ settings: { triggerGroups }, steps });
-    const payload = { name, trigger: "tag_added", triggerTag: triggerGroups[0], steps: stepsJson, active };
-    const r = editing ? await dal.whatsapp.updateAutomation(editing.id, payload) : await dal.whatsapp.createAutomation(payload);
-    setSaving(false);
-    if (!r.ok) { toast.error(r.error); return; }
-    toast.success(editing ? "Saved" : "Automation created");
-    setOpen(false); refresh();
-  };
 
   const toggleActive = async (a: WaAutomation) => {
     const r = await dal.whatsapp.updateAutomation(a.id, { active: !a.active });
@@ -701,17 +662,32 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
     if (r.ok) { setItems((p) => p.filter((x) => x.id !== a.id)); toast.success("Deleted"); } else toast.error(r.error);
   };
 
-  const toggleTg = (g: string) => setTriggerGroups((p) => p.includes(g) ? p.filter((x) => x !== g) : [...p, g]);
+  if (building) {
+    return (
+      <WhatsappAutomationBuilder
+        automation={building.automation}
+        templates={templates}
+        groups={groups}
+        onBack={() => { setBuilding(null); refresh(); }}
+        onSaved={refresh}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{items.length} automation{items.length === 1 ? "" : "s"} — WhatsApp drips triggered when a subscriber joins a group.</p>
-        <Button className="gap-1.5" onClick={openNew}><Plus className="size-4" /> New automation</Button>
+        <p className="text-sm text-muted-foreground">{items.length} automation{items.length === 1 ? "" : "s"} — WhatsApp drips triggered when a contact joins a group.</p>
+        <Button className="gap-1.5" onClick={() => setBuilding({ automation: null })}><Plus className="size-4" /> New automation</Button>
       </div>
 
       {items.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">No automations yet.</p>
+        <div className="rounded-xl border border-dashed border-border/70 p-10 text-center">
+          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><Zap className="size-6" /></span>
+          <p className="mt-3 text-sm font-medium">No automations yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">Build a visual drip that fires when a contact joins a group.</p>
+          <Button className="mt-4 gap-1.5" onClick={() => setBuilding({ automation: null })}><Plus className="size-4" /> New automation</Button>
+        </div>
       ) : (
         <div className="space-y-3">
           {items.map((a) => {
@@ -720,13 +696,13 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
               <Card key={a.id}>
                 <CardContent className="flex items-center gap-3 py-4">
                   <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", a.active ? "bg-success/12 text-success" : "bg-muted text-muted-foreground")}><Zap className="size-5" /></span>
-                  <div className="min-w-0 flex-1">
+                  <button className="min-w-0 flex-1 text-left" onClick={() => setBuilding({ automation: a })}>
                     <p className="truncate font-medium">{a.name}</p>
                     <p className="text-xs text-muted-foreground">Joins “{a.triggerTag}” · {stepCount} steps · {a.sentCount} sent</p>
-                  </div>
+                  </button>
                   <Badge variant={a.active ? "default" : "secondary"}>{a.active ? "Running" : "Paused"}</Badge>
                   <Switch checked={a.active} onCheckedChange={() => toggleActive(a)} />
-                  <Button variant="ghost" size="icon" className="size-8" title="Edit" onClick={() => openEdit(a)}><Pencil className="size-4" /></Button>
+                  <Button variant="ghost" size="icon" className="size-8" title="Edit" onClick={() => setBuilding({ automation: a })}><Pencil className="size-4" /></Button>
                   <Button variant="ghost" size="icon" className="size-8" title="Delete" onClick={() => del(a)}><Trash2 className="size-4 text-destructive" /></Button>
                 </CardContent>
               </Card>
@@ -734,75 +710,6 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
           })}
         </div>
       )}
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader><DialogTitle>{editing ? "Edit automation" : "New WhatsApp automation"}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5"><Label>Name <span className="text-destructive">*</span></Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. CPHQ WhatsApp welcome" /></div>
-            <div className="space-y-1.5">
-              <Label>Trigger — when a subscriber joins group(s) <span className="text-destructive">*</span></Label>
-              <div className="flex flex-wrap gap-1.5">
-                {groups.length === 0 && <span className="text-xs text-muted-foreground">No subscriber groups yet.</span>}
-                {groups.map((g) => (
-                  <button key={g.name} type="button" onClick={() => toggleTg(g.name)}
-                    className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors",
-                      triggerGroups.includes(g.name) ? "border-primary bg-primary/10 text-primary" : "border-border/70 hover:bg-muted")}>
-                    <Users className="size-3" /> {g.name} <span className="tabular-nums opacity-70">{g.phoneCount}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Flow</Label>
-              {steps.map((s, i) => (
-                <div key={s.id} className="rounded-xl border border-border/70 p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary">
-                      {s.type === "message" ? <MessageSquare className="size-3.5" /> : <Clock className="size-3.5" />} {s.type === "message" ? `Message ${i + 1}` : "Delay"}
-                    </span>
-                    <Button variant="ghost" size="icon" className="size-7" onClick={() => rmStep(i)}><Trash2 className="size-3.5 text-destructive" /></Button>
-                  </div>
-                  {s.type === "message" ? (
-                    <div className="space-y-2">
-                      <Select value={s.templateName} onValueChange={(v) => { const t = templates.find((x) => x.name === v); setStep(i, { templateName: v, language: t?.language ?? "ar", params: Array.from({ length: t?.variables ?? 0 }, (_, k) => s.params?.[k] ?? (k === 0 ? "{{name}}" : "")) }); }}>
-                        <SelectTrigger><SelectValue placeholder="Pick a template" /></SelectTrigger>
-                        <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
-                      </Select>
-                      {(templates.find((t) => t.name === s.templateName)?.variables ?? 0) > 0 && (s.params ?? []).map((p, k) => (
-                        <Input key={k} value={p} onChange={(e) => setStep(i, { params: (s.params ?? []).map((x, j) => (j === k ? e.target.value : x)) })} placeholder={`{{${k + 1}}} — {{name}} allowed`} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Wait</span>
-                      <Input type="number" min={1} value={s.amount} onChange={(e) => setStep(i, { amount: Number(e.target.value) })} className="w-20" />
-                      <Select value={s.unit} onValueChange={(v) => setStep(i, { unit: v })}>
-                        <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                        <SelectContent position="popper"><SelectItem value="minutes">minutes</SelectItem><SelectItem value="hours">hours</SelectItem><SelectItem value="days">days</SelectItem></SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => addStep("message")}><MessageSquare className="size-3.5" /> Add message</Button>
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => addStep("delay")}><Clock className="size-3.5" /> Add delay</Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-xl border border-border/70 p-3">
-              <div><p className="text-sm font-medium">Active</p><p className="text-xs text-muted-foreground">Enrol new group members and send automatically.</p></div>
-              <Switch checked={active} onCheckedChange={setActive} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
-            <Button onClick={save} disabled={saving} className="gap-1.5">{saving && <Loader2 className="size-4 animate-spin" />}{editing ? "Save" : "Create"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
