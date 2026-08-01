@@ -68,6 +68,11 @@ export type WaThread = svc.WaThreadDto;
 
 export async function fetchConversations(): Promise<Result<WaConversation[]>> { return svc.listConversations(); }
 export async function fetchThread(phone: string): Promise<Result<WaThread>> { return svc.getThread(phone); }
+export async function fetchLabels(): Promise<Result<string[]>> { return svc.listLabels(); }
+export async function startConversation(input: { phone: string; name?: string; templateName: string; language: string; params?: string[] }): Promise<Result<{ success: boolean; phone: string }>> { return svc.startConversation(input); }
+export async function setLabels(phone: string, labels: string[]): Promise<Result<boolean>> {
+  const r = await svc.setLabels(phone, labels); return r.ok ? ok(true) : r;
+}
 export async function markConversationRead(phone: string): Promise<Result<boolean>> {
   const r = await svc.markRead(phone); return r.ok ? ok(true) : r;
 }

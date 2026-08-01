@@ -35,12 +35,15 @@ export const sendBulk = (input: Record<string, unknown>): Promise<Result<WaSendR
 export const testSend = (input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/test`, input);
 
 /* ── Live-chat inbox ── */
-export interface WaConversationDto { phone: string; name: string; lastMessage: string; lastDirection: string; lastMessageAt?: string; unread: number; status: string; windowOpen: boolean }
+export interface WaConversationDto { phone: string; name: string; lastMessage: string; lastDirection: string; lastMessageAt?: string; unread: number; status: string; labels: string[]; windowOpen: boolean }
 export interface WaThreadMsg { id: string; direction: string; type: string; text: string; status: string; author?: string; at?: string }
 export interface WaContactDto { name: string; email: string; tags: string[]; createdAt?: string; source?: string }
-export interface WaThreadDto { phone: string; name: string; status: string; windowOpen: boolean; lastInboundAt?: string; contact?: WaContactDto | null; messages: WaThreadMsg[] }
+export interface WaThreadDto { phone: string; name: string; status: string; labels: string[]; windowOpen: boolean; lastInboundAt?: string; contact?: WaContactDto | null; messages: WaThreadMsg[] }
 
 export const listConversations = (): Promise<Result<WaConversationDto[]>> => api.get(`${BASE}/conversations`, { revalidate: false });
+export const listLabels = (): Promise<Result<string[]>> => api.get(`${BASE}/labels`, { revalidate: false });
+export const startConversation = (input: Record<string, unknown>): Promise<Result<{ success: boolean; phone: string }>> => api.post(`${BASE}/conversations/start`, input);
+export const setLabels = (phone: string, labels: string[]): Promise<Result<{ success: boolean; labels: string[] }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/labels`, { labels });
 export const getThread = (phone: string): Promise<Result<WaThreadDto>> => api.get(`${BASE}/conversations/${encodeURIComponent(phone)}/messages`, { revalidate: false });
 export const markRead = (phone: string): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/read`, {});
 export const setConversationStatus = (phone: string, status: string): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/status`, { status });

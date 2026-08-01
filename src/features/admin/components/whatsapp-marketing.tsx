@@ -146,14 +146,25 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
   const [filter, setFilter] = React.useState<InboxFilter>("open");
   const [showInfo, setShowInfo] = React.useState(true);
   const [quickOpen, setQuickOpen] = React.useState(false);
+  const [allLabels, setAllLabels] = React.useState<string[]>([]);
+  const [labelFilter, setLabelFilter] = React.useState<string | null>(null);
+  const [labelInput, setLabelInput] = React.useState("");
+  const [newOpen, setNewOpen] = React.useState(false);
+  const [nc, setNc] = React.useState<{ phone: string; name: string; tplName: string; params: string[] }>({ phone: "", name: "", tplName: templates[0]?.name ?? "", params: [] });
   const bottomRef = React.useRef<HTMLDivElement>(null);
 
-  const loadConvos = React.useCallback(async () => { const r = await dal.whatsapp.fetchConversations(); if (r.ok) setConvos(r.data); }, []);
+  const loadConvos = React.useCallback(async () => {
+    const [r, l] = await Promise.all([dal.whatsapp.fetchConversations(), dal.whatsapp.fetchLabels()]);
+    if (r.ok) setConvos(r.data);
+    if (l.ok) setAllLabels(l.data);
+  }, []);
   const loadThread = React.useCallback(async (phone: string) => { const r = await dal.whatsapp.fetchThread(phone); if (r.ok) setThread(r.data); }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- loaders setState only after an await
   React.useEffect(() => { loadConvos(); const id = window.setInterval(loadConvos, 12_000); return () => window.clearInterval(id); }, [loadConvos]);
   React.useEffect(() => {
     if (!active) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loaders setState only after an await
     loadThread(active); dal.whatsapp.markConversationRead(active).then(loadConvos);
     const id = window.setInterval(() => loadThread(active), 8_000);
     return () => window.clearInterval(id);
@@ -166,10 +177,35 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
     if (filter === "open" && c.status === "resolved") return false;
     if (filter === "unread" && (!c.unread || c.status === "resolved")) return false;
     if (filter === "resolved" && c.status !== "resolved") return false;
-    if (q && !`${c.name} ${c.phone} ${c.lastMessage}`.toLowerCase().includes(q)) return false;
+    if (labelFilter && !(c.labels || []).includes(labelFilter)) return false;
+    if (q && !`${c.name} ${c.phone} ${c.lastMessage} ${(c.labels || []).join(" ")}`.toLowerCase().includes(q)) return false;
     return true;
   });
   const unreadCount = convos.filter((c) => c.unread > 0 && c.status !== "resolved").length;
+
+  const startNew = async () => {
+    const phone = nc.phone.replace(/\D/g, "");
+    if (phone.length < 8) { toast.error("Enter a valid number with country code"); return; }
+    if (!nc.tplName) { toast.error("Pick a template"); return; }
+    setSending(true);
+    const t = templates.find((x) => x.name === nc.tplName);
+    const r = await dal.whatsapp.startConversation({ phone, name: nc.name, templateName: nc.tplName, language: t?.language ?? "ar", params: nc.params });
+    setSending(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    toast.success("Conversation started");
+    setNewOpen(false); setNc({ phone: "", name: "", tplName: templates[0]?.name ?? "", params: [] });
+    await loadConvos(); setActive(phone); setMode("reply");
+  };
+
+  const applyLabels = async (next: string[]) => {
+    if (!active) return;
+    const r = await dal.whatsapp.setLabels(active, next);
+    if (!r.ok) { toast.error(r.error); return; }
+    setThread((t) => (t ? { ...t, labels: next } : t));
+    loadConvos();
+  };
+  const removeLabel = (l: string) => applyLabels((thread?.labels || []).filter((x) => x !== l));
+  const addLabel = (l: string) => { const v = l.trim(); if (v && !(thread?.labels || []).includes(v)) applyLabels([...(thread?.labels || []), v]); setLabelInput(""); };
 
   const sendReply = async () => {
     if (!active) return;
@@ -217,15 +253,27 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
       {/* ── Conversation list ── */}
       <div className={cn("flex flex-col border-e border-border/60 bg-card", active && "hidden lg:flex")}>
         <div className="space-y-2 border-b border-border/60 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">Conversations{convos.length ? ` · ${convos.length}` : ""}</p>
+            <Button size="sm" className="h-8 gap-1.5" onClick={() => setNewOpen(true)}><Plus className="size-3.5" /> New</Button>
+          </div>
           <div className="relative">
             <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name / number…" className="ps-8" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name / number / label…" className="ps-8" />
           </div>
           <div className="flex gap-1">
             {([["open", "Open"], ["unread", `Unread${unreadCount ? ` ${unreadCount}` : ""}`], ["resolved", "Resolved"]] as [InboxFilter, string][]).map(([k, l]) => (
               <button key={k} type="button" onClick={() => setFilter(k)} className={cn("rounded-full px-2.5 py-1 text-xs font-medium transition-colors", filter === k ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70")}>{l}</button>
             ))}
           </div>
+          {allLabels.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {labelFilter && <button type="button" onClick={() => setLabelFilter(null)} className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary"><X className="size-2.5" /> {labelFilter}</button>}
+              {!labelFilter && allLabels.slice(0, 8).map((l) => (
+                <button key={l} type="button" onClick={() => setLabelFilter(l)} className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"><Tag className="size-2.5" /> {l}</button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
@@ -243,6 +291,11 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                   <span className="truncate text-xs text-muted-foreground">{c.lastDirection === "out" ? "↩ " : ""}{c.lastMessage}</span>
                   {c.status === "resolved" ? <CheckCircle2 className="size-3.5 shrink-0 text-success" /> : c.unread > 0 ? <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">{c.unread}</span> : null}
                 </span>
+                {(c.labels || []).length > 0 && (
+                  <span className="mt-1 flex flex-wrap gap-1">
+                    {c.labels.slice(0, 3).map((l) => <span key={l} className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">{l}</span>)}
+                  </span>
+                )}
               </span>
             </button>
           ))}
@@ -384,9 +437,51 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                 <div className="flex flex-wrap gap-1">{contact.tags.map((t) => <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>)}</div>
               ) : <p className="text-xs text-muted-foreground">{contact ? "None" : "Not in subscribers"}</p>}
             </div>
+            <div className="border-t border-border/60 pt-3">
+              <p className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"><Tag className="size-3.5" /> Labels</p>
+              <div className="flex flex-wrap gap-1">
+                {(thread?.labels || []).length === 0 && <span className="text-xs text-muted-foreground">None</span>}
+                {(thread?.labels || []).map((l) => (
+                  <span key={l} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{l}<button type="button" onClick={() => removeLabel(l)}><X className="size-2.5" /></button></span>
+                ))}
+              </div>
+              <div className="mt-1.5 flex gap-1">
+                <Input value={labelInput} onChange={(e) => setLabelInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLabel(labelInput); } }} placeholder="Add label…" list="wa-labels" className="h-8 text-xs" />
+                <datalist id="wa-labels">{allLabels.map((l) => <option key={l} value={l} />)}</datalist>
+                <Button size="sm" variant="outline" className="h-8 shrink-0" onClick={() => addLabel(labelInput)}>Add</Button>
+              </div>
+            </div>
           </div>
         </aside>
       )}
+
+      {/* New conversation */}
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>New conversation</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">Starting a chat with a number that hasn’t messaged you first requires an approved template.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>Phone (country code) <span className="text-destructive">*</span></Label><Input value={nc.phone} onChange={(e) => setNc((s) => ({ ...s, phone: e.target.value }))} placeholder="9665xxxxxxxx" className="font-mono" /></div>
+              <div className="space-y-1.5"><Label>Name (optional)</Label><Input value={nc.name} onChange={(e) => setNc((s) => ({ ...s, name: e.target.value }))} /></div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Template <span className="text-destructive">*</span></Label>
+              <Select value={nc.tplName} onValueChange={(v) => { const t = templates.find((x) => x.name === v); setNc((s) => ({ ...s, tplName: v, params: Array.from({ length: t?.variables ?? 0 }, () => "") })); }}>
+                <SelectTrigger><SelectValue placeholder={templates.length ? "Pick a template" : "No templates"} /></SelectTrigger>
+                <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            {nc.params.map((p, i) => (
+              <Input key={i} value={p} onChange={(e) => setNc((s) => ({ ...s, params: s.params.map((x, j) => (j === i ? e.target.value : x)) }))} placeholder={`{{${i + 1}}} — {{name}} allowed`} />
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewOpen(false)} disabled={sending}>Cancel</Button>
+            <Button onClick={startNew} disabled={sending} className="gap-1.5">{sending && <Loader2 className="size-4 animate-spin" />}<Send className="size-4" /> Start</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
