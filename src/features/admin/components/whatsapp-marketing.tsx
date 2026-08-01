@@ -141,7 +141,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
   const [mode, setMode] = React.useState<"reply" | "note">("reply");
   const [sending, setSending] = React.useState(false);
   const [tplName, setTplName] = React.useState(templates[0]?.name ?? "");
-  const [tplParams, setTplParams] = React.useState<string[]>([]);
+  const [tplParams, setTplParams] = React.useState<string[]>(() => Array.from({ length: templates[0]?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")));
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState<InboxFilter>("open");
   const [showInfo, setShowInfo] = React.useState(true);
@@ -255,7 +255,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
         <div className="space-y-2 border-b border-border/60 p-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">Conversations{convos.length ? ` · ${convos.length}` : ""}</p>
-            <Button size="sm" className="h-8 gap-1.5" onClick={() => setNewOpen(true)}><Plus className="size-3.5" /> New</Button>
+            <Button size="sm" className="h-8 gap-1.5" onClick={() => { const t = templates[0]; setNc({ phone: "", name: "", tplName: t?.name ?? "", params: Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")) }); setNewOpen(true); }}><Plus className="size-3.5" /> New</Button>
           </div>
           <div className="relative">
             <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -399,7 +399,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                 <div className="space-y-2">
                   <p className="text-[11px] text-muted-foreground">The 24-hour reply window is closed — you can only send an approved template.</p>
                   <div className="flex items-end gap-2">
-                    <Select value={tplName} onValueChange={(v) => { setTplName(v); const t = templates.find((x) => x.name === v); setTplParams(Array.from({ length: t?.variables ?? 0 }, () => "")); }}>
+                    <Select value={tplName} onValueChange={(v) => { setTplName(v); const t = templates.find((x) => x.name === v); setTplParams(Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : ""))); }}>
                       <SelectTrigger className="flex-1"><SelectValue placeholder={templates.length ? "Pick a template" : "No templates"} /></SelectTrigger>
                       <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
                     </Select>
@@ -467,7 +467,7 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
             </div>
             <div className="space-y-1.5">
               <Label>Template <span className="text-destructive">*</span></Label>
-              <Select value={nc.tplName} onValueChange={(v) => { const t = templates.find((x) => x.name === v); setNc((s) => ({ ...s, tplName: v, params: Array.from({ length: t?.variables ?? 0 }, () => "") })); }}>
+              <Select value={nc.tplName} onValueChange={(v) => { const t = templates.find((x) => x.name === v); setNc((s) => ({ ...s, tplName: v, params: Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")) })); }}>
                 <SelectTrigger><SelectValue placeholder={templates.length ? "Pick a template" : "No templates"} /></SelectTrigger>
                 <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
               </Select>
@@ -509,15 +509,17 @@ function CampaignsPanel({ templates, groups, initial, confirm }: {
   const [templateName, setTemplateName] = React.useState(templates[0]?.name ?? "");
   const [manual, setManual] = React.useState("");
   const [pickedGroups, setPickedGroups] = React.useState<string[]>([]);
-  const [params, setParams] = React.useState<string[]>([]);
+  const [params, setParams] = React.useState<string[]>(() => Array.from({ length: templates[0]?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")));
   const [sending, setSending] = React.useState(false);
 
   const tpl = templates.find((t) => t.name === templateName);
   const language = tpl?.language ?? "ar";
+  const varCount = tpl?.variables ?? 0;
+  const finalParams = Array.from({ length: varCount }, (_, i) => params[i] ?? "");
   const pickTemplate = (v: string) => {
     setTemplateName(v);
     const t = templates.find((x) => x.name === v);
-    setParams(Array.from({ length: t?.variables ?? 0 }, () => ""));
+    setParams(Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")));
   };
 
   const manualRecipients = parseRecipients(manual);
@@ -533,7 +535,7 @@ function CampaignsPanel({ templates, groups, initial, confirm }: {
     if (totalReach === 0) { toast.error("Add recipients (numbers or a group)"); return; }
     setSending(true);
     if (save) {
-      const c = await dal.whatsapp.createCampaign({ name: name || `Campaign ${new Date().toISOString().slice(0, 10)}`, templateName, language, bodyPreview: tpl?.body, defaultParams: params, groups: pickedGroups, recipients: manualRecipients });
+      const c = await dal.whatsapp.createCampaign({ name: name || `Campaign ${new Date().toISOString().slice(0, 10)}`, templateName, language, bodyPreview: tpl?.body, defaultParams: finalParams, groups: pickedGroups, recipients: manualRecipients });
       if (!c.ok) { setSending(false); toast.error(c.error); return; }
       const res = await dal.whatsapp.sendCampaign(c.data.id);
       setSending(false);
@@ -542,7 +544,7 @@ function CampaignsPanel({ templates, groups, initial, confirm }: {
       if (res.data.errors?.length) toast.warning(res.data.errors[0]);
       refresh();
     } else {
-      const res = await dal.whatsapp.sendBulk({ templateName, language, defaultParams: params, groups: pickedGroups, recipients: manualRecipients });
+      const res = await dal.whatsapp.sendBulk({ templateName, language, defaultParams: finalParams, groups: pickedGroups, recipients: manualRecipients });
       setSending(false);
       if (!res.ok) { toast.error(res.error); return; }
       toast.success(`Sent ${res.data.sent}/${res.data.total}${res.data.failed ? ` · ${res.data.failed} failed` : ""}`);
@@ -576,12 +578,13 @@ function CampaignsPanel({ templates, groups, initial, confirm }: {
             <div className="space-y-1.5"><Label>Language</Label><Input value={language} disabled className="font-mono text-sm" /></div>
           </div>
           {tpl?.body && <p dir={language.startsWith("ar") ? "rtl" : "ltr"} className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">{tpl.body}</p>}
-          {(tpl?.variables ?? 0) > 0 && (
+          {varCount > 0 && (
             <div className="space-y-2">
               <Label>Template variables</Label>
-              {params.map((v, i) => (
-                <Input key={i} value={v} onChange={(e) => setParams((p) => p.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`{{${i + 1}}} — use {{name}} for the recipient's name`} />
+              {Array.from({ length: varCount }).map((_, i) => (
+                <Input key={i} value={params[i] ?? ""} onChange={(e) => setParams((p) => { const n = Array.from({ length: varCount }, (_, j) => p[j] ?? ""); n[i] = e.target.value; return n; })} placeholder={`{{${i + 1}}} — use {{name}} for the recipient's name`} />
               ))}
+              <p className="text-[11px] text-muted-foreground">Use <code>{"{{name}}"}</code> to insert each recipient&apos;s name.</p>
             </div>
           )}
 
@@ -670,7 +673,7 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
   };
 
   const addStep = (type: "message" | "delay") => setSteps((s) => [...s, type === "message"
-    ? { id: `s${Date.now()}`, type, templateName: templates[0]?.name ?? "", language: templates[0]?.language ?? "ar", params: [] }
+    ? { id: `s${Date.now()}`, type, templateName: templates[0]?.name ?? "", language: templates[0]?.language ?? "ar", params: Array.from({ length: templates[0]?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")) }
     : { id: `s${Date.now()}`, type, amount: 1, unit: "days" }]);
   const setStep = (i: number, patch: Partial<AStep>) => setSteps((s) => s.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const rmStep = (i: number) => setSteps((s) => s.filter((_, j) => j !== i));
@@ -763,7 +766,7 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
                   </div>
                   {s.type === "message" ? (
                     <div className="space-y-2">
-                      <Select value={s.templateName} onValueChange={(v) => { const t = templates.find((x) => x.name === v); setStep(i, { templateName: v, language: t?.language ?? "ar", params: Array.from({ length: t?.variables ?? 0 }, (_, k) => s.params?.[k] ?? "") }); }}>
+                      <Select value={s.templateName} onValueChange={(v) => { const t = templates.find((x) => x.name === v); setStep(i, { templateName: v, language: t?.language ?? "ar", params: Array.from({ length: t?.variables ?? 0 }, (_, k) => s.params?.[k] ?? (k === 0 ? "{{name}}" : "")) }); }}>
                         <SelectTrigger><SelectValue placeholder="Pick a template" /></SelectTrigger>
                         <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
                       </Select>
