@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   MessageSquare, Send, Plus, Trash2, Pencil, Loader2, Users, Zap,
   FileText, Megaphone, CheckCircle2, AlertTriangle, Clock, Inbox, CheckCheck, ArrowLeft,
-  Search, Info, StickyNote, Check, Mail, CalendarDays, Tag, X,
+  Search, Info, StickyNote, Check, Mail, CalendarDays, Tag, X, Paperclip, Mic, Download,
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
@@ -133,6 +133,17 @@ const QUICK_REPLIES = [
 
 type InboxFilter = "open" | "unread" | "resolved";
 
+/** mm:ss for the voice-recording timer. */
+function fmtDur(s: number): string {
+  const m = Math.floor(s / 60), r = s % 60;
+  return `${m}:${String(r).padStart(2, "0")}`;
+}
+
+/** A caption is real content; bracket placeholders like [image] / the voice label are not. */
+function isPlaceholderText(t: string): boolean {
+  return !t || /^\[.*\]$/.test(t) || t === "🎤 Voice message" || /^📎/.test(t);
+}
+
 /** Fill {{1}}, {{2}}… in a template body with params (for the composer preview). */
 function fillPreview(body: string, params: string[]): string {
   let out = body;
@@ -159,7 +170,12 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
   const [labelInput, setLabelInput] = React.useState("");
   const [newOpen, setNewOpen] = React.useState(false);
   const [nc, setNc] = React.useState<{ phone: string; name: string; tplName: string; params: string[] }>({ phone: "", name: "", tplName: templates[0]?.name ?? "", params: [] });
+  const [uploading, setUploading] = React.useState(false);
+  const [recording, setRecording] = React.useState(false);
+  const [recSecs, setRecSecs] = React.useState(0);
   const bottomRef = React.useRef<HTMLDivElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const recRef = React.useRef<{ rec: MediaRecorder; chunks: Blob[]; stream: MediaStream } | null>(null);
 
   const loadConvos = React.useCallback(async () => {
     const [r, l] = await Promise.all([dal.whatsapp.fetchConversations(), dal.whatsapp.fetchLabels()]);
@@ -178,6 +194,59 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
     return () => window.clearInterval(id);
   }, [active, loadThread, loadConvos]);
   React.useEffect(() => { bottomRef.current?.scrollIntoView({ block: "end" }); }, [thread?.messages.length]);
+  React.useEffect(() => {
+    if (!recording) return;
+    const id = window.setInterval(() => setRecSecs((s) => s + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [recording]);
+
+  const sendFile = React.useCallback(async (file: File, voice = false) => {
+    if (!active) return;
+    setUploading(true);
+    const r = await dal.whatsapp.sendMedia(active, file, { voice });
+    setUploading(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    loadThread(active); loadConvos();
+  }, [active, loadThread, loadConvos]);
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      if (f.size > 25 * 1024 * 1024) { toast.error("File too large (max 25MB)"); }
+      else sendFile(f);
+    }
+    e.target.value = "";
+  };
+
+  const startRec = async () => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) { toast.error("Recording not supported in this browser"); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = ["audio/ogg;codecs=opus", "audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t)) || "";
+      const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (ev) => { if (ev.data.size) chunks.push(ev.data); };
+      rec.start();
+      recRef.current = { rec, chunks, stream };
+      setRecSecs(0); setRecording(true);
+    } catch { toast.error("Microphone permission denied"); }
+  };
+  const stopRec = (send: boolean) => {
+    const m = recRef.current;
+    setRecording(false);
+    if (!m) return;
+    m.rec.onstop = () => {
+      m.stream.getTracks().forEach((t) => t.stop());
+      const mt = m.rec.mimeType || "audio/webm";
+      if (send && m.chunks.length) {
+        const blob = new Blob(m.chunks, { type: mt });
+        const ext = mt.includes("ogg") ? "ogg" : mt.includes("mp4") ? "m4a" : "webm";
+        sendFile(new File([blob], `voice-${Date.now()}.${ext}`, { type: mt }), true);
+      }
+      recRef.current = null;
+    };
+    m.rec.stop();
+  };
 
   const tpl = templates.find((t) => t.name === tplName);
   const q = search.trim().toLowerCase();
@@ -355,7 +424,8 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                     {sep && <DaySep label={sep} />}
                     <div className={cn("flex", m.direction === "out" ? "justify-end" : "justify-start")}>
                       <div className={cn("max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm", m.direction === "out" ? "bg-[#dcf8c6] text-[#0a1424] dark:bg-[#005c4b] dark:text-white" : "bg-card")}>
-                        <p className="whitespace-pre-wrap break-words" dir="auto">{m.text}</p>
+                        {m.mediaUrl && <WaMedia url={m.mediaUrl} type={m.type} mime={m.mime} filename={m.filename} />}
+                        {!(m.mediaUrl && isPlaceholderText(m.text)) && <p className="whitespace-pre-wrap break-words" dir="auto">{m.text}</p>}
                         <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[10px]", m.direction === "out" ? "text-[#0a1424]/50 dark:text-white/60" : "text-muted-foreground")}>
                           {fmtTime(m.at)}
                           {m.direction === "out" && (m.status === "failed"
@@ -399,10 +469,31 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
                   <Button onClick={saveNote} disabled={sending || !note.trim()} variant="secondary" className="shrink-0 gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <StickyNote className="size-4" />} Note</Button>
                 </div>
               ) : thread?.windowOpen ? (
-                <div className="flex items-end gap-2">
-                  <Textarea rows={1} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }} placeholder="Type a reply…" dir="auto" className="max-h-32 min-h-[42px] resize-none" />
-                  <Button onClick={sendReply} disabled={sending || !text.trim()} className="size-10 shrink-0 rounded-full p-0">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
-                </div>
+                recording ? (
+                  <div className="flex items-center gap-3 rounded-xl border border-red-300/60 bg-red-50/60 px-3 py-2.5 dark:border-red-500/30 dark:bg-red-950/20">
+                    <span className="size-2.5 animate-pulse rounded-full bg-red-500" />
+                    <span className="text-sm font-semibold tabular-nums text-red-700 dark:text-red-300">{fmtDur(recSecs)}</span>
+                    <span className="text-xs text-muted-foreground">Recording voice…</span>
+                    <div className="ms-auto flex items-center gap-2">
+                      <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => stopRec(false)}><Trash2 className="size-4" /> Cancel</Button>
+                      <Button size="sm" className="gap-1.5" onClick={() => stopRec(true)} disabled={uploading}>{uploading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-end gap-1.5">
+                    <input ref={fileInputRef} type="file" hidden onChange={onPickFile}
+                      accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip" />
+                    <Button variant="ghost" size="icon" className="size-10 shrink-0" title="Attach file" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                      {uploading ? <Loader2 className="size-5 animate-spin" /> : <Paperclip className="size-5" />}
+                    </Button>
+                    <Textarea rows={1} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }} placeholder="Type a reply…" dir="auto" className="max-h-32 min-h-[42px] resize-none" />
+                    {text.trim() ? (
+                      <Button onClick={sendReply} disabled={sending} className="size-10 shrink-0 rounded-full p-0">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
+                    ) : (
+                      <Button variant="ghost" size="icon" className="size-10 shrink-0" title="Record voice" onClick={startRec} disabled={uploading}><Mic className="size-5" /></Button>
+                    )}
+                  </div>
+                )
               ) : (
                 <div className="space-y-2">
                   {/* 24h window closed — Meta only allows an approved template until the customer replies. */}
@@ -501,6 +592,30 @@ function InboxPanel({ templates, connected }: { templates: WaTemplate[]; connect
 
 function DaySep({ label }: { label: string }) {
   return <div className="my-2 flex justify-center"><span className="rounded-full bg-card px-3 py-0.5 text-[11px] font-medium text-muted-foreground shadow-sm">{label}</span></div>;
+}
+
+/** Renders a message attachment inline — image / video / audio player / document link. */
+function WaMedia({ url, type, mime, filename }: { url: string; type: string; mime?: string; filename?: string }) {
+  const kind = type === "image" || (mime || "").startsWith("image/") ? "image"
+    : type === "video" || (mime || "").startsWith("video/") ? "video"
+      : type === "audio" || (mime || "").startsWith("audio/") ? "audio" : "document";
+  if (kind === "image") {
+    // eslint-disable-next-line @next/next/no-img-element -- arbitrary chat-attachment URLs; next/image can't optimize external user uploads
+    return <a href={url} target="_blank" rel="noopener noreferrer" className="block"><img src={url} alt="attachment" className="mb-1 max-h-64 w-auto max-w-full rounded-lg object-cover" /></a>;
+  }
+  if (kind === "video") {
+    return <video src={url} controls className="mb-1 max-h-64 w-auto max-w-full rounded-lg" />;
+  }
+  if (kind === "audio") {
+    return <audio src={url} controls className="mb-1 w-56 max-w-full" />;
+  }
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="mb-1 flex items-center gap-2 rounded-lg bg-black/5 p-2 dark:bg-white/10">
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><FileText className="size-4" /></span>
+      <span className="min-w-0 flex-1 truncate text-xs font-medium">{filename || "Document"}</span>
+      <Download className="size-4 shrink-0 text-muted-foreground" />
+    </a>
+  );
 }
 
 function Field2({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: string }) {

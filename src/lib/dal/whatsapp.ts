@@ -85,6 +85,13 @@ export async function addNote(phone: string, text: string, author?: string): Pro
 export async function replyText(phone: string, text: string): Promise<Result<boolean>> {
   const r = await svc.replyText(phone, text); return r.ok ? ok(true) : r;
 }
+export async function sendMedia(phone: string, file: Blob, opts: { caption?: string; voice?: boolean; filename?: string } = {}): Promise<Result<boolean>> {
+  const form = new FormData();
+  form.append("file", file, opts.filename || (file instanceof File ? file.name : "file"));
+  if (opts.caption) form.append("caption", opts.caption);
+  if (opts.voice) form.append("voice", "true");
+  const r = await svc.sendMedia(phone, form); return r.ok ? ok(true) : r;
+}
 export async function replyTemplate(phone: string, input: { templateName: string; language: string; params?: string[] }): Promise<Result<boolean>> {
   const r = await svc.replyTemplate(phone, input); return r.ok ? ok(true) : r;
 }
