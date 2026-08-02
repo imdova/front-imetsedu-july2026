@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface PageHeaderProps {
   title: string;
   description?: string;
+  icon?: React.ReactNode; // optional icon rendered to the left of the title
   children?: React.ReactNode; // action slot (buttons)
   className?: string;
 }
@@ -12,6 +13,7 @@ interface PageHeaderProps {
 export function PageHeader({
   title,
   description,
+  icon,
   children,
   className,
 }: PageHeaderProps) {
@@ -23,7 +25,8 @@ export function PageHeader({
       )}
     >
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-foreground">
+          {icon}
           {title}
         </h1>
         {description && (
