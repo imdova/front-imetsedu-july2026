@@ -21,7 +21,7 @@ export interface WaSendResult { sent: number; failed: number; total: number; err
 export const getStatus = (): Promise<Result<WaStatusDto>> => api.get(`${BASE}/status`, { revalidate: false });
 export const getGroups = (): Promise<Result<WaGroupDto[]>> => api.get(`${BASE}/groups`, { revalidate: false });
 
-export interface WaTemplateFolderDto { name: string; count: number }
+export interface WaTemplateFolderDto { name: string; count: number; kind?: string }
 export const createGroup = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/groups`, { name });
 
 export interface WaAnalyticsDto {
@@ -35,7 +35,8 @@ export interface WaAnalyticsDto {
 }
 export const getAnalytics = (): Promise<Result<WaAnalyticsDto>> => api.get(`${BASE}/analytics`, { revalidate: false });
 export const listTemplateFolders = (): Promise<Result<WaTemplateFolderDto[]>> => api.get(`${BASE}/template-folders`, { revalidate: false });
-export const createTemplateFolder = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/template-folders`, { name });
+export const createTemplateFolder = (name: string, kind?: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/template-folders`, { name, ...(kind ? { kind } : {}) });
+export const syncCourseTemplateFolders = (): Promise<Result<{ synced: number; created: number }>> => api.post(`${BASE}/template-folders/sync-courses`, {});
 export const renameTemplateFolder = (name: string, to: string): Promise<Result<{ success: boolean; name: string }>> => api.patch(`${BASE}/template-folders`, { name, to });
 export const deleteTemplateFolder = (name: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/template-folders/${encodeURIComponent(name)}`);
 

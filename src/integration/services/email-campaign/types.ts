@@ -52,7 +52,7 @@ export interface TemplateDto {
   body?: string;
   createdAt: string;
 }
-export interface TemplateCategoryDto { name: string; count: number }
+export interface TemplateCategoryDto { name: string; count: number; kind?: string }
 
 export interface AutomationDto {
   _id: string;

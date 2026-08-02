@@ -40,8 +40,11 @@ export async function createGroup(name: string): Promise<Result<boolean>> {
 
 export type WaTemplateFolder = svc.WaTemplateFolderDto;
 export async function fetchTemplateFolders(): Promise<Result<WaTemplateFolder[]>> { return svc.listTemplateFolders(); }
-export async function createTemplateFolder(name: string): Promise<Result<boolean>> {
-  const r = await svc.createTemplateFolder(name); return r.ok ? ok(true) : r;
+export async function createTemplateFolder(name: string, kind?: "landing" | "course"): Promise<Result<boolean>> {
+  const r = await svc.createTemplateFolder(name, kind); return r.ok ? ok(true) : r;
+}
+export async function syncCourseTemplateFolders(): Promise<Result<{ synced: number; created: number }>> {
+  return svc.syncCourseTemplateFolders();
 }
 export async function renameTemplateFolder(name: string, to: string): Promise<Result<boolean>> {
   const r = await svc.renameTemplateFolder(name, to); return r.ok ? ok(true) : r;

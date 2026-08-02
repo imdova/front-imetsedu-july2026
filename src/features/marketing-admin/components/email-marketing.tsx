@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   Plus, MoreHorizontal, Users, Send, Mail, MousePointerClick, Percent, FileText, Zap,
   LayoutDashboard, ArrowRight, Eye, Sparkles, GitBranch, Pencil, Trash2, Play, Pause, ArrowUpDown,
+  RefreshCw, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -143,9 +144,13 @@ export function EmailMarketing({
   }, []);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- setState runs after an await, not synchronously
   React.useEffect(() => { refreshTplCats(); }, [refreshTplCats]);
-  const addTplCat = async (name: string) => {
-    const res = await dal.emailMarketing.createTemplateCategory(name);
+  const addTplCat = async (name: string, kind?: "landing" | "course") => {
+    const res = await dal.emailMarketing.createTemplateCategory(name, kind);
     if (res.ok) { await refreshTplCats(); toast.success("Category added"); } else toast.error(res.error);
+  };
+  const syncTplCatCourses = async () => {
+    const res = await dal.emailMarketing.syncCourseTemplateCategories();
+    if (res.ok) { await refreshTplCats(); toast.success(`Synced ${res.data.synced} course${res.data.synced === 1 ? "" : "s"}${res.data.created ? ` · ${res.data.created} new` : ""}`); } else toast.error(res.error);
   };
   const renameTplCat = async (oldName: string, name: string) => {
     const res = await dal.emailMarketing.renameTemplateCategory(oldName, name);
@@ -392,6 +397,7 @@ export function EmailMarketing({
             onAddCategory={addTplCat}
             onRenameCategory={renameTplCat}
             onDeleteCategory={deleteTplCat}
+            onSyncCourses={syncTplCatCourses}
           />
         </TabsContent>
 
@@ -750,15 +756,20 @@ const UNCATEGORIZED = "__uncat__";
 
 function TemplatesGallery({
   templates, categories, onNew, onEdit, onDelete, onPreview, onUse, onOpenDesign,
-  onAddCategory, onRenameCategory, onDeleteCategory,
+  onAddCategory, onRenameCategory, onDeleteCategory, onSyncCourses,
 }: {
   templates: EmailTemplate[]; categories: TemplateCategory[];
   onNew: () => void; onEdit: (t: EmailTemplate) => void; onDelete: (t: EmailTemplate) => void;
   onPreview: (t: EmailTemplate) => void; onUse: (t: EmailTemplate) => void; onOpenDesign: (t: EmailTemplate) => void;
-  onAddCategory: (name: string) => void; onRenameCategory: (oldName: string, name: string) => void; onDeleteCategory: (name: string) => void;
+  onAddCategory: (name: string, kind?: "landing" | "course") => void; onRenameCategory: (oldName: string, name: string) => void; onDeleteCategory: (name: string) => void;
+  onSyncCourses: () => Promise<void> | void;
 }) {
   const [active, setActive] = React.useState<string | null>(null); // null = All
   const [catDlg, setCatDlg] = React.useState<{ mode: "new" | "rename"; original?: string; value: string } | null>(null);
+  const [catTab, setCatTab] = React.useState<"landing" | "course">("landing");
+  const [syncing, setSyncing] = React.useState(false);
+  const shownCats = categories.filter((c) => c.kind === catTab);
+  const doSync = async () => { setSyncing(true); await onSyncCourses(); setSyncing(false); };
 
   const uncatCount = templates.filter((t) => !t.category).length;
   const visible = React.useMemo(() => {
@@ -770,7 +781,7 @@ function TemplatesGallery({
   const submitCat = () => {
     const v = catDlg?.value.trim();
     if (!v) return;
-    if (catDlg!.mode === "new") onAddCategory(v);
+    if (catDlg!.mode === "new") onAddCategory(v, catTab);
     else if (catDlg!.original && catDlg!.original !== v) onRenameCategory(catDlg!.original, v);
     setCatDlg(null);
   };
@@ -784,9 +795,19 @@ function TemplatesGallery({
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</span>
             <button onClick={() => setCatDlg({ mode: "new", value: "" })} title="Add category" className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Plus className="size-4" /></button>
           </div>
+          <div className="px-2 pt-2">
+            <div className="flex rounded-lg border border-border/60 bg-muted/40 p-0.5 text-xs font-medium">
+              {([["landing", "Landing pages"], ["course", "Courses"]] as const).map(([k, l]) => (
+                <button key={k} onClick={() => setCatTab(k)}
+                  className={cn("flex-1 rounded-md px-2 py-1.5 transition-colors", catTab === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-0.5 p-2">
             <CatRow label="All templates" count={templates.length} active={active === null} onClick={() => setActive(null)} />
-            {categories.map((c) => (
+            {shownCats.map((c) => (
               <CatRow
                 key={c.name} label={c.name} count={c.count} active={active === c.name}
                 onClick={() => setActive(c.name)}
@@ -794,7 +815,16 @@ function TemplatesGallery({
                 onDelete={() => onDeleteCategory(c.name)}
               />
             ))}
-            {uncatCount > 0 && (
+            {catTab === "course" && (
+              <button onClick={doSync} disabled={syncing}
+                className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/70 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-60">
+                {syncing ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} Sync course categories
+              </button>
+            )}
+            {shownCats.length === 0 && catTab === "landing" && (
+              <p className="px-2 py-3 text-[11px] text-muted-foreground">No landing categories yet.</p>
+            )}
+            {catTab === "landing" && uncatCount > 0 && (
               <CatRow label="Uncategorized" count={uncatCount} active={active === UNCATEGORIZED} onClick={() => setActive(UNCATEGORIZED)} />
             )}
           </div>

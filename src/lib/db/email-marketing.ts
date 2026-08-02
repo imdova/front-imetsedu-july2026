@@ -84,7 +84,7 @@ export interface EmailTemplate {
   createdAt: string;
 }
 export type TemplateInput = { name: string; subject: string; previewText: string; category?: string };
-export interface TemplateCategory { name: string; count: number }
+export interface TemplateCategory { name: string; count: number; kind: "landing" | "course" }
 
 export interface BrandBlock {
   id: string;

@@ -45,7 +45,8 @@ export const saveTemplateDesign = (id: string, design: string, body: string) => 
 
 /* Template categories */
 export const listTemplateCategories = () => api.get<TemplateCategoryDto[]>(API_EMAIL_TEMPLATE_CATEGORIES);
-export const createTemplateCategory = (name: string) => api.post<TemplateCategoryDto>(API_EMAIL_TEMPLATE_CATEGORIES, { name });
+export const createTemplateCategory = (name: string, kind?: string) => api.post<TemplateCategoryDto>(API_EMAIL_TEMPLATE_CATEGORIES, { name, ...(kind ? { kind } : {}) });
+export const syncCourseTemplateCategories = () => api.post<{ synced: number; created: number }>(`${API_EMAIL_TEMPLATE_CATEGORIES}/sync-courses`, {});
 export const renameTemplateCategory = (oldName: string, name: string) => api.patch<TemplateCategoryDto>(apiEmailTemplateCategory(oldName), { name });
 export const deleteTemplateCategory = (name: string) => api.delete<{ success: boolean }>(apiEmailTemplateCategory(name));
 

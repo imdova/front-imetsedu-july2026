@@ -127,17 +127,21 @@ export async function deleteTemplate(id: string): Promise<Result<boolean>> {
 }
 
 /* ── Template categories ── */
+const mapCat = (c: { name: string; count: number; kind?: string }): TemplateCategory => ({ name: c.name, count: c.count, kind: c.kind === "course" ? "course" : "landing" });
 export async function fetchTemplateCategories(): Promise<Result<TemplateCategory[]>> {
   const res = await svc.listTemplateCategories();
-  return res.ok ? ok(res.data.map((c) => ({ name: c.name, count: c.count }))) : res;
+  return res.ok ? ok(res.data.map(mapCat)) : res;
 }
-export async function createTemplateCategory(name: string): Promise<Result<TemplateCategory>> {
-  const res = await svc.createTemplateCategory(name);
-  return res.ok ? ok({ name: res.data.name, count: res.data.count }) : res;
+export async function createTemplateCategory(name: string, kind?: "landing" | "course"): Promise<Result<TemplateCategory>> {
+  const res = await svc.createTemplateCategory(name, kind);
+  return res.ok ? ok(mapCat(res.data)) : res;
+}
+export async function syncCourseTemplateCategories(): Promise<Result<{ synced: number; created: number }>> {
+  return svc.syncCourseTemplateCategories();
 }
 export async function renameTemplateCategory(oldName: string, name: string): Promise<Result<TemplateCategory>> {
   const res = await svc.renameTemplateCategory(oldName, name);
-  return res.ok ? ok({ name: res.data.name, count: res.data.count }) : res;
+  return res.ok ? ok(mapCat(res.data)) : res;
 }
 export async function deleteTemplateCategory(name: string): Promise<Result<boolean>> {
   const res = await svc.deleteTemplateCategory(name);

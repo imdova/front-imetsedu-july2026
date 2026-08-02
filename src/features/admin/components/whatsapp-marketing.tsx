@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, Plus, Trash2, Pencil, Loader2, Users, Zap,
   FileText, Megaphone, CheckCircle2, AlertTriangle, Clock, Inbox, CheckCheck, ArrowLeft,
   Search, Info, StickyNote, Check, Mail, CalendarDays, Tag, X, Paperclip, Mic, Download,
-  BarChart3, TrendingUp, Clock3, Flame, Sparkles, ScrollText, Gauge,
+  BarChart3, TrendingUp, Clock3, Flame, Sparkles, ScrollText, Gauge, RefreshCw,
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
@@ -1352,6 +1352,8 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
   const [activeCat, setActiveCat] = React.useState<string | null>(null); // null = All
   const [folders, setFolders] = React.useState<WaTemplateFolder[]>([]);
   const [catDlg, setCatDlg] = React.useState<{ mode: "new" | "rename"; original?: string; value: string } | null>(null);
+  const [folderTab, setFolderTab] = React.useState<"landing" | "course">("landing");
+  const [syncingFolders, setSyncingFolders] = React.useState(false);
 
   const refreshFolders = React.useCallback(async () => { const r = await dal.whatsapp.fetchTemplateFolders(); if (r.ok) setFolders(r.data); }, []);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- loader setState only after an await
@@ -1362,7 +1364,7 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
   const submitCat = async () => {
     const v = catDlg?.value.trim(); if (!v) return;
     const r = catDlg!.mode === "new"
-      ? await dal.whatsapp.createTemplateFolder(v)
+      ? await dal.whatsapp.createTemplateFolder(v, folderTab)
       : (catDlg!.original && catDlg!.original !== v ? await dal.whatsapp.renameTemplateFolder(catDlg!.original, v) : { ok: true } as const);
     if (!r.ok) { toast.error(r.error); return; }
     if (catDlg!.mode === "rename" && activeCat === catDlg!.original) setActiveCat(v);
@@ -1378,6 +1380,16 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
     toast.success("Category deleted"); refreshFolders();
     const tr = await dal.whatsapp.fetchTemplates(); if (tr.ok) setTemplates(tr.data);
   };
+
+  const syncFolders = async () => {
+    setSyncingFolders(true);
+    const r = await dal.whatsapp.syncCourseTemplateFolders();
+    setSyncingFolders(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    toast.success(`Synced ${r.data.synced} course${r.data.synced === 1 ? "" : "s"}${r.data.created ? ` · ${r.data.created} new` : ""}`);
+    refreshFolders();
+  };
+  const shownFolders = folders.filter((f) => (f.kind ?? "landing") === folderTab);
 
   const visible = React.useMemo(() => {
     if (activeCat === null) return templates;
@@ -1418,13 +1430,32 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</span>
             <button onClick={() => setCatDlg({ mode: "new", value: "" })} title="New category" className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"><Plus className="size-4" /></button>
           </div>
+          <div className="px-2 pt-2">
+            <div className="flex rounded-lg border border-border/60 bg-muted/40 p-0.5 text-xs font-medium">
+              {([["landing", "Landing pages"], ["course", "Courses"]] as const).map(([k, l]) => (
+                <button key={k} onClick={() => setFolderTab(k)}
+                  className={cn("flex-1 rounded-md px-2 py-1.5 transition-colors", folderTab === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-0.5 p-2">
             <WaCatRow label="All templates" count={templates.length} active={activeCat === null} onClick={() => setActiveCat(null)} />
-            {folders.map((c) => (
+            {shownFolders.map((c) => (
               <WaCatRow key={c.name} label={c.name} count={c.count} active={activeCat === c.name} onClick={() => setActiveCat(c.name)}
                 onRename={() => setCatDlg({ mode: "rename", original: c.name, value: c.name })} onDelete={() => deleteCat(c.name)} />
             ))}
-            {uncatCount > 0 && (
+            {folderTab === "course" && (
+              <button onClick={syncFolders} disabled={syncingFolders}
+                className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/70 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-60">
+                {syncingFolders ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} Sync course categories
+              </button>
+            )}
+            {shownFolders.length === 0 && folderTab === "landing" && (
+              <p className="px-2 py-3 text-[11px] text-muted-foreground">No landing categories yet.</p>
+            )}
+            {folderTab === "landing" && uncatCount > 0 && (
               <WaCatRow label="Uncategorized" count={uncatCount} active={activeCat === WA_UNCAT} onClick={() => setActiveCat(WA_UNCAT)} />
             )}
           </div>
