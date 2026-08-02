@@ -787,7 +787,7 @@ function TemplatesGallery({
   };
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+    <div className="grid gap-5 lg:grid-cols-[297px_minmax(0,1fr)]">
       {/* Category sidebar */}
       <aside className="lg:sticky lg:top-20 lg:self-start">
         <div className="rounded-2xl border border-border/60 bg-card">
