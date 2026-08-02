@@ -264,8 +264,6 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const [note, setNote] = React.useState("");
   const [mode, setMode] = React.useState<"reply" | "note">("reply");
   const [sending, setSending] = React.useState(false);
-  const [tplName, setTplName] = React.useState(templates[0]?.name ?? "");
-  const [tplParams, setTplParams] = React.useState<string[]>(() => Array.from({ length: templates[0]?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")));
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState<InboxFilter>("open");
   const [showInfo, setShowInfo] = React.useState(true);
@@ -384,7 +382,6 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
     m.rec.stop();
   };
 
-  const tpl = templates.find((t) => t.name === tplName);
   const q = search.trim().toLowerCase();
   const filtered = convos.filter((c) => {
     if (filter === "open" && c.status === "resolved") return false;
@@ -499,19 +496,12 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   };
 
   const sendReply = async () => {
-    if (!active) return;
+    if (!active || !text.trim()) return;
     setSending(true);
-    let r;
-    if (thread?.windowOpen) {
-      if (!text.trim()) { setSending(false); return; }
-      r = await dal.whatsapp.replyText(active, text.trim());
-    } else {
-      if (!tplName) { setSending(false); toast.error("Pick a template"); return; }
-      r = await dal.whatsapp.replyTemplate(active, { templateName: tplName, language: tpl?.language ?? "ar", params: tplParams });
-    }
+    const r = await dal.whatsapp.replyText(active, text.trim());
     setSending(false);
     if (!r.ok) { toast.error(r.error); return; }
-    setText(""); setTplParams([]);
+    setText("");
     loadThread(active); loadConvos();
   };
   const runAi = async (action: "summary" | "suggest" | "intent") => {
@@ -568,14 +558,14 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const cols = showInfo && active ? "lg:grid-cols-[390px_1fr_280px]" : "lg:grid-cols-[390px_1fr]";
 
   return (
-    <div ref={wrapRef} style={boxH ? { height: boxH } : undefined} className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70 min-h-[420px]", !boxH && "h-[calc(100dvh_-_200px)]", cols)}>
+    <div ref={wrapRef} style={boxH ? { height: boxH } : undefined} className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70 min-h-[420px] [grid-template-rows:minmax(0,1fr)]", !boxH && "h-[calc(100dvh_-_200px)]", cols)}>
       {/* ── Conversation list ── */}
       <div className={cn("flex min-h-0 flex-col border-e border-border/60 bg-card", active && "hidden lg:flex")}>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-3">
+          <p className="text-sm font-semibold">Conversations{convos.length ? ` · ${convos.length}` : ""}</p>
+          <Button size="sm" className="h-8 gap-1.5" onClick={() => { const t = templates[0]; setNc({ phone: "", name: "", tplName: t?.name ?? "", params: Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")) }); setNewOpen(true); }}><Plus className="size-3.5" /> New</Button>
+        </div>
         <div className="space-y-2 border-b border-border/60 p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">Conversations{convos.length ? ` · ${convos.length}` : ""}</p>
-            <Button size="sm" className="h-8 gap-1.5" onClick={() => { const t = templates[0]; setNc({ phone: "", name: "", tplName: t?.name ?? "", params: Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")) }); setNewOpen(true); }}><Plus className="size-3.5" /> New</Button>
-          </div>
           <div className="relative">
             <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name / number / label…" className="ps-8" />
@@ -673,7 +663,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3 border-b border-border/60 bg-card px-4 py-2.5">
+            <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border/60 bg-card px-4">
               <button type="button" className="lg:hidden" onClick={() => { setActive(null); setThread(null); }}><ArrowLeft className="size-5" /></button>
               <span className="grid size-9 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(activeConvo?.name || active).charAt(0).toUpperCase()}</span>
               <div className="min-w-0 flex-1">
@@ -780,7 +770,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                   <Textarea rows={1} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a private note (not sent to the customer)…" dir="auto" className="max-h-32 min-h-[42px] resize-none bg-amber-50/50 dark:bg-amber-950/10" />
                   <Button onClick={saveNote} disabled={sending || !note.trim()} variant="secondary" className="shrink-0 gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <StickyNote className="size-4" />} Note</Button>
                 </div>
-              ) : thread?.windowOpen ? (
+              ) : (
                 recording ? (
                   <div className="flex items-center gap-3 rounded-xl border border-red-300/60 bg-red-50/60 px-3 py-2.5 dark:border-red-500/30 dark:bg-red-950/20">
                     <span className="size-2.5 animate-pulse rounded-full bg-red-500" />
@@ -806,25 +796,6 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                     )}
                   </div>
                 )
-              ) : (
-                <div className="space-y-2">
-                  {/* 24h window closed — Meta only allows an approved template until the customer replies. */}
-                  <div className="flex items-start gap-2 rounded-lg border border-amber-300/50 bg-amber-50/60 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-300">
-                    <Clock className="mt-px size-3.5 shrink-0" />
-                    <span>The 24-hour free-reply window is closed. Send an approved <span className="font-semibold">template</span> below — once the customer replies you can chat freely.</span>
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <Select value={tplName} onValueChange={(v) => { setTplName(v); const t = templates.find((x) => x.name === v); setTplParams(Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : ""))); }}>
-                      <SelectTrigger className="flex-1"><SelectValue placeholder={templates.length ? "Pick a template" : "No templates"} /></SelectTrigger>
-                      <SelectContent position="popper">{templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}</SelectContent>
-                    </Select>
-                    <Button onClick={sendReply} disabled={sending || !tplName} className="shrink-0 gap-1.5">{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send</Button>
-                  </div>
-                  {tpl?.body && <p dir={tpl.language.startsWith("ar") ? "rtl" : "ltr"} className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">{fillPreview(tpl.body, tplParams)}</p>}
-                  {(tpl?.variables ?? 0) > 0 && tplParams.map((p, i) => (
-                    <Input key={i} value={p} onChange={(e) => setTplParams((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`{{${i + 1}}}${i === 0 ? " — {{name}} allowed" : ""}`} />
-                  ))}
-                </div>
               )}
             </div>
           </>
@@ -833,8 +804,8 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
 
       {/* ── Client info panel ── */}
       {showInfo && active && (
-        <aside className="hidden flex-col border-s border-border/60 bg-card lg:flex">
-          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+        <aside className="hidden min-h-0 flex-col border-s border-border/60 bg-card lg:flex">
+          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-4">
             <p className="text-sm font-semibold">Client info</p>
             <button type="button" onClick={() => setShowInfo(false)}><X className="size-4 text-muted-foreground" /></button>
           </div>
