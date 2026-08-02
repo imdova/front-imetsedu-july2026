@@ -3,7 +3,7 @@ import { api, type Result } from "@integration/services/http/client";
 const BASE = "/admin/whatsapp";
 
 export interface WaStatusDto { configured: boolean; phoneId: string; version: string }
-export interface WaGroupDto { name: string; count: number; phoneCount: number }
+export interface WaGroupDto { name: string; count: number; phoneCount: number; kind?: string }
 export interface WaTemplateDto {
   _id: string; name: string; language: string; category: string; folder?: string; body: string; variables: number; status: string;
 }
@@ -22,7 +22,7 @@ export const getStatus = (): Promise<Result<WaStatusDto>> => api.get(`${BASE}/st
 export const getGroups = (): Promise<Result<WaGroupDto[]>> => api.get(`${BASE}/groups`, { revalidate: false });
 
 export interface WaTemplateFolderDto { name: string; count: number; kind?: string }
-export const createGroup = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/groups`, { name });
+export const createGroup = (name: string, kind?: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/groups`, { name, ...(kind ? { kind } : {}) });
 
 export interface WaAnalyticsDto {
   conversations: { total: number; open: number; resolved: number; unread: number; hot: number; warm: number; cold: number };

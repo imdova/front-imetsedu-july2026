@@ -81,12 +81,13 @@ export function WhatsappAutomationBuilder({
   React.useEffect(() => {
     dal.whatsapp.fetchGroups().then((r) => { if (r.ok) setGroupList(r.data); });
   }, []);
+  const [groupTab, setGroupTab] = React.useState<"landing" | "course">("landing");
   const groupOptions: Option[] = React.useMemo(
-    () => groupList.map((g) => ({ value: g.name, label: g.name, hint: `${g.phoneCount} with phone` })),
-    [groupList],
+    () => groupList.filter((g) => (g.kind ?? "landing") === groupTab).map((g) => ({ value: g.name, label: g.name, hint: `${g.phoneCount} with phone` })),
+    [groupList, groupTab],
   );
   const createGroup = async (name: string) => {
-    const r = await dal.whatsapp.createGroup(name);
+    const r = await dal.whatsapp.createGroup(name, groupTab);
     if (!r.ok) { toast.error(r.error); return; }
     const gr = await dal.whatsapp.fetchGroups();
     if (gr.ok) setGroupList(gr.data);
@@ -250,6 +251,7 @@ export function WhatsappAutomationBuilder({
               <WorkflowSettings
                 name={name} setName={(v) => { setName(v); markDirty(); }}
                 groupOptions={groupOptions}
+                groupTab={groupTab} setGroupTab={setGroupTab}
                 onCreateGroup={createGroup}
                 settings={settings} setSettings={(s) => { setSettings(s); markDirty(); }}
                 messageCount={messageCount}
@@ -456,10 +458,11 @@ function describeStep(step: WaStep, template?: WaTemplate): { title: string; sub
 /* ────────────────────────── Inspector rail ────────────────────────── */
 
 function WorkflowSettings({
-  name, setName, groupOptions, onCreateGroup, settings, setSettings, messageCount, sentCount,
+  name, setName, groupOptions, groupTab, setGroupTab, onCreateGroup, settings, setSettings, messageCount, sentCount,
 }: {
   name: string; setName: (v: string) => void;
   groupOptions: Option[];
+  groupTab: "landing" | "course"; setGroupTab: (t: "landing" | "course") => void;
   onCreateGroup: (name: string) => void;
   settings: WaFlowSettings; setSettings: (s: WaFlowSettings) => void;
   messageCount: number; sentCount: number;
@@ -476,13 +479,21 @@ function WorkflowSettings({
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="CPHQ WhatsApp welcome" />
         </Field>
         <Field label="Trigger — when a contact joins group(s)">
+          <div className="mb-2 flex rounded-lg border border-border/60 bg-muted/40 p-0.5 text-xs font-medium">
+            {([["landing", "Landing pages"], ["course", "Platform courses"]] as const).map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setGroupTab(k)}
+                className={cn("flex-1 rounded-md px-2 py-1.5 transition-colors", groupTab === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                {l}
+              </button>
+            ))}
+          </div>
           <MultiSelect
             options={groupOptions}
             value={settings.triggerGroups}
             onChange={(v) => setSettings({ ...settings, triggerGroups: v })}
             placeholder="Select or create groups…"
             searchPlaceholder="Search or type a new group…"
-            emptyText="Type a name to create a group."
+            emptyText={groupTab === "course" ? "No course groups — type a name to create one." : "Type a name to create a group."}
             creatable
             onCreate={onCreateGroup}
           />

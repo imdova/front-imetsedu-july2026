@@ -69,13 +69,18 @@ export function AutomationBuilder({
   const [trigger, setTrigger] = React.useState<AutomationTrigger>(automation.trigger);
   const [active, setActive] = React.useState(automation.active);
   const [settings, setSettings] = React.useState<FlowSettings>(initial.settings);
-  const [groupOptions, setGroupOptions] = React.useState<Option[]>([]);
+  const [allGroups, setAllGroups] = React.useState<{ name: string; count: number; kind: "landing" | "course" }[]>([]);
+  const [groupTab, setGroupTab] = React.useState<"landing" | "course">("landing");
 
   React.useEffect(() => {
     dal.emailMarketing.fetchSubscriberGroups().then((res) => {
-      if (res.ok) setGroupOptions(res.data.map((g) => ({ value: g.name, label: g.name, hint: `${g.count} subscribers` })));
+      if (res.ok) setAllGroups(res.data.map((g) => ({ name: g.name, count: g.count, kind: g.kind })));
     });
   }, []);
+  const groupOptions: Option[] = React.useMemo(
+    () => allGroups.filter((g) => g.kind === groupTab).map((g) => ({ value: g.name, label: g.name, hint: `${g.count} subscribers` })),
+    [allGroups, groupTab],
+  );
   const [steps, setSteps] = React.useState<Step[]>(initial.steps);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -235,6 +240,7 @@ export function AutomationBuilder({
                 name={name} setName={(v) => { setName(v); markDirty(); }}
                 trigger={trigger} setTrigger={(v) => { setTrigger(v); markDirty(); }}
                 groupOptions={groupOptions}
+                groupTab={groupTab} setGroupTab={setGroupTab}
                 settings={settings} setSettings={(s) => { setSettings(s); markDirty(); }}
                 emailCount={emailCount}
                 sentCount={automation.sentCount}
@@ -431,12 +437,13 @@ function describeStep(step: Step, template?: EmailTemplate): { title: string; su
 /* ────────────────────────── Inspector rail ────────────────────────── */
 
 function WorkflowSettings({
-  name, setName, trigger, setTrigger, groupOptions,
+  name, setName, trigger, setTrigger, groupOptions, groupTab, setGroupTab,
   settings, setSettings, emailCount, sentCount,
 }: {
   name: string; setName: (v: string) => void;
   trigger: AutomationTrigger; setTrigger: (v: AutomationTrigger) => void;
   groupOptions: Option[];
+  groupTab: "landing" | "course"; setGroupTab: (t: "landing" | "course") => void;
   settings: FlowSettings; setSettings: (s: FlowSettings) => void;
   emailCount: number; sentCount: number;
 }) {
@@ -462,13 +469,21 @@ function WorkflowSettings({
         </Field>
         {trigger === "tag_added" && (
           <Field label="Groups">
+            <div className="mb-2 flex rounded-lg border border-border/60 bg-muted/40 p-0.5 text-xs font-medium">
+              {([["landing", "Landing pages"], ["course", "Platform courses"]] as const).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setGroupTab(k)}
+                  className={cn("flex-1 rounded-md px-2 py-1.5 transition-colors", groupTab === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                  {l}
+                </button>
+              ))}
+            </div>
             <MultiSelect
               options={groupOptions}
               value={settings.triggerGroups ?? []}
               onChange={(v) => setSettings({ ...settings, triggerGroups: v })}
               placeholder="Select one or more groups…"
               searchPlaceholder="Search groups…"
-              emptyText="No subscriber groups yet."
+              emptyText={groupTab === "course" ? "No course groups yet." : "No landing-page groups yet."}
             />
             <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
               A subscriber enters this flow when they join <span className="font-medium">any</span> of the selected groups.
