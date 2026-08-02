@@ -571,7 +571,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   // Precompute which message starts a new day (for date separators).
   const daySep = new Map<string, string>();
   { let ld = ""; for (const m of thread?.messages ?? []) { const d = fmtDay(m.at); if (d && d !== ld) { ld = d; daySep.set(m.id, d); } } }
-  const cols = showInfo && active ? "lg:grid-cols-[300px_1fr_280px]" : "lg:grid-cols-[300px_1fr]";
+  const cols = showInfo && active ? "lg:grid-cols-[390px_1fr_280px]" : "lg:grid-cols-[390px_1fr]";
 
   return (
     <div ref={wrapRef} style={boxH ? { height: boxH } : undefined} className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70 min-h-[420px]", !boxH && "h-[calc(100dvh_-_200px)]", cols)}>

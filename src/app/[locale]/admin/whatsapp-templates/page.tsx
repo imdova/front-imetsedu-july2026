@@ -19,7 +19,7 @@ export default async function AdminWhatsappPage({ params }: { params: Promise<{ 
   ]);
 
   return (
-    <div className="mx-auto max-w-[1100px] space-y-6">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6">
       <PageHeader
         title="WhatsApp Marketing"
         description="Send approved-template broadcasts to your subscribers and automate WhatsApp drips — via the Meta WhatsApp Cloud API."
