@@ -131,6 +131,8 @@ export async function sendMedia(phone: string, file: Blob, opts: { caption?: str
 export async function replyTemplate(phone: string, input: { templateName: string; language: string; params?: string[] }): Promise<Result<boolean>> {
   const r = await svc.replyTemplate(phone, input); return r.ok ? ok(true) : r;
 }
+export type WaAiResult = svc.WaAiResult;
+export async function aiCopilot(phone: string, action: "summary" | "suggest" | "intent"): Promise<Result<WaAiResult>> { return svc.aiCopilot(phone, action); }
 
 export async function fetchAutomations(): Promise<Result<WaAutomation[]>> {
   const r = await svc.listAutomations(); return r.ok ? ok(r.data.map(mapAuto)) : r;

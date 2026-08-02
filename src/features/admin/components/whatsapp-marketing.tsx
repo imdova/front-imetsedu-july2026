@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, Plus, Trash2, Pencil, Loader2, Users, Zap,
   FileText, Megaphone, CheckCircle2, AlertTriangle, Clock, Inbox, CheckCheck, ArrowLeft,
   Search, Info, StickyNote, Check, Mail, CalendarDays, Tag, X, Paperclip, Mic, Download,
-  BarChart3, TrendingUp, Clock3, Flame,
+  BarChart3, TrendingUp, Clock3, Flame, Sparkles, ScrollText, Gauge,
 } from "lucide-react";
 
 import { dal } from "@/lib/dal";
@@ -287,6 +287,8 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const [uploading, setUploading] = React.useState(false);
   const [recording, setRecording] = React.useState(false);
   const [recSecs, setRecSecs] = React.useState(0);
+  const [aiBusy, setAiBusy] = React.useState<"summary" | "suggest" | "intent" | null>(null);
+  const [aiPanel, setAiPanel] = React.useState<{ action: "summary" | "intent"; text: string } | null>(null);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const recRef = React.useRef<{ rec: MediaRecorder; chunks: Blob[]; stream: MediaStream } | null>(null);
@@ -488,6 +490,21 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
     setText(""); setTplParams([]);
     loadThread(active); loadConvos();
   };
+  const runAi = async (action: "summary" | "suggest" | "intent") => {
+    if (!active || aiBusy) return;
+    setAiBusy(action);
+    const r = await dal.whatsapp.aiCopilot(active, action);
+    setAiBusy(null);
+    if (!r.ok) { toast.error(r.error); return; }
+    if (!r.data.ok) { toast.error(r.data.error || "AI error"); return; }
+    if (action === "suggest") {
+      setMode("reply");
+      setText((t) => (t.trim() ? t.trim() + "\n" : "") + r.data.result);
+      toast.success("تم إدراج الرد المقترح — راجعه قبل الإرسال");
+    } else {
+      setAiPanel({ action, text: r.data.result });
+    }
+  };
   const saveNote = async () => {
     if (!active || !note.trim()) return;
     setSending(true);
@@ -582,7 +599,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                 className={cn("ms-3 grid size-5 shrink-0 place-items-center rounded border transition", checked ? "border-primary bg-primary text-primary-foreground opacity-100" : cn("border-border/60 text-transparent", selected.length > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"))}>
                 <Check className="size-3.5" />
               </button>
-              <button type="button" onClick={() => { setActive(c.phone); setMode("reply"); }}
+              <button type="button" onClick={() => { setActive(c.phone); setMode("reply"); setAiPanel(null); }}
                 className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-start">
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(c.name || c.phone).charAt(0).toUpperCase()}</span>
                 <span className="min-w-0 flex-1">
@@ -678,8 +695,22 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                     {mode === mk && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded bg-primary" />}
                   </button>
                 ))}
+                {mode === "reply" && thread && (
+                  <div className="ms-auto flex items-center gap-0.5 rounded-full border border-violet-300/50 bg-violet-50/60 px-1 py-0.5 dark:border-violet-500/30 dark:bg-violet-950/20">
+                    <span className="ps-1.5 text-[10px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-400">AI</span>
+                    <button type="button" onClick={() => runAi("suggest")} disabled={!!aiBusy} title="اقترح ردًا جاهزًا" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-50 dark:text-violet-300 dark:hover:bg-violet-900/40">
+                      {aiBusy === "suggest" ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />} Suggest reply
+                    </button>
+                    <button type="button" onClick={() => runAi("summary")} disabled={!!aiBusy} title="لخّص المحادثة" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-50 dark:text-violet-300 dark:hover:bg-violet-900/40">
+                      {aiBusy === "summary" ? <Loader2 className="size-3.5 animate-spin" /> : <ScrollText className="size-3.5" />} Summarize
+                    </button>
+                    <button type="button" onClick={() => runAi("intent")} disabled={!!aiBusy} title="حلّل نية العميل" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-50 dark:text-violet-300 dark:hover:bg-violet-900/40">
+                      {aiBusy === "intent" ? <Loader2 className="size-3.5 animate-spin" /> : <Gauge className="size-3.5" />} Intent
+                    </button>
+                  </div>
+                )}
                 {mode === "reply" && thread?.windowOpen && (
-                  <div className="relative ms-auto">
+                  <div className="relative">
                     <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => setQuickOpen((o) => !o)}><Zap className="size-3.5" /> Quick replies</Button>
                     {quickOpen && (
                       <div className="absolute bottom-9 end-0 z-10 w-72 space-y-1 rounded-xl border border-border/70 bg-card p-1.5 shadow-lg">
@@ -691,6 +722,18 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                   </div>
                 )}
               </div>
+
+              {mode === "reply" && aiPanel && (
+                <div className="mb-2 rounded-xl border border-violet-300/50 bg-violet-50/50 p-3 dark:border-violet-500/30 dark:bg-violet-950/20">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                      {aiPanel.action === "summary" ? <><ScrollText className="size-3.5" /> ملخص المحادثة</> : <><Gauge className="size-3.5" /> تحليل النية</>}
+                    </span>
+                    <button type="button" onClick={() => setAiPanel(null)} className="text-violet-500 hover:text-violet-700 dark:hover:text-violet-300"><X className="size-3.5" /></button>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90" dir="auto">{aiPanel.text}</p>
+                </div>
+              )}
 
               {mode === "note" ? (
                 <div className="flex items-end gap-2">

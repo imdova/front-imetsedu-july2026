@@ -81,6 +81,9 @@ export const setConversationLists = (phone: string, lists: string[]): Promise<Re
 export const setContactGroup = (phone: string, group: string, add: boolean): Promise<Result<{ success: boolean; tags: string[]; created?: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/group`, { group, add });
 export const replyTemplate = (phone: string, input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/reply-template`, input);
 
+export interface WaAiResult { ok: boolean; action?: string; result: string; error?: string }
+export const aiCopilot = (phone: string, action: string): Promise<Result<WaAiResult>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/ai`, { action });
+
 export const listAutomations = (): Promise<Result<WaAutomationDto[]>> => api.get(`${BASE}/automations`, { revalidate: false });
 export const createAutomation = (input: Record<string, unknown>): Promise<Result<WaAutomationDto>> => api.post(`${BASE}/automations`, input);
 export const updateAutomation = (id: string, input: Record<string, unknown>): Promise<Result<WaAutomationDto>> => api.patch(`${BASE}/automations/${id}`, input);
