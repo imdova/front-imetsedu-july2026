@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Plus, Trash2, Pencil, Loader2, GraduationCap, ExternalLink, Wand2,
   ChevronDown, Eye, EyeOff, Video, ShieldCheck, ListChecks, Lock, Layers,
+  GripVertical, ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +21,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/shared/image-upload";
+import { SortableList } from "@/components/shared/sortable/sortable-list";
+import type { DragHandleProps } from "@/components/shared/sortable/sortable-item";
 
 /** Mirror of the backend slug rule so the DTO can't 400 on us. */
 const slugify = (s: string) =>
@@ -401,7 +404,24 @@ function ProgramRow({
   };
 
   const itemsOf = (moduleId: string) => program.lectures.filter((l) => l.moduleId === moduleId).sort((a, b) => a.order - b.order);
-  const ungrouped = program.lectures.filter((l) => !l.moduleId);
+  const ungrouped = program.lectures.filter((l) => !l.moduleId).sort((a, b) => a.order - b.order);
+
+  /** Persist a new lesson/quiz order for a group: reindex by array position (optimistic + API). */
+  const reorderItems = async (ordered: FreeLecture[]) => {
+    const posById = new Map(ordered.map((l, i) => [l.id, i]));
+    setLectures((prev) => prev.map((l) => (posById.has(l.id) ? { ...l, order: posById.get(l.id)! } : l)));
+    const changed = ordered.map((l, i) => ({ l, i })).filter(({ l, i }) => l.order !== i);
+    const results = await Promise.all(changed.map(({ l, i }) => dal.freeCourses.updateFreeLecture(l.id, { order: i })));
+    if (results.some((r) => !r.ok)) toast.error("Couldn't save the new order — refresh and try again.");
+  };
+  /** Arrow move: shift the item at `index` by `dir` (-1 up / +1 down) within its group. */
+  const moveItem = (list: FreeLecture[], index: number, dir: -1 | 1) => {
+    const j = index + dir;
+    if (j < 0 || j >= list.length) return;
+    const ordered = [...list];
+    [ordered[index], ordered[j]] = [ordered[j], ordered[index]];
+    reorderItems(ordered);
+  };
   const lockedCount = program.lectures.filter((l) => l.locked).length;
 
   return (
@@ -471,7 +491,22 @@ function ProgramRow({
                     <div className="space-y-1.5 p-2">
                       {items.length === 0
                         ? <p className="px-2 py-2 text-center text-xs text-muted-foreground">No lessons or quizzes yet.</p>
-                        : items.map((l, i) => <ItemLine key={l.id} l={l} index={i} onEdit={() => openEdit(l)} onDelete={() => removeLecture(l)} />)}
+                        : (
+                          <SortableList
+                            items={items}
+                            onReorder={(next) => reorderItems(next)}
+                            renderItem={(l, handle) => (
+                              <ItemLine
+                                l={l} index={items.findIndex((x) => x.id === l.id)} handle={handle}
+                                onUp={() => moveItem(items, items.findIndex((x) => x.id === l.id), -1)}
+                                onDown={() => moveItem(items, items.findIndex((x) => x.id === l.id), 1)}
+                                isFirst={items[0]?.id === l.id} isLast={items[items.length - 1]?.id === l.id}
+                                onEdit={() => openEdit(l)} onDelete={() => removeLecture(l)}
+                              />
+                            )}
+                            className="space-y-1.5"
+                          />
+                        )}
                       <div className="flex gap-2 pt-1">
                         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openCreate("lesson", m.id)}><Video className="size-3.5" /> Add lesson</Button>
                         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openCreate("quiz", m.id)}><ListChecks className="size-3.5" /> Add quiz</Button>
@@ -485,7 +520,20 @@ function ProgramRow({
                 <div className="overflow-hidden rounded-xl border border-dashed border-border/70 bg-card">
                   <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold text-muted-foreground">Ungrouped (legacy)</div>
                   <div className="space-y-1.5 p-2">
-                    {ungrouped.map((l, i) => <ItemLine key={l.id} l={l} index={i} onEdit={() => openEdit(l)} onDelete={() => removeLecture(l)} />)}
+                    <SortableList
+                      items={ungrouped}
+                      onReorder={(next) => reorderItems(next)}
+                      renderItem={(l, handle) => (
+                        <ItemLine
+                          l={l} index={ungrouped.findIndex((x) => x.id === l.id)} handle={handle}
+                          onUp={() => moveItem(ungrouped, ungrouped.findIndex((x) => x.id === l.id), -1)}
+                          onDown={() => moveItem(ungrouped, ungrouped.findIndex((x) => x.id === l.id), 1)}
+                          isFirst={ungrouped[0]?.id === l.id} isLast={ungrouped[ungrouped.length - 1]?.id === l.id}
+                          onEdit={() => openEdit(l)} onDelete={() => removeLecture(l)}
+                        />
+                      )}
+                      className="space-y-1.5"
+                    />
                   </div>
                 </div>
               )}
@@ -632,11 +680,28 @@ function ProgramRow({
 
 /* ─────────────────────────── Item line ─────────────────────────── */
 
-function ItemLine({ l, index, onEdit, onDelete }: {
-  l: FreeLecture; index: number; onEdit: () => void; onDelete: () => void;
+function ItemLine({ l, index, handle, onUp, onDown, isFirst, isLast, onEdit, onDelete }: {
+  l: FreeLecture; index: number;
+  handle?: DragHandleProps; onUp?: () => void; onDown?: () => void; isFirst?: boolean; isLast?: boolean;
+  onEdit: () => void; onDelete: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border/70 bg-background px-3 py-2">
+    <div className={cn("flex items-center gap-2 rounded-lg border border-border/70 bg-background px-2 py-2", handle?.isDragging && "ring-2 ring-primary/40")}>
+      {handle && (
+        <button
+          type="button" title="Drag to reorder"
+          className="shrink-0 cursor-grab touch-none rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
+          {...handle.attributes} {...(handle.listeners ?? {})}
+        >
+          <GripVertical className="size-4" />
+        </button>
+      )}
+      {(onUp || onDown) && (
+        <div className="flex shrink-0 flex-col">
+          <button type="button" title="Move up" disabled={isFirst} onClick={onUp} className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"><ChevronUp className="size-3.5" /></button>
+          <button type="button" title="Move down" disabled={isLast} onClick={onDown} className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"><ChevronDown className="size-3.5" /></button>
+        </div>
+      )}
       <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold tabular-nums text-primary">{index + 1}</span>
       {l.kind === "quiz"
         ? <ListChecks className="size-4 shrink-0 text-muted-foreground" />
