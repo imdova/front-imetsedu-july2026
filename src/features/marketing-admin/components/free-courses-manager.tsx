@@ -362,6 +362,8 @@ function ProgramRow({
   const [saving, setSaving] = React.useState(false);
   const [modDlg, setModDlg] = React.useState<{ id?: string; titleEn: string; titleAr: string } | null>(null);
   const [modSaving, setModSaving] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set());
+  const toggleModule = (id: string) => setCollapsed((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const openCreate = (kind: "lesson" | "quiz", moduleId: string) => {
     setEditingLec(null); setQuizCat(""); setForm({ ...EMPTY_LECTURE, kind, moduleId }); setLecOpen(true);
@@ -513,12 +515,16 @@ function ProgramRow({
                 return (
                   <div key={m.id} className="overflow-hidden rounded-xl border border-border/70 bg-card">
                     <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2.5">
+                      <button type="button" onClick={() => toggleModule(m.id)} title={collapsed.has(m.id) ? "Expand" : "Collapse"} className="grid size-6 shrink-0 place-items-center rounded hover:bg-muted" aria-expanded={!collapsed.has(m.id)}>
+                        <ChevronDown className={cn("size-4 transition-transform", collapsed.has(m.id) && "-rotate-90")} />
+                      </button>
                       <Layers className="size-4 shrink-0 text-primary" />
-                      <p className="min-w-0 flex-1 truncate text-sm font-semibold">{m.titleEn}</p>
+                      <button type="button" onClick={() => toggleModule(m.id)} className="min-w-0 flex-1 truncate text-left text-sm font-semibold">{m.titleEn}</button>
                       <span className="shrink-0 text-[11px] text-muted-foreground">{items.length} {items.length === 1 ? "item" : "items"}</span>
                       <Button variant="ghost" size="icon" className="size-7" title="Rename module" onClick={() => setModDlg({ id: m.id, titleEn: m.titleEn, titleAr: m.titleAr })}><Pencil className="size-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="size-7" title="Delete module" onClick={() => deleteModule(m)}><Trash2 className="size-3.5 text-destructive" /></Button>
                     </div>
+                    {!collapsed.has(m.id) && (
                     <div className="space-y-1.5 p-2">
                       {items.length === 0
                         ? <p className="px-2 py-2 text-center text-xs text-muted-foreground">No lessons or quizzes yet.</p>
@@ -543,6 +549,7 @@ function ProgramRow({
                         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openCreate("quiz", m.id)}><ListChecks className="size-3.5" /> Add quiz</Button>
                       </div>
                     </div>
+                    )}
                   </div>
                 );
               })}
