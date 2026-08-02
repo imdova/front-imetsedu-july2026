@@ -134,6 +134,15 @@ export async function replyTemplate(phone: string, input: { templateName: string
 export type WaAiResult = svc.WaAiResult;
 export async function aiCopilot(phone: string, action: "summary" | "suggest" | "intent"): Promise<Result<WaAiResult>> { return svc.aiCopilot(phone, action); }
 
+export type WaFollowUp = svc.WaFollowUpDto;
+export async function fetchFollowUps(): Promise<Result<WaFollowUp[]>> { return svc.listFollowUps(); }
+export async function setFollowUp(phone: string, input: { at: string; note?: string; by?: string }): Promise<Result<boolean>> {
+  const r = await svc.setFollowUp(phone, input); return r.ok ? ok(true) : r;
+}
+export async function clearFollowUp(phone: string): Promise<Result<boolean>> {
+  const r = await svc.clearFollowUp(phone); return r.ok ? ok(true) : r;
+}
+
 export async function fetchAutomations(): Promise<Result<WaAutomation[]>> {
   const r = await svc.listAutomations(); return r.ok ? ok(r.data.map(mapAuto)) : r;
 }

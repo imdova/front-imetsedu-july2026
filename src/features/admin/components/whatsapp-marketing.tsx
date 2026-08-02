@@ -115,6 +115,12 @@ function fmtTime(at?: string) {
   return sameDay ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString([], { day: "2-digit", month: "short" });
 }
 
+/** Date → "YYYY-MM-DDTHH:mm" in local time, for <input type="datetime-local">. */
+function toLocalInput(d: Date) {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 function fmtDay(at?: string) {
   if (!at) return "";
   const d = new Date(at); const now = new Date();
@@ -134,7 +140,7 @@ const QUICK_REPLIES = [
   "هل لديك أي استفسار آخر؟",
 ];
 
-type InboxFilter = "open" | "unread" | "resolved" | "hot";
+type InboxFilter = "open" | "unread" | "resolved" | "hot" | "due";
 
 /** Lead temperature → display tokens. */
 const TEMP: Record<string, { emoji: string; label: string; chip: string; bar: string; accent: string }> = {
@@ -289,6 +295,11 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const [recSecs, setRecSecs] = React.useState(0);
   const [aiBusy, setAiBusy] = React.useState<"summary" | "suggest" | "intent" | null>(null);
   const [aiPanel, setAiPanel] = React.useState<{ action: "summary" | "intent"; text: string } | null>(null);
+  const [fuEdit, setFuEdit] = React.useState(false);
+  const [fuDate, setFuDate] = React.useState("");
+  const [fuNote, setFuNote] = React.useState("");
+  const [now, setNow] = React.useState(() => Date.now());
+  React.useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 30_000); return () => window.clearInterval(id); }, []);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const recRef = React.useRef<{ rec: MediaRecorder; chunks: Blob[]; stream: MediaStream } | null>(null);
@@ -372,6 +383,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
     if (filter === "unread" && (!c.unread || c.status === "resolved")) return false;
     if (filter === "resolved" && c.status !== "resolved") return false;
     if (filter === "hot" && (c.temperature !== "hot" || c.status === "resolved")) return false;
+    if (filter === "due" && !c.followUpAt) return false;
     if (labelFilter && !(c.labels || []).includes(labelFilter)) return false;
     if (listFilter && !(c.lists || []).includes(listFilter)) return false;
     if (q && !`${c.name} ${c.phone} ${c.lastMessage} ${(c.labels || []).join(" ")} ${(c.lists || []).join(" ")}`.toLowerCase().includes(q)) return false;
@@ -379,8 +391,12 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   });
   const unreadCount = convos.filter((c) => c.unread > 0 && c.status !== "resolved").length;
   const hotCount = convos.filter((c) => c.temperature === "hot" && c.status !== "resolved").length;
-  // When viewing Hot leads, surface the highest score first.
-  const shown = filter === "hot" ? [...filtered].sort((a, b) => (b.score || 0) - (a.score || 0)) : filtered;
+  const nowMs = now;
+  const dueCount = convos.filter((c) => c.followUpAt && new Date(c.followUpAt).getTime() < nowMs).length;
+  // When viewing Hot leads, surface the highest score first; Due → soonest reminder first.
+  const shown = filter === "hot" ? [...filtered].sort((a, b) => (b.score || 0) - (a.score || 0))
+    : filter === "due" ? [...filtered].sort((a, b) => new Date(a.followUpAt || 0).getTime() - new Date(b.followUpAt || 0).getTime())
+    : filtered;
 
   const startNew = async () => {
     const phone = nc.phone.replace(/\D/g, "");
@@ -505,6 +521,19 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
       setAiPanel({ action, text: r.data.result });
     }
   };
+  const saveFollowUp = async () => {
+    if (!active || !fuDate) return;
+    const r = await dal.whatsapp.setFollowUp(active, { at: new Date(fuDate).toISOString(), note: fuNote.trim() });
+    if (!r.ok) { toast.error(r.error); return; }
+    toast.success("تم ضبط التذكير");
+    setFuEdit(false); setFuNote(""); loadThread(active); loadConvos();
+  };
+  const removeFollowUp = async () => {
+    if (!active) return;
+    const r = await dal.whatsapp.clearFollowUp(active);
+    if (!r.ok) { toast.error(r.error); return; }
+    setFuEdit(false); loadThread(active); loadConvos();
+  };
   const saveNote = async () => {
     if (!active || !note.trim()) return;
     setSending(true);
@@ -544,8 +573,8 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name / number / label…" className="ps-8" />
           </div>
           <div className="flex flex-wrap gap-1">
-            {([["open", "Open"], ["hot", `🔥 Hot${hotCount ? ` ${hotCount}` : ""}`], ["unread", `Unread${unreadCount ? ` ${unreadCount}` : ""}`], ["resolved", "Resolved"]] as [InboxFilter, string][]).map(([k, l]) => (
-              <button key={k} type="button" onClick={() => setFilter(k)} className={cn("rounded-full px-2.5 py-1 text-xs font-medium transition-colors", filter === k ? (k === "hot" ? "bg-red-500 text-white" : "bg-primary text-primary-foreground") : k === "hot" && hotCount ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400" : "bg-muted text-muted-foreground hover:bg-muted/70")}>{l}</button>
+            {([["open", "Open"], ["hot", `🔥 Hot${hotCount ? ` ${hotCount}` : ""}`], ["due", `⏰ Due${dueCount ? ` ${dueCount}` : ""}`], ["unread", `Unread${unreadCount ? ` ${unreadCount}` : ""}`], ["resolved", "Resolved"]] as [InboxFilter, string][]).map(([k, l]) => (
+              <button key={k} type="button" onClick={() => setFilter(k)} className={cn("rounded-full px-2.5 py-1 text-xs font-medium transition-colors", filter === k ? (k === "hot" ? "bg-red-500 text-white" : k === "due" ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground") : k === "hot" && hotCount ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400" : k === "due" && dueCount ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400" : "bg-muted text-muted-foreground hover:bg-muted/70")}>{l}</button>
             ))}
           </div>
           {allLabels.length > 0 && (
@@ -589,7 +618,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {shown.length === 0 ? (
-            <p className="p-6 text-center text-sm text-muted-foreground">{convos.length === 0 ? (connected ? "No conversations yet — they appear when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages.") : filter === "hot" ? "No hot leads right now." : "No conversations match."}</p>
+            <p className="p-6 text-center text-sm text-muted-foreground">{convos.length === 0 ? (connected ? "No conversations yet — they appear when a customer messages your WhatsApp number." : "Connect the Cloud API + webhook to receive messages.") : filter === "hot" ? "No hot leads right now." : filter === "due" ? "لا توجد متابعات مجدولة." : "No conversations match."}</p>
           ) : shown.map((c) => {
             const checked = selected.includes(c.phone);
             return (
@@ -599,7 +628,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                 className={cn("ms-3 grid size-5 shrink-0 place-items-center rounded border transition", checked ? "border-primary bg-primary text-primary-foreground opacity-100" : cn("border-border/60 text-transparent", selected.length > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"))}>
                 <Check className="size-3.5" />
               </button>
-              <button type="button" onClick={() => { setActive(c.phone); setMode("reply"); setAiPanel(null); }}
+              <button type="button" onClick={() => { setActive(c.phone); setMode("reply"); setAiPanel(null); setFuEdit(false); }}
                 className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-start">
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(c.name || c.phone).charAt(0).toUpperCase()}</span>
                 <span className="min-w-0 flex-1">
@@ -611,8 +640,11 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                     <span className="truncate text-xs text-muted-foreground">{c.lastDirection === "out" ? "↩ " : ""}{c.lastMessage}</span>
                     {c.status === "resolved" ? <CheckCircle2 className="size-3.5 shrink-0 text-success" /> : c.unread > 0 ? <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#25D366] text-[10px] font-bold text-white">{c.unread}</span> : null}
                   </span>
-                  {((c.labels || []).length > 0 || (c.lists || []).length > 0) && (
+                  {(c.followUpAt || (c.labels || []).length > 0 || (c.lists || []).length > 0) && (
                     <span className="mt-1 flex flex-wrap gap-1">
+                      {c.followUpAt && (() => { const od = new Date(c.followUpAt).getTime() < nowMs; return (
+                        <span title={`متابعة: ${new Date(c.followUpAt).toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" })}`} className={cn("inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-medium", od ? "bg-red-500/15 text-red-600 dark:text-red-400" : "bg-amber-500/15 text-amber-700 dark:text-amber-400")}><Clock3 className="size-2" />{od ? "متأخر" : fmtDay(c.followUpAt)}</span>
+                      ); })()}
                       {(c.lists || []).slice(0, 3).map((l) => <span key={`li-${l}`} className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-400"><Users className="size-2" />{l}</span>)}
                       {(c.labels || []).slice(0, 3).map((l) => <span key={`la-${l}`} className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">{l}</span>)}
                     </span>
@@ -815,6 +847,42 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className={cn("h-full rounded-full", t.bar)} style={{ width: `${thread.score}%` }} /></div>
                   <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground">Auto-scored from buying intent, recency, engagement &amp; unread — higher means more likely to convert.</p>
                 </div>
+              );
+            })()}
+            {/* Follow-up reminder */}
+            {(() => {
+              const fu = thread?.followUpAt ? new Date(thread.followUpAt) : null;
+              const overdue = !!fu && fu.getTime() < now;
+              if (fuEdit) {
+                return (
+                  <div className="rounded-xl border border-border/60 p-3">
+                    <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold"><Clock3 className="size-3.5" /> تذكير المتابعة</p>
+                    <input type="datetime-local" value={fuDate} onChange={(e) => setFuDate(e.target.value)} className="mb-2 w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs" />
+                    <Input value={fuNote} onChange={(e) => setFuNote(e.target.value)} placeholder="سبب المتابعة (اختياري)…" dir="auto" className="mb-2 h-8 text-xs" />
+                    <div className="flex gap-1.5">
+                      <Button size="sm" className="h-7 flex-1 gap-1 text-xs" onClick={saveFollowUp} disabled={!fuDate}><Check className="size-3.5" /> حفظ</Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setFuEdit(false)}>إلغاء</Button>
+                    </div>
+                  </div>
+                );
+              }
+              if (fu) {
+                return (
+                  <div className={cn("rounded-xl border p-3", overdue ? "border-red-300/60 bg-red-50/50 dark:border-red-500/30 dark:bg-red-950/20" : "border-border/60")}>
+                    <div className="flex items-center justify-between">
+                      <span className={cn("inline-flex items-center gap-1.5 text-xs font-semibold", overdue && "text-red-600 dark:text-red-400")}><Clock3 className="size-3.5" /> {overdue ? "متأخر — للمتابعة" : "متابعة مجدولة"}</span>
+                      <button type="button" onClick={removeFollowUp} title="تم" className="text-muted-foreground hover:text-success"><CheckCircle2 className="size-4" /></button>
+                    </div>
+                    <p className="mt-1.5 text-sm font-medium tabular-nums" dir="auto">{fu.toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" })}</p>
+                    {thread?.followUpNote && <p className="mt-0.5 text-xs text-muted-foreground" dir="auto">{thread.followUpNote}</p>}
+                    <button type="button" onClick={() => { setFuDate(toLocalInput(fu)); setFuNote(thread?.followUpNote || ""); setFuEdit(true); }} className="mt-1.5 text-[11px] text-primary hover:underline">تعديل</button>
+                  </div>
+                );
+              }
+              return (
+                <button type="button" onClick={() => { setFuDate(toLocalInput(new Date(Date.now() + 864e5))); setFuNote(""); setFuEdit(true); }} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border/70 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                  <Clock3 className="size-3.5" /> جدولة متابعة
+                </button>
               );
             })()}
             <Field2 icon={Mail} label="Email" value={contact?.email || "—"} />

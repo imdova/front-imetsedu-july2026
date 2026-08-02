@@ -53,10 +53,10 @@ export const sendBulk = (input: Record<string, unknown>): Promise<Result<WaSendR
 export const testSend = (input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/test`, input);
 
 /* ── Live-chat inbox ── */
-export interface WaConversationDto { phone: string; name: string; lastMessage: string; lastDirection: string; lastMessageAt?: string; unread: number; status: string; labels: string[]; lists: string[]; windowOpen: boolean; score: number; temperature: string }
+export interface WaConversationDto { phone: string; name: string; lastMessage: string; lastDirection: string; lastMessageAt?: string; unread: number; status: string; labels: string[]; lists: string[]; windowOpen: boolean; score: number; temperature: string; followUpAt?: string | null; followUpNote?: string }
 export interface WaThreadMsg { id: string; direction: string; type: string; text: string; mediaUrl?: string; mime?: string; filename?: string; status: string; author?: string; at?: string }
 export interface WaContactDto { name: string; email: string; tags: string[]; createdAt?: string; source?: string }
-export interface WaThreadDto { phone: string; name: string; status: string; labels: string[]; lists: string[]; windowOpen: boolean; lastInboundAt?: string; contact?: WaContactDto | null; messages: WaThreadMsg[]; score?: number; temperature?: string }
+export interface WaThreadDto { phone: string; name: string; status: string; labels: string[]; lists: string[]; windowOpen: boolean; lastInboundAt?: string; contact?: WaContactDto | null; messages: WaThreadMsg[]; score?: number; temperature?: string; followUpAt?: string | null; followUpNote?: string }
 export interface WaListDto { name: string; count: number }
 export interface WaListSendResult { total: number; sent: number; skipped: number; failed: number; errors: string[] }
 
@@ -83,6 +83,12 @@ export const replyTemplate = (phone: string, input: Record<string, unknown>): Pr
 
 export interface WaAiResult { ok: boolean; action?: string; result: string; error?: string }
 export const aiCopilot = (phone: string, action: string): Promise<Result<WaAiResult>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/ai`, { action });
+
+/* ── Follow-up reminders ── */
+export interface WaFollowUpDto { phone: string; name: string; followUpAt: string; followUpNote: string; followUpBy: string; overdue: boolean; score: number; temperature: string }
+export const listFollowUps = (): Promise<Result<WaFollowUpDto[]>> => api.get(`${BASE}/follow-ups`, { revalidate: false });
+export const setFollowUp = (phone: string, input: { at: string; note?: string; by?: string }): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/conversations/${encodeURIComponent(phone)}/follow-up`, input);
+export const clearFollowUp = (phone: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/conversations/${encodeURIComponent(phone)}/follow-up`);
 
 export const listAutomations = (): Promise<Result<WaAutomationDto[]>> => api.get(`${BASE}/automations`, { revalidate: false });
 export const createAutomation = (input: Record<string, unknown>): Promise<Result<WaAutomationDto>> => api.post(`${BASE}/automations`, input);
