@@ -303,6 +303,20 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const recRef = React.useRef<{ rec: MediaRecorder; chunks: Blob[]; stream: MediaStream } | null>(null);
+  // Size the inbox to fill from its top edge to the viewport bottom, so the reply
+  // box is always visible regardless of page chrome height or browser zoom.
+  const wrapRef = React.useRef<HTMLDivElement>(null);
+  const [boxH, setBoxH] = React.useState<number | undefined>(undefined);
+  React.useEffect(() => {
+    const recalc = () => {
+      const el = wrapRef.current; if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      setBoxH(Math.max(420, Math.round(window.innerHeight - top - 16)));
+    };
+    const raf = window.requestAnimationFrame(recalc);
+    window.addEventListener("resize", recalc);
+    return () => { window.cancelAnimationFrame(raf); window.removeEventListener("resize", recalc); };
+  }, []);
 
   const loadConvos = React.useCallback(async () => {
     const [r, l, ls] = await Promise.all([dal.whatsapp.fetchConversations(), dal.whatsapp.fetchLabels(), dal.whatsapp.fetchLists()]);
@@ -560,7 +574,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
   const cols = showInfo && active ? "lg:grid-cols-[300px_1fr_280px]" : "lg:grid-cols-[300px_1fr]";
 
   return (
-    <div className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70 h-[calc(100dvh_-_200px)] min-h-[380px]", cols)}>
+    <div ref={wrapRef} style={boxH ? { height: boxH } : undefined} className={cn("grid gap-0 overflow-hidden rounded-2xl border border-border/70 min-h-[420px]", !boxH && "h-[calc(100dvh_-_200px)]", cols)}>
       {/* ── Conversation list ── */}
       <div className={cn("flex min-h-0 flex-col border-e border-border/60 bg-card", active && "hidden lg:flex")}>
         <div className="space-y-2 border-b border-border/60 p-3">
