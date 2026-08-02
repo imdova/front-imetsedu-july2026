@@ -86,6 +86,7 @@ export interface SubscriberGroupDto {
   name: string;
   count: number;
   paths?: string[];
+  kind?: string;
 }
 
 export interface EmailStatsDto {

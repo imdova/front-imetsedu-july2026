@@ -192,7 +192,7 @@ export async function deleteBrandBlock(id: string): Promise<Result<boolean>> {
 const mapSubscriber = (d: svc.SubscriberDto): Subscriber => ({
   id: d._id, email: d.email, name: d.name ?? "", phone: d.phone ?? "", source: d.source ?? "", tags: d.tags ?? [], createdAt: d.createdAt,
 });
-const mapGroup = (d: svc.SubscriberGroupDto): SubscriberGroup => ({ name: d.name, count: d.count, paths: d.paths ?? [] });
+const mapGroup = (d: svc.SubscriberGroupDto): SubscriberGroup => ({ name: d.name, count: d.count, paths: d.paths ?? [], kind: d.kind === "course" ? "course" : "landing" });
 export async function fetchSubscribers(search?: string, group?: string): Promise<Result<Subscriber[]>> {
   const res = await svc.listSubscribers(search, group);
   return res.ok ? ok(res.data.map(mapSubscriber)) : res;
@@ -223,9 +223,12 @@ export async function fetchSubscriberGroups(): Promise<Result<SubscriberGroup[]>
   const res = await svc.listSubscriberGroups();
   return res.ok ? ok(res.data.map(mapGroup)) : res;
 }
-export async function createSubscriberGroup(name: string): Promise<Result<SubscriberGroup>> {
-  const res = await svc.createSubscriberGroup(name);
+export async function createSubscriberGroup(name: string, kind?: "landing" | "course"): Promise<Result<SubscriberGroup>> {
+  const res = await svc.createSubscriberGroup(name, kind);
   return res.ok ? ok(mapGroup(res.data)) : res;
+}
+export async function syncCourseGroups(): Promise<Result<{ synced: number; created: number }>> {
+  return svc.syncCourseGroups();
 }
 export async function renameSubscriberGroup(oldName: string, name: string): Promise<Result<SubscriberGroup>> {
   const res = await svc.renameSubscriberGroup(oldName, name);

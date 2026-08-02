@@ -78,7 +78,8 @@ export const unassignSubscribersGroup = (ids: string[], group: string) => api.po
 
 /* Subscriber groups */
 export const listSubscriberGroups = () => api.get<SubscriberGroupDto[]>(API_EMAIL_SUBSCRIBER_GROUPS);
-export const createSubscriberGroup = (name: string) => api.post<SubscriberGroupDto>(API_EMAIL_SUBSCRIBER_GROUPS, { name });
+export const createSubscriberGroup = (name: string, kind?: string) => api.post<SubscriberGroupDto>(API_EMAIL_SUBSCRIBER_GROUPS, { name, ...(kind ? { kind } : {}) });
+export const syncCourseGroups = () => api.post<{ synced: number; created: number }>(`${API_EMAIL_SUBSCRIBER_GROUPS}/sync-courses`, {});
 export const renameSubscriberGroup = (oldName: string, name: string) => api.patch<SubscriberGroupDto>(apiEmailSubscriberGroup(oldName), { name });
 export const setSubscriberGroupPaths = (name: string, paths: string[]) => api.patch<SubscriberGroupDto>(`${apiEmailSubscriberGroup(name)}/paths`, { paths });
 export const linkPathToGroups = (path: string, groups: string[]) => api.patch<{ path: string; groups: string[] }>(API_EMAIL_SUBSCRIBER_GROUP_LINKS, { path, groups });

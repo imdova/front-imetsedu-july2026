@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   Users, Search, Download, Trash2, FolderPlus, Pencil, Tag,
   MoreHorizontal, Mail, X, UserPlus, Loader2, Link2 as LinkIcon,
+  RefreshCw, GraduationCap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,6 +35,8 @@ export function SubscribersTab() {
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState("");
   const [activeGroup, setActiveGroup] = React.useState("all");
+  const [groupTab, setGroupTab] = React.useState<"landing" | "course">("landing");
+  const [syncing, setSyncing] = React.useState(false);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
 
   const load = React.useCallback(async () => {
@@ -119,7 +122,7 @@ export function SubscribersTab() {
     const name = groupDlg.value.trim();
     if (!name) { toast.error("Group name is required"); return; }
     const res = groupDlg.mode === "new"
-      ? await dal.emailMarketing.createSubscriberGroup(name)
+      ? await dal.emailMarketing.createSubscriberGroup(name, groupTab)
       : await dal.emailMarketing.renameSubscriberGroup(groupDlg.original!, name);
     if (res.ok) {
       toast.success(groupDlg.mode === "new" ? "Group created" : "Group renamed");
@@ -138,6 +141,14 @@ export function SubscribersTab() {
     const res = await dal.emailMarketing.setSubscriberGroupPaths(linksDlg.group, linksDlg.paths);
     if (res.ok) { toast.success("Linked forms updated"); setLinksDlg(null); refreshGroups(); }
     else toast.error(res.error);
+  };
+  const syncCourses = async () => {
+    setSyncing(true);
+    const res = await dal.emailMarketing.syncCourseGroups();
+    setSyncing(false);
+    if (!res.ok) { toast.error(res.error); return; }
+    toast.success(`Synced ${res.data.synced} course${res.data.synced === 1 ? "" : "s"}${res.data.created ? ` · ${res.data.created} new group${res.data.created === 1 ? "" : "s"}` : ""}`);
+    refreshGroups();
   };
   const deleteGroup = async (g: SubscriberGroup) => {
     const okc = await confirm({ title: `Delete group “${g.name}”`, description: "The group is removed and untagged from its subscribers. Subscribers are not deleted.", confirmText: "Delete", variant: "destructive" });
@@ -158,6 +169,7 @@ export function SubscribersTab() {
   };
 
   const totalCount = subscribers.length;
+  const shownGroups = groups.filter((g) => g.kind === groupTab);
 
   return (
     <div className="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -165,24 +177,41 @@ export function SubscribersTab() {
       <aside className="space-y-2">
         <div className="flex items-center justify-between px-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Groups</p>
-          <button onClick={() => setGroupDlg({ mode: "new", value: "" })} title="New group" className="grid size-6 place-items-center rounded-md text-primary hover:bg-primary/10">
+          <button onClick={() => setGroupDlg({ mode: "new", value: "" })} title={`New ${groupTab === "course" ? "course" : "landing"} group`} className="grid size-6 place-items-center rounded-md text-primary hover:bg-primary/10">
             <FolderPlus className="size-4" />
           </button>
         </div>
+        {/* Tabs: Landing pages / Courses */}
+        <div className="flex rounded-lg border border-border/60 bg-muted/40 p-0.5 text-xs font-medium">
+          {([["landing", "Landing pages"], ["course", "Courses"]] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setGroupTab(k)}
+              className={cn("flex-1 rounded-md px-2 py-1.5 transition-colors", groupTab === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+              {l}
+            </button>
+          ))}
+        </div>
         <div className="space-y-1">
           <GroupRow label="All subscribers" count={totalCount} active={activeGroup === "all"} onClick={() => setActiveGroup("all")} icon={Users} />
-          {groups.map((g) => (
+          {shownGroups.map((g) => (
             <GroupRow
               key={g.name} label={g.name} count={g.count} active={activeGroup === g.name}
               linkedCount={g.paths.length}
-              onClick={() => setActiveGroup(g.name)} icon={Tag}
+              onClick={() => setActiveGroup(g.name)} icon={groupTab === "course" ? GraduationCap : Tag}
               onEdit={() => setGroupDlg({ mode: "edit", original: g.name, value: g.name })}
               onLinks={() => setLinksDlg({ group: g.name, paths: [...g.paths], input: "" })}
               onDelete={() => deleteGroup(g)}
             />
           ))}
-          {groups.length === 0 && !loading && (
-            <p className="px-2 py-3 text-xs text-muted-foreground">No groups yet. Create one to segment your list.</p>
+          {groupTab === "course" && (
+            <button onClick={syncCourses} disabled={syncing}
+              className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/70 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-60">
+              {syncing ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />} Sync course groups
+            </button>
+          )}
+          {shownGroups.length === 0 && !loading && (
+            <p className="px-2 py-3 text-xs text-muted-foreground">
+              {groupTab === "course" ? "No course groups yet — click “Sync course groups” to create one per platform course." : "No landing-page groups yet. Create one to segment your list."}
+            </p>
           )}
         </div>
       </aside>

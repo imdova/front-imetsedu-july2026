@@ -112,6 +112,7 @@ export interface SubscriberGroup {
   name: string;
   count: number;
   paths: string[];
+  kind: "landing" | "course";
 }
 
 export type AutomationTrigger = "subscriber_created" | "tag_added";
