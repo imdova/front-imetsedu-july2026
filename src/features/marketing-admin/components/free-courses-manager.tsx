@@ -46,7 +46,7 @@ const EMPTY_LECTURE = {
 export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
   const { confirm, Confirmation } = useConfirm();
   const [programs, setPrograms] = React.useState<FreeProgram[]>(initial);
-  const [openId, setOpenId] = React.useState<string | null>(null);
+  const [selectedId, setSelectedId] = React.useState<string | null>(initial[0]?.id ?? null);
 
   const [progOpen, setProgOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<FreeProgram | null>(null);
@@ -118,6 +118,7 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
     setPrograms((prev) =>
       editing ? prev.map((x) => (x.id === res.data.id ? { ...res.data, lectures: x.lectures } : x)) : [...prev, res.data],
     );
+    if (!editing) setSelectedId(res.data.id);
     toast.success(editing ? "Program updated" : "Program created");
     setProgOpen(false);
   };
@@ -145,22 +146,10 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
   const setModules = (programId: string, fn: (m: FreeModule[]) => FreeModule[]) =>
     setPrograms((prev) => prev.map((p) => (p.id === programId ? { ...p, modules: fn(p.modules) } : p)));
 
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          {programs.length} {programs.length === 1 ? "program" : "programs"} ·{" "}
-          {programs.filter((p) => p.isPublished).length} published
-        </p>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-1.5" onClick={generateFromCourses} disabled={generating}>
-            {generating ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
-            {generating ? "Generating…" : "Generate from courses"}
-          </Button>
-          <Button className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> New program</Button>
-        </div>
-      </div>
+  const selected = programs.find((p) => p.id === selectedId) ?? programs[0] ?? null;
 
+  return (
+    <div className="space-y-4">
       {programs.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-gradient-to-b from-muted/30 to-transparent py-16 text-center">
           <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary"><GraduationCap className="size-7" /></span>
@@ -168,26 +157,70 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
           <p className="max-w-sm text-sm text-muted-foreground">
             Create a program, add its lectures, then publish it — it appears on <code className="text-xs">/free-courses</code> immediately.
           </p>
-          <Button variant="outline" className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> New program</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="gap-1.5" onClick={generateFromCourses} disabled={generating}>
+              {generating ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />} Generate from courses
+            </Button>
+            <Button className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> New program</Button>
+          </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          {programs.map((p) => (
-            <ProgramRow
-              key={p.id}
-              program={p}
-              expanded={openId === p.id}
-              onToggle={() => setOpenId(openId === p.id ? null : p.id)}
-              onEdit={() => openEdit(p)}
-              onDelete={() => removeProgram(p)}
-              onTogglePublish={() => togglePublish(p)}
-              setLectures={(fn) => setLectures(p.id, fn)}
-              setModules={(fn) => setModules(p.id, fn)}
-              quizCats={quizCats}
-              quizzes={quizzes}
-              confirm={confirm}
-            />
-          ))}
+        <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+          {/* ── Courses (left) ── */}
+          <aside className="space-y-2 lg:sticky lg:top-20 lg:self-start">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Courses · {programs.length}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={generateFromCourses} disabled={generating}>
+                {generating ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />} Generate
+              </Button>
+              <Button size="sm" className="flex-1 gap-1.5" onClick={openCreate}><Plus className="size-3.5" /> New</Button>
+            </div>
+            <div className="space-y-1">
+              {programs.map((p) => {
+                const active = selected?.id === p.id;
+                return (
+                  <button key={p.id} type="button" onClick={() => setSelectedId(p.id)}
+                    className={cn("flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-colors",
+                      active ? "border-primary/40 bg-primary/10" : "border-border/60 hover:bg-muted/60")}>
+                    <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg", active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground")}>
+                      <GraduationCap className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{p.titleEn}</span>
+                      <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <span className={cn("inline-block size-1.5 rounded-full", p.isPublished ? "bg-success" : "bg-muted-foreground/40")} />
+                        {p.isPublished ? "Live" : "Draft"} · {p.lectures.length} {p.lectures.length === 1 ? "item" : "items"}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* ── Curriculum (right) ── */}
+          <div className="min-w-0">
+            {selected ? (
+              <ProgramRow
+                key={selected.id}
+                program={selected}
+                onEdit={() => openEdit(selected)}
+                onDelete={() => removeProgram(selected)}
+                onTogglePublish={() => togglePublish(selected)}
+                setLectures={(fn) => setLectures(selected.id, fn)}
+                setModules={(fn) => setModules(selected.id, fn)}
+                quizCats={quizCats}
+                quizzes={quizzes}
+                confirm={confirm}
+              />
+            ) : (
+              <p className="rounded-2xl border border-dashed border-border/70 p-12 text-center text-sm text-muted-foreground">Select a course to edit its curriculum.</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -310,11 +343,9 @@ export function FreeCoursesManager({ initial }: { initial: FreeProgram[] }) {
 /* ─────────────────────────── Program row ─────────────────────────── */
 
 function ProgramRow({
-  program, expanded, onToggle, onEdit, onDelete, onTogglePublish, setLectures, setModules, quizCats, quizzes, confirm,
+  program, onEdit, onDelete, onTogglePublish, setLectures, setModules, quizCats, quizzes, confirm,
 }: {
   program: FreeProgram;
-  expanded: boolean;
-  onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onTogglePublish: () => void;
@@ -427,9 +458,9 @@ function ProgramRow({
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
       <div className="flex items-center gap-3 p-4">
-        <button type="button" onClick={onToggle} className="grid size-8 shrink-0 place-items-center rounded-lg hover:bg-muted" aria-expanded={expanded}>
-          <ChevronDown className={cn("size-4 transition-transform", expanded && "rotate-180")} />
-        </button>
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          <GraduationCap className="size-5" />
+        </span>
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -464,7 +495,7 @@ function ProgramRow({
         </div>
       </div>
 
-      {expanded && (
+      {(
         <div className="space-y-3 border-t border-border/60 bg-muted/20 p-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">Modules</p>
