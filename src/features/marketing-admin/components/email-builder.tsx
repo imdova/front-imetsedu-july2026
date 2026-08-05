@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { SortableList } from "@/components/shared/sortable/sortable-list";
 import { ImageUpload } from "@/components/shared/image-upload";
+import { RichTextEditor } from "@/components/shared/rich-text-editor/editor";
 import { cn } from "@/lib/utils";
 
 const BLOCK_TYPES: BlockType[] = ["header", "heading", "text", "button", "image", "divider", "spacer", "hero", "footer"];
@@ -382,12 +383,9 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
       </>}
       {block.type === "divider" && <F label="Color">{color("color")}</F>}
       {block.type === "spacer" && <F label="Height (px)">{num("height")}</F>}
-      {block.type === "html" && <>
-        <F label="HTML">
-          <Textarea rows={14} className="font-mono text-xs" value={String(x.html ?? "")} onChange={(e) => onChange({ html: e.target.value })} />
-        </F>
-        <p className="text-xs text-muted-foreground">Rendered exactly as written. Use inline styles and table layout for email compatibility.</p>
-      </>}
+      {block.type === "html" && (
+        <HtmlBlockFields value={String(x.html ?? "")} onChange={(html) => onChange({ html })} />
+      )}
       {block.type === "hero" && <>
         <F label="Title">{text("title")}{tokens("title")}</F>
         <F label="Subtitle">{area("subtitle")}{tokens("subtitle")}</F>
@@ -532,6 +530,46 @@ function BlockEditor({ block, onChange }: { block: Block; onChange: (props: Reco
           </div>
         ))}
       </>}
+    </div>
+  );
+}
+
+/**
+ * The "Rich text" block inspector: a visual editor by default (no HTML needed),
+ * with a raw-HTML escape hatch. Existing complex/table markup opens in HTML mode
+ * so the visual editor never strips it.
+ */
+function HtmlBlockFields({ value, onChange }: { value: string; onChange: (html: string) => void }) {
+  const [mode, setMode] = React.useState<"visual" | "html">(() =>
+    /<table|<td\b|role="presentation"/i.test(value) ? "html" : "visual",
+  );
+  return (
+    <div className="space-y-2">
+      <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+        {(["visual", "html"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={cn(
+              "rounded px-2.5 py-1 font-medium transition-colors",
+              mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {m === "visual" ? "Visual" : "HTML"}
+          </button>
+        ))}
+      </div>
+      {mode === "visual" ? (
+        <RichTextEditor value={value} onChange={onChange} dir="rtl" placeholder="اكتب المحتوى هنا…" />
+      ) : (
+        <Textarea rows={14} className="font-mono text-xs" value={value} onChange={(e) => onChange(e.target.value)} />
+      )}
+      <p className="text-xs text-muted-foreground">
+        {mode === "visual"
+          ? "Format visually — bold, links, lists, headings. Switch to HTML for full control (tables, custom layout)."
+          : "Rendered exactly as written. Use inline styles + table layout for email compatibility."}
+      </p>
     </div>
   );
 }

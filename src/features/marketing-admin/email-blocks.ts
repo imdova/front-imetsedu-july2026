@@ -117,7 +117,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   emailCta: "CTA button (RTL)",
   emailSignature: "Instructor signature",
   emailFooter: "WhatsApp footer",
-  html: "Custom HTML",
+  html: "Rich text",
 };
 
 let seq = 0;
@@ -208,7 +208,9 @@ export function defaultProps(type: BlockType): Record<string, string | number> {
         c3img: "", c3title: "Hospital Management", c3subtitle: "Diploma", c3btn: "View course", c3url: `${BRAND.site}/courses`,
       };
     case "html":
-      return { html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:24px 28px;font-family:Arial,sans-serif;color:#374151;font-size:15px;line-height:1.7;">Paste or write your HTML here. This block is rendered exactly as-is — use it for fully custom sections.</td></tr></table>` };
+      // Simple default so the block opens in the visual editor; authors can
+      // switch to HTML mode for fully custom (table-based) sections.
+      return { html: `<p>اكتب المحتوى هنا…</p>` };
 
     /* ── RTL newsletter sections ── */
     case "emailImageLogo":
@@ -670,10 +672,12 @@ export function renderBlock(b: Block): string {
     case "emailFooter":
       return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${RTL_FONT};direction:rtl;"><tr><td style="padding:16px 30px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f1fd;border:1px solid #d3e2fb;border-radius:14px;"><tr><td align="center" style="padding:24px 24px 22px;"><div style="color:#334155;font-size:13px;font-weight:600;margin-bottom:10px;">${esc(x.helpPrompt)}</div><a href="${esc(x.waUrl)}" target="_blank" style="display:inline-block;background:#25D366;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;padding:11px 24px;border-radius:10px;box-shadow:0 4px 12px rgba(37,211,102,0.35);"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/48px-WhatsApp.svg.png" width="18" height="18" alt="WhatsApp" style="vertical-align:middle;border:0;margin-left:8px;">${esc(x.waLabel)}</a><div style="margin-top:20px;color:#0f172a;font-size:15px;font-weight:800;">${esc(x.brandName)}</div><div style="color:#64748b;font-size:12px;line-height:1.8;">${esc(x.brandTagline)}</div><div style="margin-top:10px;"><a href="${esc(x.siteUrl)}" style="color:#1111D4;font-size:12px;text-decoration:none;font-weight:700;">${esc(x.siteLabel)}</a><span style="color:#94a3b8;">&nbsp;•&nbsp;</span><a href="mailto:${esc(x.email)}" style="color:#475569;font-size:12px;text-decoration:none;">${esc(x.email)}</a></div><div style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.8;">${esc(x.disclaimer)}<br><a href="{{UnsubscribeURL}}" style="color:#94a3b8;text-decoration:underline;">${esc(x.unsubLabel)}</a></div></td></tr></table></td></tr></table>`;
 
-    case "html":
-      // Rendered verbatim — the block IS raw HTML. Full-bleed so the author
-      // controls all spacing.
-      return String(x.html ?? "");
+    case "html": {
+      // Content authored in the Rich-text (visual) mode is plain semantic HTML
+      // with no inline styles, so wrap it in the newsletter RTL font/direction.
+      // Custom table markup (HTML mode) sets its own styles and just inherits.
+      return `<div style="font-family:${RTL_FONT};direction:rtl;font-size:15px;line-height:1.7;color:#374151;">${String(x.html ?? "")}</div>`;
+    }
   }
 }
 
