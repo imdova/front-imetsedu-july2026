@@ -8,7 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type { BrandBlock } from "@/lib/db/email-marketing";
 import {
-  type Block, type BlockType, type Design, type Preset,
+  type Block, type BlockType, type Design,
   BLOCK_LABELS, PRESETS, PRESET_CATEGORY_ORDER, PERSONALIZATION_TOKENS, makeBlock, renderBlock, renderDesign, parseDesign, brandStarter, DEFAULT_SETTINGS,
 } from "@/features/marketing-admin/email-blocks";
 import { Button } from "@/components/ui/button";
@@ -133,14 +133,12 @@ export function EmailBuilder({
       <div className="flex min-h-0 flex-1 gap-3">
         {/* Palette */}
         {!preview && (
-          <aside className="w-[346px] shrink-0 space-y-4 overflow-y-auto rounded-xl border border-border/70 bg-card p-3">
+          <aside className="w-[519px] shrink-0 space-y-4 overflow-y-auto rounded-xl border border-border/70 bg-card p-3">
             <div>
               <p className="mb-2 text-xs font-semibold text-muted-foreground">Quick blocks</p>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-2 gap-2">
                 {BLOCK_TYPES.map((t) => (
-                  <Button key={t} variant="outline" size="sm" className="justify-start gap-1" onClick={() => addBlock(freshBlock(t))}>
-                    <Plus className="size-3" /> {BLOCK_LABELS[t]}
-                  </Button>
+                  <PresetItem key={t} label={BLOCK_LABELS[t]} make={() => freshBlock(t)} onAdd={() => addBlock(freshBlock(t))} />
                 ))}
               </div>
             </div>
@@ -153,8 +151,8 @@ export function EmailBuilder({
                   return (
                     <div key={cat}>
                       <p className="mb-1.5 px-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70">{cat}</p>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {items.map((pr) => <PresetItem key={pr.id} preset={pr} onAdd={() => addBlock(pr.make())} />)}
+                      <div className="grid grid-cols-2 gap-2">
+                        {items.map((pr) => <PresetItem key={pr.id} label={pr.label} make={pr.make} onAdd={() => addBlock(pr.make())} />)}
                       </div>
                     </div>
                   );
@@ -586,25 +584,26 @@ function SettingsEditor({ design, onChange }: { design: Design; onChange: (s: De
   );
 }
 
-/** A library item: a scaled live thumbnail of the block plus its label. */
-function PresetItem({ preset, onAdd }: { preset: Preset; onAdd: () => void }) {
-  const html = React.useMemo(() => renderBlock(preset.make()), [preset]);
+/** A palette item: a scaled live thumbnail of the block plus its label. */
+function PresetItem({ label, make, onAdd }: { label: string; make: () => Block; onAdd: () => void }) {
+  // The wider palette (≈245px per item) fits a 600px email preview at ~0.4 scale.
+  const html = React.useMemo(() => renderBlock(make()), [make]);
   return (
     <button
       onClick={onAdd}
-      title={`Add ${preset.label}`}
+      title={`Add ${label}`}
       className="group block w-full overflow-hidden rounded-lg border border-border/60 bg-white text-start transition hover:border-primary/50 hover:shadow-sm"
     >
-      <div className="relative h-[58px] overflow-hidden bg-white">
+      <div className="relative h-[104px] overflow-hidden bg-white">
         <div
           className="pointer-events-none absolute left-0 top-0 origin-top-left"
-          style={{ width: 600, transform: "scale(0.26)" }}
+          style={{ width: 600, transform: "scale(0.4)" }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </div>
-      <div className="flex items-center justify-between gap-1 border-t border-border/50 bg-muted/30 px-2 py-1">
-        <span className="truncate text-[11px] font-medium">{preset.label}</span>
-        <Plus className="size-3 shrink-0 text-primary opacity-0 transition group-hover:opacity-100" />
+      <div className="flex items-center justify-between gap-1 border-t border-border/50 bg-muted/30 px-2.5 py-1.5">
+        <span className="truncate text-xs font-medium">{label}</span>
+        <Plus className="size-3.5 shrink-0 text-primary opacity-0 transition group-hover:opacity-100" />
       </div>
     </button>
   );
