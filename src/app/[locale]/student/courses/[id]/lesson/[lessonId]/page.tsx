@@ -4,10 +4,11 @@ import * as React from "react";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft, ChevronRight, Menu as MenuIcon, X as CloseIcon,
-  Loader2, Check, FileQuestion, Lock,
+  Loader2, Check, FileQuestion, Lock, StickyNote,
 } from "lucide-react";
 
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { dal } from "@/lib/dal";
 import { ROUTES } from "@integration/constants";
@@ -28,6 +29,7 @@ import {
   calculateProgress,
   saveProgressPct,
 } from "@/lib/utils/lesson-progress";
+import { getLessonNotes, saveLessonNotes, type LessonNote } from "@/lib/utils/lesson-notes";
 
 /* ─── helpers ────────────────────────────────────────────────────────────── */
 
@@ -129,6 +131,7 @@ function VdoCipherPlayer({ videoId, title }: { videoId: string; title: string })
 }
 
 function LessonVideo({ contentType, contentUrl, title }: { contentType?: string; contentUrl?: string; title: string }) {
+  const t = useTranslations("Student");
   if (contentType === "youtube_url") {
     const embed = youtubeEmbedUrl(contentUrl);
     if (embed) {
@@ -150,7 +153,7 @@ function LessonVideo({ contentType, contentUrl, title }: { contentType?: string;
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center text-white/50">
-      <p className="text-sm">Lesson content unavailable</p>
+      <p className="text-sm">{t("lpUnavailable")}</p>
       {contentUrl?.trim() && <p className="max-w-md text-xs break-all opacity-70">{contentUrl}</p>}
     </div>
   );
@@ -166,6 +169,7 @@ function CurriculumItem({
   activeSlug: string;
   isWatched: boolean;
 }) {
+  const t = useTranslations("Student");
   const isQuiz = item.kind === "quiz";
   const isActive = item.slug === activeSlug;
   const isDone = !isQuiz && (isWatched || item.status === "completed");
@@ -197,11 +201,78 @@ function CurriculumItem({
         <p className={cn("font-medium truncate", isActive && "text-primary")}>
           {item.title}
         </p>
-        {isQuiz && <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Quiz</p>}
-        {isDone && !isActive && <p className="text-[10px] font-semibold text-emerald-600">Watched</p>}
+        {isQuiz && <p className="text-[10px] font-bold uppercase tracking-wider text-primary">{t("cdQuiz")}</p>}
+        {isDone && !isActive && <p className="text-[10px] font-semibold text-emerald-600">{t("lpWatched")}</p>}
       </div>
       <span className="shrink-0 text-xs text-muted-foreground">{item.duration}</span>
     </Link>
+  );
+}
+
+/* ─── Lesson notes (localStorage, per device) ─────────────────────────────── */
+
+function LessonNotes({ courseId, slug, t }: { courseId: string; slug: string; t: ReturnType<typeof useTranslations> }) {
+  // Lazy init reads this lesson's notes once; the parent passes key={slug} so a
+  // lesson change remounts (re-reads) instead of a setState-in-effect.
+  const [notes, setNotes] = React.useState<LessonNote[]>(() => getLessonNotes(courseId, slug));
+  const [draft, setDraft] = React.useState("");
+
+  const add = () => {
+    const text = draft.trim();
+    if (!text) return;
+    const next = [...notes, { id: `n_${Date.now().toString(36)}`, text, at: Date.now() }];
+    setNotes(next);
+    saveLessonNotes(courseId, slug, next);
+    setDraft("");
+  };
+  const remove = (id: string) => {
+    const next = notes.filter((n) => n.id !== id);
+    setNotes(next);
+    saveLessonNotes(courseId, slug, next);
+  };
+
+  return (
+    <div className="rounded-2xl border border-border/70 bg-card p-5">
+      <p className="flex items-center gap-2 font-semibold"><StickyNote className="size-4 text-primary" />{t("lpMyNotes")}</p>
+      {notes.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {notes.map((n) => (
+            <li key={n.id} className="group flex items-start gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm">
+              <span className="min-w-0 flex-1">
+                <span className="block whitespace-pre-wrap break-words">{n.text}</span>
+                <span className="mt-0.5 block text-[0.7rem] text-muted-foreground">{new Date(n.at).toLocaleString()}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => remove(n.id)}
+                aria-label={t("lpDeleteNote")}
+                className="shrink-0 text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
+              >
+                <CloseIcon className="size-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-3 flex items-start gap-2">
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={2}
+          placeholder={t("lpNotePlaceholder")}
+          className="min-h-[44px] flex-1 resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+        <button
+          type="button"
+          onClick={add}
+          disabled={!draft.trim()}
+          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+        >
+          {t("lpAddNote")}
+        </button>
+      </div>
+      <p className="mt-2 text-[0.7rem] text-muted-foreground">{t("lpNotesLocal")}</p>
+    </div>
   );
 }
 
@@ -209,6 +280,8 @@ function CurriculumItem({
 
 export default function StudentLessonPage() {
   const params = useParams();
+  const t = useTranslations("Student");
+  const router = useRouter();
   const courseId = typeof params.id === "string" ? params.id : "";
   const lessonSlug = typeof params.lessonId === "string" ? params.lessonId : "";
 
@@ -267,6 +340,13 @@ export default function StudentLessonPage() {
   const toggleModule = (id: string) =>
     setModules((prev) => prev.map((m) => m.id === id ? { ...m, expanded: !m.expanded } : m));
 
+  // Mark the current lesson complete, then advance to the next item (or finish → overview).
+  const completeAndContinue = React.useCallback(() => {
+    if (!data) return;
+    markLessonWatched(courseId, lessonSlug);
+    router.push((data.nextNav ? navHref(courseId, data.nextNav) : ROUTES.STUDENT.COURSE_OVERVIEW(courseId)) as never);
+  }, [data, courseId, lessonSlug, router]);
+
   if (!courseId || !lessonSlug) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-background">
@@ -303,24 +383,26 @@ export default function StudentLessonPage() {
       {/* Top bar */}
       <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur-xl sm:px-6">
         <Link
-          href={ROUTES.STUDENT.COURSE_OVERVIEW(courseId)}
-          className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary no-underline hover:underline"
+          href={ROUTES.STUDENT.COURSES}
+          className="inline-flex min-h-10 shrink-0 items-center gap-2 text-sm font-semibold text-primary no-underline hover:underline"
         >
           <ArrowLeft className="size-4 shrink-0 rtl:rotate-180" />
-          <span className="hidden sm:inline">Back to course</span>
-          <span className="sm:hidden">Course</span>
+          <span className="hidden sm:inline">{t("lpBackCourses")}</span>
         </Link>
         <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold">
-          {data.currentLesson.title}
+          {data.courseTitle}
         </p>
+        <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold tabular-nums text-primary sm:inline-flex">
+          {t("lpComplete", { pct: displayPct })}
+        </span>
         {/* Mobile TOC toggle */}
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold lg:hidden"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold lg:hidden"
           onClick={() => setTocOpen(true)}
         >
           <MenuIcon className="size-4" />
-          Contents
+          {t("lpContents")}
         </button>
       </header>
 
@@ -350,7 +432,7 @@ export default function StudentLessonPage() {
           </button>
 
           <div className="border-b border-border/70 p-5">
-            <h2 className="mb-3 text-sm font-bold">Course Content</h2>
+            <h2 className="mb-3 text-sm font-bold">{t("quizCourseContent")}</h2>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-all duration-500"
@@ -358,7 +440,7 @@ export default function StudentLessonPage() {
               />
             </div>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              {displayPct}% Completed · {displayDone}/{displayTotal} Lessons
+              {t("lpProgressLine", { pct: displayPct, done: displayDone, total: displayTotal })}
             </p>
           </div>
 
@@ -394,7 +476,7 @@ export default function StudentLessonPage() {
               className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground no-underline hover:bg-muted hover:text-foreground"
             >
               <ArrowLeft className="size-4 rtl:rotate-180" />
-              Course Overview
+              {t("quizCourseOverview")}
             </Link>
           </div>
         </aside>
@@ -410,28 +492,43 @@ export default function StudentLessonPage() {
             />
           </div>
 
-          {/* Navigation */}
-          <div className="mx-auto w-full max-w-4xl p-4 sm:p-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="mx-auto w-full max-w-4xl space-y-5 p-4 sm:p-6">
+            {/* Lesson heading — the student knows what they're consuming */}
+            <div>
+              <h1 className="font-heading text-xl font-bold tracking-tight sm:text-2xl">{data.currentLesson.title}</h1>
+              {data.currentLesson.duration && <p className="mt-1 text-sm text-muted-foreground">{data.currentLesson.duration}</p>}
+              {data.currentLesson.description && (
+                <div className="mt-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{t("lpAboutLesson")}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-foreground/85">{data.currentLesson.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* My Notes (localStorage) */}
+            <LessonNotes key={lessonSlug} courseId={courseId} slug={lessonSlug} t={t} />
+
+            {/* Navigation + mark complete */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-5">
               {data.prevNav ? (
                 <Link
                   href={navHref(courseId, data.prevNav)}
                   className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold text-primary no-underline hover:bg-muted"
                 >
                   <ArrowLeft className="size-4 rtl:rotate-180" />
-                  {data.prevNav.kind === "quiz" ? "Previous Quiz" : "Previous Lesson"}
+                  {t("lpPrevious")}
                 </Link>
               ) : <span />}
 
-              {data.nextNav ? (
-                <Link
-                  href={navHref(courseId, data.nextNav)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground no-underline hover:opacity-90"
-                >
-                  {data.nextNav.kind === "quiz" ? "Next Quiz" : "Next Lesson"}
-                  <ChevronRight className="size-4 rtl:rotate-180" />
-                </Link>
-              ) : <span />}
+              <button
+                type="button"
+                onClick={completeAndContinue}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
+                <Check className="size-4" strokeWidth={2.5} />
+                {data.nextNav ? t("lpMarkContinue") : t("lpFinishCourse")}
+                {data.nextNav && <ChevronRight className="size-4 rtl:rotate-180" />}
+              </button>
             </div>
           </div>
         </div>

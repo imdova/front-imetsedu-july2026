@@ -142,7 +142,7 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
   if (phase === "intro") {
     return (
       <>
-        <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[390px_1fr]">
           <CourseSidebar modules={modules} toggleModule={toggleModule} courseId={quiz.courseId} activeQuizId={quiz.quizId} t={t} />
           <div className="space-y-5">
             {/* Hero */}
@@ -219,7 +219,7 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
   const isLast = current === total - 1;
 
   return (
-    <div ref={rootRef} className="grid gap-6 bg-background lg:grid-cols-[280px_1fr]">
+    <div ref={rootRef} className="grid gap-6 bg-background lg:grid-cols-[364px_1fr]">
       <CourseSidebar modules={modules} toggleModule={toggleModule} courseId={quiz.courseId} activeQuizId={quiz.quizId} t={t} />
 
       <div className="min-w-0 space-y-4">

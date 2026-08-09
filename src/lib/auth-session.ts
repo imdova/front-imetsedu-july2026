@@ -28,7 +28,7 @@ export function homeForRole(role: AppRole): string {
     case "admin": return "/admin/dashboard";   // both super-admin and staff
     case "instructor": return "/instructor/dashboard";
     case "staff": return "/admin/dashboard";   // legacy path (shouldn't occur with current backend)
-    default: return "/student/dashboard";
+    default: return "/student/courses";   // students land on "My Courses" after sign-in
   }
 }
 

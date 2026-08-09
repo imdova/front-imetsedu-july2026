@@ -85,7 +85,7 @@ export function AppHeader({ nav = ADMIN_NAV, showCreate = true }: AppHeaderProps
 
       <div className="relative hidden max-w-sm flex-1 sm:block">
         <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder={t("Common.search")} className="ps-9" />
+        <Input placeholder={t(user?.role === "student" ? "Common.searchStudent" : "Common.search")} className="ps-9" />
       </div>
 
       <div className="ms-auto flex items-center gap-1.5">

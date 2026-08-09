@@ -6,14 +6,14 @@ import { useTranslations } from "next-intl";
 import {
   Play, PlayCircle, HelpCircle, ChevronDown, Video, CalendarDays, Search, Download,
   Send, Award, FileText, UploadCloud, MessageSquare, Building2, CheckCircle2,
-  LayoutGrid, List as ListIcon, Lock, Paperclip, Loader2, X,
+  LayoutGrid, List as ListIcon, Lock, Paperclip, Loader2, X, Circle, Clock, Layers, ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { ROUTES } from "@integration/constants";
-import type { EnrolledCourse, ScheduleEvent, StudentAssignment, Certificate } from "@/lib/db/student";
+import type { EnrolledCourse, ScheduleEvent, StudentAssignment, Certificate, LessonType } from "@/lib/db/student";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,8 @@ export function CourseDetailView({
   };
 
   const totalLessons = course.totalLessons || course.modules.reduce((n, m) => n + m.lessons.length, 0);
+  const isComplete = course.progress >= 100 || (totalLessons > 0 && course.completedLessons >= totalLessons);
+  const certLink = certificates.find((c) => c.link)?.link;
   const openCount = assignments.filter((a) => a.status === "pending").length;
 
   const tabs: { key: Tab; label: string; badge?: number }[] = [
@@ -63,33 +65,50 @@ export function CourseDetailView({
 
   return (
     <div className="space-y-5">
-      {/* Header card */}
+      {/* Back to My Courses */}
+      <Link href={ROUTES.STUDENT.COURSES} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground no-underline hover:text-foreground">
+        <ArrowLeft className="size-4 rtl:rotate-180" />{t("lpBackCourses")}
+      </Link>
+
+      {/* Hero */}
       <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="relative h-24 w-40 shrink-0 overflow-hidden rounded-xl bg-muted">
-            <Image src={course.thumbnailUrl} alt={course.title} fill sizes="160px" className="object-cover" />
+          <div className="relative h-40 w-full shrink-0 overflow-hidden rounded-xl bg-muted sm:h-24 sm:w-40">
+            <Image src={course.thumbnailUrl} alt={course.title} fill sizes="(max-width: 640px) 100vw, 160px" className="object-cover" />
           </div>
           <div className="min-w-0 flex-1">
-            {course.category && <span className="inline-flex rounded-full bg-primary px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-primary-foreground">{course.category}</span>}
-            <h1 className="mt-1.5 font-heading text-2xl font-bold tracking-tight">{course.title}</h1>
-            <p className="mt-3 text-sm font-semibold text-muted-foreground">{t("cdOverallCompletion")}</p>
+            <h1 className="font-heading text-2xl font-bold tracking-tight">{course.title}</h1>
+            {(course.category || course.subcategory) && (
+              <p className="mt-1 text-sm text-muted-foreground">{[course.category, course.subcategory].filter(Boolean).join(" · ")}</p>
+            )}
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+              {isComplete && <CheckCircle2 className="size-4 text-success" />}
+              {isComplete ? t("cdCourseCompleted") : t("cdOverallCompletion")}
+            </p>
             <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${course.progress}%` }} />
+              <div className={cn("h-full rounded-full", isComplete ? "bg-success" : "bg-primary")} style={{ width: `${course.progress}%` }} />
             </div>
             <p className="mt-1.5 text-sm"><span className="font-bold">{course.progress}%</span> <span className="text-muted-foreground">{t("cdLessonsCompleted", { done: course.completedLessons, total: totalLessons })}</span></p>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className="text-xs text-muted-foreground">{t("cdLastAccessed")}: —</span>
-            <Button className="gap-2" disabled={allLessons.length === 0} onClick={() => play(firstIncompleteSlug)} ><Play className="size-4" />{t("cdContinueLearning")}</Button>
+          <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+            {isComplete ? (
+              certLink ? (
+                <Button asChild className="gap-2"><a href={certLink} target="_blank" rel="noreferrer"><Award className="size-4" />{t("cdViewCertificate")}</a></Button>
+              ) : (
+                <Button variant="outline" className="gap-2" disabled={allLessons.length === 0} onClick={() => play(allLessons[0]?.lessonSlug)}><CheckCircle2 className="size-4" />{t("cdReviewCourse")}</Button>
+              )
+            ) : (
+              <Button className="gap-2" disabled={allLessons.length === 0} onClick={() => play(firstIncompleteSlug)}><Play className="size-4" />{t("cdContinueLearning")}</Button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-1 border-b border-border/70">
+      <div className="flex gap-1 overflow-x-auto border-b border-border/70 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((x) => (
           <button key={x.key} type="button" onClick={() => setTab(x.key)}
-            className={cn("relative -mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+            className={cn("relative -mb-px flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors",
               tab === x.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
             {x.label}
             {x.badge ? <span className="grid size-5 place-items-center rounded-full bg-destructive text-[0.7rem] font-bold text-white">{x.badge}</span> : null}
@@ -97,7 +116,7 @@ export function CourseDetailView({
         ))}
       </div>
 
-      {tab === "overview" && <OverviewTab course={course} liveEvents={liveEvents} t={t} onPlay={play} />}
+      {tab === "overview" && <OverviewTab course={course} liveEvents={liveEvents} t={t} onPlay={play} isComplete={isComplete} certLink={certLink} onViewCertificate={() => setTab("certificate")} />}
       {tab === "materials" && <MaterialsTab course={course} t={t} />}
       {tab === "assignments" && <AssignmentsTab assignments={assignments} t={t} />}
       {tab === "certificate" && <CertificateTab certificates={certificates} t={t} />}
@@ -108,14 +127,81 @@ export function CourseDetailView({
 
 type T = ReturnType<typeof useTranslations>;
 
+/** Strip a redundant leading "Module N:" some titles embed, so the header never
+ *  renders "Module 1 · Module 1 : Basic Concepts…". */
+function cleanModuleTitle(title: string): string {
+  return title.replace(/^\s*module\s*\d+\s*[:·.–-]\s*/i, "").trim() || title;
+}
+
+function lessonTypeLabel(type: LessonType, t: T): string {
+  return type === "quiz" ? t("cdTypeQuizItem") : type === "video" ? t("cdTypeVideo") : t("cdTypeReading");
+}
+
+/** Leading integer from a duration string like "18 min" → 18. */
+function parseMinutes(d: string): number {
+  const m = /(\d+)/.exec(d || "");
+  return m ? parseInt(m[1], 10) : 0;
+}
+function formatTotalTime(mins: number): string {
+  if (mins <= 0) return "—";
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+}
+/** File extension label from a URL, e.g. "…/guide.pdf?x" → "PDF". */
+function fileExt(url: string): string {
+  const m = /\.([a-z0-9]{2,5})(?:\?|#|$)/i.exec(url || "");
+  return m ? m[1].toUpperCase() : "FILE";
+}
+
 /* ───────────── Overview ───────────── */
-function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse; liveEvents: ScheduleEvent[]; t: T; onPlay: (lessonSlug?: string) => void }) {
+function OverviewTab({ course, liveEvents, t, onPlay, isComplete, certLink, onViewCertificate }: { course: EnrolledCourse; liveEvents: ScheduleEvent[]; t: T; onPlay: (lessonSlug?: string) => void; isComplete: boolean; certLink?: string; onViewCertificate: () => void }) {
   const [open, setOpen] = React.useState<Set<number>>(() => new Set([0]));
   const toggle = (i: number) => setOpen((p) => { const n = new Set(p); n.has(i) ? n.delete(i) : n.add(i); return n; });
   const next = liveEvents[0];
+  const allLessons = course.modules.flatMap((m) => m.lessons);
+  // The single "current" lesson = first incomplete across the whole course.
+  const resumeLesson = allLessons.find((l) => !l.completed);
+  const nextIsQuiz = resumeLesson?.type === "quiz";
+  const firstIncomplete = resumeLesson?.lessonSlug;
+  const resumeModuleIndex = resumeLesson ? course.modules.findIndex((m) => m.lessons.some((l) => l.id === resumeLesson.id)) : -1;
+  const lessonCount = allLessons.filter((l) => l.type !== "quiz").length;
+  const assessmentCount = allLessons.filter((l) => l.type === "quiz").length;
+  const totalMinutes = allLessons.reduce((s, l) => s + parseMinutes(l.duration), 0);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+    <div className="space-y-5">
+      {/* Resume point / completion celebration */}
+      {isComplete ? (
+        <div className="rounded-2xl border border-success/30 bg-gradient-to-br from-success/10 to-transparent p-6 text-center shadow-sm">
+          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-success/15 text-success"><Award className="size-7" /></span>
+          <h2 className="mt-3 font-heading text-xl font-bold">🎉 {t("cdCongrats")}</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{t("cdCompletedBody", { title: course.title })}{certLink ? ` ${t("cdCertReady")}` : ""}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            {certLink ? (
+              <>
+                <Button asChild className="gap-2"><a href={certLink} target="_blank" rel="noreferrer"><Award className="size-4" />{t("cdViewCertificate")}</a></Button>
+                <Button asChild variant="outline" className="gap-2"><a href={certLink} target="_blank" rel="noreferrer" download><Download className="size-4" />{t("cdDownloadCertificate")}</a></Button>
+              </>
+            ) : (
+              <Button variant="outline" className="gap-2" onClick={onViewCertificate}><Award className="size-4" />{t("cdViewCertificate")}</Button>
+            )}
+          </div>
+        </div>
+      ) : resumeLesson ? (
+        <div className="flex flex-col gap-4 rounded-2xl border border-primary/20 bg-primary/[0.04] p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">{nextIsQuiz ? <HelpCircle className="size-6" /> : <PlayCircle className="size-6" />}</span>
+            <div className="min-w-0">
+              <p className="text-[0.7rem] font-bold uppercase tracking-wide text-primary">{nextIsQuiz ? t("cdNextStep") : t("cdResumeLabel")}</p>
+              <p className="truncate font-semibold">{resumeLesson.title}</p>
+              <p className="truncate text-xs text-muted-foreground">{t("cdModuleShort", { n: resumeModuleIndex + 1 })} · {lessonTypeLabel(resumeLesson.type, t)} · {resumeLesson.duration}</p>
+            </div>
+          </div>
+          <Button className="w-full shrink-0 gap-2 sm:w-auto" onClick={() => onPlay(resumeLesson.lessonSlug)}>{nextIsQuiz ? <HelpCircle className="size-4" /> : <Play className="size-4" />}{nextIsQuiz ? t("cdStartQuiz") : t("cdContinueLearning")}</Button>
+        </div>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
         <h2 className="font-heading text-xl font-bold">{t("cdCurriculum")}</h2>
         <p className="text-sm text-muted-foreground">{t("cdCurriculumSub")}</p>
@@ -126,24 +212,31 @@ function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse
                 className={cn("flex w-full items-center gap-3 px-4 py-3.5 text-start font-semibold transition-colors",
                   open.has(i) ? "bg-primary text-primary-foreground" : "bg-card hover:bg-muted/40")}>
                 <span className={cn("grid size-7 shrink-0 place-items-center rounded-lg text-sm", open.has(i) ? "bg-white/20" : "bg-muted")}>{i + 1}</span>
-                <span className="flex-1">{t("cdModule", { n: i + 1, title: m.title })}</span>
+                <span className="flex-1">{t("cdModule", { n: i + 1, title: cleanModuleTitle(m.title) })}</span>
                 <ChevronDown className={cn("size-4 transition-transform", open.has(i) && "rotate-180")} />
               </button>
               {open.has(i) && (
                 <div className="divide-y divide-border/60">
-                  {m.lessons.map((l) => (
-                    <button key={l.id} type="button" onClick={() => onPlay(l.lessonSlug)}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-primary/5">
-                      {l.type === "quiz"
-                        ? <HelpCircle className="size-5 shrink-0 text-primary" />
-                        : <PlayCircle className="size-5 shrink-0 text-muted-foreground" />}
-                      <span className="flex-1 text-sm font-medium">{l.title}</span>
-                      {l.completed && <CheckCircle2 className="size-4 shrink-0 text-success" />}
-                      {l.type === "quiz"
-                        ? <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-bold uppercase text-primary">{t("cdQuiz")}</span>
-                        : <Play className="size-4 shrink-0 text-muted-foreground" />}
-                    </button>
-                  ))}
+                  {m.lessons.map((l) => {
+                    const isCurrent = !l.completed && l.lessonSlug === firstIncomplete;
+                    return (
+                      <button key={l.id} type="button" onClick={() => onPlay(l.lessonSlug)}
+                        className={cn("flex w-full items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-primary/5", isCurrent && "bg-primary/5")}>
+                        {l.completed
+                          ? <CheckCircle2 className="size-5 shrink-0 text-success" />
+                          : l.type === "quiz"
+                            ? <HelpCircle className="size-5 shrink-0 text-primary" />
+                            : isCurrent
+                              ? <PlayCircle className="size-5 shrink-0 text-primary" />
+                              : <Circle className="size-5 shrink-0 text-muted-foreground/40" />}
+                        <span className="min-w-0 flex-1">
+                          <span className={cn("block truncate text-sm font-medium", isCurrent && "text-primary")}>{l.title}</span>
+                          <span className="text-xs text-muted-foreground">{lessonTypeLabel(l.type, t)} · {l.duration}</span>
+                        </span>
+                        {l.type === "quiz" && <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[0.65rem] font-bold uppercase text-primary">{t("cdQuiz")}</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -151,8 +244,20 @@ function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse
         </div>
       </div>
 
-      {/* Live sessions */}
       <aside className="space-y-4">
+        {/* Course at a glance */}
+        <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
+          <h3 className="font-heading text-base font-bold">{t("cdAtAGlance")}</h3>
+          <ul className="mt-3 space-y-2.5 text-sm">
+            <GlanceRow icon={Clock} label={t("cdGlanceTime")} value={formatTotalTime(totalMinutes)} />
+            <GlanceRow icon={Layers} label={t("cdGlanceModules")} value={String(course.modules.length)} />
+            <GlanceRow icon={PlayCircle} label={t("cdGlanceLessons")} value={String(lessonCount)} />
+            <GlanceRow icon={HelpCircle} label={t("cdGlanceAssessments")} value={String(assessmentCount)} />
+            <GlanceRow icon={Award} label={t("cdGlanceCertificate")} value={isComplete || certLink ? t("cdGlanceAvailable") : t("cdGlanceOnCompletion")} highlight={isComplete || !!certLink} />
+          </ul>
+        </div>
+
+        {/* Live sessions */}
         <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
           <h3 className="font-heading text-base font-bold">{t("cdLiveTitle")}</h3>
           <div className="mt-3 rounded-xl border border-border/60 p-3">
@@ -163,9 +268,14 @@ function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse
                 {next && <p className="text-xs text-muted-foreground">{t("cdNextLive", { when: `${next.day} · ${next.time}` })}</p>}
               </div>
             </div>
-            {next?.joinUrl
-              ? <Button className="mt-3 w-full gap-2" size="sm" onClick={() => window.open(next.joinUrl, "_blank")}><Video className="size-4" />{t("cdJoinZoom")}</Button>
-              : <p className="mt-3 text-xs text-muted-foreground">{t("cdNoZoom")}</p>}
+            {next?.joinUrl ? (
+              <Button className="mt-3 w-full gap-2" size="sm" onClick={() => window.open(next.joinUrl, "_blank")}><Video className="size-4" />{t("cdJoinZoom")}</Button>
+            ) : (
+              <div className="mt-3 rounded-lg bg-muted/40 px-3 py-2.5 text-center">
+                <p className="text-xs font-medium">{t("cdNoSessionsTitle")}</p>
+                <p className="mt-0.5 text-[0.7rem] leading-snug text-muted-foreground">{t("cdNoSessionsBody")}</p>
+              </div>
+            )}
           </div>
           <div className="mt-4 flex items-center justify-between">
             <p className="flex items-center gap-1.5 text-sm font-semibold"><CalendarDays className="size-4 text-primary" />{t("cdLectureSchedule")}</p>
@@ -173,7 +283,7 @@ function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse
           </div>
           <div className="mt-2 space-y-2">
             {liveEvents.length === 0 ? (
-              <p className="text-xs text-muted-foreground">—</p>
+              <p className="text-xs text-muted-foreground">{t("cdNoSessionsTitle")}</p>
             ) : liveEvents.slice(0, 5).map((e) => (
               <div key={e.id} className="rounded-lg border border-success/30 bg-success/5 p-3">
                 <p className="flex items-center gap-1.5 text-sm font-medium"><span className="size-1.5 rounded-full bg-success" />{e.courseCode || e.title}</p>
@@ -183,7 +293,19 @@ function OverviewTab({ course, liveEvents, t, onPlay }: { course: EnrolledCourse
           </div>
         </div>
       </aside>
+      </div>
     </div>
+  );
+}
+
+/** One row in the "Course at a glance" list. */
+function GlanceRow({ icon: Icon, label, value, highlight }: { icon: React.ElementType; label: string; value: string; highlight?: boolean }) {
+  return (
+    <li className="flex items-center gap-2.5">
+      <Icon className={cn("size-4 shrink-0", highlight ? "text-success" : "text-primary")} />
+      <span className="flex-1 text-muted-foreground">{label}</span>
+      <span className={cn("font-semibold tabular-nums", highlight && "text-success")}>{value}</span>
+    </li>
   );
 }
 
@@ -219,7 +341,7 @@ function MaterialsTab({ course, t }: { course: EnrolledCourse; t: T }) {
                   <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-destructive/10 text-destructive"><FileText className="size-4" /></span>
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{m.title}</span>
-                    <span className="text-xs text-muted-foreground">{t("cdDownload")} · —</span>
+                    <span className="text-xs text-muted-foreground">{fileExt(m.url)}</span>
                   </span>
                 </span>
                 <Button variant="ghost" size="icon-sm" disabled={!m.url} onClick={() => window.open(m.url, "_blank")} aria-label={t("cdDownload")}><Download className="size-4" /></Button>
@@ -240,7 +362,7 @@ function MaterialsGroup({ count, t, children }: { count: number; t: T; children:
         <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-sm font-semibold">1</span>
         <span className="flex-1">
           <span className="block font-semibold">{t("cdMaterialsGroup")}</span>
-          <span className="text-xs text-muted-foreground">{t("cdMaterialsFileCount", { n: count })} · —</span>
+          <span className="text-xs text-muted-foreground">{t("cdMaterialsFileCount", { n: count })}</span>
         </span>
         <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
