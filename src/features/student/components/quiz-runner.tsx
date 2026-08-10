@@ -6,6 +6,7 @@ import {
   Clock, ArrowLeft, ArrowRight, Trophy, HelpCircle, Check, List, FileCheck,
   RefreshCw, ChevronRight, FileQuestion, Lock, Flag, Settings, Maximize2,
   ListOrdered, Shuffle, ClipboardCheck, BookOpen, X,
+  CheckCircle2, XCircle, MinusCircle, Eye, Target,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,9 +40,13 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
   const passingPct = quiz.passingPct ?? 70;
   const maxAttempts = quiz.numberOfAttempts ?? 2;
   const attemptsLeft = Math.max(0, maxAttempts - attemptsUsed);
+  // After this attempt completes (used on the result / review screens).
+  const usedNow = Math.min(maxAttempts, attemptsUsed + 1);
+  const remainingAfter = Math.max(0, maxAttempts - usedNow);
 
-  const [phase, setPhase] = React.useState<"intro" | "running" | "done">("intro");
+  const [phase, setPhase] = React.useState<"intro" | "running" | "done" | "review">("intro");
   const [configOpen, setConfigOpen] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [options, setOptions] = React.useState<QuizStartOptions>(DEFAULT_START_OPTIONS);
   const [session, setSession] = React.useState<QuizQuestion[]>([]);
   const [current, setCurrent] = React.useState(0);
@@ -124,6 +129,23 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
     setPhase("running");
   };
 
+  // Quiz mode confirms before submitting; study mode just ends the review.
+  const handleFinishClick = () => {
+    if (isStudy) void finish();
+    else setConfirmOpen(true);
+  };
+
+  // Reset back to the orientation so the student can start a fresh attempt.
+  const retake = () => {
+    setResult(null);
+    setAnswers({});
+    setFlagged(new Set());
+    setAttemptId(null);
+    setCurrent(0);
+    setConfirmOpen(false);
+    setPhase("intro");
+  };
+
   const choose = (oi: number) => {
     setAnswers((p) => ({ ...p, [current]: oi }));
     if (!isStudy) toast.success(t("autoSaved"), { duration: 800 });
@@ -173,6 +195,17 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
               <StatCard icon={<FileCheck className="size-5 text-primary" />} tone="primary" label={t("quizStatPassing")} value={`${passingPct}%`} />
               <StatCard icon={<RefreshCw className="size-5 text-success" />} tone="success" label={t("quizStatAttempts")} value={t("quizAttemptsLeft", { n: attemptsLeft })} subValue={t("quizAttemptsUsed", { used: attemptsUsed, max: maxAttempts })} />
             </div>
+            {/* Before you begin */}
+            <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
+              <p className="font-heading font-bold">{t("quizBeforeTitle")}</p>
+              <ul className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                <BeforeItem text={t("quizRuleQuestions", { n: quiz.totalQuestions })} />
+                <BeforeItem text={t("quizRuleTime", { min: quiz.timeLimitMinutes })} />
+                <BeforeItem text={t("quizRulePass", { pct: passingPct })} />
+                <BeforeItem text={t("quizRuleAttempts", { max: maxAttempts })} />
+                <BeforeItem text={t("quizRuleNoPause")} />
+              </ul>
+            </div>
             {/* Start */}
             <div className="pb-4 pt-2 text-center">
               {attemptsLeft > 0 ? (
@@ -193,19 +226,102 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
 
   /* ───────────── Results ───────────── */
   if (phase === "done" && result) {
+    const correct = session.reduce((a, qq, i) => a + (answers[i] === qq.correctIndex ? 1 : 0), 0);
+    const answeredN = Object.keys(answers).length;
+    const incorrect = answeredN - correct;
+    const unanswered = total - answeredN;
+    const passed = result.passed;
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-2xl">
         <Card>
-          <CardContent className="flex flex-col items-center gap-4 py-14 text-center">
-            <span className={cn("grid size-16 place-items-center rounded-2xl", result.passed ? "bg-success/12 text-success" : "bg-destructive/12 text-destructive")}><Trophy className="size-8" /></span>
-            <div>
-              <p className="text-sm text-muted-foreground">{t("yourScore")}</p>
-              <p className="font-heading text-4xl font-bold tabular-nums">{result.correct}/{result.total}</p>
-              <p className={cn("text-sm font-medium", result.passed ? "text-success" : "text-destructive")}>{result.pct}% · {result.passed ? t("quizPassed") : t("quizFailed")}</p>
+          <CardContent className="space-y-6 py-8">
+            <div className="text-center">
+              <span className={cn("mx-auto grid size-16 place-items-center rounded-2xl", passed ? "bg-success/12 text-success" : "bg-amber-500/12 text-amber-600")}>
+                {passed ? <Trophy className="size-8" /> : <Target className="size-8" />}
+              </span>
+              <p className="mt-4 font-heading text-2xl font-bold">{passed ? `🎉 ${t("quizPassedTitle")}` : t("quizNotPassedTitle")}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{quiz.orientationTitle ?? quiz.title}</p>
+              <p className={cn("mt-4 font-heading text-5xl font-bold tabular-nums", passed ? "text-success" : "text-amber-600")}>{result.pct}%</p>
+              <p className="mt-1 text-sm font-semibold">{correct}/{total} · {passed ? t("quizPassed") : t("quizNotPassed")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("quizPassMark", { pct: passingPct })}</p>
             </div>
-            <Button asChild variant="outline" className="mt-2 gap-1.5"><Link href={ROUTES.STUDENT.COURSE_OVERVIEW(quiz.courseId)}><ArrowLeft className="size-4 rtl:rotate-180" />{t("quizCourseOverview")}</Link></Button>
+
+            <div className="grid grid-cols-3 gap-2 border-y border-border/60 py-4">
+              <ResultStat icon={<CheckCircle2 className="size-5 text-success" />} value={correct} label={t("quizStatCorrect")} />
+              <ResultStat icon={<XCircle className="size-5 text-destructive" />} value={incorrect} label={t("quizStatIncorrect")} />
+              <ResultStat icon={<MinusCircle className="size-5 text-muted-foreground" />} value={unanswered} label={t("quizStatUnanswered")} />
+            </div>
+
+            <p className="text-center text-sm text-muted-foreground">{t("quizAttemptsSummary", { used: usedNow, max: maxAttempts, left: remainingAfter })}</p>
+
+            {!passed && (
+              <div className="rounded-xl bg-muted/40 p-4 text-center text-sm text-muted-foreground">{t("quizEncourage")}</div>
+            )}
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <Button variant="outline" className="gap-1.5" onClick={() => setPhase("review")}><Eye className="size-4" />{t("quizReviewAnswers")}</Button>
+              {!passed && remainingAfter > 0 && <Button className="gap-1.5" onClick={retake}><RefreshCw className="size-4" />{t("quizRetake")}</Button>}
+              <Button asChild variant={passed ? "default" : "outline"} className="gap-1.5"><Link href={ROUTES.STUDENT.COURSE_OVERVIEW(quiz.courseId)}><ArrowLeft className="size-4 rtl:rotate-180" />{t("quizBackToCourse")}</Link></Button>
+            </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  /* ───────────── Review answers ───────────── */
+  if (phase === "review" && result) {
+    const correct = session.reduce((a, qq, i) => a + (answers[i] === qq.correctIndex ? 1 : 0), 0);
+    return (
+      <div className="mx-auto max-w-3xl space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <Button variant="ghost" className="gap-1.5" onClick={() => setPhase("done")}><ArrowLeft className="size-4 rtl:rotate-180" />{t("quizBackToResults")}</Button>
+          <p className="text-sm font-semibold tabular-nums">{correct}/{total} · {result.pct}%</p>
+        </div>
+        {session.map((qq, i) => {
+          const your = answers[i];
+          const isUnanswered = your === undefined;
+          const isCorrect = your === qq.correctIndex;
+          return (
+            <Card key={qq.id}>
+              <CardContent className="space-y-3 py-5">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-heading font-semibold leading-snug">{t("quizQuestionLabel", { n: i + 1 })}: {qq.question}</h3>
+                  <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-bold uppercase",
+                    isCorrect ? "bg-success/10 text-success" : isUnanswered ? "bg-muted text-muted-foreground" : "bg-destructive/10 text-destructive")}>
+                    {isCorrect ? <CheckCircle2 className="size-3" /> : isUnanswered ? <MinusCircle className="size-3" /> : <XCircle className="size-3" />}
+                    {isCorrect ? t("quizStatCorrect") : isUnanswered ? t("quizStatUnanswered") : t("quizStatIncorrect")}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {qq.options.map((opt, oi) => {
+                    const isC = oi === qq.correctIndex;
+                    const isYour = oi === your;
+                    return (
+                      <div key={oi} className={cn("flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm",
+                        isC ? "border-success bg-success/5" : isYour ? "border-destructive bg-destructive/5" : "border-border")}>
+                        {isC ? <CheckCircle2 className="size-4 shrink-0 text-success" /> : isYour ? <XCircle className="size-4 shrink-0 text-destructive" /> : <span className="size-4 shrink-0" />}
+                        <span className="flex-1">{opt}</span>
+                        {isYour && !isC && <span className="shrink-0 text-[0.7rem] font-medium text-destructive">{t("quizYourAnswer")}</span>}
+                        {isC && <span className="shrink-0 text-[0.7rem] font-medium text-success">{t("quizCorrectAnswer")}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+                {qq.learningInsight && (
+                  <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-sm">
+                    <p className="font-semibold text-primary">{t("quizWhy")}</p>
+                    <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{qq.learningInsight}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+        <div className="flex flex-col justify-center gap-2 pt-2 sm:flex-row">
+          {!result.passed && remainingAfter > 0 && <Button className="gap-1.5" onClick={retake}><RefreshCw className="size-4" />{t("quizRetake")}</Button>}
+          <Button asChild variant="outline" className="gap-1.5"><Link href={ROUTES.STUDENT.COURSE_OVERVIEW(quiz.courseId)}><ArrowLeft className="size-4 rtl:rotate-180" />{t("quizBackToCourse")}</Link></Button>
+        </div>
       </div>
     );
   }
@@ -219,6 +335,7 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
   const isLast = current === total - 1;
 
   return (
+    <>
     <div ref={rootRef} className="grid gap-6 bg-background lg:grid-cols-[364px_1fr]">
       <CourseSidebar modules={modules} toggleModule={toggleModule} courseId={quiz.courseId} activeQuizId={quiz.quizId} t={t} />
 
@@ -237,7 +354,7 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
             )}
             <Button variant="outline" size="icon-sm" onClick={() => setConfigOpen(true)} aria-label={t("quizSettings")}><Settings className="size-4" /></Button>
             <Button variant="outline" size="icon-sm" onClick={toggleFullscreen} aria-label={t("quizFullscreen")}><Maximize2 className="size-4" /></Button>
-            <Button onClick={finish} disabled={submitting}>{t("quizFinishAttempt")}</Button>
+            <Button onClick={handleFinishClick} disabled={submitting}>{t("quizFinishAttempt")}</Button>
           </div>
         </div>
 
@@ -325,7 +442,7 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
           <Button variant="outline" disabled={current === 0} onClick={() => setCurrent((c) => c - 1)} className="gap-1.5"><ArrowLeft className="size-4 rtl:rotate-180" />{t("quizPrevQuestion")}</Button>
           <Button variant="outline" onClick={() => toggleFlag(current)} className={cn("gap-1.5", flagged.has(current) && "border-warning text-warning")}><Flag className="size-4" />{t("quizFlag")}</Button>
           {isLast ? (
-            <Button onClick={finish} disabled={submitting} className={cn("gap-1.5", !isStudy && "bg-success text-white hover:bg-success/90")}>
+            <Button onClick={handleFinishClick} disabled={submitting} className={cn("gap-1.5", !isStudy && "bg-success text-white hover:bg-success/90")}>
               {submitting ? t("loading") : isStudy ? t("quizFinishSession") : t("submitQuiz")}
             </Button>
           ) : (
@@ -334,6 +451,21 @@ export function QuizRunner({ quiz, attemptsUsed = 0 }: { quiz: QuizAttemptData; 
         </div>
       </div>
     </div>
+
+    {/* Submit confirmation (quiz mode) */}
+    <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <DialogContent className="sm:max-w-md">
+        <h3 className="font-heading text-lg font-bold">{t("quizSubmitTitle")}</h3>
+        <p className="text-sm text-muted-foreground">
+          {answered >= total ? t("quizSubmitReady", { total }) : t("quizSubmitWarn", { answered, total, unanswered: total - answered })}
+        </p>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={() => setConfirmOpen(false)}>{t("quizContinueQuiz")}</Button>
+          <Button onClick={() => { setConfirmOpen(false); void finish(); }} disabled={submitting}>{t("quizSubmitAssessment")}</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
@@ -412,6 +544,25 @@ function OptionPill({ selected, onSelect, icon: Icon, label, desc }: { selected:
 /* ───────────── Shared ───────────── */
 function Legend({ className, icon, label }: { className?: string; icon?: React.ReactNode; label: string }) {
   return <span className="flex items-center gap-1.5">{icon ?? <span className={cn("size-3 rounded-full", className)} />}{label}</span>;
+}
+
+function ResultStat({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 text-center">
+      {icon}
+      <span className="font-heading text-xl font-bold tabular-nums">{value}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function BeforeItem({ text }: { text: string }) {
+  return (
+    <li className="flex items-center gap-2">
+      <Check className="size-4 shrink-0 text-success" strokeWidth={2.5} />
+      <span>{text}</span>
+    </li>
+  );
 }
 
 function StatCard({ icon, tone, label, value, subValue }: { icon: React.ReactNode; tone: "primary" | "success"; label: string; value: string; subValue?: string }) {

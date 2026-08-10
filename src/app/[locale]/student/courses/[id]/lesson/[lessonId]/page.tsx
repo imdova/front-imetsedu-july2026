@@ -4,7 +4,7 @@ import * as React from "react";
 import { useParams } from "next/navigation";
 import {
   ArrowLeft, ChevronRight, Menu as MenuIcon, X as CloseIcon,
-  Loader2, Check, FileQuestion, Lock, StickyNote,
+  Loader2, Check, FileQuestion, Circle, StickyNote, Video,
 } from "lucide-react";
 
 import { Link, useRouter } from "@/i18n/navigation";
@@ -45,6 +45,11 @@ function lessonHref(courseId: string, item: SidebarLesson): string {
     return ROUTES.STUDENT.COURSE_QUIZ(courseId, item.quizId);
   }
   return ROUTES.STUDENT.COURSE_LESSON(courseId, item.slug);
+}
+
+/** Strip an embedded "Module N:" so the sidebar shows a clean title beneath the label. */
+function cleanModuleTitle(title: string): string {
+  return title.replace(/^\s*module\s*\d+\s*[:·.–-]\s*/i, "").trim() || title;
 }
 
 /* ─── Lesson video player ─────────────────────────────────────────────────── */
@@ -162,23 +167,27 @@ function LessonVideo({ contentType, contentUrl, title }: { contentType?: string;
 /* ─── Curriculum sidebar item ─────────────────────────────────────────────── */
 
 function CurriculumItem({
-  item, courseId, activeSlug, isWatched,
+  item, courseId, activeSlug, isWatched, week,
 }: {
   item: SidebarLesson;
   courseId: string;
   activeSlug: string;
   isWatched: boolean;
+  week?: number;
 }) {
   const t = useTranslations("Student");
   const isQuiz = item.kind === "quiz";
   const isActive = item.slug === activeSlug;
   const isDone = !isQuiz && (isWatched || item.status === "completed");
+  const isLocked = item.status === "locked";
+  // A weekly live session is a recording once available; a future week is "Upcoming".
+  const meta = isQuiz ? t("cdQuiz") : isLocked ? t("lpUpcoming") : `${t("lpRecording")} · ${item.duration}`;
 
   return (
     <Link
       href={lessonHref(courseId, item)}
       className={cn(
-        "flex items-center gap-3 border-s-2 px-5 py-3 ps-7 text-sm no-underline transition-colors hover:bg-muted/50",
+        "flex items-start gap-3 border-s-2 px-5 py-3 ps-7 text-sm no-underline transition-colors hover:bg-muted/50",
         isActive
           ? "border-s-primary bg-primary/5 text-primary"
           : isDone
@@ -188,23 +197,24 @@ function CurriculumItem({
               : "border-s-transparent text-muted-foreground",
       )}
     >
-      {isQuiz ? (
-        <FileQuestion className="size-4 shrink-0 text-primary" />
-      ) : isDone ? (
-        <Check className="size-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
-      ) : item.status === "locked" ? (
-        <Lock className="size-4 shrink-0 text-muted-foreground/40" />
-      ) : (
-        <ChevronRight className="size-4 shrink-0 text-primary rtl:rotate-180" />
-      )}
-      <div className="flex-1 min-w-0">
-        <p className={cn("font-medium truncate", isActive && "text-primary")}>
-          {item.title}
-        </p>
-        {isQuiz && <p className="text-[10px] font-bold uppercase tracking-wider text-primary">{t("cdQuiz")}</p>}
-        {isDone && !isActive && <p className="text-[10px] font-semibold text-emerald-600">{t("lpWatched")}</p>}
+      <span className="mt-0.5 shrink-0">
+        {isQuiz ? (
+          <FileQuestion className="size-4 text-primary" />
+        ) : isDone ? (
+          <Check className="size-4 text-emerald-600" strokeWidth={2.5} />
+        ) : isLocked ? (
+          <Circle className="size-4 text-muted-foreground/40" />
+        ) : (
+          <ChevronRight className="size-4 text-primary rtl:rotate-180" />
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        {!isQuiz && week ? (
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">{t("lpWeek", { n: week })}</p>
+        ) : null}
+        <p className={cn("truncate font-medium", isActive && "text-primary")}>{item.title}</p>
+        <p className="text-[11px] text-muted-foreground">{meta}</p>
       </div>
-      <span className="shrink-0 text-xs text-muted-foreground">{item.duration}</span>
     </Link>
   );
 }
@@ -321,15 +331,12 @@ export default function StudentLessonPage() {
       setModules(lessonData.modules);
       setError(null);
 
-      // Progress tracking
-      markLessonWatched(courseId, lessonSlug);
+      // Read existing progress only. A session counts as completed when the
+      // student explicitly clicks "Mark Session Complete" — not by merely opening it.
       const watched = getWatchedLessons(courseId);
-      const pct = calculateProgress(watched.size, lessonData.lessonsTotal);
       setWatchedSlugs(new Set(watched));
-      setLocalPct(pct);
+      setLocalPct(calculateProgress(watched.size, lessonData.lessonsTotal));
       setLocalDone(watched.size);
-      saveProgressPct(courseId, pct);
-      void dal.student.updateCourseProgress(courseId, pct);
 
       setLoading(false);
     })();
@@ -340,10 +347,18 @@ export default function StudentLessonPage() {
   const toggleModule = (id: string) =>
     setModules((prev) => prev.map((m) => m.id === id ? { ...m, expanded: !m.expanded } : m));
 
-  // Mark the current lesson complete, then advance to the next item (or finish → overview).
-  const completeAndContinue = React.useCallback(() => {
+  // Mark this session complete (+ sync progress), then advance to the next
+  // session — or finish → overview when it's the last.
+  const markCompleteAndContinue = React.useCallback(() => {
     if (!data) return;
     markLessonWatched(courseId, lessonSlug);
+    const watched = getWatchedLessons(courseId);
+    const pct = calculateProgress(watched.size, data.lessonsTotal);
+    setWatchedSlugs(new Set(watched));
+    setLocalPct(pct);
+    setLocalDone(watched.size);
+    saveProgressPct(courseId, pct);
+    void dal.student.updateCourseProgress(courseId, pct);
     router.push((data.nextNav ? navHref(courseId, data.nextNav) : ROUTES.STUDENT.COURSE_OVERVIEW(courseId)) as never);
   }, [data, courseId, lessonSlug, router]);
 
@@ -374,6 +389,15 @@ export default function StudentLessonPage() {
   }
 
   const sidebarModules = modules.length ? modules : data.modules;
+  // Sequential "Week N" across all non-quiz sessions (quizzes stay assessments).
+  const weekBySlug: Record<string, number> = {};
+  let weekCounter = 0;
+  for (const mod of sidebarModules) {
+    for (const item of mod.lessons) {
+      if (item.kind !== "quiz") { weekCounter += 1; weekBySlug[item.slug] = weekCounter; }
+    }
+  }
+  const currentWeek = weekBySlug[lessonSlug];
   const displayPct = localPct ?? data.progressPct;
   const displayDone = localDone ?? data.lessonsCompleted;
   const displayTotal = data.lessonsTotal;
@@ -419,7 +443,7 @@ export default function StudentLessonPage() {
         {/* Curriculum sidebar */}
         <aside
           className={cn(
-            "fixed inset-y-0 start-0 z-50 flex w-[min(85vw,320px)] flex-col border-e border-border/70 bg-card transition-transform duration-300 lg:relative lg:inset-auto lg:z-auto lg:w-[300px] lg:translate-x-0 lg:shrink-0",
+            "fixed inset-y-0 start-0 z-50 flex w-[min(85vw,320px)] flex-col border-e border-border/70 bg-card transition-transform duration-300 lg:relative lg:inset-auto lg:z-auto lg:w-[375px] lg:translate-x-0 lg:shrink-0",
             tocOpen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full",
           )}
         >
@@ -432,7 +456,7 @@ export default function StudentLessonPage() {
           </button>
 
           <div className="border-b border-border/70 p-5">
-            <h2 className="mb-3 text-sm font-bold">{t("quizCourseContent")}</h2>
+            <h2 className="mb-3 text-sm font-bold">{t("lpWeeklySessions")}</h2>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-all duration-500"
@@ -445,14 +469,20 @@ export default function StudentLessonPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto py-2">
-            {sidebarModules.map((mod) => (
+            {sidebarModules.map((mod, mi) => (
               <div key={mod.id} className="border-b border-border/60">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between px-5 py-3 text-start text-sm font-semibold hover:bg-muted/40"
+                  className="flex w-full items-center justify-between gap-2 px-5 py-3 text-start hover:bg-muted/40"
                   onClick={() => toggleModule(mod.id)}
                 >
-                  {mod.title}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t("cdModuleShort", { n: mi + 1 })}</span>
+                    <span className="block truncate text-sm font-semibold">{cleanModuleTitle(mod.title)}</span>
+                    {!mod.expanded && (
+                      <span className="block text-[11px] text-muted-foreground">{t("lpSessionsCount", { n: mod.lessons.filter((l) => l.kind !== "quiz").length })}</span>
+                    )}
+                  </span>
                   <ChevronRight
                     className={cn("size-4 shrink-0 text-muted-foreground transition-transform", mod.expanded && "rotate-90")}
                   />
@@ -464,6 +494,7 @@ export default function StudentLessonPage() {
                     courseId={courseId}
                     activeSlug={lessonSlug}
                     isWatched={item.kind === "lesson" && watchedSlugs.has(item.slug)}
+                    week={weekBySlug[item.slug]}
                   />
                 ))}
               </div>
@@ -493,10 +524,15 @@ export default function StudentLessonPage() {
           </div>
 
           <div className="mx-auto w-full max-w-4xl space-y-5 p-4 sm:p-6">
-            {/* Lesson heading — the student knows what they're consuming */}
+            {/* Session heading */}
             <div>
-              <h1 className="font-heading text-xl font-bold tracking-tight sm:text-2xl">{data.currentLesson.title}</h1>
-              {data.currentLesson.duration && <p className="mt-1 text-sm text-muted-foreground">{data.currentLesson.duration}</p>}
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-primary">
+                <Video className="size-3" />{t("lpRecordingAvailable")}
+              </span>
+              <h1 className="mt-2 font-heading text-xl font-bold tracking-tight sm:text-2xl">{data.currentLesson.title}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {currentWeek ? `${t("lpWeek", { n: currentWeek })} · ` : ""}{t("lpSessionRecording")}{data.currentLesson.duration ? ` · ${data.currentLesson.duration}` : ""}
+              </p>
               {data.currentLesson.description && (
                 <div className="mt-3">
                   <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{t("lpAboutLesson")}</p>
@@ -522,7 +558,7 @@ export default function StudentLessonPage() {
 
               <button
                 type="button"
-                onClick={completeAndContinue}
+                onClick={markCompleteAndContinue}
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
               >
                 <Check className="size-4" strokeWidth={2.5} />
