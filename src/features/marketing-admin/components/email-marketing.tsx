@@ -236,7 +236,10 @@ export function EmailMarketing({
       cell: ({ row }) => {
         const c = row.original;
         return (
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-1.5">
+            {c.status !== "SENT" && (
+              <Button size="sm" className="gap-1.5" onClick={() => send(c)}><Send className="size-3.5" />Send</Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm"><MoreHorizontal className="size-4" /></Button>
@@ -244,7 +247,6 @@ export function EmailMarketing({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => openEditCmp(c)}>Edit</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push(`/admin/marketing/email/builder?campaignId=${c.id}`)}>Design email</DropdownMenuItem>
-                {c.status !== "SENT" && <DropdownMenuItem onClick={() => send(c)}>Send now</DropdownMenuItem>}
                 {c.status === "DRAFT" && <DropdownMenuItem onClick={() => { setSchedFor(c); setSchedAt(""); }}>Schedule…</DropdownMenuItem>}
                 {c.status === "SCHEDULED" && <DropdownMenuItem onClick={() => unschedule(c)}>Unschedule</DropdownMenuItem>}
                 <DropdownMenuItem onClick={() => { setTestFor(c); setTestEmail(""); }}>Send test…</DropdownMenuItem>

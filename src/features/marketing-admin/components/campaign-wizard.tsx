@@ -25,11 +25,10 @@ import { KpiCard } from "@/components/shared/kpi-card";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 
-type Step = 0 | 1 | 2 | 3;
+type Step = 0 | 1 | 2;
 const STEPS = [
-  { title: "Details", icon: Mail },
+  { title: "Details & recipients", icon: Mail },
   { title: "Content", icon: FileText },
-  { title: "Recipients", icon: Users },
   { title: "Review & send", icon: Send },
 ] as const;
 
@@ -101,9 +100,9 @@ export function CampaignWizard({
 
   /* ── Validation per step ── */
   const canNext =
-    step === 0 ? subject.trim().length > 0 && isEmail(fromEmail) :
-    step === 2 ? sources.length > 0 || manual.length > 0 :
-    true;
+    step === 0
+      ? subject.trim().length > 0 && isEmail(fromEmail) && (sources.length > 0 || manual.length > 0)
+      : true;
 
   /* ── Persist (create or update) + optional template seed ── */
   const buildPayload = (): CampaignInput => ({
@@ -187,11 +186,16 @@ export function CampaignWizard({
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-6">
           {step === 0 && (
-            <DetailsStep
-              {...{ name, setName, subject, setSubject, previewText, setPreviewText,
-                fromName, setFromName, fromEmail, setFromEmail, replyTo, setReplyTo,
-                language, setLanguage, trackOpens, setTrackOpens, trackClicks, setTrackClicks }}
-            />
+            <>
+              <DetailsStep {...{ name, setName, subject, setSubject, previewText, setPreviewText }} />
+              <RecipientsStep
+                audiences={audiences}
+                sources={sources}
+                toggleSource={toggleSource}
+                manual={manual}
+                setManual={setManual}
+              />
+            </>
           )}
           {step === 1 && (
             <ContentStep
@@ -203,15 +207,6 @@ export function CampaignWizard({
             />
           )}
           {step === 2 && (
-            <RecipientsStep
-              audiences={audiences}
-              sources={sources}
-              toggleSource={toggleSource}
-              manual={manual}
-              setManual={setManual}
-            />
-          )}
-          {step === 3 && (
             <ReviewStep
               {...{ name, subject, previewText, fromName, fromEmail, language,
                 selectedTemplate, sources, audiences, manual, totalReach,
@@ -221,17 +216,25 @@ export function CampaignWizard({
           )}
         </div>
 
-        {/* Right rail: live insights */}
-        <InsightsRail
-          step={step}
-          subject={subject}
-          selectedTemplate={selectedTemplate}
-          totalReach={totalReach}
-          previewing={previewing}
-          preview={preview}
-          sources={sources}
-          manualCount={manual.length}
-        />
+        {/* Right rail: sender & tracking (step 0) + live insights */}
+        <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+          {step === 0 && (
+            <SenderPanel
+              {...{ fromName, setFromName, fromEmail, setFromEmail, replyTo, setReplyTo,
+                language, setLanguage, trackOpens, setTrackOpens, trackClicks, setTrackClicks }}
+            />
+          )}
+          <InsightsRail
+            step={step}
+            subject={subject}
+            selectedTemplate={selectedTemplate}
+            totalReach={totalReach}
+            previewing={previewing}
+            preview={preview}
+            sources={sources}
+            manualCount={manual.length}
+          />
+        </div>
       </div>
 
       {/* Footer nav */}
@@ -245,7 +248,7 @@ export function CampaignWizard({
         </Button>
 
         <div className="flex items-center gap-2">
-          {step === 3 ? (
+          {step === 2 ? (
             <>
               <Button variant="outline" onClick={saveDraft} disabled={busy}>
                 <Save className="size-4" /> Save draft
@@ -326,12 +329,6 @@ function DetailsStep(p: {
   name: string; setName: (v: string) => void;
   subject: string; setSubject: (v: string) => void;
   previewText: string; setPreviewText: (v: string) => void;
-  fromName: string; setFromName: (v: string) => void;
-  fromEmail: string; setFromEmail: (v: string) => void;
-  replyTo: string; setReplyTo: (v: string) => void;
-  language: string; setLanguage: (v: string) => void;
-  trackOpens: boolean; setTrackOpens: (v: boolean) => void;
-  trackClicks: boolean; setTrackClicks: (v: boolean) => void;
 }) {
   return (
     <Card>
@@ -345,30 +342,45 @@ function DetailsStep(p: {
         <Field label="Preview text" hint="The gray text after the subject in most inboxes.">
           <Input value={p.previewText} onChange={(e) => p.setPreviewText(e.target.value)} placeholder="Enroll before the deadline and save 20%" />
         </Field>
+      </CardContent>
+    </Card>
+  );
+}
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="From name">
-            <Input value={p.fromName} onChange={(e) => p.setFromName(e.target.value)} />
-          </Field>
-          <Field label="From email" required hint={!isEmail(p.fromEmail) ? "Enter a valid email" : undefined} error={!isEmail(p.fromEmail)}>
-            <Input value={p.fromEmail} onChange={(e) => p.setFromEmail(e.target.value)} placeholder="hello@imetsedu.com" />
-          </Field>
-          <Field label="Reply-to">
-            <Input value={p.replyTo} onChange={(e) => p.setReplyTo(e.target.value)} />
-          </Field>
-          <Field label="Language" hint="Used on the unsubscribe page.">
-            <Select value={p.language} onValueChange={p.setLanguage}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="ar">Arabic</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-        </div>
+/* ══════════════════════════ Right rail: sender & tracking ══════════════════════════ */
+function SenderPanel(p: {
+  fromName: string; setFromName: (v: string) => void;
+  fromEmail: string; setFromEmail: (v: string) => void;
+  replyTo: string; setReplyTo: (v: string) => void;
+  language: string; setLanguage: (v: string) => void;
+  trackOpens: boolean; setTrackOpens: (v: boolean) => void;
+  trackClicks: boolean; setTrackClicks: (v: boolean) => void;
+}) {
+  return (
+    <Card>
+      <CardContent className="space-y-4">
+        <p className="text-sm font-medium">Sender &amp; tracking</p>
+        <Field label="From name">
+          <Input value={p.fromName} onChange={(e) => p.setFromName(e.target.value)} />
+        </Field>
+        <Field label="From email" required hint={!isEmail(p.fromEmail) ? "Enter a valid email" : undefined} error={!isEmail(p.fromEmail)}>
+          <Input value={p.fromEmail} onChange={(e) => p.setFromEmail(e.target.value)} placeholder="hello@imetsedu.com" />
+        </Field>
+        <Field label="Reply-to">
+          <Input value={p.replyTo} onChange={(e) => p.setReplyTo(e.target.value)} />
+        </Field>
+        <Field label="Language" hint="Used on the unsubscribe page.">
+          <Select value={p.language} onValueChange={p.setLanguage}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="ar">Arabic</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
 
-        <div className="space-y-3 rounded-lg border border-border/70 bg-muted/30 p-4">
-          <p className="text-sm font-medium">Tracking options</p>
+        <div className="space-y-3 rounded-lg border border-border/70 bg-muted/30 p-3">
+          <p className="text-sm font-medium">Tracking</p>
           <ToggleRow label="Track opens" desc="Know how many recipients open the email." checked={p.trackOpens} onChange={p.setTrackOpens} />
           <ToggleRow label="Track clicks" desc="Measure clicks on links inside the email." checked={p.trackClicks} onChange={p.setTrackClicks} />
         </div>
@@ -497,16 +509,16 @@ function RecipientsStep({
   return (
     <Tabs defaultValue="audiences" className="space-y-4">
       <TabsList>
-        <TabsTrigger value="audiences"><Target className="mr-1.5 size-4" /> Platform audiences</TabsTrigger>
+        <TabsTrigger value="audiences"><Target className="mr-1.5 size-4" /> Groups &amp; audiences</TabsTrigger>
         <TabsTrigger value="manual"><UserPlus className="mr-1.5 size-4" /> Add manually</TabsTrigger>
-        <TabsTrigger value="import"><Upload className="mr-1.5 size-4" /> Upload Excel</TabsTrigger>
+        <TabsTrigger value="import"><Upload className="mr-1.5 size-4" /> Import from Excel</TabsTrigger>
       </TabsList>
 
       <TabsContent value="audiences" className="space-y-5">
         {groups.map(([group, items]) => (
           <div key={group} className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{group}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {items.map((a) => {
                 const on = sources.includes(a.key);
                 return (
@@ -515,17 +527,17 @@ function RecipientsStep({
                     type="button"
                     onClick={() => toggleSource(a.key)}
                     className={cn(
-                      "flex items-start gap-3 rounded-xl border p-3.5 text-left transition-colors",
+                      "flex flex-col gap-2 rounded-xl border p-3 text-left transition-colors",
                       on ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border/70 hover:bg-muted/40",
                     )}
                   >
-                    <Checkbox checked={on} className="mt-0.5 pointer-events-none" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium">{a.label}</p>
-                        <Badge variant="secondary" className="tabular-nums">{a.count.toLocaleString()}</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{a.description}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <Checkbox checked={on} className="pointer-events-none" />
+                      <Badge variant="secondary" className="tabular-nums">{a.count.toLocaleString()}</Badge>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-tight">{a.label}</p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{a.description}</p>
                     </div>
                   </button>
                 );
@@ -707,7 +719,7 @@ function ReviewStep(p: {
         )}
       </ReviewCard>
 
-      <ReviewCard title="Recipients" onEdit={() => p.onEditStep(2)} icon={Users}>
+      <ReviewCard title="Recipients" onEdit={() => p.onEditStep(0)} icon={Users}>
         <Row k="Total reach" v={<span className="font-semibold">{(p.totalReach ?? 0).toLocaleString()}</span>} />
         <Row k="Audiences" v={sourceLabels.length ? sourceLabels.join(", ") : "—"} />
         <Row k="Manual / imported" v={p.manual.length ? `${p.manual.length.toLocaleString()} added` : "—"} />
