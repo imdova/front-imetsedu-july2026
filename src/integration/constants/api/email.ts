@@ -25,6 +25,7 @@ export const apiEmailBrandBlock = (id: string) => `${B}/brand-blocks/${id}`;
 
 export const API_EMAIL_SUBSCRIBERS = `${B}/subscribers`;
 export const apiEmailSubscriber = (id: string) => `${B}/subscribers/${id}`;
+export const API_EMAIL_SUBSCRIBERS_IMPORT = `${B}/subscribers/import`;
 export const API_EMAIL_SUBSCRIBERS_BULK_DELETE = `${B}/subscribers/bulk-delete`;
 export const API_EMAIL_SUBSCRIBERS_ASSIGN = `${B}/subscribers/assign`;
 export const API_EMAIL_SUBSCRIBERS_UNASSIGN = `${B}/subscribers/unassign`;

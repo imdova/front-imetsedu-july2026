@@ -3,7 +3,7 @@
 import * as React from "react";
 import {
   ArrowLeft, ArrowRight, Check, Mail, Users, FileText, Sparkles, Send, CalendarClock,
-  Save, Upload, Plus, UserPlus, Paintbrush, Target, Layers, AtSign, X,
+  Save, Upload, Plus, UserPlus, Paintbrush, Target, Layers, AtSign, X, List, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ import { useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type {
   Campaign, CampaignInput, EmailTemplate, AudienceOption, ManualRecipient, RecipientsPreview,
+  SubscriberGroup,
 } from "@/lib/db/email-marketing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -510,6 +511,7 @@ function RecipientsStep({
     <Tabs defaultValue="audiences" className="space-y-4">
       <TabsList>
         <TabsTrigger value="audiences"><Target className="mr-1.5 size-4" /> Groups &amp; audiences</TabsTrigger>
+        <TabsTrigger value="lists"><List className="mr-1.5 size-4" /> Mailer List</TabsTrigger>
         <TabsTrigger value="manual"><UserPlus className="mr-1.5 size-4" /> Add manually</TabsTrigger>
         <TabsTrigger value="import"><Upload className="mr-1.5 size-4" /> Import from Excel</TabsTrigger>
       </TabsList>
@@ -552,6 +554,10 @@ function RecipientsStep({
         )}
       </TabsContent>
 
+      <TabsContent value="lists">
+        <MailerListTab sources={sources} toggleSource={toggleSource} />
+      </TabsContent>
+
       <TabsContent value="manual">
         <ManualEntry manual={manual} setManual={setManual} />
       </TabsContent>
@@ -569,6 +575,135 @@ const dedupe = (rows: ManualRecipient[]) => {
   for (const r of rows) if (r.email) m.set(r.email.toLowerCase(), r);
   return [...m.values()];
 };
+
+/* ══════════════════════════ Mailer List tab ══════════════════════════ */
+/**
+ * Create a reusable, saved mailer list and import subscribers into it.
+ * A list is a landing-kind subscriber group; selecting one adds its
+ * `newsletter:<name>` key to the campaign's sources (same as an audience).
+ */
+function MailerListTab({
+  sources, toggleSource,
+}: {
+  sources: string[];
+  toggleSource: (key: string) => void;
+}) {
+  const [lists, setLists] = React.useState<SubscriberGroup[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [newName, setNewName] = React.useState("");
+  const [creating, setCreating] = React.useState(false);
+  const [importingTo, setImportingTo] = React.useState<string | null>(null);
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const targetList = React.useRef<string>("");
+
+  const load = React.useCallback(async () => {
+    const res = await dal.emailMarketing.fetchSubscriberGroups();
+    if (res.ok) setLists(res.data.filter((g) => g.kind === "landing"));
+    setLoading(false);
+  }, []);
+  React.useEffect(() => {
+    const t = setTimeout(() => { void load(); }, 0);
+    return () => clearTimeout(t);
+  }, [load]);
+
+  const createList = async () => {
+    const name = newName.trim();
+    if (!name) return;
+    setCreating(true);
+    const res = await dal.emailMarketing.createSubscriberGroup(name, "landing");
+    setCreating(false);
+    if (res.ok) { setNewName(""); toast.success(`List “${name}” created`); void load(); }
+    else toast.error(res.error);
+  };
+
+  const startImport = (name: string) => { targetList.current = name; fileRef.current?.click(); };
+
+  const onFile = async (file: File) => {
+    const list = targetList.current;
+    setImportingTo(list);
+    try {
+      const rows = await parseRecipientsFile(file);
+      if (rows.length === 0) { toast.error("No valid rows found. Expected columns: name, email."); return; }
+      const res = await dal.emailMarketing.importSubscribers(
+        rows.map((r) => ({ email: r.email, name: r.name })), list,
+      );
+      if (res.ok) {
+        toast.success(`Imported ${res.data.imported.toLocaleString()} into “${list}” (${res.data.created.toLocaleString()} new)`);
+        void load();
+      } else toast.error(res.error);
+    } catch {
+      toast.error("Could not read that file. Use a .xlsx or .csv with name & email columns.");
+    } finally {
+      setImportingTo(null);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }}
+      />
+
+      {/* Create a list */}
+      <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-muted/30 p-3 sm:flex-row sm:items-center">
+        <Input
+          placeholder="New mailer list name — e.g. CPHQ July intake"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && createList()}
+          className="sm:flex-1"
+        />
+        <Button onClick={createList} disabled={creating || !newName.trim()}>
+          <Plus className="size-4" /> Create list
+        </Button>
+      </div>
+
+      {/* Existing lists */}
+      {loading ? (
+        <div className="grid place-items-center rounded-xl border border-dashed border-border/70 p-10 text-muted-foreground">
+          <Loader2 className="size-5 animate-spin" />
+        </div>
+      ) : lists.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">
+          No mailer lists yet. Create one above, then import subscribers into it.
+        </div>
+      ) : (
+        <div className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70">
+          {lists.map((g) => {
+            const key = `newsletter:${g.name}`;
+            const on = sources.includes(key);
+            const busy = importingTo === g.name;
+            return (
+              <div key={g.name} className={cn("flex items-center gap-3 p-3", on && "bg-primary/5")}>
+                <Checkbox checked={on} onCheckedChange={() => toggleSource(key)} />
+                <button type="button" onClick={() => toggleSource(key)} className="min-w-0 flex-1 text-left">
+                  <p className="truncate text-sm font-medium">{g.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {g.count.toLocaleString()} subscriber{g.count === 1 ? "" : "s"}
+                  </p>
+                </button>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => startImport(g.name)} disabled={busy}>
+                  {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                  {busy ? "Importing…" : "Import"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Ticked lists are added to this campaign&apos;s recipients. Imports upsert by email
+        (<span className="font-medium">name</span> &amp; <span className="font-medium">email</span> columns) and lists stay reusable across campaigns.
+      </p>
+    </div>
+  );
+}
 
 function ManualEntry({
   manual, setManual,
@@ -633,6 +768,25 @@ function ManualList({
   );
 }
 
+/** Parse an .xlsx/.xls/.csv into recipients, matching any name/email columns. */
+async function parseRecipientsFile(file: File): Promise<ManualRecipient[]> {
+  const XLSX = await import("xlsx");
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+  const rows: ManualRecipient[] = [];
+  for (const raw of json) {
+    const entries = Object.entries(raw);
+    const emailKey = entries.find(([k]) => /e-?mail/i.test(k));
+    const nameKey = entries.find(([k]) => /name/i.test(k));
+    const email = String(emailKey?.[1] ?? "").trim();
+    const nm = String(nameKey?.[1] ?? "").trim();
+    if (isEmail(email)) rows.push({ email, name: nm });
+  }
+  return rows;
+}
+
 function ExcelImport({ onImport }: { onImport: (rows: ManualRecipient[]) => void }) {
   const [loading, setLoading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -640,20 +794,7 @@ function ExcelImport({ onImport }: { onImport: (rows: ManualRecipient[]) => void
   const handleFile = async (file: File) => {
     setLoading(true);
     try {
-      const XLSX = await import("xlsx");
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-      const rows: ManualRecipient[] = [];
-      for (const raw of json) {
-        const entries = Object.entries(raw);
-        const emailKey = entries.find(([k]) => /e-?mail/i.test(k));
-        const nameKey = entries.find(([k]) => /name/i.test(k));
-        const email = String(emailKey?.[1] ?? "").trim();
-        const nm = String(nameKey?.[1] ?? "").trim();
-        if (isEmail(email)) rows.push({ email, name: nm });
-      }
+      const rows = await parseRecipientsFile(file);
       if (rows.length === 0) { toast.error("No valid rows found. Expected columns: name, email."); return; }
       onImport(rows);
       toast.success(`Imported ${rows.length} recipient${rows.length === 1 ? "" : "s"}`);

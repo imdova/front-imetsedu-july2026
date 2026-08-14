@@ -209,6 +209,13 @@ export async function deleteSubscriber(id: string): Promise<Result<boolean>> {
   const res = await svc.deleteSubscriber(id);
   return res.ok ? ok(true) : res;
 }
+export async function importSubscribers(
+  subscribers: { email: string; name?: string; phone?: string }[],
+  group?: string,
+): Promise<Result<{ imported: number; created: number; group: string | null; count: number }>> {
+  const res = await svc.importSubscribers(subscribers, group);
+  return res.ok ? ok(res.data) : res;
+}
 export async function bulkDeleteSubscribers(ids: string[]): Promise<Result<number>> {
   const res = await svc.bulkDeleteSubscribers(ids);
   return res.ok ? ok(res.data.deleted) : res;

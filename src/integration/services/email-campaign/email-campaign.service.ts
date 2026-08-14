@@ -6,7 +6,7 @@ import {
   API_EMAIL_TEMPLATE_CATEGORIES, apiEmailTemplateCategory,
   API_EMAIL_AUTOMATIONS, apiEmailAutomation, apiEmailAutomationToggle,
   API_EMAIL_BRAND_BLOCKS, apiEmailBrandBlock,
-  API_EMAIL_SUBSCRIBERS, apiEmailSubscriber, API_EMAIL_SUBSCRIBERS_BULK_DELETE,
+  API_EMAIL_SUBSCRIBERS, apiEmailSubscriber, API_EMAIL_SUBSCRIBERS_IMPORT, API_EMAIL_SUBSCRIBERS_BULK_DELETE,
   API_EMAIL_SUBSCRIBERS_ASSIGN, API_EMAIL_SUBSCRIBERS_UNASSIGN,
   API_EMAIL_SUBSCRIBER_GROUPS, apiEmailSubscriberGroup, API_EMAIL_SUBSCRIBER_GROUP_LINKS,
 } from "@integration/constants/api/email";
@@ -72,6 +72,10 @@ export const listSubscribers = (search?: string, group?: string) => {
   return api.get<SubscriberDto[]>(qs ? `${API_EMAIL_SUBSCRIBERS}?${qs}` : API_EMAIL_SUBSCRIBERS);
 };
 export const addSubscriber = (input: Record<string, unknown>) => api.post<SubscriberDto>(API_EMAIL_SUBSCRIBERS, input);
+export const importSubscribers = (subscribers: { email: string; name?: string; phone?: string }[], group?: string) =>
+  api.post<{ imported: number; created: number; group: string | null; count: number }>(
+    API_EMAIL_SUBSCRIBERS_IMPORT, { subscribers, ...(group ? { group } : {}) },
+  );
 export const deleteSubscriber = (id: string) => api.delete<{ success: boolean }>(apiEmailSubscriber(id));
 export const bulkDeleteSubscribers = (ids: string[]) => api.post<{ success: boolean; deleted: number }>(API_EMAIL_SUBSCRIBERS_BULK_DELETE, { ids });
 export const assignSubscribersGroup = (ids: string[], group: string) => api.post<{ success: boolean; modified: number }>(API_EMAIL_SUBSCRIBERS_ASSIGN, { ids, group });
