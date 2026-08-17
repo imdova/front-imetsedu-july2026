@@ -9,6 +9,7 @@ export type WaRecipient = svc.WaRecipient;
 
 export interface WaTemplate {
   id: string; name: string; language: string; category: string; folder: string; body: string; variables: number; status: string;
+  headerUrl: string; headerKind: string; headerFilename: string;
 }
 export interface WaCampaign {
   id: string; name: string; mode: "template" | "manual"; templateName: string; language: string; bodyPreview: string;
@@ -24,6 +25,7 @@ export interface WaAutomation {
 
 const mapTpl = (d: svc.WaTemplateDto): WaTemplate => ({
   id: d._id, name: d.name, language: d.language, category: d.category, folder: d.folder ?? "", body: d.body, variables: d.variables ?? 0, status: d.status,
+  headerUrl: d.headerUrl ?? "", headerKind: d.headerKind ?? "", headerFilename: d.headerFilename ?? "",
 });
 const mapCamp = (d: svc.WaCampaignDto): WaCampaign => {
   let defaultParams: string[] = []; try { defaultParams = JSON.parse(d.defaultParams || "[]"); } catch { defaultParams = []; }

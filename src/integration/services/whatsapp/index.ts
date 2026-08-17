@@ -6,6 +6,7 @@ export interface WaStatusDto { configured: boolean; phoneId: string; version: st
 export interface WaGroupDto { name: string; count: number; phoneCount: number; kind?: string }
 export interface WaTemplateDto {
   _id: string; name: string; language: string; category: string; folder?: string; body: string; variables: number; status: string;
+  headerUrl?: string; headerKind?: string; headerFilename?: string;
 }
 export interface WaRecipient { phone: string; name?: string; params?: string[] }
 export interface WaCampaignDto {

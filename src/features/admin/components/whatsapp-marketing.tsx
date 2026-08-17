@@ -1440,6 +1440,9 @@ function CampaignsPanel({ templates, groups, initial, confirm }: {
                 <div className="rounded-xl bg-[#e5ddd5] p-4 dark:bg-muted/40">
                   <div dir={language.startsWith("ar") ? "rtl" : "ltr"} className="ml-auto max-w-[85%] space-y-2 rounded-lg rounded-tr-none bg-[#d9fdd3] p-2.5 text-sm text-neutral-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-50">
                     {mode === "manual" && media && <MediaPreview media={media} className="max-w-full" />}
+                    {mode === "template" && tpl?.headerUrl && (
+                      <MediaPreview media={{ url: tpl.headerUrl, kind: tpl.headerKind, mime: "", filename: tpl.headerFilename }} className="max-w-full" />
+                    )}
                     {previewBody
                       ? <p className="whitespace-pre-wrap break-words">{previewBody}</p>
                       : mode === "manual" && media ? <p className="text-xs opacity-70">{media.filename}</p> : null}
@@ -1594,7 +1597,7 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
 }
 
 /* ───────────────────────── Templates ───────────────────────── */
-const EMPTY_TPL = { name: "", language: "ar", category: "marketing", folder: "", body: "", variables: 0, status: "approved" };
+const EMPTY_TPL = { name: "", language: "ar", category: "marketing", folder: "", body: "", variables: 0, status: "approved", headerUrl: "", headerKind: "", headerFilename: "" };
 const WA_UNCAT = "__uncat__";
 
 function TemplatesPanel({ templates, setTemplates, confirm }: {
@@ -1605,6 +1608,8 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
   const [editing, setEditing] = React.useState<WaTemplate | null>(null);
   const [form, setForm] = React.useState(EMPTY_TPL);
   const [saving, setSaving] = React.useState(false);
+  const [tplUploading, setTplUploading] = React.useState(false);
+  const tplFileRef = React.useRef<HTMLInputElement>(null);
   const [activeCat, setActiveCat] = React.useState<string | null>(null); // null = All
   const [folders, setFolders] = React.useState<WaTemplateFolder[]>([]);
   const [catDlg, setCatDlg] = React.useState<{ mode: "new" | "rename"; original?: string; value: string } | null>(null);
@@ -1658,7 +1663,20 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
     setForm({ ...EMPTY_TPL, folder: activeCat && activeCat !== WA_UNCAT ? activeCat : "" });
     setOpen(true);
   };
-  const openEdit = (t: WaTemplate) => { setEditing(t); setForm({ name: t.name, language: t.language, category: t.category, folder: t.folder ?? "", body: t.body, variables: t.variables, status: t.status }); setOpen(true); };
+  const openEdit = (t: WaTemplate) => { setEditing(t); setForm({ name: t.name, language: t.language, category: t.category, folder: t.folder ?? "", body: t.body, variables: t.variables, status: t.status, headerUrl: t.headerUrl ?? "", headerKind: t.headerKind ?? "", headerFilename: t.headerFilename ?? "" }); setOpen(true); };
+
+  const onTplHeaderFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; e.target.value = "";
+    if (!f) return;
+    if (f.size > 25 * 1024 * 1024) { toast.error("File too large (max 25MB)"); return; }
+    if (f.type.startsWith("audio/")) { toast.error("Meta doesn't allow audio/voice in template headers — use image, video or PDF."); return; }
+    setTplUploading(true);
+    const r = await dal.whatsapp.uploadCampaignMedia(f, { filename: f.name });
+    setTplUploading(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    if (!["image", "video", "document"].includes(r.data.kind)) { toast.error("Unsupported header type — use image, video or PDF."); return; }
+    setForm((p) => ({ ...p, headerUrl: r.data.url, headerKind: r.data.kind, headerFilename: r.data.filename }));
+  };
 
   const save = async () => {
     if (!form.name.trim()) { toast.error("Template name is required (must match Meta)"); return; }
@@ -1800,6 +1818,28 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
               </div>
             </div>
             <div className="space-y-1.5"><Label>Body preview (use {"{{1}}"} for variables)</Label><Textarea rows={4} dir={form.language.startsWith("ar") ? "rtl" : "ltr"} value={form.body} onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} /></div>
+
+            {/* Header media */}
+            <input ref={tplFileRef} type="file" accept="image/*,video/*,.pdf" className="hidden" onChange={onTplHeaderFile} />
+            <div className="space-y-1.5">
+              <Label>Header media <span className="font-normal text-muted-foreground">(optional — image, video or PDF)</span></Label>
+              {form.headerUrl ? (
+                <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+                  <div className="min-w-0 flex-1">
+                    <MediaPreview media={{ url: form.headerUrl, kind: form.headerKind, mime: "", filename: form.headerFilename }} />
+                  </div>
+                  <Button variant="ghost" size="icon" className="size-8" title="Remove" onClick={() => setForm((p) => ({ ...p, headerUrl: "", headerKind: "", headerFilename: "" }))}><X className="size-4" /></Button>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => tplFileRef.current?.click()} disabled={tplUploading}>
+                  {tplUploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />} {tplUploading ? "Uploading…" : "Attach image / video / PDF"}
+                </Button>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Sent as the template&apos;s header on every campaign send. The Meta template must be approved <span className="font-medium">with a matching media header</span>. Voice/audio isn&apos;t supported by Meta template headers.
+              </p>
+            </div>
+
             <div className="space-y-1.5"><Label>Number of variables</Label><Input type="number" min={0} value={form.variables} onChange={(e) => setForm((f) => ({ ...f, variables: Number(e.target.value) }))} className="w-24" /></div>
           </div>
           <DialogFooter>
