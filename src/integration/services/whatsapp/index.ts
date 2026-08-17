@@ -13,6 +13,7 @@ export interface WaCampaignDto {
   text?: string; mediaUrl?: string; mediaKind?: string; mediaFilename?: string;
   defaultParams: string; recipients: { phone: string; name?: string }[];
   status: string; total: number; sentCount: number; failedCount: number; sentAt?: string; createdAt: string;
+  deliveredCount?: number; deliveryFailedCount?: number; deliveryError?: string;
 }
 export interface WaMediaUploadDto { url: string; kind: string; mime: string; filename: string }
 export interface WaAutomationDto {

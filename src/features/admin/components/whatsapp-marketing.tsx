@@ -1474,21 +1474,37 @@ function CampaignsPanel({ templates, groups, initial, confirm }: {
 
       {/* Recent campaigns */}
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-muted-foreground">Recent campaigns</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-muted-foreground">Recent campaigns</p>
+          <Button variant="ghost" size="icon" className="size-7" title="Refresh delivery statuses" onClick={refresh}><RefreshCw className="size-3.5" /></Button>
+        </div>
         {campaigns.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">No campaigns yet.</p>
-        ) : campaigns.map((c) => (
-          <Card key={c.id}>
-            <CardContent className="flex items-center gap-3 py-3.5">
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-success/12 text-success"><MessageSquare className="size-4" /></span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{c.name}</p>
-                <p className="text-[11px] text-muted-foreground">{c.mode === "manual" ? "Manual" : c.templateName} · {c.total} recipients{c.status === "sent" ? ` · ${c.sentCount} sent${c.failedCount ? `, ${c.failedCount} failed` : ""}` : ` · ${c.status}`}</p>
-              </div>
-              <Button variant="ghost" size="icon" className="size-8" title="Delete" onClick={() => del(c)}><Trash2 className="size-4 text-destructive" /></Button>
-            </CardContent>
-          </Card>
-        ))}
+        ) : campaigns.map((c) => {
+          const undelivered = c.deliveryFailedCount > 0;
+          return (
+            <Card key={c.id}>
+              <CardContent className="flex items-center gap-3 py-3.5">
+                <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg", undelivered ? "bg-destructive/10 text-destructive" : "bg-success/12 text-success")}>
+                  {undelivered ? <AlertTriangle className="size-4" /> : <MessageSquare className="size-4" />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{c.name}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {c.mode === "manual" ? "Manual" : c.templateName} · {c.total} recipients
+                    {c.status === "sent"
+                      ? ` · ${c.sentCount} accepted${c.failedCount ? `, ${c.failedCount} rejected` : ""}${c.deliveredCount ? ` · ${c.deliveredCount} delivered` : ""}${c.deliveryFailedCount ? ` · ${c.deliveryFailedCount} not delivered` : ""}`
+                      : ` · ${c.status}`}
+                  </p>
+                  {undelivered && c.deliveryError && (
+                    <p className="mt-0.5 truncate text-[11px] text-destructive" title={c.deliveryError}>{c.deliveryError}</p>
+                  )}
+                </div>
+                <Button variant="ghost" size="icon" className="size-8" title="Delete" onClick={() => del(c)}><Trash2 className="size-4 text-destructive" /></Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
