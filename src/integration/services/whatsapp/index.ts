@@ -2,7 +2,7 @@ import { api, type Result } from "@integration/services/http/client";
 
 const BASE = "/admin/whatsapp";
 
-export interface WaStatusDto { configured: boolean; phoneId: string; version: string }
+export interface WaStatusDto { configured: boolean; phoneId: string; version: string; wabaId?: string }
 export interface WaGroupDto { name: string; count: number; phoneCount: number; kind?: string }
 export interface WaTemplateDto {
   _id: string; name: string; language: string; category: string; folder?: string; body: string; variables: number; status: string;
@@ -45,6 +45,8 @@ export const renameTemplateFolder = (name: string, to: string): Promise<Result<{
 export const deleteTemplateFolder = (name: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/template-folders/${encodeURIComponent(name)}`);
 
 export const listTemplates = (): Promise<Result<WaTemplateDto[]>> => api.get(`${BASE}/templates`, { revalidate: false });
+export interface WaTemplateStatusSync { checked: number; approved: number; pending: number; rejected: number; notFound: number; updated: number }
+export const syncTemplateStatuses = (): Promise<Result<WaTemplateStatusSync>> => api.post(`${BASE}/templates/sync-status`, {});
 export const createTemplate = (input: Record<string, unknown>): Promise<Result<WaTemplateDto>> => api.post(`${BASE}/templates`, input);
 export const updateTemplate = (id: string, input: Record<string, unknown>): Promise<Result<WaTemplateDto>> => api.patch(`${BASE}/templates/${id}`, input);
 export const removeTemplate = (id: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/templates/${id}`);

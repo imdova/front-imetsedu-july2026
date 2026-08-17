@@ -96,7 +96,7 @@ export function WhatsappMarketing({
       {tab === "analytics" && <AnalyticsPanel />}
       {tab === "campaigns" && <CampaignsPanel templates={templates} groups={groups} initial={initialCampaigns} confirm={confirm} />}
       {tab === "automations" && <AutomationsPanel templates={templates} groups={groups} initial={initialAutomations} confirm={confirm} />}
-      {tab === "templates" && <TemplatesPanel templates={templates} setTemplates={setTemplates} confirm={confirm} />}
+      {tab === "templates" && <TemplatesPanel templates={templates} setTemplates={setTemplates} confirm={confirm} wabaId={status?.wabaId} />}
       {Confirmation}
     </div>
   );
@@ -1600,9 +1600,10 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
 const EMPTY_TPL = { name: "", language: "ar", category: "marketing", folder: "", body: "", variables: 0, status: "approved", headerUrl: "", headerKind: "", headerFilename: "" };
 const WA_UNCAT = "__uncat__";
 
-function TemplatesPanel({ templates, setTemplates, confirm }: {
+function TemplatesPanel({ templates, setTemplates, confirm, wabaId }: {
   templates: WaTemplate[]; setTemplates: React.Dispatch<React.SetStateAction<WaTemplate[]>>;
   confirm: ReturnType<typeof useConfirm>["confirm"];
+  wabaId?: string;
 }) {
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<WaTemplate | null>(null);
@@ -1664,6 +1665,20 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
     setOpen(true);
   };
   const openEdit = (t: WaTemplate) => { setEditing(t); setForm({ name: t.name, language: t.language, category: t.category, folder: t.folder ?? "", body: t.body, variables: t.variables, status: t.status, headerUrl: t.headerUrl ?? "", headerKind: t.headerKind ?? "", headerFilename: t.headerFilename ?? "" }); setOpen(true); };
+
+  const [checkingStatus, setCheckingStatus] = React.useState(false);
+  const metaManagerUrl = `https://business.facebook.com/wa/manage/message-templates/${wabaId ? `?waba_id=${wabaId}` : ""}`;
+
+  const checkApprovals = async () => {
+    setCheckingStatus(true);
+    const r = await dal.whatsapp.syncTemplateStatuses();
+    if (r.ok) {
+      const s = r.data;
+      toast.success(`${s.approved} approved · ${s.pending} pending · ${s.rejected} rejected${s.notFound ? ` · ${s.notFound} not on Meta` : ""}`);
+      const tr = await dal.whatsapp.fetchTemplates(); if (tr.ok) setTemplates(tr.data);
+    } else toast.error(r.error);
+    setCheckingStatus(false);
+  };
 
   const onTplHeaderFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; e.target.value = "";
@@ -1757,7 +1772,12 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
           <p className="text-sm text-muted-foreground">
             {visible.length} {visible.length === 1 ? "template" : "templates"}{activeCat && activeCat !== WA_UNCAT ? ` in “${activeCat}”` : ""}
           </p>
-          <Button className="gap-1.5" onClick={openNew}><Plus className="size-4" /> New template</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="gap-1.5" onClick={checkApprovals} disabled={checkingStatus}>
+              {checkingStatus ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />} Check approvals
+            </Button>
+            <Button className="gap-1.5" onClick={openNew}><Plus className="size-4" /> New template</Button>
+          </div>
         </div>
 
         {visible.length === 0 ? (
@@ -1782,10 +1802,20 @@ function TemplatesPanel({ templates, setTemplates, confirm }: {
                           <Badge variant="secondary" className="capitalize">{t.category}</Badge>
                           <Badge variant="outline" className="uppercase">{t.language}</Badge>
                           {t.variables > 0 && <Badge variant="outline">{t.variables} vars</Badge>}
+                          {(t.status === "pending" || t.status === "in_appeal") && <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300">Pending review</Badge>}
+                          {t.status === "rejected" && <Badge variant="destructive">Rejected</Badge>}
+                          {t.status === "not_found" && <Badge variant="outline" className="text-muted-foreground">Not on Meta</Badge>}
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-1">
+                      {t.status === "approved" ? (
+                        <span title="Approved by Meta" className="grid size-7 place-items-center rounded-full bg-success/12 text-success"><CheckCircle2 className="size-4" /></span>
+                      ) : (
+                        <a href={metaManagerUrl} target="_blank" rel="noreferrer">
+                          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs">Approve in Meta</Button>
+                        </a>
+                      )}
                       <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(t)}><Pencil className="size-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="size-7" onClick={() => del(t)}><Trash2 className="size-3.5 text-destructive" /></Button>
                     </div>
