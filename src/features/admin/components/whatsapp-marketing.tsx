@@ -7,12 +7,14 @@ import {
   FileText, Megaphone, CheckCircle2, AlertTriangle, Clock, Inbox, CheckCheck, ArrowLeft,
   Search, Info, StickyNote, Check, Mail, CalendarDays, Tag, X, Paperclip, Mic, Download,
   BarChart3, TrendingUp, Clock3, Flame, Sparkles, ScrollText, Gauge, RefreshCw,
-  Upload, Image as ImageIcon, Film, Music, File as FileIcon, Square, ArrowRight, Type,
+  Eye,
 } from "lucide-react";
 
+import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaRecipient, WaConversation, WaThread, WaList, WaTemplateFolder, WaAnalytics } from "@/lib/dal/whatsapp";
+import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaConversation, WaThread, WaList, WaTemplateFolder, WaAnalytics } from "@/lib/dal/whatsapp";
 import { WhatsappAutomationBuilder } from "@/features/admin/components/whatsapp-automation-builder";
+import { CampaignStatusBadge, MediaPreview, fmtDur } from "@/features/admin/components/whatsapp-shared";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
@@ -27,24 +29,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 type Tab = "inbox" | "analytics" | "templates" | "campaigns" | "automations";
 
-/** "phone" or "phone,name" per line → recipients. */
-function parseRecipients(text: string): WaRecipient[] {
-  return text.split(/\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
-    const [phone, ...rest] = l.split(",");
-    return { phone: phone.trim(), name: rest.join(",").trim() || undefined };
-  }).filter((r) => r.phone.replace(/\D/g, "").length >= 6);
-}
-
 export function WhatsappMarketing({
-  initialStatus, initialTemplates, initialGroups, initialCampaigns, initialAutomations,
+  initialStatus, initialTemplates, initialGroups, initialCampaigns, initialAutomations, initialTab,
 }: {
   initialStatus: WaStatus | null;
   initialTemplates: WaTemplate[];
   initialGroups: WaGroup[];
   initialCampaigns: WaCampaign[];
   initialAutomations: WaAutomation[];
+  initialTab?: Tab;
 }) {
-  const [tab, setTab] = React.useState<Tab>("inbox");
+  const [tab, setTab] = React.useState<Tab>(initialTab ?? "inbox");
   const [status] = React.useState(initialStatus);
   const [templates, setTemplates] = React.useState(initialTemplates);
   const [groups] = React.useState(initialGroups);
@@ -94,7 +89,7 @@ export function WhatsappMarketing({
 
       {tab === "inbox" && <InboxPanel templates={templates} connected={!!status?.configured} confirm={confirm} />}
       {tab === "analytics" && <AnalyticsPanel />}
-      {tab === "campaigns" && <CampaignsPanel templates={templates} groups={groups} initial={initialCampaigns} confirm={confirm} />}
+      {tab === "campaigns" && <CampaignsPanel initial={initialCampaigns} confirm={confirm} />}
       {tab === "automations" && <AutomationsPanel templates={templates} groups={groups} initial={initialAutomations} confirm={confirm} />}
       {tab === "templates" && <TemplatesPanel templates={templates} setTemplates={setTemplates} confirm={confirm} wabaId={status?.wabaId} />}
       {Confirmation}
@@ -143,12 +138,6 @@ const TEMP: Record<string, { emoji: string; label: string; chip: string; bar: st
   warm: { emoji: "🌤️", label: "Warm", chip: "bg-amber-500/10 text-amber-600 dark:text-amber-500", bar: "bg-amber-500", accent: "border-s-amber-400" },
   cold: { emoji: "❄️", label: "Cold", chip: "bg-sky-500/10 text-sky-600 dark:text-sky-400", bar: "bg-sky-500", accent: "border-s-transparent" },
 };
-
-/** mm:ss for the voice-recording timer. */
-function fmtDur(s: number): string {
-  const m = Math.floor(s / 60), r = s % 60;
-  return `${m}:${String(r).padStart(2, "0")}`;
-}
 
 /** A caption is real content; bracket placeholders like [image] / the voice label are not. */
 function isPlaceholderText(t: string): boolean {
@@ -1090,186 +1079,25 @@ function Field2({ icon: Icon, label, value }: { icon: typeof Mail; label: string
 }
 
 /* ───────────────────────── Campaigns ───────────────────────── */
-type WaMedia = { url: string; kind: string; mime: string; filename: string };
+/* Campaign management list — the wizard lives on /admin/whatsapp-campaigns/new. */
 
-/** Parse an .xlsx/.xls/.csv into WhatsApp recipients (phone + optional name columns). */
-async function parseWaRecipientsFile(file: File): Promise<WaRecipient[]> {
-  const XLSX = await import("xlsx");
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-  const out: WaRecipient[] = [];
-  for (const raw of json) {
-    const entries = Object.entries(raw);
-    const phoneKey = entries.find(([k]) => /phone|mobile|whats|number|tel/i.test(k));
-    const nameKey = entries.find(([k]) => /name/i.test(k));
-    const phone = String(phoneKey?.[1] ?? "").replace(/[^\d+]/g, "").trim();
-    const name = String(nameKey?.[1] ?? "").trim();
-    if (phone.replace(/\D/g, "").length >= 6) out.push({ phone, name: name || undefined });
-  }
-  return out;
-}
-
-const MEDIA_ICON: Record<string, typeof FileIcon> = { image: ImageIcon, video: Film, audio: Music, document: FileIcon };
-
-/** WhatsApp-style rendered media preview for the review step + attach preview. */
-function MediaPreview({ media, className }: { media: WaMedia; className?: string }) {
-  // eslint-disable-next-line @next/next/no-img-element -- user-uploaded S3 media, no next/image optimization
-  if (media.kind === "image") return <img src={media.url} alt="" className={cn("max-h-52 rounded-lg object-contain", className)} />;
-  if (media.kind === "video") return <video src={media.url} controls className={cn("max-h-52 rounded-lg", className)} />;
-  if (media.kind === "audio") return <audio src={media.url} controls className={cn("w-full", className)} />;
-  const Icon = MEDIA_ICON[media.kind] ?? FileIcon;
-  return (
-    <a href={media.url} target="_blank" rel="noreferrer" className={cn("inline-flex items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm", className)}>
-      <Icon className="size-4 text-primary" /> <span className="truncate">{media.filename || "Attachment"}</span>
-    </a>
-  );
-}
-
-function CampaignsPanel({ templates, groups, initial, confirm }: {
-  templates: WaTemplate[]; groups: WaGroup[]; initial: WaCampaign[];
+function CampaignsPanel({ initial, confirm }: {
+  initial: WaCampaign[];
   confirm: ReturnType<typeof useConfirm>["confirm"];
 }) {
   const [campaigns, setCampaigns] = React.useState(initial);
-  const [step, setStep] = React.useState<0 | 1>(0);
-  const [name, setName] = React.useState("");
-  const [mode, setMode] = React.useState<"template" | "manual">(templates.length ? "template" : "manual");
-
-  // Template mode
-  const [templateName, setTemplateName] = React.useState(templates[0]?.name ?? "");
-  const [params, setParams] = React.useState<string[]>(() => Array.from({ length: templates[0]?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")));
-
-  // Manual mode
-  const [text, setText] = React.useState("");
-  const [media, setMedia] = React.useState<WaMedia | null>(null);
-  const [uploading, setUploading] = React.useState(false);
-  const [recording, setRecording] = React.useState(false);
-  const [recSecs, setRecSecs] = React.useState(0);
-  const recRef = React.useRef<{ rec: MediaRecorder; chunks: Blob[]; stream: MediaStream } | null>(null);
-  const fileRef = React.useRef<HTMLInputElement>(null);
-  const excelRef = React.useRef<HTMLInputElement>(null);
-
-  // Recipients
-  const [pickedGroups, setPickedGroups] = React.useState<string[]>([]);
-  const [manual, setManual] = React.useState("");
-  const [imported, setImported] = React.useState<WaRecipient[]>([]);
-  const [sending, setSending] = React.useState(false);
-
-  const tpl = templates.find((t) => t.name === templateName);
-  const language = mode === "template" ? (tpl?.language ?? "ar") : "ar";
-  const varCount = tpl?.variables ?? 0;
-  const finalParams = Array.from({ length: varCount }, (_, i) => params[i] ?? "");
-  const pickTemplate = (v: string) => {
-    setTemplateName(v);
-    const t = templates.find((x) => x.name === v);
-    setParams(Array.from({ length: t?.variables ?? 0 }, (_, i) => (i === 0 ? "{{name}}" : "")));
-  };
-
-  const manualRecipients = React.useMemo(() => {
-    const seen = new Set<string>();
-    return [...parseRecipients(manual), ...imported].filter((r) => {
-      const n = r.phone.replace(/\D/g, ""); if (!n || seen.has(n)) return false; seen.add(n); return true;
-    });
-  }, [manual, imported]);
-  const groupReach = groups.filter((g) => pickedGroups.includes(g.name)).reduce((s, g) => s + g.phoneCount, 0);
-  const totalReach = manualRecipients.length + groupReach;
-
-  const toggleGroup = (g: string) => setPickedGroups((p) => p.includes(g) ? p.filter((x) => x !== g) : [...p, g]);
-
-  const contentReady = mode === "template" ? !!templateName : (text.trim().length > 0 || !!media);
-  const canReview = contentReady && totalReach > 0 && !uploading && !recording;
-
-  const previewBody = mode === "template"
-    ? (tpl?.body ?? "").replace(/\{\{(\d+)\}\}/g, (_, n) => finalParams[Number(n) - 1] || `{{${n}}}`)
-    : text;
+  const [busyId, setBusyId] = React.useState<string | null>(null);
 
   const refresh = async () => { const r = await dal.whatsapp.fetchCampaigns(); if (r.ok) setCampaigns(r.data); };
 
-  const reset = () => {
-    setStep(0); setName(""); setText(""); setMedia(null); setManual(""); setImported([]); setPickedGroups([]);
-    setMode(templates.length ? "template" : "manual");
-  };
-
-  /* ── Media attach / voice record ── */
-  React.useEffect(() => {
-    if (!recording) return;
-    const id = setInterval(() => setRecSecs((s) => s + 1), 1000);
-    return () => clearInterval(id);
-  }, [recording]);
-
-  const uploadMedia = async (file: File, voice = false) => {
-    if (file.size > 25 * 1024 * 1024) { toast.error("File too large (max 25MB)"); return; }
-    setUploading(true);
-    const r = await dal.whatsapp.uploadCampaignMedia(file, { voice, filename: file.name });
-    setUploading(false);
+  const sendNow = async (c: WaCampaign) => {
+    if (!(await confirm({ title: "Send campaign", description: `“${c.name}” will be sent to ${c.total} recipients now.`, confirmText: "Send" }))) return;
+    setBusyId(c.id);
+    const r = await dal.whatsapp.sendCampaign(c.id);
+    setBusyId(null);
     if (!r.ok) { toast.error(r.error); return; }
-    setMedia({ url: r.data.url, kind: r.data.kind, mime: r.data.mime, filename: r.data.filename });
-  };
-  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; if (f) void uploadMedia(f); e.target.value = "";
-  };
-  const startRec = async () => {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) { toast.error("Recording not supported in this browser"); return; }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = ["audio/ogg;codecs=opus", "audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t)) || "";
-      const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      const chunks: Blob[] = [];
-      rec.ondataavailable = (ev) => { if (ev.data.size) chunks.push(ev.data); };
-      rec.start();
-      recRef.current = { rec, chunks, stream };
-      setRecSecs(0); setRecording(true);
-    } catch { toast.error("Microphone permission denied"); }
-  };
-  const stopRec = (save: boolean) => {
-    const m = recRef.current;
-    setRecording(false);
-    if (!m) return;
-    m.rec.onstop = () => {
-      m.stream.getTracks().forEach((t) => t.stop());
-      const mt = m.rec.mimeType || "audio/webm";
-      if (save && m.chunks.length) {
-        const ext = mt.includes("ogg") ? "ogg" : mt.includes("mp4") ? "m4a" : "webm";
-        void uploadMedia(new File([new Blob(m.chunks, { type: mt })], `voice-${Date.now()}.${ext}`, { type: mt }), true);
-      }
-      recRef.current = null;
-    };
-    m.rec.stop();
-  };
-
-  const importExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; e.target.value = "";
-    if (!f) return;
-    try {
-      const rows = await parseWaRecipientsFile(f);
-      if (rows.length === 0) { toast.error("No valid rows. Expected a phone (and optional name) column."); return; }
-      setImported((p) => {
-        const seen = new Set(p.map((r) => r.phone.replace(/\D/g, "")));
-        const add = rows.filter((r) => { const n = r.phone.replace(/\D/g, ""); if (seen.has(n)) return false; seen.add(n); return true; });
-        return [...p, ...add];
-      });
-      toast.success(`Imported ${rows.length} number${rows.length === 1 ? "" : "s"}`);
-    } catch { toast.error("Could not read that file. Use .xlsx/.csv with a phone column."); }
-  };
-
-  const send = async () => {
-    setSending(true);
-    const c = await dal.whatsapp.createCampaign({
-      name: name || `Campaign ${new Date().toISOString().slice(0, 10)}`,
-      mode,
-      ...(mode === "template"
-        ? { templateName, language, bodyPreview: tpl?.body, defaultParams: finalParams }
-        : { text, mediaUrl: media?.url, mediaKind: media?.kind, mediaFilename: media?.filename }),
-      groups: pickedGroups, recipients: manualRecipients,
-    });
-    if (!c.ok) { setSending(false); toast.error(c.error); return; }
-    const res = await dal.whatsapp.sendCampaign(c.data.id);
-    setSending(false);
-    if (!res.ok) { toast.error(res.error); return; }
-    toast.success(`Sent ${res.data.sent}/${res.data.total}${res.data.failed ? ` · ${res.data.failed} failed` : ""}`);
-    if (res.data.errors?.length) toast.warning(res.data.errors[0]);
-    reset(); refresh();
+    toast.success(`Sent ${r.data.sent}/${r.data.total}${r.data.failed ? ` · ${r.data.failed} failed` : ""}`);
+    refresh();
   };
 
   const del = async (c: WaCampaign) => {
@@ -1278,246 +1106,69 @@ function CampaignsPanel({ templates, groups, initial, confirm }: {
     if (r.ok) { setCampaigns((p) => p.filter((x) => x.id !== c.id)); toast.success("Deleted"); } else toast.error(r.error);
   };
 
-  const stepDot = (n: 0 | 1, label: string) => (
-    <button type="button" onClick={() => n < step && setStep(n)} disabled={n > step}
-      className={cn("flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-        step === n ? "bg-primary/10 text-primary" : n < step ? "text-foreground hover:bg-muted" : "text-muted-foreground")}>
-      <span className={cn("grid size-5 place-items-center rounded-full text-xs ring-1",
-        step === n ? "bg-primary text-primary-foreground ring-primary" : n < step ? "bg-success text-white ring-success" : "ring-border")}>
-        {n < step ? <Check className="size-3" /> : n + 1}</span>
-      {label}
-    </button>
-  );
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-      <div className="space-y-4">
-        {/* Stepper */}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{campaigns.length} campaign{campaigns.length === 1 ? "" : "s"} — click a name for its full report.</p>
         <div className="flex items-center gap-2">
-          {stepDot(0, "Build")}
-          <div className="h-px flex-1 bg-border/60" />
-          {stepDot(1, "Review & send")}
+          <Button variant="outline" size="icon" className="size-9" title="Refresh delivery statuses" onClick={refresh}><RefreshCw className="size-4" /></Button>
+          <Link href="/admin/whatsapp-campaigns/new"><Button className="gap-1.5"><Plus className="size-4" /> New campaign</Button></Link>
         </div>
+      </div>
 
-        <input ref={fileRef} type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xlsx,.xls,.csv,.zip" className="hidden" onChange={onPickFile} />
-        <input ref={excelRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={importExcel} />
-
-        {step === 0 ? (
-          <Card>
-            <CardContent className="space-y-5 pt-5">
-              {/* Name */}
-              <div className="space-y-1.5">
-                <Label>Campaign name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. CPHQ July reminder" />
-              </div>
-
-              {/* Content */}
-              <div className="space-y-3">
-                <Label>Content</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => setMode("template")}
-                    className={cn("flex items-center gap-2 rounded-xl border p-3 text-left text-sm transition-colors",
-                      mode === "template" ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border/70 hover:bg-muted/40")}>
-                    <FileText className="size-4 text-primary" /><div><p className="font-medium">Use a template</p><p className="text-xs text-muted-foreground">Approved · sends to anyone</p></div>
-                  </button>
-                  <button type="button" onClick={() => setMode("manual")}
-                    className={cn("flex items-center gap-2 rounded-xl border p-3 text-left text-sm transition-colors",
-                      mode === "manual" ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border/70 hover:bg-muted/40")}>
-                    <Type className="size-4 text-primary" /><div><p className="font-medium">Write manually</p><p className="text-xs text-muted-foreground">Text + media</p></div>
-                  </button>
-                </div>
-
-                {mode === "template" ? (
-                  <div className="space-y-3 rounded-xl border border-border/60 p-3">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label>Template <span className="text-destructive">*</span></Label>
-                        <Select value={templateName} onValueChange={pickTemplate}>
-                          <SelectTrigger><SelectValue placeholder={templates.length ? "Pick a template" : "No templates yet"} /></SelectTrigger>
-                          <SelectContent position="popper">
-                            {templates.map((t) => <SelectItem key={t.id} value={t.name}>{t.name} · {t.language}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5"><Label>Language</Label><Input value={language} disabled className="font-mono text-sm" /></div>
-                    </div>
-                    {tpl?.body && <p dir={language.startsWith("ar") ? "rtl" : "ltr"} className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">{tpl.body}</p>}
-                    {varCount > 0 && (
-                      <div className="space-y-2">
-                        <Label>Template variables</Label>
-                        {Array.from({ length: varCount }).map((_, i) => (
-                          <Input key={i} value={params[i] ?? ""} onChange={(e) => setParams((p) => { const n = Array.from({ length: varCount }, (_, j) => p[j] ?? ""); n[i] = e.target.value; return n; })} placeholder={`{{${i + 1}}} — use {{name}} for the recipient's name`} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-3 rounded-xl border border-border/60 p-3">
-                    <Textarea rows={5} value={text} onChange={(e) => setText(e.target.value)} placeholder={"Write your message…\nUse {{name}} to greet each recipient."} />
-                    {/* Attach / record */}
-                    {recording ? (
-                      <div className="flex items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-2.5">
-                        <span className="size-2.5 animate-pulse rounded-full bg-destructive" />
-                        <span className="flex-1 text-sm text-muted-foreground">Recording… {fmtDur(recSecs)}</span>
-                        <Button variant="ghost" size="sm" onClick={() => stopRec(false)}>Cancel</Button>
-                        <Button size="sm" className="gap-1.5" onClick={() => stopRec(true)}><Square className="size-3.5" /> Stop</Button>
-                      </div>
-                    ) : media ? (
-                      <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
-                        <div className="min-w-0 flex-1"><MediaPreview media={media} /></div>
-                        <Button variant="ghost" size="icon" className="size-8" title="Remove" onClick={() => setMedia(null)}><X className="size-4" /></Button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                          {uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />} {uploading ? "Uploading…" : "Attach file / image / video"}
-                        </Button>
-                        <Button variant="outline" size="sm" className="gap-1.5" onClick={startRec} disabled={uploading}><Mic className="size-4" /> Record voice</Button>
-                      </div>
-                    )}
-                    <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-                      <Info className="mt-0.5 size-3 shrink-0" />
-                      Free-form messages only reach contacts who messaged you in the last 24h. For cold audiences, use a template.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Recipients */}
-              <div className="space-y-3">
-                <Label>Recipients</Label>
-                {groups.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-                    {groups.map((g) => {
-                      const on = pickedGroups.includes(g.name);
-                      return (
-                        <button key={g.name} type="button" onClick={() => toggleGroup(g.name)}
-                          className={cn("flex flex-col gap-1.5 rounded-xl border p-3 text-left transition-colors",
-                            on ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border/70 hover:bg-muted/40")}>
-                          <div className="flex items-center justify-between">
-                            <Users className={cn("size-4", on ? "text-primary" : "text-muted-foreground")} />
-                            <Badge variant="secondary" className="tabular-nums">{g.phoneCount}</Badge>
-                          </div>
-                          <p className="truncate text-sm font-medium">{g.name}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => excelRef.current?.click()}><Upload className="size-4" /> Import from Excel</Button>
-                  {imported.length > 0 && (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                      {imported.length} imported
-                      <button type="button" className="text-destructive hover:underline" onClick={() => setImported([])}>clear</button>
+      {campaigns.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border/70 bg-card p-12 text-center">
+          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-success/12 text-success"><Megaphone className="size-6" /></div>
+          <p className="text-sm font-medium">No campaigns yet</p>
+          <p className="mt-1 text-xs text-muted-foreground">Build a broadcast from a template or free text + media.</p>
+          <Link href="/admin/whatsapp-campaigns/new"><Button className="mt-4 gap-1.5"><Plus className="size-4" /> New campaign</Button></Link>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
+          <div className="hidden grid-cols-[minmax(0,1fr)_120px_200px_150px_110px] gap-3 border-b border-border/70 bg-muted/40 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
+            <span>Campaign</span><span>Status</span><span>Delivery</span><span>Sent at</span><span className="text-right">Actions</span>
+          </div>
+          <div className="divide-y divide-border/60">
+            {campaigns.map((c) => {
+              const undelivered = c.deliveryFailedCount > 0;
+              return (
+                <div key={c.id} className="grid gap-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_120px_200px_150px_110px] md:items-center md:gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg", undelivered ? "bg-destructive/10 text-destructive" : "bg-success/12 text-success")}>
+                      {undelivered ? <AlertTriangle className="size-4" /> : <MessageSquare className="size-4" />}
                     </span>
-                  )}
-                </div>
-                <details className="rounded-lg border border-border/60">
-                  <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground">…or paste numbers manually</summary>
-                  <div className="p-3 pt-0">
-                    <Textarea rows={3} value={manual} onChange={(e) => setManual(e.target.value)} placeholder={"201001234567\n201007654321,Ahmed"} className="font-mono text-sm" />
-                    <p className="mt-1 text-[11px] text-muted-foreground">One per line, optional <code>,name</code>.</p>
+                    <div className="min-w-0">
+                      <Link href={`/admin/whatsapp-campaigns/${c.id}`} className="block truncate text-sm font-medium hover:text-primary hover:underline">{c.name}</Link>
+                      <p className="truncate text-[11px] text-muted-foreground">{c.mode === "manual" ? "Manual message" : `Template · ${c.templateName}`} · {c.total} recipients</p>
+                    </div>
                   </div>
-                </details>
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between border-t border-border/60 pt-3">
-                <span className="text-sm text-muted-foreground">Reach: <span className="font-semibold text-foreground tabular-nums">{totalReach}</span></span>
-                <Button disabled={!canReview} className="gap-1.5" onClick={() => setStep(1)}>Next: Review <ArrowRight className="size-4" /></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="space-y-4 pt-5">
-              <div className="flex items-center gap-2"><Megaphone className="size-4 text-primary" /><p className="font-semibold">Review &amp; send</p></div>
-
-              {/* WhatsApp-style preview */}
-              <div>
-                <p className="mb-1.5 text-xs font-medium text-muted-foreground">Message preview</p>
-                <div className="rounded-xl bg-[#e5ddd5] p-4 dark:bg-muted/40">
-                  <div dir={language.startsWith("ar") ? "rtl" : "ltr"} className="ml-auto max-w-[85%] space-y-2 rounded-lg rounded-tr-none bg-[#d9fdd3] p-2.5 text-sm text-neutral-900 shadow-sm dark:bg-emerald-900/40 dark:text-emerald-50">
-                    {mode === "manual" && media && <MediaPreview media={media} className="max-w-full" />}
-                    {mode === "template" && tpl?.headerUrl && (
-                      <MediaPreview media={{ url: tpl.headerUrl, kind: tpl.headerKind, mime: "", filename: tpl.headerFilename }} className="max-w-full" />
+                  <div><CampaignStatusBadge status={c.status} /></div>
+                  <div className="min-w-0 text-xs text-muted-foreground">
+                    {c.status === "sent" ? (
+                      <>
+                        <span className="tabular-nums">{c.sentCount} accepted</span>
+                        {c.deliveredCount > 0 && <span className="text-success"> · {c.deliveredCount} delivered</span>}
+                        {c.deliveryFailedCount > 0 && <span className="text-destructive"> · {c.deliveryFailedCount} failed</span>}
+                        {undelivered && c.deliveryError && <p className="mt-0.5 truncate text-[11px] text-destructive" title={c.deliveryError}>{c.deliveryError}</p>}
+                      </>
+                    ) : "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{c.sentAt ? new Date(c.sentAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—"}</div>
+                  <div className="flex items-center gap-1 md:justify-end">
+                    <Link href={`/admin/whatsapp-campaigns/${c.id}`}><Button variant="ghost" size="icon" className="size-8" title="View report"><Eye className="size-4" /></Button></Link>
+                    {c.status === "draft" && (
+                      <Button variant="ghost" size="icon" className="size-8" title="Send now" onClick={() => sendNow(c)} disabled={busyId === c.id}>
+                        {busyId === c.id ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4 text-primary" />}
+                      </Button>
                     )}
-                    {previewBody
-                      ? <p className="whitespace-pre-wrap break-words">{previewBody}</p>
-                      : mode === "manual" && media ? <p className="text-xs opacity-70">{media.filename}</p> : null}
-                    <p className="text-right text-[10px] opacity-60">12:00 ✓✓</p>
+                    <Button variant="ghost" size="icon" className="size-8" title="Delete" onClick={() => del(c)}><Trash2 className="size-4 text-destructive" /></Button>
                   </div>
                 </div>
-              </div>
-
-              {/* Details */}
-              <div className="space-y-2 rounded-xl border border-border/60 p-3 text-sm">
-                <DetailRow k="Campaign" v={name || "Untitled"} />
-                <DetailRow k="Content" v={mode === "template" ? `Template — ${templateName}` : media ? `Manual — text + ${media.kind}` : "Manual — text"} />
-                <DetailRow k="Language" v={language === "ar" ? "Arabic" : language} />
-                <DetailRow k="Groups" v={pickedGroups.length ? `${pickedGroups.join(", ")} (${groupReach})` : "—"} />
-                <DetailRow k="Manual / imported" v={manualRecipients.length ? `${manualRecipients.length} numbers` : "—"} />
-                <div className="flex items-center justify-between border-t border-border/60 pt-2">
-                  <span className="font-medium">Total reach</span>
-                  <span className="font-semibold tabular-nums">{totalReach.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-border/60 pt-3">
-                <Button variant="ghost" onClick={() => setStep(0)} disabled={sending} className="gap-1.5"><ArrowLeft className="size-4" /> Back</Button>
-                <Button onClick={send} disabled={sending || totalReach === 0} className="gap-1.5">
-                  {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send now
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Recent campaigns */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-muted-foreground">Recent campaigns</p>
-          <Button variant="ghost" size="icon" className="size-7" title="Refresh delivery statuses" onClick={refresh}><RefreshCw className="size-3.5" /></Button>
+              );
+            })}
+          </div>
         </div>
-        {campaigns.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">No campaigns yet.</p>
-        ) : campaigns.map((c) => {
-          const undelivered = c.deliveryFailedCount > 0;
-          return (
-            <Card key={c.id}>
-              <CardContent className="flex items-center gap-3 py-3.5">
-                <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg", undelivered ? "bg-destructive/10 text-destructive" : "bg-success/12 text-success")}>
-                  {undelivered ? <AlertTriangle className="size-4" /> : <MessageSquare className="size-4" />}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{c.name}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {c.mode === "manual" ? "Manual" : c.templateName} · {c.total} recipients
-                    {c.status === "sent"
-                      ? ` · ${c.sentCount} accepted${c.failedCount ? `, ${c.failedCount} rejected` : ""}${c.deliveredCount ? ` · ${c.deliveredCount} delivered` : ""}${c.deliveryFailedCount ? ` · ${c.deliveryFailedCount} not delivered` : ""}`
-                      : ` · ${c.status}`}
-                  </p>
-                  {undelivered && c.deliveryError && (
-                    <p className="mt-0.5 truncate text-[11px] text-destructive" title={c.deliveryError}>{c.deliveryError}</p>
-                  )}
-                </div>
-                <Button variant="ghost" size="icon" className="size-8" title="Delete" onClick={() => del(c)}><Trash2 className="size-4 text-destructive" /></Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function DetailRow({ k, v }: { k: string; v: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <span className="shrink-0 text-muted-foreground">{k}</span>
-      <span className="min-w-0 truncate text-right">{v}</span>
+      )}
     </div>
   );
 }

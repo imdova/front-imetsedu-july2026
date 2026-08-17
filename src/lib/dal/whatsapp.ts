@@ -86,6 +86,15 @@ export async function uploadCampaignMedia(file: Blob, opts: { voice?: boolean; f
   return svc.uploadCampaignMedia(form);
 }
 export async function sendCampaign(id: string): Promise<Result<WaSendResult>> { return svc.sendCampaign(id); }
+export interface WaCampaignReport {
+  campaign: WaCampaign;
+  stats: { total: number; accepted: number; delivered: number; read: number; failed: number; notSent: number };
+  recipients: { phone: string; name: string; status: string; error: string; at: string | null }[];
+}
+export async function fetchCampaignReport(id: string): Promise<Result<WaCampaignReport>> {
+  const r = await svc.getCampaignReport(id);
+  return r.ok ? ok({ campaign: mapCamp(r.data.campaign), stats: r.data.stats, recipients: r.data.recipients }) : r;
+}
 export async function deleteCampaign(id: string): Promise<Result<boolean>> {
   const r = await svc.removeCampaign(id); return r.ok ? ok(true) : r;
 }

@@ -55,6 +55,12 @@ export const listCampaigns = (): Promise<Result<WaCampaignDto[]>> => api.get(`${
 export const createCampaign = (input: Record<string, unknown>): Promise<Result<WaCampaignDto>> => api.post(`${BASE}/campaigns`, input);
 export const uploadCampaignMedia = (form: FormData): Promise<Result<WaMediaUploadDto>> => api.post(`${BASE}/campaigns/upload-media`, form);
 export const sendCampaign = (id: string): Promise<Result<WaSendResult>> => api.post(`${BASE}/campaigns/${id}/send`, {});
+export interface WaCampaignReportDto {
+  campaign: WaCampaignDto;
+  stats: { total: number; accepted: number; delivered: number; read: number; failed: number; notSent: number };
+  recipients: { phone: string; name: string; status: string; error: string; at: string | null }[];
+}
+export const getCampaignReport = (id: string): Promise<Result<WaCampaignReportDto>> => api.get(`${BASE}/campaigns/${id}/report`, { revalidate: false });
 export const removeCampaign = (id: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/campaigns/${id}`);
 
 export const sendBulk = (input: Record<string, unknown>): Promise<Result<WaSendResult>> => api.post(`${BASE}/send-bulk`, input);

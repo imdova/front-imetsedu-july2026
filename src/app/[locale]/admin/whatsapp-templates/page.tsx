@@ -6,9 +6,16 @@ import { WhatsappMarketing } from "@/features/admin/components/whatsapp-marketin
 
 export const metadata = { robots: { index: false } };
 
-export default async function AdminWhatsappPage({ params }: { params: Promise<{ locale: string }> }) {
+const TABS = ["inbox", "analytics", "templates", "campaigns", "automations"] as const;
+
+export default async function AdminWhatsappPage({ params, searchParams }: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const { tab } = await searchParams;
+  const initialTab = TABS.find((t) => t === tab);
 
   const [statusRes, templatesRes, groupsRes, campaignsRes, automationsRes] = await Promise.all([
     dal.whatsapp.fetchStatus(),
@@ -34,6 +41,7 @@ export default async function AdminWhatsappPage({ params }: { params: Promise<{ 
         initialGroups={groupsRes.ok ? groupsRes.data : []}
         initialCampaigns={campaignsRes.ok ? campaignsRes.data : []}
         initialAutomations={automationsRes.ok ? automationsRes.data : []}
+        initialTab={initialTab}
       />
     </div>
   );
