@@ -1318,7 +1318,17 @@ function TemplatesPanel({ templates, setTemplates, confirm, wabaId }: {
   const openEdit = (t: WaTemplate) => { setEditing(t); setForm({ name: t.name, language: t.language, category: t.category, folder: t.folder ?? "", body: t.body, variables: t.variables, status: t.status, headerUrl: t.headerUrl ?? "", headerKind: t.headerKind ?? "", headerFilename: t.headerFilename ?? "" }); setOpen(true); };
 
   const [checkingStatus, setCheckingStatus] = React.useState(false);
+  const [submittingId, setSubmittingId] = React.useState<string | null>(null);
   const metaManagerUrl = `https://business.facebook.com/wa/manage/message-templates/${wabaId ? `?waba_id=${wabaId}` : ""}`;
+
+  const submitForApproval = async (t: WaTemplate) => {
+    setSubmittingId(t.id);
+    const r = await dal.whatsapp.submitTemplate(t.id);
+    setSubmittingId(null);
+    if (!r.ok) { toast.error(r.error); return; }
+    toast.success(`Submitted for review${r.data.renamed ? ` as “${r.data.name}” (name normalized to Meta rules)` : ""}`);
+    const tr = await dal.whatsapp.fetchTemplates(); if (tr.ok) setTemplates(tr.data);
+  };
 
   const checkApprovals = async () => {
     setCheckingStatus(true);
@@ -1453,19 +1463,29 @@ function TemplatesPanel({ templates, setTemplates, confirm, wabaId }: {
                           <Badge variant="secondary" className="capitalize">{t.category}</Badge>
                           <Badge variant="outline" className="uppercase">{t.language}</Badge>
                           {t.variables > 0 && <Badge variant="outline">{t.variables} vars</Badge>}
-                          {(t.status === "pending" || t.status === "in_appeal") && <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300">Pending review</Badge>}
-                          {t.status === "rejected" && <Badge variant="destructive">Rejected</Badge>}
-                          {t.status === "not_found" && <Badge variant="outline" className="text-muted-foreground">Not on Meta</Badge>}
+                          {t.status === "approved" ? (
+                            <Badge className="gap-1 bg-success/12 text-success hover:bg-success/15"><CheckCircle2 className="size-3" /> Approved</Badge>
+                          ) : t.status === "pending" || t.status === "in_appeal" ? (
+                            <Badge className="gap-1 bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300"><Clock className="size-3" /> Pending</Badge>
+                          ) : t.status === "rejected" ? (
+                            <Badge variant="destructive" className="gap-1"><AlertTriangle className="size-3" /> Rejected</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground">Not submitted</Badge>
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
                       {t.status === "approved" ? (
                         <span title="Approved by Meta" className="grid size-7 place-items-center rounded-full bg-success/12 text-success"><CheckCircle2 className="size-4" /></span>
-                      ) : (
-                        <a href={metaManagerUrl} target="_blank" rel="noreferrer">
-                          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs">Approve in Meta</Button>
+                      ) : t.status === "pending" || t.status === "in_appeal" ? null : t.status === "rejected" ? (
+                        <a href={metaManagerUrl} target="_blank" rel="noreferrer" title="Rejected templates must be edited & resubmitted in Meta WhatsApp Manager">
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-xs">Fix in Meta</Button>
                         </a>
+                      ) : (
+                        <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => submitForApproval(t)} disabled={submittingId === t.id}>
+                          {submittingId === t.id ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />} Submit for approval
+                        </Button>
                       )}
                       <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(t)}><Pencil className="size-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="size-7" onClick={() => del(t)}><Trash2 className="size-3.5 text-destructive" /></Button>

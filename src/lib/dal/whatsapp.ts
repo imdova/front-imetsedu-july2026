@@ -60,6 +60,9 @@ export async function deleteTemplateFolder(name: string): Promise<Result<boolean
 
 export type WaTemplateStatusSync = svc.WaTemplateStatusSync;
 export async function syncTemplateStatuses(): Promise<Result<WaTemplateStatusSync>> { return svc.syncTemplateStatuses(); }
+export async function submitTemplate(id: string): Promise<Result<{ success: boolean; name: string; renamed: boolean; status: string }>> {
+  return svc.submitTemplate(id);
+}
 export async function fetchTemplates(): Promise<Result<WaTemplate[]>> {
   const r = await svc.listTemplates(); return r.ok ? ok(r.data.map(mapTpl)) : r;
 }

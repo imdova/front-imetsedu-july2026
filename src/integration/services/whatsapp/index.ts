@@ -47,6 +47,8 @@ export const deleteTemplateFolder = (name: string): Promise<Result<{ success: bo
 export const listTemplates = (): Promise<Result<WaTemplateDto[]>> => api.get(`${BASE}/templates`, { revalidate: false });
 export interface WaTemplateStatusSync { checked: number; approved: number; pending: number; rejected: number; notFound: number; updated: number }
 export const syncTemplateStatuses = (): Promise<Result<WaTemplateStatusSync>> => api.post(`${BASE}/templates/sync-status`, {});
+export const submitTemplate = (id: string): Promise<Result<{ success: boolean; name: string; renamed: boolean; status: string }>> =>
+  api.post(`${BASE}/templates/${id}/submit`, {});
 export const createTemplate = (input: Record<string, unknown>): Promise<Result<WaTemplateDto>> => api.post(`${BASE}/templates`, input);
 export const updateTemplate = (id: string, input: Record<string, unknown>): Promise<Result<WaTemplateDto>> => api.patch(`${BASE}/templates/${id}`, input);
 export const removeTemplate = (id: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/templates/${id}`);
