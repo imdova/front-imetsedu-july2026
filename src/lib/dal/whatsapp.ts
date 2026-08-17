@@ -11,10 +11,12 @@ export interface WaTemplate {
   id: string; name: string; language: string; category: string; folder: string; body: string; variables: number; status: string;
 }
 export interface WaCampaign {
-  id: string; name: string; templateName: string; language: string; bodyPreview: string;
+  id: string; name: string; mode: "template" | "manual"; templateName: string; language: string; bodyPreview: string;
+  text: string; mediaUrl: string; mediaKind: string; mediaFilename: string;
   defaultParams: string[]; recipients: { phone: string; name?: string }[];
   status: string; total: number; sentCount: number; failedCount: number; sentAt?: string; createdAt: string;
 }
+export type WaMediaUpload = svc.WaMediaUploadDto;
 export interface WaAutomation {
   id: string; name: string; trigger: string; triggerTag: string; steps: string; active: boolean; sentCount: number; createdAt: string;
 }
@@ -24,7 +26,7 @@ const mapTpl = (d: svc.WaTemplateDto): WaTemplate => ({
 });
 const mapCamp = (d: svc.WaCampaignDto): WaCampaign => {
   let defaultParams: string[] = []; try { defaultParams = JSON.parse(d.defaultParams || "[]"); } catch { defaultParams = []; }
-  return { id: d._id, name: d.name, templateName: d.templateName, language: d.language, bodyPreview: d.bodyPreview, defaultParams, recipients: d.recipients ?? [], status: d.status, total: d.total ?? 0, sentCount: d.sentCount ?? 0, failedCount: d.failedCount ?? 0, sentAt: d.sentAt, createdAt: d.createdAt };
+  return { id: d._id, name: d.name, mode: d.mode === "manual" ? "manual" : "template", templateName: d.templateName, language: d.language, bodyPreview: d.bodyPreview, text: d.text ?? "", mediaUrl: d.mediaUrl ?? "", mediaKind: d.mediaKind ?? "", mediaFilename: d.mediaFilename ?? "", defaultParams, recipients: d.recipients ?? [], status: d.status, total: d.total ?? 0, sentCount: d.sentCount ?? 0, failedCount: d.failedCount ?? 0, sentAt: d.sentAt, createdAt: d.createdAt };
 };
 const mapAuto = (d: svc.WaAutomationDto): WaAutomation => ({
   id: d._id, name: d.name, trigger: d.trigger, triggerTag: d.triggerTag ?? "", steps: d.steps ?? "", active: !!d.active, sentCount: d.sentCount ?? 0, createdAt: d.createdAt,
@@ -69,8 +71,14 @@ export async function deleteTemplate(id: string): Promise<Result<boolean>> {
 export async function fetchCampaigns(): Promise<Result<WaCampaign[]>> {
   const r = await svc.listCampaigns(); return r.ok ? ok(r.data.map(mapCamp)) : r;
 }
-export async function createCampaign(input: { name: string; templateName: string; language: string; bodyPreview?: string; defaultParams?: string[]; groups?: string[]; recipients?: WaRecipient[] }): Promise<Result<WaCampaign>> {
+export async function createCampaign(input: { name: string; mode?: "template" | "manual"; templateName?: string; language?: string; bodyPreview?: string; text?: string; mediaUrl?: string; mediaKind?: string; mediaFilename?: string; defaultParams?: string[]; groups?: string[]; recipients?: WaRecipient[] }): Promise<Result<WaCampaign>> {
   const r = await svc.createCampaign(input); return r.ok ? ok(mapCamp(r.data)) : r;
+}
+export async function uploadCampaignMedia(file: Blob, opts: { voice?: boolean; filename?: string } = {}): Promise<Result<WaMediaUpload>> {
+  const form = new FormData();
+  form.append("file", file, opts.filename ?? (file instanceof File ? file.name : "file"));
+  if (opts.voice) form.append("voice", "true");
+  return svc.uploadCampaignMedia(form);
 }
 export async function sendCampaign(id: string): Promise<Result<WaSendResult>> { return svc.sendCampaign(id); }
 export async function deleteCampaign(id: string): Promise<Result<boolean>> {

@@ -9,10 +9,12 @@ export interface WaTemplateDto {
 }
 export interface WaRecipient { phone: string; name?: string; params?: string[] }
 export interface WaCampaignDto {
-  _id: string; name: string; templateName: string; language: string; bodyPreview: string;
+  _id: string; name: string; mode?: string; templateName: string; language: string; bodyPreview: string;
+  text?: string; mediaUrl?: string; mediaKind?: string; mediaFilename?: string;
   defaultParams: string; recipients: { phone: string; name?: string }[];
   status: string; total: number; sentCount: number; failedCount: number; sentAt?: string; createdAt: string;
 }
+export interface WaMediaUploadDto { url: string; kind: string; mime: string; filename: string }
 export interface WaAutomationDto {
   _id: string; name: string; trigger: string; triggerTag?: string; steps?: string; active: boolean; sentCount: number; createdAt: string;
 }
@@ -47,6 +49,7 @@ export const removeTemplate = (id: string): Promise<Result<{ success: boolean }>
 
 export const listCampaigns = (): Promise<Result<WaCampaignDto[]>> => api.get(`${BASE}/campaigns`, { revalidate: false });
 export const createCampaign = (input: Record<string, unknown>): Promise<Result<WaCampaignDto>> => api.post(`${BASE}/campaigns`, input);
+export const uploadCampaignMedia = (form: FormData): Promise<Result<WaMediaUploadDto>> => api.post(`${BASE}/campaigns/upload-media`, form);
 export const sendCampaign = (id: string): Promise<Result<WaSendResult>> => api.post(`${BASE}/campaigns/${id}/send`, {});
 export const removeCampaign = (id: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/campaigns/${id}`);
 
