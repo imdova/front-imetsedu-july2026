@@ -4,7 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowRight, Check, FileText, Info, Loader2, Megaphone, Mic, Paperclip,
-  Send, Square, Type, Upload, Users, X,
+  Send, Square, Type, Upload, UserPlus, Users, X,
 } from "lucide-react";
 
 import { useRouter } from "@/i18n/navigation";
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
@@ -269,40 +270,80 @@ export function WhatsappCampaignWizard({ templates, groups }: { templates: WaTem
             {/* Recipients */}
             <div className="space-y-3">
               <Label>Recipients</Label>
-              {groups.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-                  {groups.map((g) => {
-                    const on = pickedGroups.includes(g.name);
-                    return (
-                      <button key={g.name} type="button" onClick={() => toggleGroup(g.name)}
-                        className={cn("flex flex-col gap-1.5 rounded-xl border p-3 text-left transition-colors",
-                          on ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border/70 hover:bg-muted/40")}>
-                        <div className="flex items-center justify-between">
-                          <Users className={cn("size-4", on ? "text-primary" : "text-muted-foreground")} />
-                          <Badge variant="secondary" className="tabular-nums">{g.phoneCount}</Badge>
+              <Tabs defaultValue="import" className="space-y-3">
+                <TabsList>
+                  <TabsTrigger value="import"><Upload className="mr-1.5 size-4" /> Import from Excel</TabsTrigger>
+                  <TabsTrigger value="manual"><UserPlus className="mr-1.5 size-4" /> Add manually</TabsTrigger>
+                  <TabsTrigger value="groups">
+                    <Users className="mr-1.5 size-4" /> Subscribers list
+                    {pickedGroups.length > 0 && <Badge variant="secondary" className="ml-1.5 tabular-nums">{pickedGroups.length}</Badge>}
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="import">
+                  {imported.length > 0 ? (
+                    <div className="rounded-xl border border-border/70">
+                      <div className="flex items-center justify-between border-b border-border/70 px-3 py-2">
+                        <p className="text-xs font-medium text-muted-foreground">{imported.length.toLocaleString()} number{imported.length === 1 ? "" : "s"} imported</p>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => excelRef.current?.click()}><Upload className="size-3.5" /> Add more</Button>
+                          <Button variant="ghost" size="sm" onClick={() => setImported([])}>Clear all</Button>
                         </div>
-                        <p className="truncate text-sm font-medium">{g.name}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => excelRef.current?.click()}><Upload className="size-4" /> Import from Excel</Button>
-                {imported.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {imported.length} imported
-                    <button type="button" className="text-destructive hover:underline" onClick={() => setImported([])}>clear</button>
-                  </span>
-                )}
-              </div>
-              <details className="rounded-lg border border-border/60">
-                <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground">…or paste numbers manually</summary>
-                <div className="p-3 pt-0">
-                  <Textarea rows={3} value={manual} onChange={(e) => setManual(e.target.value)} placeholder={"201001234567\n201007654321,Ahmed"} className="font-mono text-sm" />
-                  <p className="mt-1 text-[11px] text-muted-foreground">One per line, optional <code>,name</code>.</p>
-                </div>
-              </details>
+                      </div>
+                      <div className="max-h-48 divide-y divide-border/60 overflow-y-auto">
+                        {imported.slice(0, 100).map((r) => (
+                          <div key={r.phone} className="flex items-center justify-between gap-3 px-3 py-1.5 text-sm">
+                            <span className="font-mono text-xs">{r.phone}</span>
+                            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{r.name || ""}</span>
+                            <button type="button" className="text-muted-foreground hover:text-destructive" onClick={() => setImported((p) => p.filter((x) => x.phone !== r.phone))}><X className="size-3.5" /></button>
+                          </div>
+                        ))}
+                        {imported.length > 100 && <p className="px-3 py-2 text-center text-[11px] text-muted-foreground">…and {imported.length - 100} more</p>}
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => excelRef.current?.click()}
+                      className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-border/70 p-8 text-center transition-colors hover:border-primary/50 hover:bg-muted/30"
+                    >
+                      <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary"><Upload className="size-6" /></div>
+                      <p className="text-sm font-medium">Click to upload a spreadsheet</p>
+                      <p className="text-xs text-muted-foreground">.xlsx, .xls or .csv with a <span className="font-medium">phone</span> column (and optional <span className="font-medium">name</span>)</p>
+                    </button>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="manual">
+                  <div className="space-y-1.5">
+                    <Textarea rows={5} value={manual} onChange={(e) => setManual(e.target.value)} placeholder={"201001234567\n201007654321,Ahmed"} className="font-mono text-sm" />
+                    <p className="text-[11px] text-muted-foreground">One number per line, optional <code>,name</code> after it. Full international format without + (e.g. 2010…, 9665…).</p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="groups">
+                  {groups.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                      {groups.map((g) => {
+                        const on = pickedGroups.includes(g.name);
+                        return (
+                          <button key={g.name} type="button" onClick={() => toggleGroup(g.name)}
+                            className={cn("flex flex-col gap-1.5 rounded-xl border p-3 text-left transition-colors",
+                              on ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border/70 hover:bg-muted/40")}>
+                            <div className="flex items-center justify-between">
+                              <Users className={cn("size-4", on ? "text-primary" : "text-muted-foreground")} />
+                              <Badge variant="secondary" className="tabular-nums">{g.phoneCount}</Badge>
+                            </div>
+                            <p className="truncate text-sm font-medium">{g.name}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-border/70 p-8 text-center text-sm text-muted-foreground">No subscriber groups yet.</p>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
 
             {/* Footer */}
