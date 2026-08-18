@@ -23,6 +23,16 @@ export interface WaAutomationDto {
 export interface WaSendResult { sent: number; failed: number; total: number; errors: string[] }
 
 export const getStatus = (): Promise<Result<WaStatusDto>> => api.get(`${BASE}/status`, { revalidate: false });
+
+export interface WaAccountSettingsDto {
+  profile: { about?: string; description?: string; email?: string; profile_picture_url?: string; websites?: string[]; vertical?: string; address?: string };
+  phone: { display_phone_number?: string; verified_name?: string; name_status?: string; quality_rating?: string; throughput?: { level?: string } };
+  waba: { name?: string; account_review_status?: string; business_verification_status?: string };
+}
+export const getAccountSettings = (): Promise<Result<WaAccountSettingsDto>> => api.get(`${BASE}/settings`, { revalidate: false });
+export const updateWaProfile = (input: Record<string, unknown>): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/settings/profile`, input);
+export const updateWaProfilePicture = (form: FormData): Promise<Result<{ success: boolean }>> => api.post(`${BASE}/settings/profile-picture`, form);
+export const requestWaDisplayName = (name: string): Promise<Result<{ success: boolean; name: string }>> => api.post(`${BASE}/settings/display-name`, { name });
 export const getGroups = (): Promise<Result<WaGroupDto[]>> => api.get(`${BASE}/groups`, { revalidate: false });
 
 export interface WaTemplateFolderDto { name: string; count: number; kind?: string }

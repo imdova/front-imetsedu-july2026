@@ -36,6 +36,21 @@ const mapAuto = (d: svc.WaAutomationDto): WaAutomation => ({
 });
 
 export async function fetchStatus(): Promise<Result<WaStatus>> { return svc.getStatus(); }
+export type WaAccountSettings = svc.WaAccountSettingsDto;
+export async function fetchAccountSettings(): Promise<Result<WaAccountSettings>> { return svc.getAccountSettings(); }
+export async function updateAccountProfile(input: { about?: string; description?: string; email?: string; website?: string; vertical?: string }): Promise<Result<boolean>> {
+  const r = await svc.updateWaProfile(input as unknown as Record<string, unknown>);
+  return r.ok ? ok(true) : r;
+}
+export async function updateProfilePicture(file: Blob, filename?: string): Promise<Result<boolean>> {
+  const form = new FormData();
+  form.append("file", file, filename ?? (file instanceof File ? file.name : "profile.jpg"));
+  const r = await svc.updateWaProfilePicture(form);
+  return r.ok ? ok(true) : r;
+}
+export async function requestDisplayName(name: string): Promise<Result<{ success: boolean; name: string }>> {
+  return svc.requestWaDisplayName(name);
+}
 export async function fetchGroups(): Promise<Result<WaGroup[]>> { return svc.getGroups(); }
 export type WaAnalytics = svc.WaAnalyticsDto;
 export async function fetchAnalytics(): Promise<Result<WaAnalytics>> { return svc.getAnalytics(); }

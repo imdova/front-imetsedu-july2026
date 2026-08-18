@@ -15,6 +15,7 @@ import { dal } from "@/lib/dal";
 import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaConversation, WaThread, WaList, WaTemplateFolder, WaAnalytics } from "@/lib/dal/whatsapp";
 import { WhatsappAutomationBuilder } from "@/features/admin/components/whatsapp-automation-builder";
 import { CampaignStatusBadge, MediaPreview, fmtDur } from "@/features/admin/components/whatsapp-shared";
+import { WhatsappSettingsPanel } from "@/features/admin/components/whatsapp-settings-panel";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type Tab = "inbox" | "analytics" | "templates" | "campaigns" | "automations";
+type Tab = "inbox" | "analytics" | "templates" | "campaigns" | "automations" | "settings";
 
 export function WhatsappMarketing({
   initialStatus, initialTemplates, initialGroups, initialCampaigns, initialAutomations, initialTab,
@@ -51,6 +52,7 @@ export function WhatsappMarketing({
     { key: "campaigns", label: "Campaigns", icon: Megaphone },
     { key: "automations", label: "Automations", icon: Zap },
     { key: "templates", label: "Templates", icon: FileText },
+    { key: "settings", label: "Settings", icon: Gauge },
   ];
 
   return (
@@ -91,6 +93,7 @@ export function WhatsappMarketing({
       {tab === "analytics" && <AnalyticsPanel />}
       {tab === "campaigns" && <CampaignsPanel initial={initialCampaigns} confirm={confirm} />}
       {tab === "automations" && <AutomationsPanel templates={templates} groups={groups} initial={initialAutomations} confirm={confirm} />}
+      {tab === "settings" && <WhatsappSettingsPanel />}
       {tab === "templates" && <TemplatesPanel templates={templates} setTemplates={setTemplates} confirm={confirm} wabaId={status?.wabaId} />}
       {Confirmation}
     </div>

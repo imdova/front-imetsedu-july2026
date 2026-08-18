@@ -6,7 +6,7 @@ import { WhatsappMarketing } from "@/features/admin/components/whatsapp-marketin
 
 export const metadata = { robots: { index: false } };
 
-const TABS = ["inbox", "analytics", "templates", "campaigns", "automations"] as const;
+const TABS = ["inbox", "analytics", "templates", "campaigns", "automations", "settings"] as const;
 
 export default async function AdminWhatsappPage({ params, searchParams }: {
   params: Promise<{ locale: string }>;
