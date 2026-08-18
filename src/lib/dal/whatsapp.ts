@@ -98,6 +98,9 @@ export async function fetchCampaignReport(id: string): Promise<Result<WaCampaign
   const r = await svc.getCampaignReport(id);
   return r.ok ? ok({ campaign: mapCamp(r.data.campaign), stats: r.data.stats, recipients: r.data.recipients }) : r;
 }
+export async function resendCampaignFailed(id: string): Promise<Result<WaSendResult & { retried: number }>> {
+  return svc.resendCampaignFailed(id);
+}
 export async function deleteCampaign(id: string): Promise<Result<boolean>> {
   const r = await svc.removeCampaign(id); return r.ok ? ok(true) : r;
 }

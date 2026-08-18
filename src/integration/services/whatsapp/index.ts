@@ -63,6 +63,8 @@ export interface WaCampaignReportDto {
   recipients: { phone: string; name: string; status: string; error: string; at: string | null }[];
 }
 export const getCampaignReport = (id: string): Promise<Result<WaCampaignReportDto>> => api.get(`${BASE}/campaigns/${id}/report`, { revalidate: false });
+export const resendCampaignFailed = (id: string): Promise<Result<WaSendResult & { retried: number }>> =>
+  api.post(`${BASE}/campaigns/${id}/resend-failed`, {});
 export const removeCampaign = (id: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/campaigns/${id}`);
 
 export const sendBulk = (input: Record<string, unknown>): Promise<Result<WaSendResult>> => api.post(`${BASE}/send-bulk`, input);

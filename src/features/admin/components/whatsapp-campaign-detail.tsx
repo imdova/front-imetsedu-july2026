@@ -22,6 +22,7 @@ const fmtAt = (v?: string | null) =>
 export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport }) {
   const [report, setReport] = React.useState(initial);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
   const { campaign: c, stats, recipients } = report;
 
   const refresh = async () => {
@@ -30,6 +31,16 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
     setRefreshing(false);
     if (r.ok) setReport(r.data);
     else toast.error(r.error);
+  };
+
+  const resendFailed = async () => {
+    setResending(true);
+    const r = await dal.whatsapp.resendCampaignFailed(c.id);
+    setResending(false);
+    if (!r.ok) { toast.error(r.error); return; }
+    toast.success(`Retried ${r.data.retried} failed recipient${r.data.retried === 1 ? "" : "s"} — ${r.data.sent} accepted${r.data.failed ? `, ${r.data.failed} rejected` : ""}`);
+    if (r.data.errors?.length) toast.warning(r.data.errors[0]);
+    void refresh();
   };
 
   const reached = stats.delivered + stats.read;
@@ -58,9 +69,16 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
             </p>
           </div>
         </div>
-        <Button variant="outline" className="gap-1.5" onClick={refresh} disabled={refreshing}>
-          {refreshing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />} Refresh statuses
-        </Button>
+        <div className="flex items-center gap-2">
+          {stats.failed > 0 && (
+            <Button className="gap-1.5" onClick={resendFailed} disabled={resending || refreshing} title="Best retried 24–48h after the original send — per-user marketing limits reset over time.">
+              {resending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Resend to failed ({stats.failed})
+            </Button>
+          )}
+          <Button variant="outline" className="gap-1.5" onClick={refresh} disabled={refreshing || resending}>
+            {refreshing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />} Refresh statuses
+          </Button>
+        </div>
       </div>
 
       {/* Overview stats */}
@@ -106,9 +124,14 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
                     <p className="mt-1 text-xs text-muted-foreground">
                       {failedRows.filter((r) => (r.error || "Delivery failed") === reason).length} recipient(s).
                       {/24 hours|re-engagement/i.test(reason) && " These contacts are outside the 24-hour window — resend using an approved template to reach them."}
+                      {/healthy ecosystem/i.test(reason) && " Meta's per-user marketing frequency cap — usually resets within 24–48h, so retry with the button above."}
+                      {/undeliverable/i.test(reason) && " Usually a number without WhatsApp (or a typo) — retrying rarely helps; review these in your sheet."}
                     </p>
                   </div>
                 ))}
+                <p className="text-[11px] text-muted-foreground">
+                  Use <span className="font-medium text-foreground">Resend to failed</span> (top right) to retry only these recipients — best 24–48h after the original send, when per-user limits reset. Contacts who replied to you at least once are far less restricted.
+                </p>
               </CardContent>
             </Card>
           )}
