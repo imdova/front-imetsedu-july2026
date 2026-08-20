@@ -2,6 +2,9 @@
 export const API_SEO_OVERVIEW = "/admin/seo/overview";
 export const API_SEO_SETTINGS = "/admin/seo/settings";
 export const API_SEO_PAGES = "/admin/seo/pages";
+export const API_SEO_PUBLIC_PAGES = "/admin/seo/public-pages";
+export const API_SEO_PUBLIC_PAGE_DETAIL = "/admin/seo/public-pages/detail";
+export const API_SEO_PUBLIC_PAGE_ENTITY = "/admin/seo/public-pages/entity";
 export const apiSeoPage = (id: string) => `/admin/seo/pages/${id}`;
 export const API_SEO_REDIRECTS = "/admin/seo/redirects";
 export const apiSeoRedirect = (id: string) => `/admin/seo/redirects/${id}`;

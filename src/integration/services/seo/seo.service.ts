@@ -1,12 +1,21 @@
 import { api, type Result } from "@integration/services/http/client";
 import {
   API_SEO_OVERVIEW, API_SEO_SETTINGS, API_SEO_PAGES, apiSeoPage,
+  API_SEO_PUBLIC_PAGES, API_SEO_PUBLIC_PAGE_DETAIL, API_SEO_PUBLIC_PAGE_ENTITY,
   API_SEO_REDIRECTS, apiSeoRedirect, API_SEO_SCHEMAS, apiSeoSchema,
   API_PUBLIC_SEO_SETTINGS, API_PUBLIC_SEO_PAGE, API_PUBLIC_SEO_REDIRECTS, API_PUBLIC_SEO_SCHEMAS,
 } from "@integration/constants/api/seo";
 import type {
   SeoSettingsDto, SeoPageDto, SeoRedirectDto, SeoSchemaDto, SeoOverviewDto, SeoSchemaSummaryDto,
+  SeoPublicPageDto, SeoPublicPageDetailDto,
 } from "./types";
+
+/* ── Public pages directory ── */
+export const listPublicPages = () => api.get<SeoPublicPageDto[]>(API_SEO_PUBLIC_PAGES, { revalidate: false });
+export const getPublicPageDetail = (path: string) =>
+  api.get<SeoPublicPageDetailDto>(`${API_SEO_PUBLIC_PAGE_DETAIL}?path=${encodeURIComponent(path)}`, { revalidate: false });
+export const updatePublicPageEntity = (input: { type: string; id: string; title?: string; slug?: string }) =>
+  api.patch<{ success: boolean; path: string; title: string; slug: string }>(API_SEO_PUBLIC_PAGE_ENTITY, input);
 
 /* ── Analytics tables ── */
 import {

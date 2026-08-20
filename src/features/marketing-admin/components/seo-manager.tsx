@@ -6,8 +6,9 @@ import {
 } from "lucide-react";
 
 import type {
-  SeoOverview, SeoSettings, SeoPage, SeoRedirect, SeoSchema, SchemaSummary,
+  SeoOverview, SeoSettings, SeoRedirect, SeoSchema, SchemaSummary,
 } from "@/lib/db/seo";
+import type { SeoPublicPage } from "@/lib/dal/seo";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { SeoOverviewPanel } from "./seo-overview-panel";
@@ -29,7 +30,7 @@ type NavId =
  * `overview`, `robots` and `sitemaps` render their own header/actions. */
 const HEADS: Partial<Record<NavId, { crumb: string; title: string; description: string }>> = {
   settings: { crumb: "Global Defaults", title: "Global Defaults", description: "Site-wide title template, meta description and social sharing defaults." },
-  pages: { crumb: "Pages", title: "Page Overrides", description: "Per-page title, description and indexing overrides." },
+  pages: { crumb: "Pages", title: "Public Pages", description: "Every public page with its SEO score, views and per-page meta controls — click a title to open its SEO editor." },
   schema: { crumb: "Schema", title: "Structured Data", description: "JSON-LD schema blocks and their validation health." },
   redirects: { crumb: "Redirections", title: "Managed Redirects", description: "301/302 redirects for moved or retired URLs." },
   visibility: { crumb: "Visibility", title: "Backlinks & Visibility", description: "Referring domains, anchors and link authority." },
@@ -53,11 +54,11 @@ const NAV: { id: NavId; label: string; icon: React.ElementType }[] = [
 ];
 
 export function SeoManager({
-  overview, settings, pages, redirects, schemas, schemaSummary,
+  overview, settings, publicPages, redirects, schemas, schemaSummary,
 }: {
   overview: SeoOverview;
   settings: SeoSettings;
-  pages: SeoPage[];
+  publicPages: SeoPublicPage[];
   redirects: SeoRedirect[];
   schemas: SeoSchema[];
   schemaSummary: SchemaSummary;
@@ -96,7 +97,7 @@ export function SeoManager({
 
         {active === "overview" && <SeoOverviewPanel overview={overview} settings={settings} />}
         {active === "settings" && <SeoSettingsPanel initial={settings} />}
-        {active === "pages" && <SeoPagesPanel initial={pages} />}
+        {active === "pages" && <SeoPagesPanel publicPages={publicPages} />}
         {active === "robots" && <SeoRobotsPanel initial={settings} />}
         {active === "sitemaps" && <SeoSitemapsPanel />}
         {active === "schema" && <SeoSchemaPanel initial={schemas} initialSummary={schemaSummary} />}

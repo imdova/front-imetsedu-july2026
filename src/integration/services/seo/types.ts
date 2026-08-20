@@ -26,6 +26,27 @@ export interface SeoPageDto {
   noindex: boolean;
 }
 
+export interface SeoPublicPageDto {
+  type: "static" | "course" | "blog" | "landing";
+  path: string;
+  title: string;
+  slug: string;
+  entityId: string;
+  createdAt: string | null;
+  views: number | null;
+  indexable: boolean;
+  hasOverride: boolean;
+  overrideId: string;
+  score: number;
+}
+
+export interface SeoPublicPageDetailDto {
+  page: SeoPublicPageDto;
+  override: SeoPageDto | null;
+  effective: { title: string; description: string; focusKeyword: string; canonical: string; ogImage: string; slug: string; indexable: boolean };
+  checks: { label: string; pass: boolean; points: number }[];
+}
+
 export interface SeoRedirectDto {
   _id: string;
   from: string;

@@ -56,6 +56,27 @@ export async function fetchPages(): Promise<Result<db.SeoPage[]>> {
   const res = await svc.listPages();
   return res.ok ? ok(res.data.map(mapPage)) : res;
 }
+
+/* ── Public pages directory ── */
+export type SeoPublicPage = svc.SeoPublicPageDto;
+export interface SeoPublicPageDetail {
+  page: svc.SeoPublicPageDto;
+  override: db.SeoPage | null;
+  effective: svc.SeoPublicPageDetailDto["effective"];
+  checks: svc.SeoPublicPageDetailDto["checks"];
+}
+export async function fetchPublicPages(): Promise<Result<SeoPublicPage[]>> {
+  return svc.listPublicPages();
+}
+export async function fetchPublicPageDetail(path: string): Promise<Result<SeoPublicPageDetail>> {
+  const res = await svc.getPublicPageDetail(path);
+  return res.ok
+    ? ok({ page: res.data.page, override: res.data.override ? mapPage(res.data.override) : null, effective: res.data.effective, checks: res.data.checks })
+    : res;
+}
+export async function updatePublicPageEntity(input: { type: string; id: string; title?: string; slug?: string }): Promise<Result<{ success: boolean; path: string; title: string; slug: string }>> {
+  return svc.updatePublicPageEntity(input);
+}
 export async function createPage(input: db.SeoPageInput): Promise<Result<db.SeoPage>> {
   const res = await svc.createPage(input);
   return res.ok ? ok(mapPage(res.data)) : res;

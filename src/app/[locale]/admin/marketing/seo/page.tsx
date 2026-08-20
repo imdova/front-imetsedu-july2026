@@ -17,10 +17,10 @@ export default async function SeoManagerPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [overviewRes, settingsRes, pagesRes, redirectsRes, schemasRes] = await Promise.all([
+  const [overviewRes, settingsRes, publicPagesRes, redirectsRes, schemasRes] = await Promise.all([
     dal.seo.fetchOverview(),
     dal.seo.fetchSettings(),
-    dal.seo.fetchPages(),
+    dal.seo.fetchPublicPages(),
     dal.seo.fetchRedirects(),
     dal.seo.fetchSchemas(),
   ]);
@@ -43,7 +43,7 @@ export default async function SeoManagerPage({
       <SeoManager
         overview={overviewRes.ok ? overviewRes.data : EMPTY_OVERVIEW}
         settings={settingsRes.data}
-        pages={pagesRes.ok ? pagesRes.data : []}
+        publicPages={publicPagesRes.ok ? publicPagesRes.data : []}
         redirects={redirectsRes.ok ? redirectsRes.data : []}
         schemas={schemasRes.ok ? schemasRes.data.data : []}
         schemaSummary={schemasRes.ok ? schemasRes.data.summary : EMPTY_SUMMARY}
