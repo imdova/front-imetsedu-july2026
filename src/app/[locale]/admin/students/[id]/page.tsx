@@ -28,7 +28,10 @@ export default async function AdminStudentDetailPage({
           {t("studentsTitle")}
         </Link>
       </Button>
-      <PageHeader title={res.data.name} description={t("studentDetailSubtitle")} />
+      <PageHeader
+        title={res.data.name}
+        description={[res.data.email, res.data.phone !== "—" ? res.data.phone : ""].filter(Boolean).join("  ·  ") || t("studentDetailSubtitle")}
+      />
       {/* The installment plan lives on the student's CRM lead; StudentDetail
           looks it up by email client-side so this server render never blocks. */}
       <StudentDetail student={res.data} />
