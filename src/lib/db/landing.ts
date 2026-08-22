@@ -88,6 +88,21 @@ type Row = Omit<MarketingLandingPage, "ctr" | "registrations">;
 
 const pages: Row[] = [
   {
+    id: "lp_quality_diploma_cohort_42",
+    name: "Quality Diploma - Cohort 42",
+    path: "/graduates/quality-diploma-cohort-42",
+    status: "published",
+    language: "en",
+    campaign: "quality-diploma-cohort-42",
+    audience: "Healthcare Quality Management Professional Diploma graduates",
+    description: "Graduation gallery — Healthcare Quality Management Professional Diploma, Cohort 42 (August 2026 class, 21 graduates).",
+    thumbnailUrl: "",
+    views: 0,
+    clicks: 0,
+    createdAt: "2026-08-18T00:00:00.000Z",
+    updatedAt: "2026-08-18T00:00:00.000Z",
+  },
+  {
     id: "lp_free_lecture_cphq",
     name: "Free Lecture — CPHQ (Egypt)",
     path: "/lp/free-lecture-cphq",
