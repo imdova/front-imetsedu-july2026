@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { dal } from "@/lib/dal";
 import { PageHeader } from "@/components/shared/page-header";
 import { StudentProfileForm } from "@/features/student/components/student-profile-form";
+import { PublicProfileSettings } from "@/features/student/components/public-profile-settings";
 import type { StudentProfile } from "@/lib/student/map-profile";
 
 const EMPTY_PROFILE: StudentProfile = {
@@ -26,6 +27,7 @@ export default async function StudentProfilePage({
     <div className="mx-auto max-w-[1200px] space-y-6">
       <PageHeader title={t("profileTitle")} description={t("profileSubtitle")} />
       <StudentProfileForm profile={res.ok ? res.data : EMPTY_PROFILE} />
+      <PublicProfileSettings />
     </div>
   );
 }
