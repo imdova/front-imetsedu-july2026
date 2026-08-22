@@ -17,7 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 
-type GradRow = { id: string; name: string; title: string; country: string; photoUrl: string; key: string };
+type GradRow = { id: string; name: string; title: string; country: string; photoUrl: string; submittedAt: string; key: string };
 const newKey = () => Math.random().toString(36).slice(2, 10);
 
 /** Cohort editor: page copy + facts on the left, graduates (name / title / country / photo) on the right. */
@@ -143,7 +143,7 @@ export function GraduateCohortDetail({ initial }: { initial: GraduateCohort }) {
           <CardContent className="space-y-4 pt-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2"><Users className="size-4 text-primary" /><p className="font-semibold">Graduates ({grads.length})</p></div>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setGrads((p) => [...p, { id: "", name: "", title: "", country: c.country, photoUrl: "", key: newKey() }])}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setGrads((p) => [...p, { id: "", name: "", title: "", country: c.country, photoUrl: "", submittedAt: "", key: newKey() }])}>
                 <Plus className="size-4" /> Add graduate
               </Button>
             </div>
@@ -162,7 +162,10 @@ export function GraduateCohortDetail({ initial }: { initial: GraduateCohort }) {
                       </span>
                     </button>
                     <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[1.4fr_1fr_1fr]">
-                      <Input value={g.name} onChange={(e) => setGrad(g.key, { name: e.target.value })} placeholder="Full name *" />
+                      <div className="relative">
+                        <Input value={g.name} onChange={(e) => setGrad(g.key, { name: e.target.value })} placeholder="Full name *" className={cn(g.submittedAt && "pe-20")} />
+                        {g.submittedAt && <Badge variant="secondary" className="absolute end-1.5 top-1/2 -translate-y-1/2 px-1.5 py-0 text-[10px]" title={`Submitted via the join form on ${g.submittedAt}`}>via form</Badge>}
+                      </div>
                       <Input value={g.title} onChange={(e) => setGrad(g.key, { title: e.target.value })} placeholder="Title (e.g. RN, Pharmacist)" />
                       <Input value={g.country} onChange={(e) => setGrad(g.key, { country: e.target.value })} placeholder="Country" />
                     </div>

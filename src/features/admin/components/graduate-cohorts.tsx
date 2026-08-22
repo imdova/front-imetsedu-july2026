@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Copy, ExternalLink, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Link2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Link, useRouter } from "@/i18n/navigation";
@@ -73,6 +73,25 @@ export function GraduateCohorts({ initial }: { initial: GraduateCohort[] }) {
       ),
     },
     { accessorKey: "slug", header: "Slug", cell: ({ row }) => <span className="font-mono text-xs">/graduates/{row.original.slug}</span> },
+    {
+      id: "formLink", header: "Form link",
+      cell: ({ row }) => {
+        const url = `${typeof window !== "undefined" ? window.location.origin : "https://imetsedu.com"}/graduates/${row.original.slug}/join`;
+        return (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              title="Copy the student join-form link"
+              onClick={() => { navigator.clipboard?.writeText(url); toast.success("Form link copied"); }}
+              className="inline-flex max-w-[200px] items-center gap-1.5 rounded-md border border-border/70 bg-muted/30 px-2 py-1 font-mono text-[11px] hover:bg-muted"
+            >
+              <Link2 className="size-3.5 shrink-0 text-primary" /><span className="truncate">/graduates/{row.original.slug}/join</span>
+            </button>
+            <a href={url} target="_blank" rel="noreferrer" title="Open form"><Button variant="ghost" size="sm"><ExternalLink className="size-3.5" /></Button></a>
+          </div>
+        );
+      },
+    },
     { accessorKey: "graduatesCount", header: "Graduates", cell: ({ row }) => <span className="tabular-nums">{row.original.graduatesCount}</span> },
     {
       accessorKey: "status", header: "Status",
