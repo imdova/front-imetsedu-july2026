@@ -116,6 +116,12 @@ export const createCertificate = async (input: {
   }
 };
 
+/** LIVE: replace a certificate's file link (PATCH /certificates/:id). */
+export const updateCertificateLink = async (id: string, certificateLink: string): Promise<Result<boolean>> => {
+  const res = await certificatesSvc.updateCertificate(id, { certificateLink });
+  return res.ok ? ok(true) : res;
+};
+
 /** LIVE: delete a certificate (DELETE /certificates/:id). */
 export const deleteCertificate = (id: string): Promise<Result<void>> =>
   certificatesSvc.deleteCertificate(id);

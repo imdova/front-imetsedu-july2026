@@ -107,6 +107,10 @@ export function createCertificate(input: CreateCertificateInput): Promise<Result
   return api.post<Certificate>("/certificates", input);
 }
 
+export function updateCertificate(id: string, patch: Partial<CreateCertificateInput> & { status?: string }): Promise<Result<Certificate>> {
+  return api.patch<Certificate>(`/certificates/${id}`, patch);
+}
+
 export function deleteCertificate(id: string): Promise<Result<void>> {
   return api.delete<void>(`/certificates/${id}`);
 }

@@ -4,7 +4,7 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft, LayoutGrid, MoreHorizontal, Plus, Users, Trophy, TrendingUp, DollarSign, CalendarDays, Clock, Video, UserCog, ChevronRight, Search, Mail, Phone, Award, Trash2, Filter, KeyRound,
+  ArrowLeft, LayoutGrid, MoreHorizontal, Plus, Users, Trophy, TrendingUp, DollarSign, CalendarDays, Clock, Video, UserCog, ChevronRight, Search, Mail, Phone, Award, Trash2, Filter, KeyRound, Upload, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -172,6 +172,53 @@ function Overview({ group, t }: { group: GroupDetail; t: (k: string, v?: Record<
 function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string; roster: RosterStudent[]; t: (k: string, v?: Record<string, string | number>) => string; isStaff?: boolean }) {
   const [rows, setRows] = React.useState(roster);
   const [search, setSearch] = React.useState("");
+
+  /* ── Certificates: leadId + existing certificate per student (keyed by user id) ── */
+  type CertInfo = { leadId: string | null; certificate: { id: string; code: string; link: string } | null };
+  const [certs, setCerts] = React.useState<Record<string, CertInfo>>({});
+  const [uploadingFor, setUploadingFor] = React.useState<string | null>(null);
+  const certFileRef = React.useRef<HTMLInputElement>(null);
+  const certTarget = React.useRef<RosterStudent | null>(null);
+
+  const loadCerts = React.useCallback(async () => {
+    const res = await dal.groups.fetchGroupStudents(groupId);
+    if (!res.ok) return;
+    const map: Record<string, CertInfo> = {};
+    for (const r of res.data) map[r.userId] = { leadId: r.leadId, certificate: r.certificate ? { id: r.certificate.id, code: r.certificate.code, link: r.certificate.link } : null };
+    setCerts(map);
+  }, [groupId]);
+  React.useEffect(() => {
+    const id = setTimeout(() => { void loadCerts(); }, 0);
+    return () => clearTimeout(id);
+  }, [loadCerts]);
+
+  const pickCertificate = (student: RosterStudent) => {
+    const info = certs[student.id];
+    if (info && !info.leadId) { toast.error(t("gdCertNoLead")); return; }
+    certTarget.current = student;
+    certFileRef.current?.click();
+  };
+
+  const onCertificateFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    const student = certTarget.current;
+    if (!file || !student) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) { toast.error(t("gdCertPdfOnly")); return; }
+    if (file.size > 15 * 1024 * 1024) { toast.error(t("gdCertTooLarge")); return; }
+    const info = certs[student.id];
+    if (!info?.leadId) { toast.error(t("gdCertNoLead")); return; }
+
+    setUploadingFor(student.id);
+    const up = await dal.upload.uploadFile(file);
+    if (!up.ok) { setUploadingFor(null); toast.error(up.error); return; }
+    const res = info.certificate
+      ? await dal.admin.updateCertificateLink(info.certificate.id, up.data.url)
+      : await dal.admin.createCertificate({ leadId: info.leadId, groupId, certificateLink: up.data.url });
+    setUploadingFor(null);
+    if (!res.ok) { toast.error(res.error); return; }
+    toast.success(info.certificate ? t("gdCertReplaced") : t("gdCertUploaded"));
+    void loadCerts();
+  };
   const filtered = rows.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase()));
   const active = rows.filter((s) => s.status === "approved").length;
 
@@ -197,6 +244,7 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
 
   return (
     <div className="rounded-xl border bg-card">
+      <input ref={certFileRef} type="file" accept="application/pdf,.pdf" className="hidden" onChange={onCertificateFile} />
       <div className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div><h3 className="font-heading text-base font-bold">{t("gdEnrolledStudents")}</h3><p className="text-sm text-muted-foreground">{t("gdRosterSub", { total: rows.length, active, completed: 0, dropped: 0 })}</p></div>
         <AddStudentDialog groupId={groupId} className="gap-1.5"><Plus className="size-4" />{t("gdAddStudent")}</AddStudentDialog>
@@ -229,7 +277,7 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
               <tr><td colSpan={9} className="py-12 text-center text-muted-foreground">{t("gdNoRoster")}</td></tr>
             ) : filtered.map((s) => (
               <tr key={s.id} className="border-b last:border-0">
-                <td className="px-5 py-4"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{getInitials(s.name)}</span><div><p className="font-medium">{s.name}</p><p className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Mail className="size-3" />{s.email}</p><p className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Phone className="size-3" />{s.phone}</p></div></div></td>
+                <td className="px-5 py-4"><div className="flex items-center gap-3"><Link href={`/admin/students/${s.id}`} className="grid size-9 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{getInitials(s.name)}</Link><div><Link href={`/admin/students/${s.id}`} className="font-medium hover:text-primary hover:underline">{s.name}</Link><p className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Mail className="size-3" />{s.email}</p><p className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Phone className="size-3" />{s.phone}</p></div></div></td>
                 <td className="px-3 py-4 text-muted-foreground tabular-nums">{s.enrolledDate}</td>
                 <td className="px-3 py-4 text-muted-foreground">{s.country}</td>
                 <td className="px-3 py-4"><Badge variant="secondary" className="text-chart-3">{s.leadSource}</Badge></td>
@@ -237,7 +285,11 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
                 <td className="px-3 py-4"><div className="flex items-center gap-2"><Switch checked={s.status === "approved"} disabled={isStaff} onCheckedChange={() => !isStaff && toggleStatus(s)} /><span className={cn("inline-flex items-center gap-1 text-xs", s.status === "approved" ? "text-success" : "text-muted-foreground")}><span className={cn("size-1.5 rounded-full", s.status === "approved" ? "bg-success" : "bg-muted-foreground")} />{t("gdApproved")}</span></div></td>
                 <td className="px-3 py-4"><Badge className="border-transparent bg-warning/15 text-warning">{t("gdPaymentPending")}</Badge></td>
                 <td className="px-3 py-4 text-muted-foreground">—</td>
-                <td className="px-5 py-4"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8 text-primary" title={t("smSetPw")} onClick={() => sendRosterPw(s, t)}><KeyRound className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8"><Award className="size-4" /></Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => removeStudent(s)}><Trash2 className="size-4" /></Button></div></td>
+                <td className="px-5 py-4"><div className="flex items-center justify-end gap-1"><Button variant="ghost" size="icon" className="size-8 text-primary" title={t("smSetPw")} onClick={() => sendRosterPw(s, t)}><KeyRound className="size-4" /></Button>{certs[s.id]?.certificate?.link ? (
+                  <a href={certs[s.id]!.certificate!.link} target="_blank" rel="noreferrer" title={t("gdViewCert", { code: certs[s.id]!.certificate!.code })}><Button variant="ghost" size="icon" className="size-8 text-success"><Award className="size-4" /></Button></a>
+                ) : (
+                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground/40" title={t("gdNoCertYet")} disabled><Award className="size-4" /></Button>
+                )}<Button variant="ghost" size="icon" className="size-8" title={certs[s.id]?.certificate ? t("gdReplaceCert") : t("gdUploadCert")} onClick={() => pickCertificate(s)} disabled={uploadingFor === s.id}>{uploadingFor === s.id ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}</Button><Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => removeStudent(s)}><Trash2 className="size-4" /></Button></div></td>
               </tr>
             ))}
           </tbody>
