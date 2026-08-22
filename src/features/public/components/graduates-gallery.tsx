@@ -66,13 +66,11 @@ export function GraduatesGallery({ cohort }: { cohort: GraduateCohort }) {
         <svg className="arc" width="560" height="560" viewBox="0 0 400 400" style={{ right: -220, bottom: -260 }} aria-hidden="true">
           <circle cx="200" cy="200" r="196" strokeWidth="1.2" /><circle cx="200" cy="200" r="158" strokeWidth="3" />
         </svg>
-        <img className="logo" src={SITE_LOGO} alt="IMETS Medical School" />
         <p className="school">{cohort.schoolLabel || "IMETS MEDICAL SCHOOL"}</p>
         <h1>{cohort.programTitle} {cohort.programTitleAccent && <em>{cohort.programTitleAccent}</em>}</h1>
         {cohort.kicker && <p className="kicker">{cohort.kicker}</p>}
         <div className="rule"><i /><span className="dia" /><i /></div>
         <div className="facts">
-          <div className="fact"><b>{cohort.graduates.length}</b><span>GRADUATES</span></div>
           {cohort.trainingHours > 0 && <div className="fact"><b>{cohort.trainingHours}</b><span>TRAINING HOURS</span></div>}
           {(cohort.classYear || cohort.classLabel) && (
             <div className="fact"><b>{cohort.classYear || cohort.classLabel}</b><span>{cohort.classYear ? (cohort.classLabel || "CLASS") : "CLASS"}</span></div>
