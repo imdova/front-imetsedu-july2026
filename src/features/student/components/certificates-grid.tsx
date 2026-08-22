@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Award, Download, ShieldCheck, Share2, BadgeCheck } from "lucide-react";
+import { Award, Download, ShieldCheck, Share2, BadgeCheck, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Link } from "@/i18n/navigation";
@@ -14,6 +14,27 @@ import { CertificateShareModal } from "./certificate-share-modal";
 export function CertificatesGrid({ certificates, holderName }: { certificates: Certificate[]; holderName?: string }) {
   const t = useTranslations("Student");
   const [share, setShare] = React.useState<Certificate | null>(null);
+  const [downloading, setDownloading] = React.useState<string | null>(null);
+
+  /** Save the PDF to the device (blob download); falls back to opening it if the host blocks fetch. */
+  const download = async (c: Certificate) => {
+    if (!c.link) { toast.error(t("certNoFile")); return; }
+    setDownloading(c.id);
+    try {
+      const res = await fetch(c.link);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `IMETS-Certificate-${c.code}.pdf`; a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t("certDownloadStarted"));
+    } catch {
+      window.open(c.link, "_blank", "noopener");
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   return (
     <>
@@ -32,13 +53,16 @@ export function CertificatesGrid({ certificates, holderName }: { certificates: C
             <p className="mt-0.5 text-sm text-muted-foreground">{formatDate(c.issuedAt)}</p>
             <p className="font-mono text-xs text-muted-foreground/70">{c.code}</p>
             {/* Actions */}
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               <Button size="sm" variant="outline" className="gap-1.5" disabled={!c.link}
                 onClick={() => { if (!c.link) { toast.error(t("certNoFile")); return; } window.open(c.link, "_blank", "noopener"); }}>
-                <Download className="size-4" /> {t("certPdf")}
+                <Eye className="size-4" /> {t("certView")}
               </Button>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShare(c)}>
-                <Share2 className="size-4" /> {t("certLinkedIn")}
+              <Button size="sm" variant="outline" className="gap-1.5" disabled={!c.link || downloading === c.id} onClick={() => download(c)}>
+                {downloading === c.id ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />} {t("certDownload")}
+              </Button>
+              <Button size="sm" className="gap-1.5" onClick={() => setShare(c)}>
+                <Share2 className="size-4" /> {t("certShare")}
               </Button>
             </div>
             <Button asChild size="sm" variant="outline" className="mt-2 w-full gap-1.5">
