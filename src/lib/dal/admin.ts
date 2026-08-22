@@ -84,7 +84,56 @@ export const fetchStudents = async (): Promise<Result<db.AdminStudent[]>> => {
     return fail(toMessage(err, "Failed to load students"));
   }
 };
-export const fetchStudent = (id: string) => wrap(() => db.getStudentById(id), "Failed to load student");
+/** LIVE: single student from GET /students/:id (user enriched with lead,
+ * certificates, groups and payment plans), mapped to the admin detail shape. */
+export const fetchStudent = async (id: string): Promise<Result<db.AdminStudentDetail | null>> => {
+  const res = await studentsSvc.fetchStudentById(id);
+  if (!res.ok) return res;
+  try {
+    type Raw = Record<string, unknown>;
+    const raw = res.data as Raw;
+    const base = mapStudent(raw);
+    const list = (v: unknown): Raw[] => (Array.isArray(v) ? (v as Raw[]) : []);
+    const groups = list(raw.groups);
+    const certs = list(raw.certificates);
+    const plans = list(raw.paymentPlans);
+    const str = (v: unknown) => (v == null ? "" : String(v));
+    const courses: db.AdminStudentCourse[] = groups.map((g) => {
+      const progress = Number(g.progress ?? g.studentProgress ?? 0) || 0;
+      const nested = g.group as Raw | undefined;
+      return {
+        title: str(g.title || g.name || nested?.title) || "—",
+        progress,
+        status: g.status === "dropped" ? "dropped" : progress >= 100 ? "completed" : "inprogress",
+      };
+    });
+    const payments: db.AdminStudentPayment[] = plans.flatMap((p, i) =>
+      list(p.installments).map((inst, j) => ({
+        id: str(inst._id) || `${i}-${j}`,
+        amount: Number(inst.amount ?? 0) || 0,
+        date: str(inst.paidAt || inst.dueDate).slice(0, 10) || "—",
+        status: inst.paid || inst.status === "paid" ? "completed" : "pending",
+      })),
+    );
+    return ok({
+      ...base,
+      enrolled: groups.length || base.enrolled,
+      courses,
+      payments,
+      certificates: certs.map((c) => {
+        const grp = c.groupId as Raw | undefined;
+        const lms = c.lmsId as Raw | undefined;
+        return {
+          code: str(c.certificateCode || c.code) || "—",
+          course: str(c.courseTitle || grp?.title || lms?.title) || "—",
+          issuedAt: str(c.createdAt || c.issuedAt).slice(0, 10) || "—",
+        };
+      }),
+    });
+  } catch (err) {
+    return fail(toMessage(err, "Failed to load student"));
+  }
+};
 // No backend endpoint for these yet — return empty so no seed/dummy data is
 // shown. They go live the moment the backend exposes the routes.
 export const fetchTransactions = (): Promise<Result<db.Transaction[]>> => Promise.resolve(ok([]));
