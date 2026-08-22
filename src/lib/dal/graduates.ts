@@ -6,7 +6,7 @@
 import { ok, type Result } from "@integration/lib/api-client";
 import * as svc from "@integration/services/graduates";
 
-export interface Graduate { id: string; name: string; title: string; country: string; photoUrl: string }
+export interface Graduate { id: string; name: string; title: string; country: string; photoUrl: string; submittedAt: string }
 
 export interface GraduateCohort {
   id: string;
@@ -25,6 +25,7 @@ export interface GraduateCohort {
   footerTitle: string;
   graduates: Graduate[];
   graduatesCount: number;
+  previewPhotos: string[];
   views: number;
   createdAt: string;
 }
@@ -35,6 +36,7 @@ export type GraduateCohortInput = Partial<Omit<GraduateCohort, "id" | "graduates
 
 const mapGrad = (g: svc.GraduateDto): Graduate => ({
   id: g._id ?? "", name: g.name, title: g.title ?? "", country: g.country ?? "", photoUrl: g.photoUrl ?? "",
+  submittedAt: g.submittedAt ? String(g.submittedAt).slice(0, 10) : "",
 });
 const mapCohort = (d: svc.GraduateCohortDto): GraduateCohort => ({
   id: d._id, name: d.name, slug: d.slug, status: d.status === "published" ? "published" : "draft",
@@ -45,6 +47,7 @@ const mapCohort = (d: svc.GraduateCohortDto): GraduateCohort => ({
   footerTitle: d.footerTitle ?? "",
   graduates: (d.graduates ?? []).map(mapGrad),
   graduatesCount: d.graduatesCount ?? d.graduates?.length ?? 0,
+  previewPhotos: d.previewPhotos ?? (d.graduates ?? []).map((g) => g.photoUrl ?? "").filter(Boolean).slice(0, 5),
   views: d.views ?? 0, createdAt: d.createdAt ?? "",
 });
 const toInput = (i: GraduateCohortInput): svc.GraduateCohortInput => ({
@@ -79,4 +82,20 @@ export async function fetchPublishedCohorts(): Promise<Result<GraduateCohort[]>>
 }
 export async function fetchPublishedCohort(slug: string): Promise<Result<GraduateCohort>> {
   const r = await svc.getPublishedCohort(slug); return r.ok ? ok(mapCohort(r.data)) : r;
+}
+
+/* Public join form */
+export type JoinInfo = svc.JoinInfoDto;
+export async function fetchJoinInfo(slug: string): Promise<Result<JoinInfo>> { return svc.getJoinInfo(slug); }
+export async function submitGraduate(
+  slug: string,
+  input: { firstName: string; lastName: string; country: string; speciality: string; photo: File },
+): Promise<Result<{ success: boolean; name: string; cohort: string }>> {
+  const form = new FormData();
+  form.append("firstName", input.firstName);
+  form.append("lastName", input.lastName);
+  form.append("country", input.country);
+  form.append("speciality", input.speciality);
+  form.append("photo", input.photo, input.photo.name);
+  return svc.submitGraduate(slug, form);
 }

@@ -538,7 +538,7 @@ export const PUBLIC_NAV: NavItem[] = [
   // no /resources page. The header swaps it for the Resources menu.
   { titleKey: "navResources", href: RESOURCES_HREF, icon: "BookOpen" },
   { titleKey: "navInstructors", href: "/instructors", icon: "Users" },
-  { titleKey: "navGraduates", href: "/graduates/quality-diploma-cohort-42", icon: "Award" },
+  { titleKey: "navGraduates", href: "/graduates", icon: "Award" },
   { titleKey: "navPartnership", href: "/lp/partnership", icon: "Handshake" },
   { titleKey: "navContact", href: "/contact", icon: "Mail" },
 ];

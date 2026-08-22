@@ -3,7 +3,7 @@ import { api, type Result } from "@integration/services/http/client";
 const BASE = "/admin/graduates";
 const PUBLIC = "/graduates";
 
-export interface GraduateDto { _id?: string; name: string; title?: string; country?: string; photoUrl?: string }
+export interface GraduateDto { _id?: string; name: string; title?: string; country?: string; photoUrl?: string; submittedAt?: string | null }
 
 export interface GraduateCohortDto {
   _id: string;
@@ -23,6 +23,8 @@ export interface GraduateCohortDto {
   graduates?: GraduateDto[];
   /** Present on list endpoints (graduates omitted). */
   graduatesCount?: number;
+  /** Public list only: first few graduate photo URLs for card avatar stacks. */
+  previewPhotos?: string[];
   views?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -42,3 +44,10 @@ export const duplicateCohort = (id: string): Promise<Result<GraduateCohortDto>> 
 export const listPublishedCohorts = (): Promise<Result<GraduateCohortDto[]>> => api.get(PUBLIC, { requireAuth: false, revalidate: false });
 export const getPublishedCohort = (slug: string): Promise<Result<GraduateCohortDto>> =>
   api.get(`${PUBLIC}/${encodeURIComponent(slug)}`, { requireAuth: false, revalidate: false });
+
+/* Public join form */
+export interface JoinInfoDto { name: string; slug: string; programTitle?: string; programTitleAccent?: string; country?: string; status: string }
+export const getJoinInfo = (slug: string): Promise<Result<JoinInfoDto>> =>
+  api.get(`${PUBLIC}/${encodeURIComponent(slug)}/join`, { requireAuth: false, revalidate: false });
+export const submitGraduate = (slug: string, form: FormData): Promise<Result<{ success: boolean; name: string; cohort: string }>> =>
+  api.post(`${PUBLIC}/${encodeURIComponent(slug)}/submissions`, form, { requireAuth: false });
