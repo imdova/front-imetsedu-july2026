@@ -28,20 +28,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AddStudentDialog } from "./add-student-dialog";
 import { AssignmentsTab } from "./lms-extra-tabs";
 
-type Tab = "overview" | "students" | "lms" | "assignments";
-const VALID_TABS: Tab[] = ["overview", "students", "lms", "assignments"];
+type Tab = "students" | "lms" | "assignments";
+const VALID_TABS: Tab[] = ["students", "lms", "assignments"];
 
 export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail; isStaff?: boolean }) {
   const t = useTranslations("Admin");
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
-  const initialTab = (VALID_TABS as string[]).includes(requestedTab ?? "") ? (requestedTab as Tab) : "overview";
+  const initialTab = (VALID_TABS as string[]).includes(requestedTab ?? "") ? (requestedTab as Tab) : "students";
   const [tab, setTab] = React.useState<Tab>(initialTab);
   const enrolled = group.roster.length;
   const collectedPct = group.revenueTarget > 0 ? Math.round((group.collected / group.revenueTarget) * 100) : 0;
 
   const tabs: { key: Tab; label: string; badge: number }[] = [
-    { key: "overview", label: t("gdTabOverview"), badge: -1 },
     { key: "students", label: t("gdTabStudents"), badge: enrolled },
     { key: "lms", label: t("gdTabLms"), badge: group.assignedLms },
     { key: "assignments", label: t("gdTabAssignments"), badge: 0 },
@@ -57,7 +56,8 @@ export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header card: identity on the left, schedule / zoom panel on the right */}
+      <div className="grid gap-4 rounded-xl border bg-card p-5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="flex flex-wrap items-start gap-4">
         <span className="grid h-24 w-40 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-chart-2/30 to-primary/20 font-heading text-lg font-bold text-primary">{getInitials(group.title)}</span>
         <div className="min-w-0 flex-1 space-y-2">
@@ -79,6 +79,8 @@ export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail
           <Button variant="outline" size="icon" className="size-9"><MoreHorizontal className="size-4" /></Button>
           <AddStudentDialog groupId={group.id} className="gap-1.5"><Plus className="size-4" />{t("gdAddStudent")}</AddStudentDialog>
         </div>
+      </div>
+      <SchedulePanel group={group} t={t} />
       </div>
 
       {/* Summary bar */}
@@ -114,7 +116,6 @@ export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail
         ))}
       </div>
 
-      {tab === "overview" && <Overview group={group} t={t} />}
       {tab === "students" && <StudentsList groupId={group.id} roster={group.roster} t={t} isStaff={isStaff} />}
       {tab === "assignments" && <AssignmentsTab groupId={group.id} />}
       {tab === "lms" && (
@@ -124,47 +125,36 @@ export function GroupDetailFull({ group, isStaff = false }: { group: GroupDetail
   );
 }
 
-function Overview({ group, t }: { group: GroupDetail; t: (k: string, v?: Record<string, string | number>) => string }) {
+/** Schedule / Zoom panel — lives in the header card, right of the group identity. */
+function SchedulePanel({ group, t }: { group: GroupDetail; t: (k: string, v?: Record<string, string | number>) => string }) {
   const [view, setView] = React.useState<"schedule" | "zoom">("schedule");
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border bg-card p-5">
-        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-1">
-          {(["schedule", "zoom"] as const).map((v) => (
-            <button key={v} onClick={() => setView(v)} className={cn("inline-flex items-center justify-center gap-1.5 rounded-md py-2 text-sm font-medium", view === v ? "bg-card shadow-sm" : "text-muted-foreground")}>
-              {v === "schedule" ? <CalendarDays className="size-4" /> : <Video className="size-4" />}{v === "schedule" ? t("gdSchedule") : t("gdZoom")}
-            </button>
-          ))}
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label={t("gdProgramStart")} value={group.startDate} />
-          <Field label={t("gdProgramEnd")} value={group.endDate} />
-        </div>
-        <div className="mt-4"><Field label={t("gdRecurringSlot")} value={t("gdSlot", { day: group.lectureDay, start: group.startTime, end: group.endTime })} /></div>
+    <div className="rounded-xl border border-border/70 bg-muted/20 p-3 lg:self-start">
+      <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted/50 p-1">
+        {(["schedule", "zoom"] as const).map((v) => (
+          <button key={v} onClick={() => setView(v)} className={cn("inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 text-sm font-medium", view === v ? "bg-card shadow-sm" : "text-muted-foreground")}>
+            {v === "schedule" ? <CalendarDays className="size-4" /> : <Video className="size-4" />}{v === "schedule" ? t("gdSchedule") : t("gdZoom")}
+          </button>
+        ))}
       </div>
-
-      <div className="rounded-xl border bg-card p-5">
-        <div className="flex items-center justify-between">
-          <div><h3 className="font-heading text-base font-bold">{t("gdRecentStudents")}</h3><p className="text-sm text-muted-foreground">{t("gdRecentSub")}</p></div>
-          <button className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">{t("gdOpenRoster")}<ChevronRight className="size-3.5 rtl:rotate-180" /></button>
+      {view === "schedule" ? (
+        <div className="mt-3 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label={t("gdProgramStart")} value={group.startDate} />
+            <Field label={t("gdProgramEnd")} value={group.endDate} />
+          </div>
+          <Field label={t("gdRecurringSlot")} value={t("gdSlot", { day: group.lectureDay, start: group.startTime, end: group.endTime })} />
         </div>
-        {group.roster.length === 0 ? (
-          <div className="mt-4 grid place-items-center gap-3 rounded-xl border border-dashed py-12 text-center">
-            <span className="grid size-12 place-items-center rounded-xl bg-muted"><Users className="size-6 text-muted-foreground" /></span>
-            <p className="font-semibold">{t("gdNoStudents")}</p><p className="text-sm text-muted-foreground">{t("gdNoStudentsHint")}</p>
-            <AddStudentDialog groupId={group.id} className="gap-1.5"><Plus className="size-4" />{t("gdAddStudent")}</AddStudentDialog>
-          </div>
-        ) : (
-          <div className="mt-4 space-y-2">
-            {group.roster.slice(0, 5).map((s) => (
-              <div key={s.id} className="flex items-center gap-3 rounded-lg border p-3">
-                <span className="grid size-9 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{getInitials(s.name)}</span>
-                <div className="min-w-0"><p className="truncate font-medium">{s.name}</p><p className="truncate text-xs text-muted-foreground">{s.email}</p></div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      ) : (
+        <div className="mt-3 space-y-3">
+          <Field label={t("gdZoom")} value={group.zoomLink || "—"} />
+          {group.zoomLink && (
+            <Button asChild size="sm" className="w-full gap-1.5">
+              <a href={group.zoomLink} target="_blank" rel="noreferrer"><Video className="size-4" /> {t("gdZoom")}</a>
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
