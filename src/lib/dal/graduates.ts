@@ -82,6 +82,10 @@ export async function duplicateCohort(id: string): Promise<Result<GraduateCohort
   const r = await svc.duplicateCohort(id); return r.ok ? ok(mapCohort(r.data)) : r;
 }
 
+export async function reorderCohorts(ids: string[]): Promise<Result<boolean>> {
+  const r = await svc.reorderCohorts(ids); return r.ok ? ok(true) : r;
+}
+
 /* Admin — cohort categories */
 export interface GraduateCategory { id: string; name: string; order: number; cohortsCount: number }
 const mapCategory = (d: svc.GraduateCategoryDto): GraduateCategory => ({ id: d._id, name: d.name, order: d.order ?? 0, cohortsCount: d.cohortsCount ?? 0 });

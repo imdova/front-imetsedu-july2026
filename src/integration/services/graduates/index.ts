@@ -34,6 +34,9 @@ export interface GraduateCohortDto {
 
 export type GraduateCohortInput = Partial<Omit<GraduateCohortDto, "_id" | "graduatesCount" | "views" | "createdAt" | "updatedAt">> & { name?: string };
 
+/** Persist display order — cohort ids top → bottom. */
+export const reorderCohorts = (ids: string[]): Promise<Result<{ success: boolean }>> => api.patch(`${BASE}/reorder`, { ids });
+
 /* Admin — categories */
 export interface GraduateCategoryDto { _id: string; name: string; order?: number; cohortsCount?: number }
 export const listCategories = (): Promise<Result<GraduateCategoryDto[]>> => api.get(`${BASE}/categories`, { revalidate: false });

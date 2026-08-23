@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Copy, ExternalLink, Link2, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, ExternalLink, Link2, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
@@ -61,6 +61,24 @@ export function GraduateCohorts({ initial, initialCategories }: { initial: Gradu
     toast.success("Cohort created — add graduates next");
     setOpen(false); setName(""); setProgramTitle("");
     router.push(`/admin/graduates/${r.data.id}`);
+  };
+
+  /**
+   * Move a cohort one step up/down among the *visible* rows (respects the category filter)
+   * and persist the full order.
+   */
+  const moveRow = async (c: GraduateCohort, dir: -1 | 1) => {
+    const vi = visible.findIndex((x) => x.id === c.id);
+    const neighbour = visible[vi + dir];
+    if (vi < 0 || !neighbour) return;
+    const prev = rows;
+    const a = rows.findIndex((x) => x.id === c.id);
+    const b = rows.findIndex((x) => x.id === neighbour.id);
+    const next = [...rows];
+    [next[a], next[b]] = [next[b], next[a]];
+    setRows(next);
+    const r = await dal.graduates.reorderCohorts(next.map((x) => x.id));
+    if (!r.ok) { setRows(prev); toast.error(r.error); }
   };
 
   /** Move a cohort to another category straight from the table. */
@@ -178,6 +196,9 @@ export function GraduateCohorts({ initial, initialCategories }: { initial: Gradu
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push(`/admin/graduates/${row.original.id}`)}><Pencil className="size-4" /> Edit</DropdownMenuItem>
               <DropdownMenuItem onClick={() => duplicate(row.original)}><Copy className="size-4" /> Duplicate</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled={visible.findIndex((x) => x.id === row.original.id) === 0} onClick={() => moveRow(row.original, -1)}><ArrowUp className="size-4" /> Move up</DropdownMenuItem>
+              <DropdownMenuItem disabled={visible.findIndex((x) => x.id === row.original.id) === visible.length - 1} onClick={() => moveRow(row.original, 1)}><ArrowDown className="size-4" /> Move down</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => remove(row.original)}><Trash2 className="size-4" /> Delete</DropdownMenuItem>
             </DropdownMenuContent>
