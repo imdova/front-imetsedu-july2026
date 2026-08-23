@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Award, Download, Share2, BadgeCheck, Loader2 } from "lucide-react";
+import { Award, Download, Share2, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Certificate } from "@/lib/db/student";
@@ -13,26 +13,17 @@ import { CertificateShareModal } from "./certificate-share-modal";
 export function CertificatesGrid({ certificates, holderName }: { certificates: Certificate[]; holderName?: string }) {
   const t = useTranslations("Student");
   const [share, setShare] = React.useState<Certificate | null>(null);
-  const [downloading, setDownloading] = React.useState<string | null>(null);
-
-  /** Save the PDF to the device (blob download); falls back to opening it if the host blocks fetch. */
-  const download = async (c: Certificate) => {
+  /**
+   * Direct file download through our same-origin proxy (`Content-Disposition: attachment`),
+   * so the browser saves the PDF immediately — no new tab, no S3 CORS dependency.
+   */
+  const download = (c: Certificate) => {
     if (!c.link) { toast.error(t("certNoFile")); return; }
-    setDownloading(c.id);
-    try {
-      const res = await fetch(c.link);
-      if (!res.ok) throw new Error("fetch failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = `IMETS-Certificate-${c.code}.pdf`; a.click();
-      URL.revokeObjectURL(url);
-      toast.success(t("certDownloadStarted"));
-    } catch {
-      window.open(c.link, "_blank", "noopener");
-    } finally {
-      setDownloading(null);
-    }
+    const a = document.createElement("a");
+    a.href = fileUrl(c.link, { name: `IMETS-Certificate-${c.code}.pdf` });
+    a.download = `IMETS-Certificate-${c.code}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast.success(t("certDownloadStarted"));
   };
 
   return (
@@ -51,8 +42,8 @@ export function CertificatesGrid({ certificates, holderName }: { certificates: C
             <p className="font-mono text-xs text-muted-foreground/70">{c.code}</p>
             {/* Actions */}
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <Button size="sm" variant="outline" className="gap-1.5" disabled={!c.link || downloading === c.id} onClick={() => download(c)}>
-                {downloading === c.id ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />} {t("certDownload")}
+              <Button size="sm" variant="outline" className="gap-1.5" disabled={!c.link} onClick={() => download(c)}>
+                <Download className="size-4" /> {t("certDownload")}
               </Button>
               <Button size="sm" className="gap-1.5" onClick={() => setShare(c)}>
                 <Share2 className="size-4" /> {t("certShare")}
@@ -71,29 +62,40 @@ export function CertificatesGrid({ certificates, holderName }: { certificates: C
  * inline viewer (first page, toolbar hidden), images directly. Clicking opens
  * the file; the ribbon placeholder shows only when there is no file yet.
  */
+/** Build a same-origin proxy URL for a certificate file (see /api/certificates/file). */
+function fileUrl(link: string, opts: { inline?: boolean; name?: string } = {}) {
+  const p = new URLSearchParams({ url: link });
+  if (opts.inline) p.set("inline", "1");
+  if (opts.name) p.set("name", opts.name);
+  return `/api/certificates/file?${p.toString()}`;
+}
+
 function CertificatePreview({ link, title, onOpen }: { link?: string; title: string; onOpen: () => void }) {
   const isPdf = !!link && /\.pdf(\?|$)/i.test(link);
   const isImage = !!link && /\.(png|jpe?g|webp|gif)(\?|$)/i.test(link);
   if (!link || (!isPdf && !isImage)) {
     return (
-      <div className="grid h-44 place-items-center rounded-xl bg-gradient-to-br from-emerald-200/70 to-emerald-100 text-emerald-700 dark:from-emerald-900/40 dark:to-emerald-950/30 dark:text-emerald-300">
+      <div className="grid aspect-[297/210] place-items-center rounded-xl bg-gradient-to-br from-emerald-200/70 to-emerald-100 text-emerald-700 dark:from-emerald-900/40 dark:to-emerald-950/30 dark:text-emerald-300">
         <Award className="size-14" strokeWidth={1.5} />
       </div>
     );
   }
   return (
     <button type="button" onClick={onOpen} title={title}
-      className="group relative block h-44 w-full overflow-hidden rounded-xl border border-border/70 bg-muted/30 text-left">
+      className="group relative block aspect-[297/210] w-full overflow-hidden rounded-xl border border-border/70 bg-white text-left">
       {isPdf ? (
+        // Landscape-A4 box + `view=Fit` → the whole page fits the card with no scrollbars.
+        // Served same-origin through the proxy so the viewer behaves consistently.
         <iframe
-          src={`${link}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+          src={`${fileUrl(link, { inline: true })}#toolbar=0&navpanes=0&scrollbar=0&view=Fit&zoom=page-fit`}
           title={title}
-          className="pointer-events-none h-[calc(100%+4px)] w-[calc(100%+4px)] -translate-x-[2px] -translate-y-[2px] border-0 bg-white"
+          scrolling="no"
+          className="pointer-events-none h-[calc(100%+6px)] w-[calc(100%+6px)] -translate-x-[3px] -translate-y-[3px] overflow-hidden border-0 bg-white"
           loading="lazy"
         />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element -- S3-hosted certificate image
-        <img src={link} alt={title} className="h-full w-full object-cover" loading="lazy" />
+        <img src={link} alt={title} className="h-full w-full object-contain" loading="lazy" />
       )}
       <span className="absolute inset-0 grid place-items-center bg-black/0 text-xs font-medium text-white opacity-0 transition group-hover:bg-black/35 group-hover:opacity-100">
         Open certificate

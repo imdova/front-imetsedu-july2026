@@ -7,37 +7,68 @@ import { toast } from "sonner";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import type { GraduateCohort } from "@/lib/dal/graduates";
+import type { GraduateCategory, GraduateCohort } from "@/lib/dal/graduates";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ALL, UNCATEGORISED, GraduateCategoriesPanel } from "./graduate-categories-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DataTable } from "@/components/shared/data-table/data-table";
 import { useConfirm } from "@/hooks/use-confirm";
 
 /** Cohorts list — add / edit / duplicate / delete; name opens the cohort editor. */
-export function GraduateCohorts({ initial }: { initial: GraduateCohort[] }) {
+const NONE = "__none__";
+
+export function GraduateCohorts({ initial, initialCategories }: { initial: GraduateCohort[]; initialCategories: GraduateCategory[] }) {
   const router = useRouter();
   const { confirm, Confirmation } = useConfirm();
   const [rows, setRows] = React.useState(initial);
+  const [categories, setCategories] = React.useState(initialCategories);
+  const [selectedCat, setSelectedCat] = React.useState<string>(ALL);
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [programTitle, setProgramTitle] = React.useState("");
+  const [newCat, setNewCat] = React.useState<string>(NONE);
   const [creating, setCreating] = React.useState(false);
   const [busyId, setBusyId] = React.useState<string | null>(null);
 
   const refresh = async () => { const r = await dal.graduates.fetchCohorts(); if (r.ok) setRows(r.data); };
 
+  const catName = (id: string) => categories.find((c) => c.id === id)?.name ?? "";
+  const counts = React.useMemo(() => {
+    const byId: Record<string, number> = {};
+    let none = 0;
+    for (const r of rows) { if (r.categoryId) byId[r.categoryId] = (byId[r.categoryId] ?? 0) + 1; else none++; }
+    return { all: rows.length, none, byId };
+  }, [rows]);
+  const visible = selectedCat === ALL ? rows : selectedCat === UNCATEGORISED ? rows.filter((r) => !r.categoryId) : rows.filter((r) => r.categoryId === selectedCat);
+
+  const openCreate = () => {
+    setNewCat(selectedCat !== ALL && selectedCat !== UNCATEGORISED ? selectedCat : NONE);
+    setOpen(true);
+  };
+
   const create = async () => {
     if (!name.trim()) return;
     setCreating(true);
-    const r = await dal.graduates.createCohort({ name: name.trim(), programTitle: programTitle.trim() });
+    const r = await dal.graduates.createCohort({ name: name.trim(), programTitle: programTitle.trim(), categoryId: newCat === NONE ? "" : newCat });
     setCreating(false);
     if (!r.ok) { toast.error(r.error); return; }
     toast.success("Cohort created — add graduates next");
     setOpen(false); setName(""); setProgramTitle("");
     router.push(`/admin/graduates/${r.data.id}`);
+  };
+
+  /** Move a cohort to another category straight from the table. */
+  const assignCategory = async (c: GraduateCohort, categoryId: string) => {
+    const prev = c.categoryId;
+    setRows((p) => p.map((x) => (x.id === c.id ? { ...x, categoryId } : x)));
+    const r = await dal.graduates.updateCohort(c.id, { categoryId });
+    if (!r.ok) { setRows((p) => p.map((x) => (x.id === c.id ? { ...x, categoryId: prev } : x))); toast.error(r.error); return; }
+    toast.success(categoryId ? `Moved to “${catName(categoryId)}”` : "Category cleared");
   };
 
   const duplicate = async (c: GraduateCohort) => {
@@ -47,6 +78,17 @@ export function GraduateCohorts({ initial }: { initial: GraduateCohort[] }) {
     if (!r.ok) { toast.error(r.error); return; }
     toast.success(`Duplicated as “${r.data.name}” (draft)`);
     void refresh();
+  };
+
+  /** Open/close the public join form for a cohort (optimistic). */
+  const toggleForm = async (c: GraduateCohort, formEnabled: boolean) => {
+    setRows((p) => p.map((x) => (x.id === c.id ? { ...x, formEnabled } : x)));
+    const r = await dal.graduates.updateCohort(c.id, { formEnabled });
+    if (!r.ok) {
+      setRows((p) => p.map((x) => (x.id === c.id ? { ...x, formEnabled: !formEnabled } : x)));
+      toast.error(r.error); return;
+    }
+    toast.success(formEnabled ? "Form opened — students can submit" : "Form closed — submissions are blocked");
   };
 
   const remove = async (c: GraduateCohort) => {
@@ -72,20 +114,39 @@ export function GraduateCohorts({ initial }: { initial: GraduateCohort[] }) {
         </div>
       ),
     },
+    {
+      id: "category", header: "Category",
+      cell: ({ row }) => (
+        <Select value={row.original.categoryId || NONE} onValueChange={(v) => assignCategory(row.original, v === NONE ? "" : v)}>
+          <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Uncategorised" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NONE}><span className="text-muted-foreground">Uncategorised</span></SelectItem>
+            {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      ),
+    },
     { accessorKey: "slug", header: "Slug", cell: ({ row }) => <span className="font-mono text-xs">/graduates/{row.original.slug}</span> },
     {
       id: "formLink", header: "Form link",
       cell: ({ row }) => {
         const url = `${typeof window !== "undefined" ? window.location.origin : "https://imetsedu.com"}/graduates/${row.original.slug}/join`;
+        const on = row.original.formEnabled;
         return (
           <div className="flex items-center gap-1">
+            <Switch
+              checked={on}
+              onCheckedChange={(v) => toggleForm(row.original, v)}
+              aria-label={on ? "Form open — click to close" : "Form closed — click to open"}
+              title={on ? "Form is open — students can submit" : "Form is closed — no one can submit"}
+            />
             <button
               type="button"
-              title="Copy the student join-form link"
+              title={on ? "Copy the student join-form link" : "Form is closed"}
               onClick={() => { navigator.clipboard?.writeText(url); toast.success("Form link copied"); }}
-              className="inline-flex max-w-[200px] items-center gap-1.5 rounded-md border border-border/70 bg-muted/30 px-2 py-1 font-mono text-[11px] hover:bg-muted"
+              className={`inline-flex max-w-[200px] items-center gap-1.5 rounded-md border border-border/70 bg-muted/30 px-2 py-1 font-mono text-[11px] hover:bg-muted ${on ? "" : "opacity-50 line-through"}`}
             >
-              <Link2 className="size-3.5 shrink-0 text-primary" /><span className="truncate">/graduates/{row.original.slug}/join</span>
+              <Link2 className={`size-3.5 shrink-0 ${on ? "text-primary" : "text-muted-foreground"}`} /><span className="truncate">/graduates/{row.original.slug}/join</span>
             </button>
             <a href={url} target="_blank" rel="noreferrer" title="Open form"><Button variant="ghost" size="sm"><ExternalLink className="size-3.5" /></Button></a>
           </div>
@@ -118,12 +179,19 @@ export function GraduateCohorts({ initial }: { initial: GraduateCohort[] }) {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{rows.length} cohort{rows.length === 1 ? "" : "s"} — click a name to manage its graduates and page copy.</p>
-        <Button className="gap-1.5" onClick={() => setOpen(true)}><Plus className="size-4" /> New cohort</Button>
+    <div className="grid items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <GraduateCategoriesPanel categories={categories} onChange={setCategories} selected={selectedCat} onSelect={setSelectedCat} counts={counts} />
+
+      <div className="min-w-0 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {visible.length} cohort{visible.length === 1 ? "" : "s"}
+            {selectedCat === UNCATEGORISED ? " without a category" : selectedCat !== ALL ? ` in “${catName(selectedCat)}”` : ""} — click a name to manage its graduates and page copy.
+          </p>
+          <Button className="gap-1.5" onClick={openCreate}><Plus className="size-4" /> New cohort</Button>
+        </div>
+        <DataTable columns={columns} data={visible} pageSize={10} />
       </div>
-      <DataTable columns={columns} data={rows} pageSize={10} />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
@@ -139,6 +207,16 @@ export function GraduateCohorts({ initial }: { initial: GraduateCohort[] }) {
             <div className="space-y-1.5">
               <Label>Program title <span className="font-normal text-muted-foreground">(hero headline)</span></Label>
               <Input value={programTitle} onChange={(e) => setProgramTitle(e.target.value)} placeholder="e.g. Healthcare Quality" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Category</Label>
+              <Select value={newCat} onValueChange={setNewCat}>
+                <SelectTrigger><SelectValue placeholder="Uncategorised" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}><span className="text-muted-foreground">Uncategorised</span></SelectItem>
+                  {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

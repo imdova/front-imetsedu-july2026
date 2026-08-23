@@ -100,7 +100,7 @@ export function CertificateShareModal({
             </div>
             {cert.link && (
               <Button asChild variant="outline" size="sm" className="gap-1.5">
-                <a href={cert.link} target="_blank" rel="noreferrer"><Download className="size-4" /> {t("certDownload")}</a>
+                <a href={`/api/certificates/file?${new URLSearchParams({ url: cert.link, name: `IMETS-Certificate-${cert.code}.pdf` })}`} download><Download className="size-4" /> {t("certDownload")}</a>
               </Button>
             )}
             <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">

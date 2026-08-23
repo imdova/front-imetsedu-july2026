@@ -23,6 +23,10 @@ export interface GraduateCohort {
   classYear: string;
   issuedAt: string;
   footerTitle: string;
+  /** Public join form accepts submissions. */
+  formEnabled: boolean;
+  /** Admin category id ("" = uncategorised). */
+  categoryId: string;
   graduates: Graduate[];
   graduatesCount: number;
   previewPhotos: string[];
@@ -45,6 +49,8 @@ const mapCohort = (d: svc.GraduateCohortDto): GraduateCohort => ({
   classLabel: d.classLabel ?? "", classYear: d.classYear ?? "",
   issuedAt: d.issuedAt ? String(d.issuedAt).slice(0, 10) : "",
   footerTitle: d.footerTitle ?? "",
+  formEnabled: d.formEnabled !== false,
+  categoryId: d.categoryId ? String(d.categoryId) : "",
   graduates: (d.graduates ?? []).map(mapGrad),
   graduatesCount: d.graduatesCount ?? d.graduates?.length ?? 0,
   previewPhotos: d.previewPhotos ?? (d.graduates ?? []).map((g) => g.photoUrl ?? "").filter(Boolean).slice(0, 5),
@@ -74,6 +80,22 @@ export async function deleteCohort(id: string): Promise<Result<boolean>> {
 }
 export async function duplicateCohort(id: string): Promise<Result<GraduateCohort>> {
   const r = await svc.duplicateCohort(id); return r.ok ? ok(mapCohort(r.data)) : r;
+}
+
+/* Admin — cohort categories */
+export interface GraduateCategory { id: string; name: string; order: number; cohortsCount: number }
+const mapCategory = (d: svc.GraduateCategoryDto): GraduateCategory => ({ id: d._id, name: d.name, order: d.order ?? 0, cohortsCount: d.cohortsCount ?? 0 });
+export async function fetchCategories(): Promise<Result<GraduateCategory[]>> {
+  const r = await svc.listCategories(); return r.ok ? ok(r.data.map(mapCategory)) : r;
+}
+export async function createCategory(name: string): Promise<Result<GraduateCategory>> {
+  const r = await svc.createCategory({ name }); return r.ok ? ok(mapCategory(r.data)) : r;
+}
+export async function renameCategory(id: string, name: string): Promise<Result<GraduateCategory>> {
+  const r = await svc.updateCategory(id, { name }); return r.ok ? ok(mapCategory(r.data)) : r;
+}
+export async function deleteCategory(id: string): Promise<Result<boolean>> {
+  const r = await svc.deleteCategory(id); return r.ok ? ok(true) : r;
 }
 
 /* Public */

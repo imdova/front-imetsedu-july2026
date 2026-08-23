@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- local preview of the chosen photo */
 
 import * as React from "react";
-import { Camera, CheckCircle2, GraduationCap, Loader2, Send } from "lucide-react";
+import { Camera, CheckCircle2, GraduationCap, Loader2, Lock, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
@@ -50,6 +50,18 @@ export function GraduateJoinForm({ slug, cohort }: { slug: string; cohort: JoinI
   };
 
   const program = [cohort.programTitle, cohort.programTitleAccent].filter(Boolean).join(" ");
+
+  if (cohort.formEnabled === false) {
+    return (
+      <div className="rounded-2xl border border-border/70 bg-card p-8 text-center shadow-sm">
+        <span className="mx-auto grid size-14 place-items-center rounded-full bg-muted text-muted-foreground"><Lock className="size-7" /></span>
+        <h1 className="mt-4 font-heading text-2xl font-bold">This form is closed</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Submissions for <span className="font-medium text-foreground">{cohort.name}</span> are no longer being accepted. If you believe this is a mistake, please contact the IMETS team.
+        </p>
+      </div>
+    );
+  }
 
   if (done) {
     return (

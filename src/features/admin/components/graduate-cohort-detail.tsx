@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowDown, ArrowUp, Camera, ExternalLink, Loader2, Plus, Save, Trash2, Users } from "lucide-react";
+import { ArrowLeft, ArrowDown, ArrowUp, Camera, ExternalLink, Loader2, Plus, Save, Search, Trash2, Users, X } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
@@ -27,6 +27,9 @@ export function GraduateCohortDetail({ initial }: { initial: GraduateCohort }) {
   const [grads, setGrads] = React.useState<GradRow[]>(initial.graduates.map((g) => ({ ...g, key: g.id || newKey() })));
   const [saving, setSaving] = React.useState(false);
   const [uploadingKey, setUploadingKey] = React.useState<string | null>(null);
+  const [search, setSearch] = React.useState("");
+  const q = search.trim().toLowerCase();
+  const visible = q ? grads.filter((g) => [g.name, g.title, g.country].some((v) => v.toLowerCase().includes(q))) : grads;
   const fileRef = React.useRef<HTMLInputElement>(null);
   const target = React.useRef<string | null>(null);
 
@@ -148,11 +151,26 @@ export function GraduateCohortDetail({ initial }: { initial: GraduateCohort }) {
               </Button>
             </div>
 
+            {grads.length > 0 && (
+              <div className="relative">
+                <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search graduates by name, title or country…" className="ps-9 pe-9" />
+                {search && (
+                  <button type="button" onClick={() => setSearch("")} title="Clear" className="absolute end-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+            )}
+
             {grads.length === 0 ? (
               <p className="rounded-xl border border-dashed border-border/70 p-10 text-center text-sm text-muted-foreground">No graduates yet — add the first one.</p>
+            ) : visible.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-border/70 p-10 text-center text-sm text-muted-foreground">No graduates match “{search.trim()}”.</p>
             ) : (
               <div className="space-y-2">
-                {grads.map((g, i) => (
+                {q && <p className="text-xs text-muted-foreground">{visible.length} of {grads.length} graduates — clear the search to reorder.</p>}
+                {visible.map((g) => (
                   <div key={g.key} className="flex flex-wrap items-center gap-3 rounded-xl border border-border/70 p-3 sm:flex-nowrap">
                     <button type="button" onClick={() => pickPhoto(g.key)} title="Upload / change photo" disabled={uploadingKey === g.key}
                       className={cn("relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-amber-400/70 bg-muted/40 text-muted-foreground transition hover:border-amber-500", !g.photoUrl && "border-dashed")}>
@@ -170,8 +188,8 @@ export function GraduateCohortDetail({ initial }: { initial: GraduateCohort }) {
                       <Input value={g.country} onChange={(e) => setGrad(g.key, { country: e.target.value })} placeholder="Country" />
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5">
-                      <Button variant="ghost" size="icon" className="size-8" title="Move up" onClick={() => move(g.key, -1)} disabled={i === 0}><ArrowUp className="size-4" /></Button>
-                      <Button variant="ghost" size="icon" className="size-8" title="Move down" onClick={() => move(g.key, 1)} disabled={i === grads.length - 1}><ArrowDown className="size-4" /></Button>
+                      <Button variant="ghost" size="icon" className="size-8" title="Move up" onClick={() => move(g.key, -1)} disabled={!!q || grads[0]?.key === g.key}><ArrowUp className="size-4" /></Button>
+                      <Button variant="ghost" size="icon" className="size-8" title="Move down" onClick={() => move(g.key, 1)} disabled={!!q || grads[grads.length - 1]?.key === g.key}><ArrowDown className="size-4" /></Button>
                       <Button variant="ghost" size="icon" className="size-8" title="Remove" onClick={() => removeGrad(g)}><Trash2 className="size-4 text-destructive" /></Button>
                     </div>
                   </div>

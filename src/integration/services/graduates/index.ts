@@ -20,6 +20,8 @@ export interface GraduateCohortDto {
   classYear?: string;
   issuedAt?: string | null;
   footerTitle?: string;
+  formEnabled?: boolean;
+  categoryId?: string | null;
   graduates?: GraduateDto[];
   /** Present on list endpoints (graduates omitted). */
   graduatesCount?: number;
@@ -31,6 +33,14 @@ export interface GraduateCohortDto {
 }
 
 export type GraduateCohortInput = Partial<Omit<GraduateCohortDto, "_id" | "graduatesCount" | "views" | "createdAt" | "updatedAt">> & { name?: string };
+
+/* Admin — categories */
+export interface GraduateCategoryDto { _id: string; name: string; order?: number; cohortsCount?: number }
+export const listCategories = (): Promise<Result<GraduateCategoryDto[]>> => api.get(`${BASE}/categories`, { revalidate: false });
+export const createCategory = (input: { name: string }): Promise<Result<GraduateCategoryDto>> => api.post(`${BASE}/categories`, input);
+export const updateCategory = (id: string, input: { name?: string; order?: number }): Promise<Result<GraduateCategoryDto>> =>
+  api.patch(`${BASE}/categories/${id}`, input);
+export const deleteCategory = (id: string): Promise<Result<{ success: boolean }>> => api.delete(`${BASE}/categories/${id}`);
 
 /* Admin */
 export const listCohorts = (): Promise<Result<GraduateCohortDto[]>> => api.get(BASE, { revalidate: false });
@@ -46,7 +56,7 @@ export const getPublishedCohort = (slug: string): Promise<Result<GraduateCohortD
   api.get(`${PUBLIC}/${encodeURIComponent(slug)}`, { requireAuth: false, revalidate: false });
 
 /* Public join form */
-export interface JoinInfoDto { name: string; slug: string; programTitle?: string; programTitleAccent?: string; country?: string; status: string }
+export interface JoinInfoDto { name: string; slug: string; programTitle?: string; programTitleAccent?: string; country?: string; status: string; formEnabled?: boolean }
 export const getJoinInfo = (slug: string): Promise<Result<JoinInfoDto>> =>
   api.get(`${PUBLIC}/${encodeURIComponent(slug)}/join`, { requireAuth: false, revalidate: false });
 export const submitGraduate = (slug: string, form: FormData): Promise<Result<{ success: boolean; name: string; cohort: string }>> =>
