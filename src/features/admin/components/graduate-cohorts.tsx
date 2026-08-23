@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Copy, ExternalLink, Link2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Link2, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 import { Link, useRouter } from "@/i18n/navigation";
@@ -111,6 +112,7 @@ export function GraduateCohorts({ initial, initialCategories }: { initial: Gradu
         <div className="min-w-0">
           <Link href={`/admin/graduates/${row.original.id}`} className="block truncate text-sm font-medium hover:text-primary hover:underline">{row.original.name}</Link>
           <p className="truncate text-xs text-muted-foreground">{[row.original.programTitle, row.original.programTitleAccent].filter(Boolean).join(" ") || "—"}{row.original.country ? ` · ${row.original.country}` : ""}</p>
+          <p className="truncate font-mono text-[11px] text-muted-foreground/70">/graduates/{row.original.slug}</p>
         </div>
       ),
     },
@@ -126,7 +128,6 @@ export function GraduateCohorts({ initial, initialCategories }: { initial: Gradu
         </Select>
       ),
     },
-    { accessorKey: "slug", header: "Slug", cell: ({ row }) => <span className="font-mono text-xs">/graduates/{row.original.slug}</span> },
     {
       id: "formLink", header: "Form link",
       cell: ({ row }) => {
@@ -164,15 +165,23 @@ export function GraduateCohorts({ initial, initialCategories }: { initial: Gradu
     {
       id: "actions", header: "",
       cell: ({ row }) => (
-        <div className="flex justify-end gap-1">
-          <a href={`/graduates/${row.original.slug}`} target="_blank" rel="noreferrer" title={row.original.status === "published" ? "View public page" : "Publish first to view"}>
-            <Button variant="ghost" size="sm" disabled={row.original.status !== "published"}><ExternalLink className="size-4" /></Button>
-          </a>
-          <Link href={`/admin/graduates/${row.original.id}`} title="Edit"><Button variant="ghost" size="sm"><Pencil className="size-4" /></Button></Link>
-          <Button variant="ghost" size="sm" title="Duplicate" onClick={() => duplicate(row.original)} disabled={busyId === row.original.id}>
-            {busyId === row.original.id ? <Loader2 className="size-4 animate-spin" /> : <Copy className="size-4" />}
-          </Button>
-          <Button variant="ghost" size="sm" title="Delete" onClick={() => remove(row.original)}><Trash2 className="size-4 text-destructive" /></Button>
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8" title="Actions" disabled={busyId === row.original.id}>
+                {busyId === row.original.id ? <Loader2 className="size-4 animate-spin" /> : <MoreHorizontal className="size-4" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem disabled={row.original.status !== "published"} onClick={() => window.open(`/graduates/${row.original.slug}`, "_blank", "noopener")}>
+                <ExternalLink className="size-4" /> View public page
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/admin/graduates/${row.original.id}`)}><Pencil className="size-4" /> Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => duplicate(row.original)}><Copy className="size-4" /> Duplicate</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => remove(row.original)}><Trash2 className="size-4" /> Delete</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
     },
