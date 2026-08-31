@@ -661,15 +661,18 @@ export function CourseFaq({
         )}
       </p>
       <div className="mt-8 grid gap-8 lg:grid-cols-3 lg:gap-6">
-        {groups.map((g) => (
+        {groups.map((g, gi) => (
           <div key={g.title} className="min-w-0">
             <h3 className="mb-3 font-heading text-sm font-bold uppercase tracking-[0.14em] text-primary">
               {g.title}
             </h3>
             <div className="space-y-2">
-              {g.items.map((f) => (
+              {g.items.map((f, i) => (
                 <details
                   key={f.q}
+                  // First two answers of the first group open by default — the
+                  // questions buyers ask first, answered without a click.
+                  open={gi === 0 && i < 2}
                   className="group rounded-xl border border-border/60 bg-background/80 px-4 py-3.5 open:shadow-sm"
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-foreground">
@@ -801,10 +804,11 @@ export function CourseTrustBar({ locale }: { locale: string }) {
     tr(locale, "International Standards", "معايير دولية"),
   ];
   const stats = [
+    // Institution-wide figures only. The "4.9 Average Rating" and "95% Student
+    // Satisfaction" entries were removed: a rating implies aggregated reviews,
+    // and neither number is stored or sourced anywhere.
     { value: "3000+", label: tr(locale, "Graduates", "خريج") },
     { value: "20+", label: tr(locale, "Countries", "دولة") },
-    { value: "4.9", label: tr(locale, "Average Rating", "متوسط التقييم") },
-    { value: "95%", label: tr(locale, "Student Satisfaction", "رضا الطلاب") },
     { value: "50+", label: tr(locale, "Industry Experts", "خبير في المجال") },
   ];
   return (
@@ -874,6 +878,68 @@ export function CourseSeoContent({
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {s.body}
           </p>
+
+          {/* Facts table — server-rendered and always open, so it can win a
+              featured snippet. Google will not pull one from behind a click. */}
+          {s.table && (
+            <div className="mt-4 overflow-x-auto rounded-xl border border-border/70">
+              <table className="w-full min-w-[520px] border-collapse text-sm">
+                <thead>
+                  <tr className="bg-muted/50">
+                    {s.table.head.map((h) => (
+                      <th
+                        key={h}
+                        scope="col"
+                        className="border-b border-border/70 px-4 py-2.5 text-start font-semibold text-foreground"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {s.table.rows.map((row, ri) => (
+                    <tr key={ri} className="border-b border-border/50 last:border-0">
+                      {row.map((cell, ci) => (
+                        <td
+                          key={ci}
+                          className={cn(
+                            "px-4 py-2.5 align-top leading-relaxed",
+                            ci === 0 ? "font-medium text-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {s.subs?.map((sub) => (
+            <div key={sub.heading} className="mt-5">
+              <h3 className="font-heading text-base font-semibold">{sub.heading}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{sub.body}</p>
+            </div>
+          ))}
+
+          {s.note && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              {s.note.text}{" "}
+              {s.note.href && (
+                <a
+                  href={s.note.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary hover:underline"
+                >
+                  {s.note.label ?? s.note.href}
+                </a>
+              )}
+            </p>
+          )}
         </div>
       ))}
     </section>

@@ -61,6 +61,24 @@ export interface Course {
   modules?: CourseModule[];
   reviews?: Review[];
   textReviews?: import("./courseForm").TextReview[];
+  /* ── Schedule, proof and structured-data fields (admin course form) ── */
+  intakes?: import("./courseForm").CourseIntake[];
+  proof?: import("./courseForm").CourseProof;
+  courseCode?: string;
+  educationalLevel?: string;
+  credentialAwardedEn?: string;
+  credentialAwardedAr?: string;
+  prerequisitesEn?: string;
+  prerequisitesAr?: string;
+  teachesEn?: string[];
+  teachesAr?: string[];
+  canonicalOverride?: string;
+  robotsDirective?: "index,follow" | "noindex,follow" | "noindex,nofollow";
+  ogImage?: string;
+  ogImageAlt?: string;
+  imageAltEn?: string;
+  imageAltAr?: string;
+  suppressBrandSuffix?: boolean;
   videosReviews?: import("./courseForm").VideoReview[];
   imagesReviews?: import("./courseForm").ImageReview[];
   whatYouWillLearn?: string[];

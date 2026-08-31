@@ -9,6 +9,7 @@ import {
   Plus,
   Trash2,
   Star,
+  AlertTriangle,
 } from "lucide-react";
 
 import type { CourseFormValues, TextReviewValues } from "@/validations/course-schema";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ImageUpload } from "@/components/shared/image-upload";
 import { FormSection } from "../form-section";
 
@@ -46,6 +48,7 @@ function MediaReviewsMain() {
       <VideoReviewsSection />
       <StudentResultsSection />
       <TextTestimonialsSection />
+      <SocialProofSection />
     </div>
   );
 }
@@ -203,6 +206,114 @@ function StudentResultsSection() {
   );
 }
 
+/**
+ * Social proof the public page is allowed to state.
+ *
+ * Rating and review count are DERIVED from the stored testimonials (read-only) —
+ * they can never disagree with what is actually published. The pass rate is
+ * hand-entered but cannot be saved without the basis it was measured from.
+ */
+function SocialProofSection() {
+  const { watch, setValue, register } = useFormContext<CourseFormValues>();
+  const t = useTranslations("CourseForm");
+  const reviews = watch("textReviews") ?? [];
+  const proof = watch("proof");
+  const students = watch("students") ?? 0;
+  const descEn = watch("descriptionEn") ?? "";
+
+  // Only consented reviews are ever published, so only they count.
+  const publishable = reviews.filter((r) => r.consentToPublish && r.comment.trim());
+  const reviewCount = publishable.length;
+  const ratingValue = reviewCount
+    ? Math.round((publishable.reduce((s, r) => s + (r.rating || 0), 0) / reviewCount) * 10) / 10
+    : 0;
+
+  // A student number in the description that contradicts the stored field is the
+  // kind of mismatch nobody notices until a prospect does.
+  const descNumbers = (descEn.match(/\b\d[\d,]{2,}\b/g) ?? []).map((n) => Number(n.replace(/,/g, "")));
+  const studentsMismatch =
+    students > 0 && descNumbers.some((n) => n > 100 && Math.abs(n - students) / students > 0.05);
+
+  const setProof = (patch: Partial<CourseFormValues["proof"]>) =>
+    setValue("proof", { ...proof, ...patch }, { shouldDirty: true });
+
+  const passRateSet = Number(proof?.passRate) > 0;
+  const basisMissing = passRateSet && !proof?.passRateBasisEn?.trim() && !proof?.passRateBasisAr?.trim();
+
+  return (
+    <FormSection title={t("secSocialProof")} description={t("secSocialProofDesc")}>
+      <div className="space-y-4">
+        {/* Derived, read-only */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-border/70 bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">{t("ratingValue")}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{reviewCount ? ratingValue : "—"}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{t("ratingValueHint")}</p>
+          </div>
+          <div className="rounded-xl border border-border/70 bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">{t("reviewCount")}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{reviewCount}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {reviews.length !== reviewCount
+                ? t("reviewCountPending", { n: reviews.length - reviewCount })
+                : t("reviewCountHint")}
+            </p>
+          </div>
+        </div>
+
+        {studentsMismatch && (
+          <p className="flex items-start gap-2 rounded-lg border border-amber-300/70 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-300">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+            {t("studentsMismatch", { n: students.toLocaleString() })}
+          </p>
+        )}
+
+        {/* Pass rate — claim + its basis */}
+        <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t("passRate")}</label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={proof?.passRate || ""}
+              onChange={(e) => setProof({ passRate: Number(e.target.value) || 0 })}
+              placeholder="—"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              {t("passRateVerifiedAt")}
+            </label>
+            <Input
+              type="date"
+              value={proof?.passRateVerifiedAt ?? ""}
+              onChange={(e) => setProof({ passRateVerifiedAt: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            {t("passRateBasis")}
+            {passRateSet && <span className="text-destructive"> *</span>}
+          </label>
+          <Textarea
+            rows={2}
+            {...register("proof.passRateBasisEn")}
+            placeholder={t("passRateBasisPh")}
+            aria-invalid={basisMissing}
+          />
+          <Textarea rows={2} dir="rtl" {...register("proof.passRateBasisAr")} placeholder={t("passRateBasisPhAr")} />
+          {basisMissing && (
+            <p className="text-xs font-medium text-destructive">{t("passRateBasisRequired")}</p>
+          )}
+        </div>
+      </div>
+    </FormSection>
+  );
+}
+
 function TextTestimonialsSection() {
   const { watch, setValue } = useFormContext<CourseFormValues>();
   const t = useTranslations("CourseForm");
@@ -215,6 +326,10 @@ function TextTestimonialsSection() {
       reviewerImage: "",
       rating: 5,
       comment: "",
+      country: "",
+      datePublished: new Date().toISOString().slice(0, 10),
+      consentToPublish: false,
+      verified: false,
     };
     setValue("textReviews", [...reviews, item], { shouldDirty: true });
   };
@@ -352,6 +467,59 @@ function TextTestimonialsSection() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Provenance — required before a named person's words go public. */}
+              <div className="grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t("reviewerCountry")}</label>
+                  <Input
+                    value={review.country}
+                    onChange={(e) => updateReview(index, { country: e.target.value })}
+                    placeholder={t("reviewerCountryPh")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t("reviewDate")}</label>
+                  <Input
+                    type="date"
+                    value={review.datePublished}
+                    onChange={(e) => updateReview(index, { datePublished: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  className={cn(
+                    "flex items-start gap-2.5 rounded-lg border p-3 text-sm",
+                    review.consentToPublish
+                      ? "border-success/40 bg-success/5"
+                      : "border-amber-300/70 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-950/20",
+                  )}
+                >
+                  <Checkbox
+                    checked={review.consentToPublish}
+                    onCheckedChange={(v) => updateReview(index, { consentToPublish: v === true })}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="font-medium">{t("reviewConsent")}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {t("reviewConsentHint")}
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-center gap-2.5 px-1 text-sm">
+                  <Checkbox
+                    checked={review.verified}
+                    onCheckedChange={(v) => updateReview(index, { verified: v === true })}
+                  />
+                  <span>
+                    {t("reviewVerified")}
+                    <span className="ms-1.5 text-xs text-muted-foreground">{t("reviewVerifiedHint")}</span>
+                  </span>
+                </label>
               </div>
             </div>
           ))}

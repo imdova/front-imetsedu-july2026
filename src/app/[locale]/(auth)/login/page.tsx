@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "admin@imetsedu.com", password: "" },
+    defaultValues: { email: "", password: "" },
   });
 
   const onSubmit = async (values: Values) => {

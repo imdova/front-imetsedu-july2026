@@ -18,6 +18,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { CourseHeroMeta } from "@/features/marketing/components/course-hero-meta";
@@ -64,6 +65,7 @@ import {
   courseLd,
   courseVideoLd,
   breadcrumbLd,
+  isoWeeks,
 } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 
@@ -110,15 +112,30 @@ export async function generateMetadata({
     title: !adminTitle && bundledTitle ? { absolute: title } : title,
     description,
     ...(keywords.length ? { keywords } : {}),
-    alternates: seoAlternates(path, locale),
+    // Per-course canonical override wins over the computed one (retired cohorts,
+    // duplicate landing pages); otherwise the normal alternates apply.
+    alternates: course.canonicalOverride
+      ? { ...seoAlternates(path, locale), canonical: course.canonicalOverride }
+      : seoAlternates(path, locale),
+    // Per-course robots directive — lets a retired course be de-indexed without
+    // unpublishing it.
+    ...(course.robotsDirective && course.robotsDirective !== "index,follow"
+      ? {
+          robots: {
+            index: false,
+            follow: course.robotsDirective === "noindex,follow",
+          },
+        }
+      : {}),
     // Social cards keep the course's own name — a SERP-tuned meta title reads
-    // oddly as a shared link headline.
+    // oddly as a shared link headline. A dedicated 1200×630 image wins over the
+    // course thumbnail, which is the wrong aspect ratio for social previews.
     ...socialMeta({
       title: courseName,
       description,
       path,
       locale,
-      image: course.thumbnailUrl,
+      image: course.ogImage || course.thumbnailUrl,
     }),
   });
 }
@@ -152,13 +169,12 @@ export default async function CourseDetailPage({
   const realReviews = course.textReviews ?? [];
   const hasRealReviews = realReviews.length > 0;
 
-  // Display-only fallbacks when a course has no reviews yet. These are NOT fed
-  // to structured data — see the JSON-LD below, which passes the real values so
-  // the markup stays silent rather than claiming a rating nobody left.
-  const rating = course.rating > 0 ? course.rating : 4.9;
-  const reviews = hasRealReviews
-    ? realReviews.length
-    : Math.max(20, Math.round(course.students * 0.15));
+  // No invented fallbacks. A course with no consented reviews shows no rating
+  // and no review count anywhere — visible page and markup alike. The previous
+  // "4.9" / `students * 0.15` defaults presented fabricated numbers as student
+  // feedback; they are gone.
+  const rating = hasRealReviews ? course.rating : 0;
+  const reviews = hasRealReviews ? realReviews.length : 0;
 
   // Long-form conversion + SEO content (bespoke for CPHQ, generic otherwise).
   const content = getCourseContent({
@@ -194,23 +210,43 @@ export default async function CourseDetailPage({
 
   const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
 
-  // The wall: real reviews win. `country` has no field in the course form, so it
-  // stays blank rather than being guessed at.
-  const reviewWall = hasRealReviews
-    ? realReviews.map((r) => ({
-        name: r.reviewerName,
-        role: r.title,
-        country: "",
-        rating: r.rating,
-        text: r.comment,
-      }))
-    : content.reviews;
+  // The wall shows stored, consented reviews only. With none, the section is
+  // not rendered at all — it must never fall back to sample testimonials.
+  const reviewWall = realReviews.map((r) => ({
+    name: r.reviewerName,
+    role: r.title,
+    country: r.country ?? "",
+    rating: r.rating,
+    text: r.comment,
+  }));
 
-  // The 92% pass rate is an exam-prep claim — it only means anything for the two
-  // courses that prepare for an external certification exam. Diplomas have no
-  // exam to pass, so the badge is omitted there rather than shown as a fiction.
-  const EXAM_PREP_SLUGS = ["cphq-preparation", "cic-preparation"];
-  const showPassRate = EXAM_PREP_SLUGS.includes(course.slug);
+  // Pass rate: published only when the course record carries BOTH a rate and the
+  // basis it was measured from (the admin form and the API both enforce that
+  // pairing). It used to be a hardcoded "92%" shown on a slug allowlist.
+  // Course cover alt text (course form → Indexing & Social).
+  const imageAlt =
+    (locale === "ar" ? course.imageAltAr : course.imageAltEn) ||
+    course.imageAltEn ||
+    (locale === "ar" ? course.titleAr : course.titleEn);
+
+  // Languages the course is delivered in, for `availableLanguage`.
+  const courseLanguages = (course.languages ?? []).filter((l) => l && l.trim().length > 0);
+
+  const proof = course.proof;
+  const passRateBasis = (locale === "ar" ? proof?.passRateBasisAr : proof?.passRateBasisEn)
+    || proof?.passRateBasisEn || "";
+  const passRate =
+    proof && proof.passRate > 0 && passRateBasis
+      ? {
+          value: proof.passRate,
+          verifiedOn: proof.passRateVerifiedAt
+            ? new Date(proof.passRateVerifiedAt).toLocaleDateString(
+                locale === "ar" ? "ar-EG" : "en-US",
+                { month: "short", year: "numeric" },
+              )
+            : "",
+        }
+      : null;
 
   // Facts only, from the course record. Rows with no data are omitted rather
   // than filled with a hardcoded guess (duration/language used to be literals,
@@ -500,7 +536,9 @@ export default async function CourseDetailPage({
               browser picks a 360px source for a full-width phone card. */}
           <Image
             src={course.thumbnailUrl}
-            alt={course.titleEn}
+            // Admin-authored alt text wins; the title is only a fallback (it
+            // duplicates the H1, which is poor alt text but better than none).
+            alt={imageAlt}
             fill
             priority
             sizes="(min-width: 1024px) 360px, 100vw"
@@ -539,39 +577,62 @@ export default async function CourseDetailPage({
           </div>
         )}
 
-        {/* Social proof */}
-        <div className="space-y-2.5 rounded-xl border border-amber-200/70 bg-amber-50/60 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="flex text-amber-400">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="size-4 fill-current" />
-              ))}
-            </span>
-            <span className="font-heading text-base font-bold text-foreground tabular-nums">
-              {rating.toFixed(1)}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {tr(
-                `Based on ${reviews.toLocaleString()} reviews`,
-                `بناءً على ${reviews.toLocaleString()} تقييم`,
-              )}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-[#0b3fa8] ring-1 ring-blue-100 dark:ring-blue-900/40">
-              👨‍⚕️ {course.students.toLocaleString()}{" "}
-              {tr("Healthcare Professionals", "متخصص رعاية صحية")}
-            </span>
-            {showPassRate && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:text-emerald-300 dark:ring-emerald-900/40">
-                🎓 {tr("92% First-Attempt Pass Rate", "٩٢٪ نجاح من أول محاولة")}
-              </span>
+        {/* Social proof — every claim here comes from the course record. The
+            stars/rating line only appears with consented reviews behind it, the
+            pass rate only when one is stored WITH its basis, and the student
+            count only when it is set. Nothing is asserted by default. */}
+        {(hasRealReviews || course.students > 0 || passRate) && (
+          <div className="space-y-2.5 rounded-xl border border-amber-200/70 bg-amber-50/60 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
+            {hasRealReviews && (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="flex text-amber-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={cn("size-4", i < Math.round(rating) ? "fill-current" : "opacity-30")}
+                    />
+                  ))}
+                </span>
+                <span className="font-heading text-base font-bold text-foreground tabular-nums">
+                  {rating.toFixed(1)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {tr(
+                    `Based on ${reviews.toLocaleString()} ${reviews === 1 ? "review" : "reviews"}`,
+                    `بناءً على ${reviews.toLocaleString()} تقييم`,
+                  )}
+                </span>
+              </div>
             )}
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground ring-1 ring-border/60">
-              🌍 {tr("Students from 15+ Countries", "طلاب من +15 دولة")}
-            </span>
+            <div className="flex flex-wrap gap-2">
+              {course.students > 0 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-[#0b3fa8] ring-1 ring-blue-100 dark:ring-blue-900/40">
+                  👨‍⚕️ {course.students.toLocaleString()}{" "}
+                  {tr("Healthcare Professionals", "متخصص رعاية صحية")}
+                </span>
+              )}
+              {passRate && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 dark:text-emerald-300 dark:ring-emerald-900/40"
+                  title={passRateBasis || undefined}
+                >
+                  🎓 {tr(
+                    `${passRate.value}% First-Attempt Pass Rate`,
+                    `${passRate.value}٪ نجاح من أول محاولة`,
+                  )}
+                  {passRate.verifiedOn && (
+                    <span className="font-normal opacity-80">
+                      · {tr(`verified ${passRate.verifiedOn}`, `مُحقّق ${passRate.verifiedOn}`)}
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+            {passRate && passRateBasis && (
+              <p className="text-[11px] leading-relaxed text-muted-foreground">{passRateBasis}</p>
+            )}
           </div>
-        </div>
+        )}
 
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {tr("Program Investment", "الاستثمار في البرنامج")}
@@ -648,8 +709,36 @@ export default async function CourseDetailPage({
             locale,
             price,
             currency: "EGP",
-            // Real reviews only. A course with none emits no rating and no
-            // Review markup — silence beats claiming stars nobody gave.
+            // Everything below is stored on the course record; blank fields are
+            // omitted from the markup rather than emitted empty.
+            alternateName: locale === "ar" ? course.titleEn : course.titleAr,
+            courseCode: course.courseCode,
+            educationalLevel: course.educationalLevel || course.difficulty,
+            timeRequired: isoWeeks(course.duration),
+            credentialAwarded:
+              (locale === "ar" ? course.credentialAwardedAr : course.credentialAwardedEn) ||
+              course.credentialAwardedEn,
+            prerequisites:
+              (locale === "ar" ? course.prerequisitesAr : course.prerequisitesEn) ||
+              course.prerequisitesEn,
+            teaches:
+              ((locale === "ar" ? course.teachesAr : course.teachesEn) ?? []).length
+                ? (locale === "ar" ? course.teachesAr : course.teachesEn)
+                : outcomes,
+            audience: locale === "ar" ? course.whoCanAttendAr : course.whoCanAttendEn,
+            availableLanguage: courseLanguages,
+            // One offer per currency the course actually prices in.
+            offers: [
+              { price: course.priceEGP, currency: "EGP" },
+              { price: course.priceSAR ?? 0, currency: "SAR" },
+              { price: course.priceUSD ?? 0, currency: "USD" },
+            ].filter((o) => o.price > 0),
+            // Future cohorts only — `courseLd` drops past-dated ones itself.
+            instances: course.intakes,
+            courseMode: "online",
+            instructors: instructorName ? [{ name: instructorName }] : undefined,
+            // Gated: real, consented reviews only. A course with none emits no
+            // rating and no Review markup — silence beats claiming stars nobody gave.
             rating: hasRealReviews && course.rating > 0 ? course.rating : undefined,
             reviewCount: hasRealReviews ? realReviews.length : undefined,
             reviews: hasRealReviews
@@ -657,6 +746,7 @@ export default async function CourseDetailPage({
                   author: r.reviewerName,
                   rating: r.rating,
                   body: r.comment,
+                  datePublished: r.datePublished || undefined,
                 }))
               : undefined,
           }),
@@ -893,17 +983,20 @@ export default async function CourseDetailPage({
                 </CourseSectionBand>
               )}
 
+              {/* Reviews render only when real, consented ones exist. */}
               <CourseSectionBand tone="muted" spacing="lg">
                 <CourseTrustBar locale={locale} />
-                <div className="mt-12">
-                  <CourseReviews
-                    locale={locale}
-                    rating={rating}
-                    reviewCount={reviews}
-                    distribution={distribution}
-                    reviews={reviewWall}
-                  />
-                </div>
+                {hasRealReviews && (
+                  <div className="mt-12">
+                    <CourseReviews
+                      locale={locale}
+                      rating={rating}
+                      reviewCount={reviews}
+                      distribution={distribution}
+                      reviews={reviewWall}
+                    />
+                  </div>
+                )}
               </CourseSectionBand>
 
               {/* Standalone FAQ — hidden when a sales FAQ is incorporated into

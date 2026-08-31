@@ -67,9 +67,11 @@ export function CourseCard({
   const onSale = money.sale > 0 && money.sale < money.price;
   const price = onSale ? money.sale : money.price;
   const discountPct = deriveDiscount(money.price, money.sale);
-  const { rating, reviews } = courseSocialProof(course);
+  const { rating, reviews, hasReviews } = courseSocialProof(course);
   const isBestSeller = course.isBestseller || course.students >= 800;
-  const isMostPopular = course.isTopRated || rating >= 4.7;
+  // "Most popular" must be an editorial flag or a real rating — never a
+  // synthesised one, which is what made every card claim the badge.
+  const isMostPopular = course.isTopRated || (hasReviews && rating >= 4.7);
   const faculty = resolveFaculty(course, instructors);
 
   return (
@@ -114,15 +116,18 @@ export function CourseCard({
           </h3>
         </Link>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <StarRating rating={rating} />
-          <span className="font-heading text-sm font-bold tabular-nums text-amber-700">
-            {rating.toFixed(1)}
-          </span>
-          <span className="text-xs font-medium text-muted-foreground">
-            {t("cardReviews", { count: reviews.toLocaleString("en-US") })}
-          </span>
-        </div>
+        {/* Only shown once real, consented reviews exist. */}
+        {hasReviews && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <StarRating rating={rating} />
+            <span className="font-heading text-sm font-bold tabular-nums text-amber-700">
+              {rating.toFixed(1)}
+            </span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {t("cardReviews", { count: reviews.toLocaleString("en-US") })}
+            </span>
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-1.5">
           <CardBadge

@@ -35,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSection } from "../form-section";
 import { CurriculumBuilder } from "../curriculum-builder";
+import { IntakesSection, StructuredDataSection } from "../schedule-sections";
 
 /** Converts between a one-item-per-line textarea and a string[] form value. */
 function linesToArray(text: string): string[] {
@@ -127,6 +128,8 @@ function StructureMain() {
       <WhyChooseSection />
       <FaqsSection />
       <CareerRolesSection />
+      <IntakesSection />
+      <StructuredDataSection />
     </>
   );
 }

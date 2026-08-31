@@ -28,7 +28,44 @@ export const textReviewSchema = z.object({
   reviewerImage: z.string().trim(),
   rating: z.coerce.number().min(0).max(5),
   comment: z.string().trim(),
+  /** Reviewer's country — shown on the wall and emitted in review markup. */
+  country: z.string().trim(),
+  /** ISO date (yyyy-mm-dd). Required by schema.org `Review.datePublished`. */
+  datePublished: z.string().trim(),
+  /** Without consent the review is never rendered and never enters schema. */
+  consentToPublish: z.boolean(),
+  /** Reviewer matched to a real enrolment record. */
+  verified: z.boolean(),
 });
+
+/** One scheduled cohort — feeds `hasCourseInstance` in the course JSON-LD. */
+export const courseIntakeSchema = z.object({
+  startDate: z.string().trim(),
+  endDate: z.string().trim(),
+  dayOfWeek: z.string().trim(),
+  sessionTime: z.string().trim(),
+  timezone: z.string().trim(),
+  weeklyHours: z.coerce.number().min(0),
+  sessionDurationMinutes: z.coerce.number().min(0),
+  seatsAvailable: z.coerce.number().min(0),
+  status: z.enum(["open", "closed", "full"]),
+});
+
+/**
+ * Verifiable outcome claims. A pass rate may only be published together with the
+ * basis it was measured from — enforced here and again on the server.
+ */
+export const courseProofSchema = z
+  .object({
+    passRate: z.coerce.number().min(0).max(100),
+    passRateBasisEn: z.string().trim(),
+    passRateBasisAr: z.string().trim(),
+    passRateVerifiedAt: z.string().trim(),
+  })
+  .refine((p) => p.passRate <= 0 || !!(p.passRateBasisEn || p.passRateBasisAr), {
+    message: "State what the pass rate is based on before publishing it.",
+    path: ["passRateBasisEn"],
+  });
 
 export const videoReviewSchema = z.object({
   url: z.string().trim(),
@@ -179,6 +216,27 @@ export const courseFormSchema = z.object({
     metaKeywordsAr: z.array(z.string()),
   }),
 
+  /* --- Structured data + indexing --- */
+  courseCode: z.string().trim(),
+  educationalLevel: z.string().trim(),
+  credentialAwardedEn: z.string().trim(),
+  credentialAwardedAr: z.string().trim(),
+  prerequisitesEn: z.string().trim(),
+  prerequisitesAr: z.string().trim(),
+  teachesEn: z.array(z.string()),
+  teachesAr: z.array(z.string()),
+  canonicalOverride: urlOrEmpty,
+  robotsDirective: z.enum(["index,follow", "noindex,follow", "noindex,nofollow"]),
+  ogImage: z.string().trim(),
+  ogImageAlt: z.string().trim(),
+  imageAltEn: z.string().trim(),
+  imageAltAr: z.string().trim(),
+  suppressBrandSuffix: z.boolean(),
+  /** Scheduled cohorts. Empty ⇒ no `hasCourseInstance` is emitted. */
+  intakes: z.array(courseIntakeSchema),
+  /** Verifiable outcome claims. */
+  proof: courseProofSchema,
+
   /* --- Step 2: Structure --- */
   whatYouWillLearnEn: z.array(z.string().trim()),
   whatYouWillLearnAr: z.array(z.string().trim()),
@@ -220,6 +278,8 @@ export type CourseHeadingsValues = z.infer<typeof courseHeadingsSchema>;
 export type LessonValues = z.infer<typeof lessonSchema>;
 export type ModuleValues = z.infer<typeof moduleSchema>;
 export type TextReviewValues = z.infer<typeof textReviewSchema>;
+export type CourseIntakeValues = z.infer<typeof courseIntakeSchema>;
+export type CourseProofValues = z.infer<typeof courseProofSchema>;
 export type VideoReviewValues = z.infer<typeof videoReviewSchema>;
 export type ImageReviewValues = z.infer<typeof imageReviewSchema>;
 

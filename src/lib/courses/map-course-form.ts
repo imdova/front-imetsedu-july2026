@@ -19,6 +19,13 @@ const idOf = (v: any): string =>
 const strArr = (v: any): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
 
+/** ISO date/datetime → the `yyyy-mm-dd` a native date input expects. */
+const dateInput = (v: any): string => {
+  if (!v) return "";
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+};
+
 const pricingBlock = (p: any) => ({
   price: Number(p?.price) || 0,
   salePrice: Number(p?.salePrice) || 0,
@@ -129,6 +136,40 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
       metaKeywordsEn: strArr(raw.seo?.metaKeywordsEn),
       metaKeywordsAr: strArr(raw.seo?.metaKeywordsAr),
     },
+    courseCode: raw.courseCode ?? "",
+    educationalLevel: raw.educationalLevel ?? "",
+    credentialAwardedEn: raw.credentialAwardedEn ?? "",
+    credentialAwardedAr: raw.credentialAwardedAr ?? "",
+    prerequisitesEn: raw.prerequisitesEn ?? "",
+    prerequisitesAr: raw.prerequisitesAr ?? "",
+    teachesEn: strArr(raw.teachesEn),
+    teachesAr: strArr(raw.teachesAr),
+    canonicalOverride: raw.canonicalOverride ?? "",
+    robotsDirective: (raw.robotsDirective ?? "index,follow") as CourseFormValues["robotsDirective"],
+    ogImage: raw.ogImage ?? "",
+    ogImageAlt: raw.ogImageAlt ?? "",
+    imageAltEn: raw.imageAltEn ?? "",
+    imageAltAr: raw.imageAltAr ?? "",
+    suppressBrandSuffix: Boolean(raw.suppressBrandSuffix),
+    intakes: Array.isArray(raw.intakes)
+      ? raw.intakes.map((i: any) => ({
+          startDate: dateInput(i?.startDate),
+          endDate: dateInput(i?.endDate),
+          dayOfWeek: i?.dayOfWeek ?? "",
+          sessionTime: i?.sessionTime ?? "",
+          timezone: i?.timezone || "Africa/Cairo",
+          weeklyHours: Number(i?.weeklyHours) || 0,
+          sessionDurationMinutes: Number(i?.sessionDurationMinutes) || 0,
+          seatsAvailable: Number(i?.seatsAvailable) || 0,
+          status: (i?.status ?? "open") as "open" | "closed" | "full",
+        }))
+      : [],
+    proof: {
+      passRate: Number(raw.proof?.passRate) || 0,
+      passRateBasisEn: raw.proof?.passRateBasisEn ?? "",
+      passRateBasisAr: raw.proof?.passRateBasisAr ?? "",
+      passRateVerifiedAt: dateInput(raw.proof?.passRateVerifiedAt),
+    },
     textReviews: Array.isArray(raw.textReviews)
       ? raw.textReviews.map((r: any) => ({
           reviewerName: r?.reviewerName ?? "",
@@ -136,6 +177,10 @@ export function mapCourseToForm(raw: any): Partial<CourseFormValues> {
           reviewerImage: r?.reviewerImage ?? "",
           rating: Number(r?.rating) || 0,
           comment: r?.comment ?? "",
+          country: r?.country ?? "",
+          datePublished: dateInput(r?.datePublished),
+          consentToPublish: Boolean(r?.consentToPublish),
+          verified: Boolean(r?.verified),
         }))
       : [],
     videosReviews: Array.isArray(raw.videosReviews)

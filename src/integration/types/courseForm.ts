@@ -34,6 +34,35 @@ export interface TextReview {
   reviewerImage: string;
   rating: number;
   comment: string;
+  /** Reviewer's country — shown on the wall and emitted in review markup. */
+  country?: string;
+  /** ISO date. Required by schema.org `Review.datePublished`. */
+  datePublished?: string;
+  /** Without consent the review never renders and never enters schema output. */
+  consentToPublish?: boolean;
+  /** Reviewer matched to a real enrolment record. */
+  verified?: boolean;
+}
+
+/** One scheduled cohort — feeds `hasCourseInstance` in the course JSON-LD. */
+export interface CourseIntake {
+  startDate: string;
+  endDate: string;
+  dayOfWeek: string;
+  sessionTime: string;
+  timezone: string;
+  weeklyHours: number;
+  sessionDurationMinutes: number;
+  seatsAvailable: number;
+  status: "open" | "closed" | "full";
+}
+
+/** Verifiable outcome claims. A pass rate requires its basis. */
+export interface CourseProof {
+  passRate: number;
+  passRateBasisEn: string;
+  passRateBasisAr: string;
+  passRateVerifiedAt?: string;
 }
 
 export interface VideoReview {
@@ -160,6 +189,24 @@ export interface CourseFormData {
     metaKeywordsAr: string[];
     metaKeywordsEn: string[];
   };
+  /* Structured data + indexing controls */
+  courseCode?: string;
+  educationalLevel?: string;
+  credentialAwardedEn?: string;
+  credentialAwardedAr?: string;
+  prerequisitesEn?: string;
+  prerequisitesAr?: string;
+  teachesEn?: string[];
+  teachesAr?: string[];
+  canonicalOverride?: string;
+  robotsDirective?: "index,follow" | "noindex,follow" | "noindex,nofollow";
+  ogImage?: string;
+  ogImageAlt?: string;
+  imageAltEn?: string;
+  imageAltAr?: string;
+  suppressBrandSuffix?: boolean;
+  intakes?: CourseIntake[];
+  proof?: CourseProof;
   instructorIds: string[];
   variables: Record<string, string | string[]>;
   courseVariables?: Record<string, string | string[]>; // UI helper

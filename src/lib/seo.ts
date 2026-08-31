@@ -83,13 +83,56 @@ export async function staticPageMeta(opts: {
 
 /* ───────────────────────────── JSON-LD ───────────────────────────── */
 
-export function organizationLd() {
+/**
+ * Markets the school actually teaches into. Emitted as `areaServed`, which is
+ * how an entity index associates the organization with a region — a `.com` with
+ * no country signal in the domain has nothing else to go on.
+ */
+const AREA_SERVED = [
+  "Egypt", "Saudi Arabia", "United Arab Emirates",
+  "Qatar", "Kuwait", "Oman", "Jordan",
+] as const;
+
+/**
+ * The organization node. Contact details, address and social profiles come from
+ * Site Settings so nothing here is a placeholder — anything the admin has left
+ * blank is omitted from the markup rather than shipped as "[LinkedIn page]".
+ */
+export function organizationLd(opts?: {
+  description?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  social?: { facebook?: string; x?: string; linkedin?: string; instagram?: string; youtube?: string };
+}) {
+  const sameAs = Object.values(opts?.social ?? {}).filter(
+    (u): u is string => typeof u === "string" && /^https?:\/\//i.test(u),
+  );
+  const contactPoint = opts?.phone || opts?.email
+    ? [{
+        "@type": "ContactPoint",
+        contactType: "admissions",
+        ...(opts.phone ? { telephone: opts.phone } : {}),
+        ...(opts.email ? { email: opts.email } : {}),
+        availableLanguage: ["en", "ar"],
+        areaServed: ["EG", "SA", "AE", "QA", "KW", "OM", "JO"],
+      }]
+    : [];
+
   return {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
+    "@id": `${SITE_URL}/#organization`,
     name: SITE_NAME,
     url: SITE_URL,
     logo: SITE_LOGO,
+    ...(opts?.description ? { description: opts.description } : {}),
+    areaServed: AREA_SERVED.map((name) => ({ "@type": "Country", name })),
+    ...(opts?.address
+      ? { address: { "@type": "PostalAddress", streetAddress: opts.address, addressCountry: "EG" } }
+      : {}),
+    ...(contactPoint.length ? { contactPoint } : {}),
+    ...(sameAs.length ? { sameAs } : {}),
   };
 }
 
@@ -126,6 +169,52 @@ export function personLd(opts: {
   };
 }
 
+/** One scheduled cohort, as stored on the course record. */
+export interface CourseInstanceInput {
+  startDate: string;
+  endDate: string;
+  dayOfWeek?: string;
+  sessionTime?: string;
+  timezone?: string;
+  weeklyHours?: number;
+  sessionDurationMinutes?: number;
+  seatsAvailable?: number;
+  status?: "open" | "closed" | "full";
+}
+
+/**
+ * A human duration string ("8 weeks", "3 أشهر", "40 hours") → ISO-8601, for
+ * `timeRequired`. Returns undefined when nothing parseable is there, so the
+ * property is omitted rather than emitted wrong.
+ */
+export function isoWeeks(duration?: string): string | undefined {
+  const s = String(duration ?? "").trim();
+  if (!s) return undefined;
+  const n = Number(s.match(/\d+(\.\d+)?/)?.[0]);
+  if (!n || n <= 0) return undefined;
+  if (/week|أسبوع|اسبوع/i.test(s)) return `P${Math.round(n)}W`;
+  if (/month|شهر|أشهر/i.test(s)) return `P${Math.round(n)}M`;
+  if (/day|يوم|أيام/i.test(s)) return `P${Math.round(n)}D`;
+  if (/hour|ساع/i.test(s)) return `PT${Math.round(n)}H`;
+  return undefined;
+}
+
+/** Decimal hours → an ISO-8601 duration ("PT2H30M"). */
+function isoDuration(hours: number): string | undefined {
+  if (!hours || hours <= 0) return undefined;
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return `PT${h ? `${h}H` : ""}${m ? `${m}M` : ""}` === "PT" ? undefined : `PT${h ? `${h}H` : ""}${m ? `${m}M` : ""}`;
+}
+
+/** Minutes → ISO-8601 duration. */
+function isoMinutes(min: number): string | undefined {
+  if (!min || min <= 0) return undefined;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `PT${h ? `${h}H` : ""}${m ? `${m}M` : ""}`;
+}
+
 export function courseLd(opts: {
   name: string;
   description: string;
@@ -136,10 +225,60 @@ export function courseLd(opts: {
   currency?: string;
   rating?: number;
   reviewCount?: number;
-  /** Real, admin-entered reviews only. Never sample or generated ones —
-   *  marking up invented reviews is a review-snippet policy violation. */
-  reviews?: { author: string; rating: number; body: string }[];
+  /** Real, admin-entered, CONSENTED reviews only. Never sample or generated
+   *  ones — marking up invented reviews is a review-snippet policy violation. */
+  reviews?: { author: string; rating: number; body: string; datePublished?: string }[];
+  /* ── Everything below comes from the admin course form ── */
+  alternateName?: string;
+  courseCode?: string;
+  educationalLevel?: string;
+  /** Total course length, ISO-8601 (e.g. "P8W"). */
+  timeRequired?: string;
+  credentialAwarded?: string;
+  prerequisites?: string;
+  teaches?: string[];
+  audience?: string;
+  availableLanguage?: string[];
+  /** One offer per stored currency. */
+  offers?: { price: number; currency: string; validFrom?: string; priceValidUntil?: string }[];
+  instances?: CourseInstanceInput[];
+  courseMode?: string;
+  instructors?: { name: string; url?: string }[];
 }) {
+  const {
+    rating, reviewCount, reviews, offers = [], instances = [], teaches = [],
+    availableLanguage = [], instructors = [],
+  } = opts;
+
+  // Past cohorts are dropped — a stale instance is worse than none.
+  const today = new Date().toISOString().slice(0, 10);
+  const future = instances.filter((i) => i.startDate && i.endDate && i.startDate >= today);
+
+  const offerNodes = offers
+    .filter((o) => o.price > 0 && o.currency)
+    .map((o) => ({
+      "@type": "Offer",
+      price: o.price,
+      priceCurrency: o.currency,
+      category: "Paid",
+      url: opts.url,
+      availability: "https://schema.org/InStock",
+      ...(o.validFrom ? { validFrom: o.validFrom } : {}),
+      ...(o.priceValidUntil ? { priceValidUntil: o.priceValidUntil } : {}),
+    }));
+
+  // Back-compat: callers that still pass a single price get one offer.
+  if (!offerNodes.length && opts.price && opts.price > 0) {
+    offerNodes.push({
+      "@type": "Offer",
+      price: opts.price,
+      priceCurrency: opts.currency ?? "EGP",
+      category: "Paid",
+      url: opts.url,
+      availability: "https://schema.org/InStock",
+    });
+  }
+
   return {
     "@context": "https://schema.org",
     "@type": "Course",
@@ -148,21 +287,69 @@ export function courseLd(opts: {
     url: opts.url,
     ...(opts.image ? { image: opts.image } : {}),
     inLanguage: opts.locale,
+    ...(opts.alternateName ? { alternateName: opts.alternateName } : {}),
+    ...(opts.courseCode ? { courseCode: opts.courseCode } : {}),
+    ...(opts.educationalLevel ? { educationalLevel: opts.educationalLevel } : {}),
+    ...(opts.timeRequired ? { timeRequired: opts.timeRequired } : {}),
+    ...(opts.credentialAwarded ? { educationalCredentialAwarded: opts.credentialAwarded } : {}),
+    ...(opts.prerequisites ? { coursePrerequisites: opts.prerequisites } : {}),
+    ...(teaches.length ? { teaches } : {}),
+    ...(opts.audience ? { audience: { "@type": "Audience", audienceType: opts.audience } } : {}),
+    ...(availableLanguage.length ? { availableLanguage } : {}),
     provider: { "@type": "EducationalOrganization", name: SITE_NAME, sameAs: SITE_URL },
-    ...(opts.rating && opts.rating > 0 && opts.reviewCount && opts.reviewCount > 0
+
+    ...(future.length
+      ? {
+          hasCourseInstance: future.map((i) => ({
+            "@type": "CourseInstance",
+            courseMode: opts.courseMode ?? "online",
+            startDate: i.startDate,
+            endDate: i.endDate,
+            ...(isoDuration(i.weeklyHours ?? 0) ? { courseWorkload: isoDuration(i.weeklyHours ?? 0) } : {}),
+            ...(i.dayOfWeek || i.sessionTime
+              ? {
+                  courseSchedule: {
+                    "@type": "Schedule",
+                    ...(i.dayOfWeek ? { byDay: i.dayOfWeek } : {}),
+                    ...(i.sessionTime ? { startTime: i.sessionTime } : {}),
+                    ...(i.timezone ? { scheduleTimezone: i.timezone } : {}),
+                    ...(isoMinutes(i.sessionDurationMinutes ?? 0)
+                      ? { duration: isoMinutes(i.sessionDurationMinutes ?? 0) }
+                      : {}),
+                    repeatFrequency: "P1W",
+                  },
+                }
+              : {}),
+            location: { "@type": "VirtualLocation", url: opts.url },
+            ...(instructors.length
+              ? {
+                  instructor: instructors.map((p) => ({
+                    "@type": "Person",
+                    name: p.name,
+                    ...(p.url ? { url: p.url } : {}),
+                  })),
+                }
+              : {}),
+          })),
+        }
+      : {}),
+
+    // Gated: rating and review markup are emitted ONLY when real, consented
+    // reviews exist. With none, both nodes are omitted entirely.
+    ...(rating && rating > 0 && reviewCount && reviewCount > 0
       ? {
           aggregateRating: {
             "@type": "AggregateRating",
-            ratingValue: opts.rating,
-            reviewCount: opts.reviewCount,
+            ratingValue: rating,
+            reviewCount,
             bestRating: 5,
             worstRating: 1,
           },
         }
       : {}),
-    ...(opts.reviews?.length
+    ...(reviews?.length
       ? {
-          review: opts.reviews.map((r) => ({
+          review: reviews.map((r) => ({
             "@type": "Review",
             author: { "@type": "Person", name: r.author },
             reviewRating: {
@@ -172,12 +359,11 @@ export function courseLd(opts: {
               worstRating: 1,
             },
             reviewBody: r.body,
+            ...(r.datePublished ? { datePublished: r.datePublished } : {}),
           })),
         }
       : {}),
-    ...(opts.price && opts.price > 0
-      ? { offers: { "@type": "Offer", price: opts.price, priceCurrency: opts.currency ?? "EGP", category: "Paid", url: opts.url } }
-      : {}),
+    ...(offerNodes.length ? { offers: offerNodes } : {}),
   };
 }
 

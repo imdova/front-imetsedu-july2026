@@ -7,7 +7,7 @@ import {
   FileText, Megaphone, CheckCircle2, AlertTriangle, Clock, Inbox, CheckCheck, ArrowLeft,
   Search, Info, StickyNote, Check, Mail, CalendarDays, Tag, X, Paperclip, Mic, Download,
   BarChart3, TrendingUp, Clock3, Flame, Sparkles, ScrollText, Gauge, RefreshCw,
-  Eye,
+  Eye, Ban,
 } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
@@ -133,7 +133,7 @@ const QUICK_REPLIES = [
   "هل لديك أي استفسار آخر؟",
 ];
 
-type InboxFilter = "open" | "unread" | "resolved" | "hot" | "due";
+type InboxFilter = "open" | "unread" | "resolved" | "hot" | "due" | "blocked";
 
 /** Lead temperature → display tokens. */
 const TEMP: Record<string, { emoji: string; label: string; chip: string; bar: string; accent: string }> = {
@@ -377,6 +377,9 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
 
   const q = search.trim().toLowerCase();
   const filtered = convos.filter((c) => {
+    // Blocked contacts stay out of every view except their own filter.
+    if (filter !== "blocked" && c.blocked) return false;
+    if (filter === "blocked" && !c.blocked) return false;
     if (filter === "open" && c.status === "resolved") return false;
     if (filter === "unread" && (!c.unread || c.status === "resolved")) return false;
     if (filter === "resolved" && c.status !== "resolved") return false;
@@ -387,7 +390,8 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
     if (q && !`${c.name} ${c.phone} ${c.lastMessage} ${(c.labels || []).join(" ")} ${(c.lists || []).join(" ")}`.toLowerCase().includes(q)) return false;
     return true;
   });
-  const unreadCount = convos.filter((c) => c.unread > 0 && c.status !== "resolved").length;
+  const blockedCount = convos.filter((c) => c.blocked).length;
+  const unreadCount = convos.filter((c) => c.unread > 0 && c.status !== "resolved" && !c.blocked).length;
   const hotCount = convos.filter((c) => c.temperature === "hot" && c.status !== "resolved").length;
   const nowMs = now;
   const dueCount = convos.filter((c) => c.followUpAt && new Date(c.followUpAt).getTime() < nowMs).length;
@@ -542,6 +546,17 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
     loadThread(active); loadConvos();
   };
 
+  /** Block/unblock the open contact — blocked numbers can't receive messages and their inbound is dropped. */
+  const toggleBlock = async () => {
+    if (!active || !thread) return;
+    const next = !thread.blocked;
+    if (next && !window.confirm(`Block +${active}?\n\nTheir incoming messages will be ignored, and no reply or campaign can be sent to this number until you unblock them.`)) return;
+    const r = await dal.whatsapp.setConversationBlocked(active, next);
+    if (!r.ok) { toast.error(r.error); return; }
+    toast.success(next ? "Contact blocked" : "Contact unblocked");
+    loadThread(active); loadConvos();
+  };
+
   const activeConvo = convos.find((c) => c.phone === active);
   const contact = thread?.contact;
 
@@ -564,7 +579,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name / number / label…" className="ps-8" />
           </div>
           <div className="flex flex-wrap gap-1">
-            {([["open", "Open"], ["hot", `🔥 Hot${hotCount ? ` ${hotCount}` : ""}`], ["due", `⏰ Due${dueCount ? ` ${dueCount}` : ""}`], ["unread", `Unread${unreadCount ? ` ${unreadCount}` : ""}`], ["resolved", "Resolved"]] as [InboxFilter, string][]).map(([k, l]) => (
+            {([["open", "Open"], ["hot", `🔥 Hot${hotCount ? ` ${hotCount}` : ""}`], ["due", `⏰ Due${dueCount ? ` ${dueCount}` : ""}`], ["unread", `Unread${unreadCount ? ` ${unreadCount}` : ""}`], ["resolved", "Resolved"], ["blocked", `🚫 Blocked${blockedCount ? ` ${blockedCount}` : ""}`]] as [InboxFilter, string][]).map(([k, l]) => (
               <button key={k} type="button" onClick={() => setFilter(k)} className={cn("rounded-full px-2.5 py-1 text-xs font-medium transition-colors", filter === k ? (k === "hot" ? "bg-red-500 text-white" : k === "due" ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground") : k === "hot" && hotCount ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400" : k === "due" && dueCount ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400" : "bg-muted text-muted-foreground hover:bg-muted/70")}>{l}</button>
             ))}
           </div>
@@ -624,7 +639,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/12 text-sm font-bold text-[#128C7E]">{(c.name || c.phone).charAt(0).toUpperCase()}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium">{c.temperature === "hot" && <span title={`Hot lead · ${c.score}/100`}>🔥 </span>}{c.name || `+${c.phone}`}</span>
+                    <span className="truncate text-sm font-medium">{c.blocked ? <Ban className="me-1 inline size-3.5 text-destructive" /> : c.temperature === "hot" && <span title={`Hot lead · ${c.score}/100`}>🔥 </span>}{c.name || `+${c.phone}`}</span>
                     <span className="shrink-0 text-[10px] text-muted-foreground">{fmtTime(c.lastMessageAt)}</span>
                   </span>
                   <span className="flex items-center justify-between gap-2">
@@ -663,11 +678,24 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                 <p className="truncate text-sm font-semibold">{activeConvo?.name || contact?.name || `+${active}`}</p>
                 <p className="text-[11px] text-muted-foreground">+{active}</p>
               </div>
-              {thread && (thread.windowOpen
-                ? <Badge className="gap-1 bg-success/12 text-success"><CheckCircle2 className="size-3" /> open window</Badge>
-                : <Badge variant="secondary" className="gap-1"><Clock className="size-3" /> 24h closed</Badge>)}
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleResolve}>
-                {thread?.status === "resolved" ? <><X className="size-3.5" /> Reopen</> : <><Check className="size-3.5" /> Resolve</>}
+              {thread?.blocked
+                ? <Badge variant="secondary" className="gap-1 bg-destructive/12 text-destructive"><Ban className="size-3" /> blocked</Badge>
+                : thread && (thread.windowOpen
+                  ? <Badge className="gap-1 bg-success/12 text-success"><CheckCircle2 className="size-3" /> open window</Badge>
+                  : <Badge variant="secondary" className="gap-1"><Clock className="size-3" /> 24h closed</Badge>)}
+              {!thread?.blocked && (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleResolve}>
+                  {thread?.status === "resolved" ? <><X className="size-3.5" /> Reopen</> : <><Check className="size-3.5" /> Resolve</>}
+                </Button>
+              )}
+              <Button
+                variant={thread?.blocked ? "outline" : "ghost"}
+                size={thread?.blocked ? "sm" : "icon"}
+                className={cn(thread?.blocked ? "gap-1.5" : "size-8 text-muted-foreground hover:text-destructive")}
+                title={thread?.blocked ? "Unblock this contact" : "Block this contact"}
+                onClick={toggleBlock}
+              >
+                {thread?.blocked ? <><Ban className="size-3.5" /> Unblock</> : <Ban className="size-4" />}
               </Button>
               <Button variant="ghost" size="icon" className="size-8" title="Client info" onClick={() => setShowInfo((s) => !s)}><Info className="size-4" /></Button>
             </div>
@@ -709,7 +737,16 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
               <div ref={bottomRef} />
             </div>
 
-            {/* Reply / Note composer */}
+            {/* Reply / Note composer — replaced by a banner while the contact is blocked */}
+            {thread?.blocked ? (
+              <div className="flex flex-wrap items-center justify-center gap-3 border-t border-border/60 bg-destructive/5 p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  <Ban className="me-1.5 inline size-4 text-destructive" />
+                  This contact is blocked — incoming messages are ignored and nothing can be sent to them.
+                </p>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleBlock}><Ban className="size-3.5" /> Unblock</Button>
+              </div>
+            ) : (
             <div className="border-t border-border/60 bg-card p-3">
               <div className="mb-2 flex items-center gap-4">
                 {(["reply", "note"] as const).map((mk) => (
@@ -791,6 +828,7 @@ function InboxPanel({ templates, connected, confirm }: { templates: WaTemplate[]
                 )
               )}
             </div>
+            )}
           </>
         )}
       </div>

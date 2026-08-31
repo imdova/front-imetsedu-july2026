@@ -161,6 +161,10 @@ export async function markConversationRead(phone: string): Promise<Result<boolea
 export async function setConversationStatus(phone: string, status: "open" | "resolved"): Promise<Result<boolean>> {
   const r = await svc.setConversationStatus(phone, status); return r.ok ? ok(true) : r;
 }
+/** Block/unblock a contact: their inbound messages are ignored and nothing can be sent to them. */
+export async function setConversationBlocked(phone: string, blocked: boolean, reason?: string): Promise<Result<boolean>> {
+  const r = await svc.setConversationBlocked(phone, blocked, reason); return r.ok ? ok(true) : r;
+}
 export async function addNote(phone: string, text: string, author?: string): Promise<Result<boolean>> {
   const r = await svc.addNote(phone, text, author); return r.ok ? ok(true) : r;
 }

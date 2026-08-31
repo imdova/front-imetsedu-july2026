@@ -88,7 +88,20 @@ export default async function PublicLayout({
 
   return (
     <div className="flex min-h-svh flex-col">
-      <JsonLd data={[organizationLd(), websiteLd()]} />
+      {/* Organization node built from Site Settings — areaServed, address,
+          contact point and social profiles. Blank settings are omitted. */}
+      <JsonLd
+        data={[
+          organizationLd({
+            description: settings?.general?.tagline,
+            phone: settings?.contact?.phone,
+            email: settings?.contact?.supportEmail,
+            address: settings?.contact?.address,
+            social: settings?.social,
+          }),
+          websiteLd(),
+        ]}
+      />
       <PublicBannerBar />
       <PublicHeader logoLight={logoLight} logoBlue={logoBlue} locale={locale} megaCategories={megaCategories} megaCourses={megaCourses} />
       <main className="flex-1">{children}</main>

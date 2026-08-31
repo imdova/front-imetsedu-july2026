@@ -12,11 +12,22 @@ function fmtDate(iso?: string): string {
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+/**
+ * Average rating across CONSENTED reviews only — the same set the page renders,
+ * so the number and the wall beneath it can never disagree.
+ */
 function avgRating(reviews?: any[]): number {
   if (!Array.isArray(reviews) || reviews.length === 0) return 0;
-  const rated = reviews.filter((r) => typeof r?.rating === "number");
+  const rated = reviews.filter((r) => typeof r?.rating === "number" && r?.consentToPublish);
   if (!rated.length) return 0;
   return Math.round((rated.reduce((s, r) => s + r.rating, 0) / rated.length) * 10) / 10;
+}
+
+/** How many reviews may actually be published. */
+function consentedCount(reviews?: any[]): number {
+  return Array.isArray(reviews)
+    ? reviews.filter((r) => r?.consentToPublish && String(r?.comment ?? "").trim()).length
+    : 0;
 }
 
 export function mapCourse(raw: any): CourseRow {
@@ -54,7 +65,49 @@ export function mapCourse(raw: any): CourseRow {
     salePriceUSD: usd.salePrice ?? 0,
     students: typeof raw?.students === "number" ? raw.students : Array.isArray(raw?.students) ? raw.students.length : 0,
     lectures,
-    rating: typeof raw?.rating === "number" ? raw.rating : avgRating(raw?.textReviews),
+    // Derived from consented reviews. A stored `rating` is only trusted when
+    // there are consented reviews behind it — otherwise it is an orphan number.
+    rating: consentedCount(raw?.textReviews) > 0
+      ? (typeof raw?.rating === "number" && raw.rating > 0 ? raw.rating : avgRating(raw?.textReviews))
+      : 0,
+    reviewCount: consentedCount(raw?.textReviews),
+    intakes: Array.isArray(raw?.intakes)
+      ? raw.intakes.map((i: Record<string, unknown>) => ({
+          startDate: String(i?.startDate ?? ""),
+          endDate: String(i?.endDate ?? ""),
+          dayOfWeek: String(i?.dayOfWeek ?? ""),
+          sessionTime: String(i?.sessionTime ?? ""),
+          timezone: String(i?.timezone ?? "Africa/Cairo"),
+          weeklyHours: Number(i?.weeklyHours) || 0,
+          sessionDurationMinutes: Number(i?.sessionDurationMinutes) || 0,
+          seatsAvailable: Number(i?.seatsAvailable) || 0,
+          status: (i?.status === "closed" || i?.status === "full" ? i.status : "open") as
+            | "open" | "closed" | "full",
+        }))
+      : undefined,
+    proof: raw?.proof && Number(raw.proof.passRate) > 0
+      ? {
+          passRate: Number(raw.proof.passRate),
+          passRateBasisEn: String(raw.proof.passRateBasisEn ?? ""),
+          passRateBasisAr: String(raw.proof.passRateBasisAr ?? ""),
+          passRateVerifiedAt: raw.proof.passRateVerifiedAt ? String(raw.proof.passRateVerifiedAt) : "",
+        }
+      : undefined,
+    courseCode: raw?.courseCode || undefined,
+    educationalLevel: raw?.educationalLevel || undefined,
+    credentialAwardedEn: raw?.credentialAwardedEn || undefined,
+    credentialAwardedAr: raw?.credentialAwardedAr || undefined,
+    prerequisitesEn: raw?.prerequisitesEn || undefined,
+    prerequisitesAr: raw?.prerequisitesAr || undefined,
+    teachesEn: Array.isArray(raw?.teachesEn) ? raw.teachesEn.filter(Boolean) : undefined,
+    teachesAr: Array.isArray(raw?.teachesAr) ? raw.teachesAr.filter(Boolean) : undefined,
+    canonicalOverride: raw?.canonicalOverride || undefined,
+    robotsDirective: raw?.robotsDirective || undefined,
+    ogImage: raw?.ogImage || undefined,
+    ogImageAlt: raw?.ogImageAlt || undefined,
+    imageAltEn: raw?.imageAltEn || undefined,
+    imageAltAr: raw?.imageAltAr || undefined,
+    suppressBrandSuffix: Boolean(raw?.suppressBrandSuffix),
     status: (raw?.status === "published" ? "published" : "draft") as CourseStatus,
     isFeatured: !!raw?.isFeatured,
     isBestseller: !!raw?.isBestseller,
@@ -174,6 +227,10 @@ export function mapCourse(raw: any): CourseRow {
     // The form has saved these all along; nothing ever read them back out, so
     // the public wall showed the bundled sample reviews instead. Rows with no
     // name or no comment are dropped rather than rendered blank.
+    // Consent is enforced HERE, at the data boundary, so no consumer can render
+    // or mark up a named person's words without it. Legacy rows stored before
+    // the consent field existed are treated as not consented — they must be
+    // re-confirmed in the admin before they reappear.
     textReviews: Array.isArray(raw?.textReviews)
       ? raw.textReviews
           .map((r: Record<string, unknown>) => ({
@@ -182,8 +239,15 @@ export function mapCourse(raw: any): CourseRow {
             reviewerImage: String(r?.reviewerImage ?? ""),
             rating: typeof r?.rating === "number" ? r.rating : 0,
             comment: String(r?.comment ?? ""),
+            country: String(r?.country ?? ""),
+            datePublished: r?.datePublished ? String(r.datePublished) : "",
+            verified: Boolean(r?.verified),
+            consentToPublish: Boolean(r?.consentToPublish),
           }))
-          .filter((r: { reviewerName: string; comment: string }) => r.reviewerName && r.comment)
+          .filter(
+            (r: { reviewerName: string; comment: string; consentToPublish: boolean }) =>
+              r.reviewerName && r.comment && r.consentToPublish,
+          )
       : undefined,
     relatedCourseSlugs: Array.isArray(raw?.relatedCourseSlugs)
       ? raw.relatedCourseSlugs.filter((x: unknown): x is string => typeof x === "string" && !!x)

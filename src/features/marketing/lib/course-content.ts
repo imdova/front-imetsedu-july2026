@@ -29,7 +29,20 @@ export type FaqGroup = { title: string; items: FaqItem[] };
  * boundary). Order in the array = order of the cards.
  */
 export type KnowledgeGroup = { key: string; en: string; ar: string; emoji: string };
-export type SeoSection = { heading: string; body: string };
+export type SeoSection = {
+  heading: string;
+  body: string;
+  /**
+   * Optional facts table rendered open beneath the body. Facts in a clean table
+   * under a question-shaped H2 is the standard featured-snippet pattern — which
+   * is why these blocks are never collapsed.
+   */
+  table?: { head: string[]; rows: string[][] };
+  /** Optional H3 sub-blocks (e.g. one per country in the geography section). */
+  subs?: { heading: string; body: string }[];
+  /** Source/verification line. Factual blocks must date-stamp and cite. */
+  note?: { text: string; href?: string; label?: string };
+};
 export type CourseReview = {
   name: string;
   role: string;
@@ -128,7 +141,16 @@ export type CourseContent = {
   whyChoose: { title: string; body: string }[];
   /** Extra SEO prose — leave empty when FAQ + About cover the intent. */
   seoSections: SeoSection[];
-  reviews: CourseReview[];
+  /**
+   * REMOVED as a content source. Reviews may only come from the course record
+   * (admin form → Media & Reviews, consented rows). This used to hold six
+   * invented named testimonials that every course rendered as real student
+   * feedback. Kept optional purely so older callers still typecheck; nothing
+   * reads it, and nothing may repopulate it.
+   *
+   * @deprecated Never populate. See `course.textReviews`.
+   */
+  reviews?: never[];
   /**
    * Page meta overrides (bespoke courses). When set, wins over CMS SEO and
    * course title fallbacks. Use a full branded title — layout template is skipped
@@ -473,69 +495,6 @@ function whyThisDiplomaCards(
 /** The five reasons professionals pick IMETS — shared fallback for non-flagship. */
 function whyChooseReasons(locale: string): { title: string; body: string }[] {
   return whyThisDiplomaCards(locale).slice(0, 5);
-}
-
-/** Shared, believable healthcare reviews used as the review wall for any course. */
-function defaultReviews(locale: string): CourseReview[] {
-  const ar = isAr(locale);
-  return [
-    {
-      name: ar ? "د. مريم الفهد" : "Dr. Mariam Al-Fahad",
-      role: ar ? "أخصائية جودة رعاية صحية" : "Healthcare Quality Specialist",
-      country: ar ? "السعودية 🇸🇦" : "Saudi Arabia 🇸🇦",
-      rating: 5,
-      text: ar
-        ? "أفضل استثمار في مسيرتي المهنية. الجلسات المباشرة والاختبارات التدريبية جهّزتني تمامًا واجتزت الامتحان من أول محاولة."
-        : "The best investment in my career. The live sessions and practice exams prepared me fully — I passed on my first attempt.",
-    },
-    {
-      name: ar ? "أحمد منصور" : "Ahmed Mansour",
-      role: ar ? "منسّق سلامة المرضى" : "Patient Safety Officer",
-      country: ar ? "الإمارات 🇦🇪" : "UAE 🇦🇪",
-      rating: 5,
-      text: ar
-        ? "المحتوى عملي جدًا وليس مجرد نظري. طبّقت ما تعلّمته في مستشفانا خلال أسابيع."
-        : "Extremely practical, not just theory. I was applying what I learned in our hospital within weeks.",
-    },
-    {
-      name: ar ? "د. ليلى حسن" : "Dr. Layla Hassan",
-      role: ar ? "مديرة جودة" : "Quality Manager",
-      country: ar ? "مصر 🇪🇬" : "Egypt 🇪🇬",
-      rating: 5,
-      text: ar
-        ? "المدرّبون خبراء حقيقيون في المجال. الدعم عبر واتساب كان سريعًا ومفيدًا في كل خطوة."
-        : "The instructors are real industry experts. The WhatsApp support was fast and helpful at every step.",
-    },
-    {
-      name: ar ? "خالد العتيبي" : "Khaled Al-Otaibi",
-      role: ar
-        ? "منسّق اعتماد المستشفيات"
-        : "Hospital Accreditation Coordinator",
-      country: ar ? "قطر 🇶🇦" : "Qatar 🇶🇦",
-      rating: 5,
-      text: ar
-        ? "التسجيلات سمحت لي بالدراسة بعد مناوبات العمل. تنظيم رائع ومحتوى محدّث."
-        : "Recordings let me study after my shifts. Well organised and the content is up to date.",
-    },
-    {
-      name: ar ? "د. نور الدين" : "Dr. Nour El-Din",
-      role: ar ? "طبيب مقيم" : "Resident Physician",
-      country: ar ? "الأردن 🇯🇴" : "Jordan 🇯🇴",
-      rating: 4,
-      text: ar
-        ? "برنامج قوي وشامل. تمنّيت لو كان هناك المزيد من الحالات العملية، لكنه ممتاز عمومًا."
-        : "Strong, comprehensive program. I'd have liked a few more case studies, but excellent overall.",
-    },
-    {
-      name: ar ? "سارة إبراهيم" : "Sara Ibrahim",
-      role: ar ? "ممرضة أولى" : "Senior Nurse",
-      country: ar ? "الكويت 🇰🇼" : "Kuwait 🇰🇼",
-      rating: 5,
-      text: ar
-        ? "غيّر البرنامج طريقة تفكيري في الجودة والسلامة. أنصح به كل زميل في القطاع الصحي."
-        : "It changed how I think about quality and safety. I recommend it to every colleague in healthcare.",
-    },
-  ];
 }
 
 /** Bespoke CPHQ content. */
@@ -908,9 +867,172 @@ function cphqContent(locale: string): CourseContent {
           ? "جودة الرعاية الصحية من أسرع المجالات نموًا في القطاع الطبي. مع توسّع برامج الاعتماد مثل JCI وCBAHI وGAHAR، أصبحت المستشفيات بحاجة ماسّة لمتخصصين يقودون التحسين المستمر. هذا مسار مهني مستقر، مؤثّر، ومطلوب في كل منشأة صحية."
           : "Healthcare quality is one of the fastest-growing fields in the medical sector. As accreditation programs like JCI, CBAHI, and GAHAR expand, hospitals urgently need professionals who can lead continuous improvement. It's a stable, high-impact career that's needed in every healthcare facility.",
       },
+      ...cphqSeoBlocks(ar),
     ],
-    reviews: defaultReviews(locale),
   };
+}
+
+/**
+ * The three sections the SEO audit adds to the CPHQ page: exam facts, an honest
+ * comparison of prep options, and geography.
+ *
+ * All three render open and server-side — they exist to answer the informational
+ * queries that currently send traffic to Mometrix and NAHQ, and a collapsed
+ * answer cannot win a featured snippet.
+ *
+ * Deliberately absent: cohort percentages and session times. The audit drafted
+ * those with "[X]%" / "[time]" placeholders; inventing them would be exactly the
+ * failure it warns about, so the sentences that needed them are simply not here.
+ * Exam fees are stated as the US figures they are, dated, and linked to NAHQ.
+ */
+function cphqSeoBlocks(ar: boolean): SeoSection[] {
+  const NAHQ_URL =
+    "https://nahq.org/credentials/cphq-certified-professional-in-healthcare-quality/";
+
+  return [
+    {
+      heading: ar
+        ? "حقائق امتحان CPHQ: الشكل والتكلفة والدومينز والأهلية"
+        : "CPHQ Exam Facts: Format, Cost, Domains and Eligibility",
+      body: ar
+        ? "امتحان CPHQ اختبار محوسب تديره NAHQ عبر لجنة اعتماد جودة الرعاية الصحية (HQCC). هذه هي تفاصيل ما تستعد له قبل أن تختار كورسًا تحضيريًا لـ CPHQ."
+        : "The CPHQ exam is a computer-based test administered by NAHQ through the Healthcare Quality Certification Commission. Here is what you are preparing for, before you choose a CPHQ prep course.",
+      table: {
+        head: ar ? ["السؤال", "الإجابة"] : ["Question", "Answer"],
+        rows: ar
+          ? [
+              ["كم عدد الأسئلة؟", "140 سؤالًا — 125 محتسبًا و15 سؤالًا تجريبيًا غير محتسب"],
+              ["كم المدة؟", "3 ساعات كحد أقصى"],
+              ["شكل الامتحان", "اختيار من متعدد، محوسب، في مركز اختبار أو بمراقبة عن بُعد"],
+              [
+                "دومينز المحتوى",
+                "7 — قيادة الجودة والتكامل؛ تحسين الأداء والعمليات؛ صحة السكان وانتقالات الرعاية؛ تحليلات البيانات الصحية؛ سلامة المرضى؛ مراجعة الجودة والمساءلة؛ الالتزام التنظيمي والاعتماد",
+              ],
+              ["الأهلية", "لا توجد متطلبات رسمية. توصي NAHQ بخبرة سنتين تقريبًا في جودة الرعاية الصحية."],
+              ["رسوم الامتحان", "تختلف حسب العضوية والدولة — راجع NAHQ للرسوم الحالية للمرشحين الدوليين"],
+              ["درجة النجاح", "درجة معيارية — تأكد من الحد الحالي في دليل المرشحين لدى NAHQ"],
+            ]
+          : [
+              ["How many questions?", "140 total — 125 scored, plus 15 unscored pretest questions"],
+              ["How long?", "3 hours maximum"],
+              ["Format", "Multiple choice, computer-based, at a test centre or via remote proctoring"],
+              [
+                "Content domains",
+                "7 — quality leadership and integration; performance and process improvement; population health and care transitions; health data analytics; patient safety; quality review and accountability; regulatory and accreditation",
+              ],
+              [
+                "Eligibility",
+                "No formal requirement. NAHQ recommends around two years of experience in healthcare quality.",
+              ],
+              [
+                "Exam fee",
+                "Varies by NAHQ membership and region — international candidate fees are published separately from the US rates. Check NAHQ for the current figure.",
+              ],
+              ["Passing score", "Scaled score — confirm the current pass mark in NAHQ's candidate handbook"],
+            ],
+      },
+      note: {
+        text: ar
+          ? "تفاصيل الامتحان مراجَعة في أغسطس 2026 من المصدر الرسمي — تُراجع كل ثلاثة أشهر."
+          : "Exam details verified August 2026 against the official source — re-checked quarterly.",
+        href: NAHQ_URL,
+        label: ar ? "NAHQ — صفحة شهادة CPHQ" : "NAHQ — CPHQ credential page",
+      },
+    },
+    {
+      heading: ar ? "مقارنة خيارات التحضير لامتحان CPHQ" : "CPHQ Prep Course Options Compared",
+      body: ar
+        ? "ليست كل الخيارات مناسبة للجميع — بما في ذلك خيارنا. إليك مقارنة صريحة بين الطرق الأربع الشائعة للتحضير."
+        : "Not every option suits everyone — including ours. Here is an honest comparison of the four common ways to prepare, including the case where a course is an unnecessary expense.",
+      table: {
+        head: ar
+          ? ["الخيار", "الأنسب لـ", "نقطة الضعف"]
+          : ["Option", "Best for", "Weakness"],
+        rows: ar
+          ? [
+              [
+                "كورس مباشر بدفعة (هذا الكورس)",
+                "المهنيون العاملون الذين يحتاجون هيكلًا والتزامًا وشخصًا يسألونه",
+                "التزام أسبوعي ثابت — عليك الحضور",
+              ],
+              [
+                "كورس المراجعة الرسمي من NAHQ",
+                "من يريد المادة مباشرة من الجهة المانحة",
+                "توقيت وتسعير أمريكيان؛ لا دعم بالعربية؛ تفاعل مباشر محدود",
+              ],
+              [
+                "دراسة ذاتية بدليل NAHQ",
+                "مديرو الجودة ذوو الخبرة العاملون فعليًا في الدومينز السبعة — إن كان هذا وضعك فقد يكون الكورس نفقة غير ضرورية",
+                "لا حلقة تغذية راجعة؛ أعلى نسبة رسوب بين الخيارات الأربعة",
+              ],
+              [
+                "بنوك أسئلة فقط",
+                "الأسبوعان الأخيران من المراجعة، فوق طريقة أخرى",
+                "تُعلّم التعرف على الإجابة لا الحكم التطبيقي الذي يختبره الامتحان",
+              ],
+            ]
+          : [
+              [
+                "Live cohort course (this one)",
+                "Working professionals who need structure, accountability and someone to ask",
+                "Fixed weekly commitment; you have to show up",
+              ],
+              [
+                "NAHQ's own review course",
+                "Candidates who want material straight from the credential body",
+                "US-centric timing and pricing; no Arabic support; limited live interaction",
+              ],
+              [
+                "Self-study with the NAHQ handbook",
+                "Experienced quality managers already working across all seven domains — if that is you, a course may be an unnecessary expense",
+                "No feedback loop; the highest failure rate of the four",
+              ],
+              [
+                "Question banks alone",
+                "Final two weeks of revision, on top of another method",
+                "Teaches recognition, not the applied judgment the exam actually tests",
+              ],
+            ],
+      },
+    },
+    {
+      heading: ar
+        ? "حضور كورس CPHQ من مصر والسعودية والإمارات"
+        : "Taking the CPHQ Course from Egypt, Saudi Arabia and the UAE",
+      body: ar
+        ? "الكورس يُقدَّم أونلاين بالكامل عبر زوم، وكل جلسة مسجّلة وتُنشر بعدها مباشرة — فإن كنت في مناوبة، تتابع لاحقًا دون أن تفوتك المادة."
+        : "The course runs entirely online over Zoom, and every session is recorded and posted afterwards — so if you are on call, you catch up without losing the material.",
+      subs: ar
+        ? [
+            {
+              heading: "كورس CPHQ في مصر",
+              body: "تُحصّل الرسوم بالجنيه المصري مع خيارات تقسيط، ويُؤدى الامتحان في مركز اختبار Prometric بالقاهرة. المستشفيات المصرية العاملة على اعتماد GAHAR توظّف على هذه الكفاءات تحديدًا.",
+            },
+            {
+              heading: "كورس CPHQ في السعودية",
+              body: "الطلب مدفوع بمتطلبات اعتماد CBAHI وإصلاحات القطاع الصحي ضمن رؤية 2030. الكورس بالإنجليزية مع دعم بالعربية، ويمكن إصدار فواتير للمؤسسات للمرشحين المبتعثين من مستشفياتهم.",
+            },
+            {
+              heading: "كورس CPHQ في الإمارات",
+              body: "يؤدي مرشحو دبي وأبوظبي الامتحان عادة في مركز Prometric محلي. المنشآت الساعية لاعتماد JCI تقدّر هذه الشهادة في وظائف الجودة وسلامة المرضى.",
+            },
+          ]
+        : [
+            {
+              heading: "CPHQ course in Egypt",
+              body: "Fees are billed in Egyptian pounds with instalment options, and the exam itself is sat at a Prometric test centre in Cairo. Egyptian hospitals working toward GAHAR accreditation are hiring for exactly these competencies.",
+            },
+            {
+              heading: "CPHQ course in Saudi Arabia",
+              body: "Demand is driven by CBAHI accreditation requirements and Vision 2030 health-sector reform. The course runs in English with Arabic support, and we can invoice institutions directly for hospital-sponsored candidates.",
+            },
+            {
+              heading: "CPHQ course in the UAE",
+              body: "Dubai and Abu Dhabi candidates typically sit the exam at a local Prometric centre. Facilities pursuing JCI accreditation value the credential for quality and patient-safety roles.",
+            },
+          ],
+    },
+  ];
 }
 
 /** Bespoke Hospital Management Diploma content. */
@@ -1163,7 +1285,6 @@ function hospitalManagementContent(locale: string): CourseContent {
     ],
     // SEO intent is covered by FAQ + About — avoid stacking more essay blocks.
     seoSections: [],
-    reviews: defaultReviews(locale),
     pageSeo: {
       metaTitleEn: "Hospital Management Diploma Online | IMETS Medical School",
       metaTitleAr: "دبلومة إدارة المستشفيات أونلاين | مدرسة IMETS الطبية",
@@ -1487,7 +1608,6 @@ function cicContent(locale: string): CourseContent {
     // "Why Choose IMETS…") duplicated the Knowledge Center, which now covers the
     // same ground in more depth. Empty ⇒ the page skips the section entirely.
     seoSections: [],
-    reviews: defaultReviews(locale),
   };
 }
 
@@ -1679,7 +1799,6 @@ function infectionControlDiplomaContent(locale: string): CourseContent {
     ],
     careerOpportunities: [],
     seoSections: [],
-    reviews: defaultReviews(locale),
   };
 }
 
@@ -2410,7 +2529,6 @@ function genericContent(
     ],
     careerOpportunities: [],
     seoSections: [],
-    reviews: defaultReviews(locale),
   };
   // Slug-specific overrides last, so they beat the generic defaults above.
   return { ...base, ...(COURSE_EXTRAS[slug]?.(ar) ?? {}) };

@@ -176,9 +176,14 @@ export function KnowledgeTimeline({
           <li key={c.key} className="relative">
             {/* Desktop / crawlable: native exclusive accordion (in the DOM on
                 all viewports). `name` closes the others when one opens. */}
+            {/* The first card opens by default: roughly half this page's body
+                copy sat behind a click, and content a reader has to reveal is
+                weaker evidence of a helpful page — and cannot win a featured
+                snippet as reliably as an open paragraph under its heading. */}
             <details
               id={`kc-card-${c.key}`}
               name="cic-knowledge-center"
+              open={i === 0}
               className="group hidden scroll-mt-28 overflow-hidden rounded-2xl border border-border/60 bg-card/70 transition-colors open:border-primary/30 open:bg-card open:shadow-sm lg:block"
             >
               <summary className="flex cursor-pointer list-none items-center gap-4 p-4 sm:p-5">

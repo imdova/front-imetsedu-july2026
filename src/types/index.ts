@@ -156,14 +156,57 @@ export interface CourseRow {
     faqEn?: string; faqAr?: string;
   };
   /** Real student reviews typed into the course form (Media & Reviews).
-   *  Empty/absent ⇒ the page falls back to its bundled sample wall. */
+   *  Only CONSENTED reviews reach this array (filtered in `mapCourse`), and an
+   *  empty array means the page renders no reviews at all — never a sample wall. */
   textReviews?: {
     reviewerName: string;
     title: string;
     reviewerImage: string;
     rating: number;
     comment: string;
+    country?: string;
+    /** ISO date — emitted as `Review.datePublished`. */
+    datePublished?: string;
+    verified?: boolean;
+    consentToPublish?: boolean;
   }[];
+  /** How many consented reviews back `rating`. 0 ⇒ no rating is shown. */
+  reviewCount?: number;
+  /** Scheduled cohorts (course form → Structure). Feeds `hasCourseInstance`. */
+  intakes?: {
+    startDate: string;
+    endDate: string;
+    dayOfWeek?: string;
+    sessionTime?: string;
+    timezone?: string;
+    weeklyHours?: number;
+    sessionDurationMinutes?: number;
+    seatsAvailable?: number;
+    status?: "open" | "closed" | "full";
+  }[];
+  /** Verifiable outcome claims. Absent unless a pass rate AND its basis are stored. */
+  proof?: {
+    passRate: number;
+    passRateBasisEn: string;
+    passRateBasisAr: string;
+    passRateVerifiedAt?: string;
+  };
+  /* ── Structured-data + indexing fields (course form) ── */
+  courseCode?: string;
+  educationalLevel?: string;
+  credentialAwardedEn?: string;
+  credentialAwardedAr?: string;
+  prerequisitesEn?: string;
+  prerequisitesAr?: string;
+  teachesEn?: string[];
+  teachesAr?: string[];
+  canonicalOverride?: string;
+  robotsDirective?: "index,follow" | "noindex,follow" | "noindex,nofollow";
+  ogImage?: string;
+  ogImageAlt?: string;
+  imageAltEn?: string;
+  imageAltAr?: string;
+  suppressBrandSuffix?: boolean;
   /** Admin-authored search metadata (course form → SEO panel). Any blank field
    *  falls back to copy derived from the course itself in `generateMetadata`. */
   seo?: {

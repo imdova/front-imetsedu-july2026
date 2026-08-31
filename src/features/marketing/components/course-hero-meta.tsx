@@ -61,7 +61,9 @@ export async function CourseHeroMeta({
   locale: string;
 }) {
   const t = await getTranslations("Marketing");
-  const { rating, reviews } = courseSocialProof(course);
+  // No consented reviews ⇒ no stars and no count. Silence beats a number the
+  // course has not earned.
+  const { rating, reviews, hasReviews } = courseSocialProof(course);
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-3 sm:gap-x-4">
@@ -69,17 +71,20 @@ export async function CourseHeroMeta({
         {t("heroOnline")}
       </span>
 
-      <MetaDivider />
-
-      <div className="flex flex-col gap-0.5">
-        <div className="flex items-center gap-1.5">
-          <StarRating rating={rating} />
-          <span className="text-sm font-bold tabular-nums text-amber-300">{rating.toFixed(1)}</span>
-        </div>
-        <span className="text-[11px] leading-none text-white/65">
-          {t("cardReviews", { count: reviews.toLocaleString("en-US") })}
-        </span>
-      </div>
+      {hasReviews && (
+        <>
+          <MetaDivider />
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5">
+              <StarRating rating={rating} />
+              <span className="text-sm font-bold tabular-nums text-amber-300">{rating.toFixed(1)}</span>
+            </div>
+            <span className="text-[11px] leading-none text-white/65">
+              {t("cardReviews", { count: reviews.toLocaleString("en-US") })}
+            </span>
+          </div>
+        </>
+      )}
       <MetaDivider />
 
       <MetaItem icon={GraduationCap}>
