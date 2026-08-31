@@ -106,10 +106,14 @@ export async function generateMetadata({
   const keywords = (ar ? seo?.metaKeywordsAr : seo?.metaKeywordsEn) ?? [];
   const path = `/courses/${slug}`;
   return mergeSeo(path, {
-    // Absolute only when the winning title already carries the school name, so
-    // the layout template can't double it (`… | IMETS · IMETS Medical School`).
-    // Keyed to the title that won, not merely to pageSeo existing.
-    title: !adminTitle && bundledTitle ? { absolute: title } : title,
+    // Absolute (i.e. the layout's `%s · IMETS Medical School` template is
+    // skipped) in two cases: the winning title already carries the school name,
+    // so the template can't double it; or the course opted out of the suffix
+    // because the composed title would otherwise truncate in the SERP.
+    title:
+      course.suppressBrandSuffix || (!adminTitle && bundledTitle)
+        ? { absolute: title }
+        : title,
     description,
     ...(keywords.length ? { keywords } : {}),
     // Per-course canonical override wins over the computed one (retired cohorts,
