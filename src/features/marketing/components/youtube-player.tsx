@@ -17,6 +17,7 @@ import { loadYouTubeApi } from "@/features/marketing/lib/youtube";
 export function YouTubePlayer({
   videoId,
   unmuteLabel = "Tap for sound",
+  playLabel = "Play video",
   autoPlay = true,
   unmuteOnStart = true,
   hideYouTubeChrome = false,
@@ -26,6 +27,8 @@ export function YouTubePlayer({
 }: {
   videoId: string;
   unmuteLabel?: string;
+  /** Accessible label for the click-to-load poster button. */
+  playLabel?: string;
   /** Fires once when the video finishes playing (state ENDED). */
   onEnded?: () => void;
   /** Fires ~every 1.5s while playing with the watched percentage (0–100). */
@@ -42,6 +45,18 @@ export function YouTubePlayer({
   unmuteOnStart?: boolean;
   className?: string;
 }) {
+  /**
+   * Click-to-load facade.
+   *
+   * A paused embed still pulled in the whole YouTube IFrame API and built a
+   * player on mount — script work and requests every visitor paid for whether
+   * or not they watched, which is where LCP and INP degrade on a mid-range
+   * phone. Non-autoplay embeds now render a thumbnail and only mount the real
+   * player once someone actually asks for it. Autoplay embeds are unchanged:
+   * they have to be live on mount to autoplay at all.
+   */
+  const [activated, setActivated] = React.useState(autoPlay);
+
   const hostRef = React.useRef<HTMLDivElement>(null);
   const playerRef = React.useRef<any>(null);
   const [muted, setMuted] = React.useState(true);
@@ -55,6 +70,8 @@ export function YouTubePlayer({
   React.useEffect(() => { onEndedRef.current = onEnded; onProgressRef.current = onProgress; });
 
   React.useEffect(() => {
+    // Nothing is loaded until the facade is dismissed.
+    if (!activated) return;
     let cancelled = false;
     // Poll watched percentage while the video is playing.
     const progressTimer = window.setInterval(() => {
@@ -84,7 +101,12 @@ export function YouTubePlayer({
         events: {
           onReady: (e: any) => {
             setReady(true);
-            if (!autoPlay) return;
+            if (!autoPlay) {
+              // Reached here from the facade — the click IS the user gesture,
+              // so start playing rather than showing a second play button.
+              try { e.target.playVideo(); } catch { /* ignore */ }
+              return;
+            }
             try { e.target.playVideo(); } catch { /* ignore */ }
             if (unmuteOnStart) {
               // Try to play WITH sound (works on desktop). Mobile blocks unmuted
@@ -124,7 +146,7 @@ export function YouTubePlayer({
       window.clearInterval(progressTimer);
       try { playerRef.current?.destroy?.(); } catch { /* ignore */ }
     };
-  }, [videoId, autoPlay, unmuteOnStart]);
+  }, [videoId, autoPlay, unmuteOnStart, activated]);
 
   const unmute = () => {
     const p = playerRef.current;
@@ -139,6 +161,21 @@ export function YouTubePlayer({
 
   return (
     <div className={cn("relative aspect-video w-full overflow-hidden bg-black", className)}>
+      {/* Facade: the thumbnail stands in for the player until it is asked for.
+          A real button, so it is keyboard reachable and announced correctly. */}
+      {!activated ? (
+        <button
+          type="button"
+          onClick={() => setActivated(true)}
+          aria-label={playLabel}
+          className="group absolute inset-0 z-[6] flex items-center justify-center bg-black bg-cover bg-center"
+          style={{ backgroundImage: `url(https://i.ytimg.com/vi/${videoId}/hqdefault.jpg)` }}
+        >
+          <span className="grid size-16 place-items-center rounded-full bg-black/55 text-white shadow-lg ring-1 ring-white/30 transition group-hover:scale-105">
+            <Play className="size-7 translate-x-0.5 fill-current" />
+          </span>
+        </button>
+      ) : null}
       <div ref={hostRef} className="size-full" />
       {hideYouTubeChrome && (
         // Blocks the top-bar title + "Watch on YouTube"/share links from being

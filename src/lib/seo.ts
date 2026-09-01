@@ -136,6 +136,40 @@ export function organizationLd(opts?: {
   };
 }
 
+/**
+ * `ItemList` of courses for a listing page — the Course List carousel is one of
+ * the few course-related rich results Google still renders, and it requires the
+ * list to live on a list page rather than on each course.
+ */
+export function courseListLd(opts: {
+  url: string;
+  name: string;
+  courses: { name: string; url: string; description?: string }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: opts.name,
+    url: opts.url,
+    numberOfItems: opts.courses.length,
+    itemListElement: opts.courses.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: {
+        "@type": "Course",
+        name: c.name,
+        url: c.url,
+        ...(c.description ? { description: c.description } : {}),
+        provider: {
+          "@type": "EducationalOrganization",
+          name: SITE_NAME,
+          sameAs: SITE_URL,
+        },
+      },
+    })),
+  };
+}
+
 export function websiteLd() {
   return {
     "@context": "https://schema.org",

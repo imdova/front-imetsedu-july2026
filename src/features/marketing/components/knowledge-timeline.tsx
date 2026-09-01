@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ChevronRight } from "lucide-react";
 
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -37,9 +38,11 @@ type Card = {
   ar: string;
   emoji: string;
   items: FaqItem[];
+  /** Optional onward link into the blog cluster. */
+  link?: KnowledgeGroup["link"];
 };
 
-function Answers({ items }: { items: FaqItem[] }) {
+function Answers({ items, link, ar }: { items: FaqItem[]; link?: KnowledgeGroup["link"]; ar?: boolean }) {
   return (
     // Cap the measure at ~720px — a comfortable reading line length even when
     // the card itself is wider (classic typography rule).
@@ -57,6 +60,18 @@ function Answers({ items }: { items: FaqItem[] }) {
           </div>
         </div>
       ))}
+
+      {/* Route on to the matching article. Descriptive anchor text, so the
+          link teaches Google what the destination is about. */}
+      {link && (
+        <Link
+          href={link.href}
+          className="inline-flex items-center gap-1.5 text-[0.95rem] font-semibold text-primary hover:underline"
+        >
+          {ar ? link.ar : link.en}
+          <ChevronRight className="size-4 rtl:rotate-180" />
+        </Link>
+      )}
     </div>
   );
 }
@@ -81,6 +96,7 @@ export function KnowledgeTimeline({
       en: g.en,
       ar: g.ar,
       emoji: g.emoji,
+      link: g.link,
       items: items.filter((it) => it.group === g.key),
     }))
     .filter((c) => c.items.length);
@@ -190,7 +206,7 @@ export function KnowledgeTimeline({
                 <Face card={c} index={i} forDetails />
               </summary>
               <div className="border-t border-border/60 px-4 pb-7 pt-6 sm:px-5 sm:ps-[4.75rem]">
-                <Answers items={c.items} />
+                <Answers items={c.items} link={c.link} ar={ar} />
               </div>
             </details>
 
@@ -226,7 +242,7 @@ export function KnowledgeTimeline({
                 </SheetTitle>
               </SheetHeader>
               <div className="mt-4">
-                <Answers items={cards[sheet].items} />
+                <Answers items={cards[sheet].items} link={cards[sheet].link} ar={ar} />
               </div>
             </>
           )}

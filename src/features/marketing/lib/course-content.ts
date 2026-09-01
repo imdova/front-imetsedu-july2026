@@ -28,7 +28,18 @@ export type FaqGroup = { title: string; items: FaqItem[] };
  * per-topic icon (emojis, not lucide, so the data can cross the server→client
  * boundary). Order in the array = order of the cards.
  */
-export type KnowledgeGroup = { key: string; en: string; ar: string; emoji: string };
+export type KnowledgeGroup = {
+  key: string;
+  en: string;
+  ar: string;
+  emoji: string;
+  /**
+   * Optional "read more" link out to the blog cluster. The Knowledge Center is
+   * the highest-value internal-linking real estate on a course page and was
+   * inert plain text — every article linked in, nothing linked out.
+   */
+  link?: { href: string; en: string; ar: string };
+};
 export type SeoSection = {
   heading: string;
   body: string;
@@ -498,14 +509,80 @@ function whyChooseReasons(locale: string): { title: string; body: string }[] {
 }
 
 /** Bespoke CPHQ content. */
+/**
+ * CPHQ knowledge groups, each routing on to the matching article in the CPHQ
+ * blog cluster with descriptive anchor text. All seven target slugs were
+ * verified published before being linked.
+ */
 function cphqKnowledgeGroups(ar: boolean): KnowledgeGroup[] {
+  void ar;
   return [
-    { key: "certification", en: "Certification", ar: "الشهادة", emoji: "🔖" },
-    { key: "eligibility", en: "Eligibility", ar: "الأهلية", emoji: "✅" },
-    { key: "exam", en: "The Exam", ar: "الامتحان", emoji: "📝" },
-    { key: "career", en: "Career", ar: "المسار المهني", emoji: "💼" },
-    { key: "preparation", en: "Preparation", ar: "التحضير", emoji: "📘" },
-    { key: "quality", en: "Healthcare Quality", ar: "جودة الرعاية", emoji: "📊" },
+    {
+      key: "certification",
+      en: "Certification",
+      ar: "الشهادة",
+      emoji: "🔖",
+      link: {
+        href: "/blog/cphq-certification-guide",
+        en: "Read the complete CPHQ certification guide",
+        ar: "اقرأ الدليل الكامل لشهادة CPHQ",
+      },
+    },
+    {
+      key: "eligibility",
+      en: "Eligibility",
+      ar: "الأهلية",
+      emoji: "✅",
+      link: {
+        href: "/blog/cphq-eligibility-requirements",
+        en: "See the full CPHQ eligibility requirements",
+        ar: "اطّلع على متطلبات الأهلية الكاملة لـ CPHQ",
+      },
+    },
+    {
+      key: "exam",
+      en: "The Exam",
+      ar: "الامتحان",
+      emoji: "📝",
+      link: {
+        href: "/blog/cphq-exam-sample-questions",
+        en: "See what CPHQ exam questions look like",
+        ar: "شاهد نماذج أسئلة امتحان CPHQ",
+      },
+    },
+    {
+      key: "career",
+      en: "Career",
+      ar: "المسار المهني",
+      emoji: "💼",
+      link: {
+        href: "/blog/is-cphq-worth-it-cost-salary-roi",
+        en: "Is the CPHQ worth it — cost, salary and ROI",
+        ar: "هل تستحق شهادة CPHQ؟ التكلفة والراتب والعائد",
+      },
+    },
+    {
+      key: "preparation",
+      en: "Preparation",
+      ar: "التحضير",
+      emoji: "📘",
+      link: {
+        href: "/blog/cphq-exam-study-plan",
+        en: "Follow the 8-week CPHQ study plan",
+        ar: "اتبع خطة الدراسة لامتحان CPHQ في 8 أسابيع",
+      },
+    },
+    {
+      key: "quality",
+      en: "Healthcare Quality",
+      ar: "جودة الرعاية",
+      emoji: "📊",
+      link: {
+        href: "/blog/cphq-vs-six-sigma-vs-cpps",
+        en: "Compare CPHQ vs Lean Six Sigma vs CPPS",
+        ar: "قارن بين CPHQ و Lean Six Sigma و CPPS",
+      },
+    },
   ];
 }
 

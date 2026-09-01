@@ -4,8 +4,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { dal } from "@/lib/dal";
 import { CourseCatalog } from "@/features/marketing/components/course-catalog";
 import { CatalogHeroBanner } from "@/features/marketing/components/catalog-hero-banner";
-import { seoAlternates, socialMeta } from "@/lib/seo";
+import { seoAlternates, socialMeta, courseListLd, localeUrl, metaDescription } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata({
   params,
@@ -48,6 +49,24 @@ export default async function CatalogPage({
 
   return (
     <div className="mx-auto max-w-7xl px-2 py-12 sm:px-3 lg:px-4">
+      {/* Course List carousel markup — this listing page is the only place it
+          belongs, and it is one of the few course rich results still rendered. */}
+      <JsonLd
+        data={[
+          courseListLd({
+            url: localeUrl("/courses", locale),
+            name: t("catalogTitle"),
+            courses: courses.map((c) => ({
+              name: (locale === "ar" ? c.titleAr : c.titleEn) || c.titleEn,
+              url: localeUrl(`/courses/${c.slug}`, locale),
+              description: metaDescription(
+                locale === "ar" ? c.descriptionAr : c.descriptionEn,
+                (locale === "ar" ? c.titleAr : c.titleEn) || c.titleEn,
+              ),
+            })),
+          }),
+        ]}
+      />
       <CatalogHeroBanner title={t("catalogTitle")} subtitle={t("catalogSubtitle")} />
       <CourseCatalog courses={courses} instructors={instructors} articles={articles} />
     </div>

@@ -227,6 +227,30 @@ export default async function CourseDetailPage({
   // Pass rate: published only when the course record carries BOTH a rate and the
   // basis it was measured from (the admin form and the API both enforce that
   // pairing). It used to be a hardcoded "92%" shown on a slug allowlist.
+  /**
+   * Offers for the Course schema: the effective price per currency (sale price
+   * when discounted), so the markup always agrees with what the page charges.
+   * A discounted offer carries `priceValidUntil` — a promotional price with no
+   * end date reads as the permanent price.
+   */
+  const priceValidUntil = onSale ? `${new Date().getFullYear()}-12-31` : undefined;
+  const offerPrices = (
+    [
+      { list: course.priceEGP, sale: course.salePriceEGP, currency: "EGP" },
+      { list: course.priceSAR ?? 0, sale: course.salePriceSAR ?? 0, currency: "SAR" },
+      { list: course.priceUSD ?? 0, sale: course.salePriceUSD ?? 0, currency: "USD" },
+    ] as const
+  )
+    .map(({ list, sale, currency }) => {
+      const discounted = sale > 0 && sale < list;
+      return {
+        price: discounted ? sale : list,
+        currency,
+        ...(discounted && priceValidUntil ? { priceValidUntil } : {}),
+      };
+    })
+    .filter((o) => o.price > 0);
+
   // Course cover alt text (course form → Indexing & Social).
   const imageAlt =
     (locale === "ar" ? course.imageAltAr : course.imageAltEn) ||
@@ -731,12 +755,12 @@ export default async function CourseDetailPage({
                 : outcomes,
             audience: locale === "ar" ? course.whoCanAttendAr : course.whoCanAttendEn,
             availableLanguage: courseLanguages,
-            // One offer per currency the course actually prices in.
-            offers: [
-              { price: course.priceEGP, currency: "EGP" },
-              { price: course.priceSAR ?? 0, currency: "SAR" },
-              { price: course.priceUSD ?? 0, currency: "USD" },
-            ].filter((o) => o.price > 0),
+            // One offer per currency, quoting the price a buyer is ACTUALLY
+            // charged — the sale price where one is set. Emitting the struck-
+            // through list price while the page charges less is a structured-
+            // data/visible-content mismatch, which is a spam-policy problem
+            // rather than a cosmetic one.
+            offers: offerPrices,
             // Future cohorts only — `courseLd` drops past-dated ones itself.
             instances: course.intakes,
             courseMode: "online",

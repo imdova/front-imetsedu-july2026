@@ -39,6 +39,16 @@ export async function generateMetadata({
     title,
     description,
     alternates: seoAlternates(path, locale),
+    /*
+     * Free-lecture pages are lead-capture assets, not search assets. Several
+     * carry the same H1 as their paid counterpart on a fraction of the copy,
+     * so leaving them indexable had two URLs on one domain competing for one
+     * query — and the thin one tends to win, then convert badly.
+     *
+     * `follow` is deliberate: the links out to the paid course pages still
+     * pass their signal, we simply stop the page competing in results.
+     */
+    robots: { index: false, follow: true },
     ...socialMeta({ title: name, description, path, locale, image: p.thumbnailUrl }),
   });
 }
@@ -78,6 +88,11 @@ export default async function FreeCourseDetailPage({
   const resolved = await Promise.all(quizLectures.map((l) => resolveQuiz(l.quizId)));
   const quizzesById: Record<string, QuizQuestion[]> = {};
   quizLectures.forEach((l, i) => { const q = resolved[i]; if (q) quizzesById[l.id] = q; });
+
+  // The paid course this lecture previews — free programmes reuse the course
+  // slug, so the pairing needs no extra field.
+  const coursesRes = await dal.courses.fetchCourses();
+  const paidCourse = (coursesRes.ok ? coursesRes.data : []).find((c) => c.slug === slug) ?? null;
 
   const name = (locale === "ar" ? program.titleAr : program.titleEn) || program.titleEn;
   const body = (locale === "ar" ? program.descriptionAr : program.descriptionEn) || "";
@@ -184,6 +199,34 @@ export default async function FreeCourseDetailPage({
         {/* The gate only covers the PLAYER. Advisor-mode slugs skip the form
             and offer a WhatsApp course advisor instead. */}
         <FreeCourseGate locale={locale} program={program} advisorWhatsapp={ADVISOR_WHATSAPP[slug]} quiz={quiz} quizzesById={quizzesById} />
+
+        {/* Route on to the paid programme. Free lectures previously had no link
+            to the course they preview, which stranded both the visitor and the
+            internal link equity. Free slugs mirror course slugs 1:1. */}
+        {paidCourse && (
+          <section className="mt-10 rounded-2xl border border-primary/20 bg-primary/[0.04] p-6 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+              {tr(locale, "Continue with the full program", "أكمل مع البرنامج الكامل")}
+            </p>
+            <h2 className="mt-2 font-heading text-xl font-bold sm:text-2xl">
+              {(locale === "ar" ? paidCourse.titleAr : paidCourse.titleEn) || paidCourse.titleEn}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              {tr(
+                locale,
+                "This free lecture is a sample. The full course adds live sessions, the complete curriculum, practice questions and a certificate of completion.",
+                "هذه المحاضرة المجانية عيّنة. البرنامج الكامل يضيف جلسات مباشرة والمنهج الكامل وأسئلة تدريبية وشهادة إتمام.",
+              )}
+            </p>
+            <Link
+              href={`/courses/${paidCourse.slug}`}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              {tr(locale, "View the full course", "شاهد البرنامج الكامل")}
+              <ChevronRight className="size-4 rtl:rotate-180" />
+            </Link>
+          </section>
+        )}
 
       </div>
     </>

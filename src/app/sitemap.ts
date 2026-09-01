@@ -64,11 +64,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const i of instRes.data)
       entries.push(entry(`/instructors/${i.slug || i.id}`));
   }
-  // Only published programs come back from the public endpoint.
-  if (freeRes?.ok) {
-    for (const p of freeRes.data)
-      entries.push(entry(`/free-courses/${p.slug}`));
-  }
+  /*
+   * Free-lecture detail pages are intentionally NOT listed. They are noindexed
+   * (lead capture, not search assets) and several duplicate the H1 of a paid
+   * course page — submitting a noindexed URL only asks Google to crawl
+   * something it is then told to drop. The `/free-courses` index above stays.
+   */
   // Published blog articles (the public list returns only PUBLISHED).
   if (blogRes?.ok) {
     for (const post of blogRes.data.data) {
