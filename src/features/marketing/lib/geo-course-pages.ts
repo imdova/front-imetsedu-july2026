@@ -1,4 +1,6 @@
 import egypt from "../content/geo/egypt.json";
+import saudiArabia from "../content/geo/saudi-arabia.json";
+import uae from "../content/geo/uae.json";
 
 /**
  * Country landing pages for a course (`/cphq-course/egypt`).
@@ -20,9 +22,22 @@ import egypt from "../content/geo/egypt.json";
  * price change in the admin never leaves a stale number on a landing page.
  */
 
+/** A small comparison table, e.g. exam windows against application deadlines. */
+export interface GeoTable {
+  head: string[];
+  rows: string[][];
+}
+
 export interface GeoSection {
   heading: string;
+  /**
+   * Body copy. May carry `[label](/path)` links — the money page's job includes
+   * routing to the articles and the course page, and those links have to sit in
+   * prose where they are contextual rather than in a footer block.
+   */
   paragraphs: string[];
+  bullets?: string[];
+  table?: GeoTable;
 }
 
 export interface GeoLocaleContent {
@@ -47,18 +62,27 @@ export interface GeoCoursePage {
   /** The course this page sells. */
   courseSlug: string;
   en: GeoLocaleContent;
-  ar: GeoLocaleContent;
+  /**
+   * Optional. Arabic mirrors are a later wave of this programme, and a page
+   * without one is served in English at both URLs with the Arabic URL
+   * canonicalising to the English one — the same treatment the English-only
+   * blog posts get. Declaring an `ar` alternate for a page that does not exist
+   * would advertise a translation Google would then find in English.
+   */
+  ar?: GeoLocaleContent;
 }
 
 /*
- * Saudi Arabia and the UAE are deliberately absent.
- *
- * SEO-08 says to ship Egypt, measure for 30 days, then decide — and not to
- * create a market's page without 600 unique, useful words for it. Registering
- * an empty entry here would produce a live URL, so the list stays at one until
- * that content is actually written.
+ * Wave 1 of the money-page programme: Egypt (live since SEO-08), plus Saudi
+ * Arabia and the UAE. Later waves — other Gulf markets, other courses, the
+ * Arabic mirrors — are deliberately not registered until their content is
+ * written to the same bar, because an unregistered market has no URL at all.
  */
-const PAGES: GeoCoursePage[] = [egypt as GeoCoursePage];
+const PAGES: GeoCoursePage[] = [
+  egypt as GeoCoursePage,
+  saudiArabia as GeoCoursePage,
+  uae as GeoCoursePage,
+];
 
 /** Every country page that exists. */
 export function listGeoCoursePages(): GeoCoursePage[] {
@@ -86,7 +110,12 @@ export function geoCoursePath(page: GeoCoursePage): string {
   return `/cphq-course/${page.country}`;
 }
 
-/** Pick the content for the active locale. */
+/** The locale a page is actually written in, for canonical + hreflang. */
+export function geoLocale(page: GeoCoursePage, locale: string): "en" | "ar" {
+  return locale === "ar" && page.ar ? "ar" : "en";
+}
+
+/** Pick the content for the active locale, falling back to English. */
 export function geoContent(page: GeoCoursePage, locale: string): GeoLocaleContent {
-  return locale === "ar" ? page.ar : page.en;
+  return locale === "ar" && page.ar ? page.ar : page.en;
 }

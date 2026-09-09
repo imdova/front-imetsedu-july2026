@@ -1,0 +1,103 @@
+{
+  "country": "uae",
+  "countryCode": "AE",
+  "currency": "USD",
+  "courseSlug": "cphq-preparation",
+  "en": {
+    "countryName": "the UAE",
+    "title": "CPHQ Course in the UAE | Dubai & Abu Dhabi Exam Guide",
+    "metaDescription": "Live online CPHQ preparation for candidates in the UAE: the four international exam windows, fees, and how CPHQ fits with DOH and DHA quality work.",
+    "h1": "CPHQ Course in the UAE",
+    "intro": "IMETS runs a live online CPHQ preparation course for candidates in Dubai, Abu Dhabi and the northern emirates: ten weeks, bilingual, on Zoom, in evening sessions built around UAE shift patterns. Fees are {price}. The constraint most UAE candidates hit is the calendar — international candidates get four CPHQ testing windows a year, not the year-round scheduling available in the United States, and applications close about a month before each one.",
+    "sections": [
+      {
+        "heading": "The exam calendar, and why it matters more than you think",
+        "paragraphs": [
+          "Testing from the UAE makes you an international candidate. NAHQ's 2026 windows are **3–24 February, 4–25 May, 3–24 August and 2–23 November**, with application deadlines on 31 January, 30 April, 31 July and 31 October.",
+          "Miss one and you wait roughly three months. With a ten-week course in front of the exam, the planning is simple but unforgiving: choose your window, count back to the application deadline, then count back ten more weeks. That is your start date.",
+          "The paper is 140 questions in three hours — 125 scored, 15 unscored. PSI runs it, either at a test centre or online with a live remote proctor. Remote is the popular choice here for the obvious reason. Before committing, read [how the exam is weighted](/blog/cphq-exam-study-plan): Performance and Process Improvement plus Health Data Analytics make up over 40% of it, which is not where most candidates expect the weight to sit."
+        ],
+        "table": {
+          "head": ["If you want to sit", "Apply by", "Start preparing around"],
+          "rows": [
+            ["February", "31 January", "Mid-November"],
+            ["May", "30 April", "Mid-February"],
+            ["August", "31 July", "Mid-May"],
+            ["November", "31 October", "Mid-August"]
+          ]
+        }
+      },
+      {
+        "heading": "Quality work in the UAE has more than one rulebook",
+        "paragraphs": [
+          "The UAE is regulated by emirate, and that shapes what a quality role looks like depending on where you work. The Department of Health in Abu Dhabi runs its own hospital accreditation programme, with standards developed specifically for hospitals in the emirate and accredited internationally by ISQua; those standards are reviewed annually and formally every three years. Dubai's health authority regulates separately, and the private sector across both emirates leans heavily on international accreditation, JCI in particular.",
+          "For someone building a quality career here, that fragmentation is the point. You are unlikely to spend a whole career inside one framework. What transfers between them is not knowledge of a particular standards manual — it is the underlying methodology: how to build a measurement plan, how to run an improvement cycle, how to analyse and present quality data credibly. That is what CPHQ certifies, and it is why the credential travels across emirates and across employers in a way that familiarity with one standards set does not.",
+          "If you are weighing accreditation frameworks, [how JCI compares to national accreditation](/blog/cbahi-vs-jci) is a useful starting point. And if you have arrived at this page while researching DHA licensing exams, they are a different thing entirely — we have written about [DHA licensing and quality certifications](/blog/dha-prometric-vs-quality-certifications) precisely because the two get confused. CPHQ is not a licensing exam and does not substitute for one.",
+          "For what the credential does to a CV and a salary band rather than what it means in theory, see [what the certification is worth](/blog/is-cphq-worth-it-cost-salary-roi)."
+        ]
+      },
+      {
+        "heading": "Who should sit it",
+        "paragraphs": [
+          "NAHQ sets **no formal eligibility requirement**. No degree gate, no minimum years, no panel. The published recommendation is around two years of experience in healthcare quality — a recommendation, not a rule.",
+          "In the UAE the candidates who do well are typically:"
+        ],
+        "bullets": [
+          "**Quality and patient safety officers** in private hospital groups who need a credential to match the role",
+          "**Clinicians moving sideways** into quality after committee work",
+          "**Accreditation coordinators** running JCI or DOH cycles",
+          "**Recent arrivals** who held quality roles elsewhere and want a credential recognised across employers here"
+        ]
+      },
+      {
+        "heading": "What it costs from the UAE",
+        "paragraphs": [
+          "Two costs, and only one of them is ours.",
+          "**The preparation course: {price}.** Ten weeks, live sessions, recordings, 500+ practice questions and a full mock exam. Quoted in US dollars, which is what our international offer is priced in — we would rather show you the figure you will actually be charged than a converted estimate that moves with the rate.",
+          "**The NAHQ exam fee, paid directly to NAHQ.** International rates: **$799** non-member, **$559** standard member, **$400** premium member. Membership costs less than the gap between the non-member and member rates, so joining first is usually the cheaper route. Check it before you apply.",
+          "Plan both together. The commonest budgeting error is treating the exam fee as a later problem, then missing an application deadline while sorting it out. The exam is applied rather than theoretical, and candidates without hands-on improvement experience feel it in the analytics domains — [eligibility, honestly](/blog/cphq-eligibility-requirements) sets out when we advise people to wait."
+        ]
+      },
+      {
+        "heading": "How the course runs",
+        "paragraphs": [
+          "Ten weeks, one live Zoom session a week, timed for UAE evenings. Bilingual delivery — technical vocabulary in English, because that is the language of the exam and of your documentation, with explanation in Arabic wherever it helps. All sessions recorded, which matters if you are rostered.",
+          "The syllabus mirrors NAHQ's published content outline proportionally, so time is allocated by exam weight rather than by what is convenient to teach. You finish with a full-length timed mock under real conditions, which is where most candidates learn that their actual weakness is pacing.",
+          "Curriculum, instructors and upcoming cohort dates are on the [CPHQ preparation course](/courses/cphq-preparation) page. If you are aiming at running a department rather than passing a single exam, the [Healthcare Quality Management Diploma](/courses/healthcare-quality-management-diploma) is the broader programme, and we would rather point you there than sell you the wrong thing."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "Can I sit the CPHQ from Dubai or Abu Dhabi?",
+        "a": "Yes — at a test centre or online with a live remote proctor. Scheduling runs through your NAHQ account and then PSI."
+      },
+      {
+        "q": "When are the exam dates?",
+        "a": "Four international windows in 2026: 3–24 February, 4–25 May, 3–24 August and 2–23 November. Apply by 31 January, 30 April, 31 July or 31 October respectively."
+      },
+      {
+        "q": "Is CPHQ required for a DHA or DOH licence?",
+        "a": "No. Licensing exams are a separate process run by the health authorities. CPHQ is a professional certification from NAHQ and does not replace or satisfy a licensing requirement."
+      },
+      {
+        "q": "Is it recognised across all the emirates?",
+        "a": "Yes — it is an international credential, not an emirate-specific one, which is much of its value in a country regulated emirate by emirate."
+      },
+      {
+        "q": "Do I need a healthcare degree?",
+        "a": "No. There is no formal eligibility requirement. Quality experience matters far more than the specific degree."
+      },
+      {
+        "q": "What language are the sessions in?",
+        "a": "Both Arabic and English. The exam is in English and the technical vocabulary stays there."
+      },
+      {
+        "q": "Can I retake if I fail?",
+        "a": "Yes, in a later window. We include the next cohort at no additional course fee; the NAHQ exam fee is payable again to NAHQ."
+      }
+    ],
+    "ctaHeading": "Join the next cohort from the UAE",
+    "ctaBody": "Tell us which exam window you are targeting and we will tell you which cohort gets you there. Fees are {price}. If you are not sure whether CPHQ or the diploma fits what you are trying to do, say so — we will give you a straight answer."
+  }
+}

@@ -336,6 +336,22 @@ export const PERMISSION_REGISTRY: UmCategory[] = [
     ],
   },
   {
+    key: "growth",
+    en: "GROWTH",
+    ar: "النمو",
+    modules: [
+      {
+        key: "moneyPages", en: "Money Pages", ar: "الصفحات الربحية",
+        descEn: "The commercial landing pages, their content gate and the internal-linking backlog.",
+        descAr: "صفحات الهبوط التجارية ومعيار المحتوى وقائمة الربط الداخلي.",
+        icon: "Target", accent: "#0ea5e9",
+        permissions: [
+          p("marketing.money_pages.view", "View", "عرض"),
+        ],
+      },
+    ],
+  },
+  {
     key: "training",
     en: "TRAINING",
     ar: "التدريب",

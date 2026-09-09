@@ -1,5 +1,6 @@
 import { ArrowRight, BadgeCheck, MapPin, Quote } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import {
   geoContent,
   type GeoCoursePage,
 } from "@/features/marketing/lib/geo-course-pages";
+import { richText } from "@/features/marketing/lib/geo-rich-text";
 
 /** A consented, country-attributed review. Empty until SEO-09 lands. */
 export interface GeoTestimonial {
@@ -34,6 +36,7 @@ export function GeoCourseLanding({
   salePrice,
   testimonials,
   webhookUrl,
+  source,
 }: {
   page: GeoCoursePage;
   locale: string;
@@ -43,6 +46,8 @@ export function GeoCourseLanding({
   salePrice: number;
   testimonials: GeoTestimonial[];
   webhookUrl?: string;
+  /** Lead attribution, so revenue can be traced back to the market page. */
+  source?: string;
 }) {
   const c = geoContent(page, locale);
   const ar = locale === "ar";
@@ -77,7 +82,7 @@ export function GeoCourseLanding({
         <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight text-balance sm:text-[2.6rem]">
           {c.h1}
         </h1>
-        <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{withPrice(c.intro)}</p>
+        <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{richText(withPrice(c.intro))}</p>
 
         <div className="mt-6 flex flex-wrap items-center gap-4 rounded-2xl border border-primary/20 bg-primary/[0.04] p-5">
           <div>
@@ -96,6 +101,7 @@ export function GeoCourseLanding({
               courseId={courseId}
               courseTitle={courseTitle}
               webhookUrl={webhookUrl}
+              source={source}
               trigger={applyButton}
             />
           </div>
@@ -109,9 +115,59 @@ export function GeoCourseLanding({
             <div className="mt-3 space-y-4">
               {section.paragraphs.map((p, i) => (
                 <p key={i} className="leading-relaxed text-foreground/90">
-                  {withPrice(p)}
+                  {richText(withPrice(p))}
                 </p>
               ))}
+
+              {section.bullets && (
+                <ul className="space-y-2">
+                  {section.bullets.map((b, i) => (
+                    <li key={i} className="flex gap-2.5 leading-relaxed text-foreground/90">
+                      <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary/60" />
+                      <span>{richText(withPrice(b))}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {section.table && (
+                /* Scrolls inside its own box — a wide table must never make the
+                   page itself scroll sideways on a phone. */
+                <div className="overflow-x-auto rounded-2xl border border-border/70">
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-muted/60">
+                        {section.table.head.map((h) => (
+                          <th
+                            key={h}
+                            scope="col"
+                            className="whitespace-nowrap px-4 py-2.5 text-start font-semibold"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {section.table.rows.map((row, ri) => (
+                        <tr key={ri} className="border-t border-border/60">
+                          {row.map((cell, ci) => (
+                            <td
+                              key={ci}
+                              className={cn(
+                                "px-4 py-2.5",
+                                ci === 0 ? "font-medium text-foreground" : "text-muted-foreground",
+                              )}
+                            >
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </section>
         ))}
@@ -153,7 +209,7 @@ export function GeoCourseLanding({
                   <BadgeCheck className="mt-0.5 size-4 shrink-0 text-primary" />
                   {f.q}
                 </dt>
-                <dd className="mt-2 ps-6 text-sm leading-relaxed text-muted-foreground">{withPrice(f.a)}</dd>
+                <dd className="mt-2 ps-6 text-sm leading-relaxed text-muted-foreground">{richText(withPrice(f.a))}</dd>
               </div>
             ))}
           </dl>
@@ -161,12 +217,13 @@ export function GeoCourseLanding({
 
         <section className="rounded-3xl bg-gradient-to-br from-primary/[0.09] via-primary/[0.03] to-transparent p-6 ring-1 ring-primary/10 sm:p-8">
           <h2 className="font-heading text-2xl font-bold tracking-tight">{c.ctaHeading}</h2>
-          <p className="mt-2 leading-relaxed text-muted-foreground">{withPrice(c.ctaBody)}</p>
+          <p className="mt-2 leading-relaxed text-muted-foreground">{richText(withPrice(c.ctaBody))}</p>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <CourseApplyDialog
               courseId={courseId}
               courseTitle={courseTitle}
               webhookUrl={webhookUrl}
+              source={source}
               trigger={applyButton}
             />
             <Link

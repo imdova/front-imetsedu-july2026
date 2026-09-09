@@ -1,0 +1,598 @@
+{
+  "sourcedFrom": "IMETS-Money-Pages.xlsx",
+  "auditedOn": "2026-09-09",
+  "pages": [
+    {
+      "url": "/courses/cphq-preparation",
+      "keyword": "cphq course",
+      "synonyms": [
+        "cphq course online",
+        "cphq prep course",
+        "cphq preparation course",
+        "cphq certification course"
+      ],
+      "priceEGP": 14000,
+      "linksIn": 10,
+      "linksOut": 10,
+      "verdict": "Healthy — this is the model"
+    },
+    {
+      "url": "/courses/healthcare-quality-management-diploma",
+      "keyword": "healthcare quality management diploma",
+      "synonyms": [
+        "healthcare quality diploma",
+        "healthcare quality course",
+        "quality management in healthcare course"
+      ],
+      "priceEGP": 18000,
+      "linksIn": 25,
+      "linksOut": 6,
+      "verdict": "Overloaded — absorbing 16 accreditation articles that belong to a product you have not built"
+    },
+    {
+      "url": "/courses/cic-preparation",
+      "keyword": "cic preparation course",
+      "synonyms": [
+        "cic exam prep",
+        "certified in infection control"
+      ],
+      "priceEGP": 14000,
+      "linksIn": 8,
+      "linksOut": 6,
+      "verdict": "Healthy, but holding 4 articles that belong to the diploma"
+    },
+    {
+      "url": "/courses/infection-control-diploma",
+      "keyword": "infection control diploma",
+      "synonyms": [
+        "infection control diploma course",
+        "infection control course",
+        "infection prevention and control course"
+      ],
+      "priceEGP": 16500,
+      "linksIn": 0,
+      "linksOut": 0,
+      "verdict": "ORPHANED — zero editorial links in, zero out, and it is the higher-priced product"
+    },
+    {
+      "url": "/courses/hospital-management-diploma",
+      "keyword": "hospital management diploma",
+      "synonyms": [
+        "hospital management diploma online",
+        "hospital management course"
+      ],
+      "priceEGP": 17800,
+      "linksIn": 0,
+      "linksOut": 2,
+      "verdict": "Its own two articles do not link to it. Sidebar widget only"
+    },
+    {
+      "url": "/courses/healthcare-strategic-management-diploma",
+      "keyword": "healthcare strategic management diploma",
+      "synonyms": [
+        "strategic management in healthcare"
+      ],
+      "priceEGP": 9500,
+      "linksIn": 0,
+      "linksOut": 1,
+      "verdict": "Its own article does not link to it. Sidebar widget only"
+    },
+    {
+      "url": "/courses/healthcare-hr-management-diploma",
+      "keyword": "healthcare hr management course",
+      "synonyms": [
+        "healthcare human resources management"
+      ],
+      "priceEGP": 9500,
+      "linksIn": 0,
+      "linksOut": 1,
+      "verdict": "Its own article does not link to it. Sidebar widget only"
+    },
+    {
+      "url": "/courses/healthcare-marketing-diploma",
+      "keyword": "healthcare marketing course",
+      "synonyms": [
+        "healthcare marketing diploma",
+        "hospital marketing"
+      ],
+      "priceEGP": 8500,
+      "linksIn": 1,
+      "linksOut": 1,
+      "verdict": "Thin but correct — one article, one link"
+    },
+    {
+      "url": "/courses/healthcare-supply-chain-diploma",
+      "keyword": "healthcare supply chain course",
+      "synonyms": [
+        "hospital supply chain management"
+      ],
+      "priceEGP": 8500,
+      "linksIn": 0,
+      "linksOut": 0,
+      "verdict": "NO SUPPORTING CONTENT — nothing on the site can link to it"
+    },
+    {
+      "url": "/courses/financial-management-course",
+      "keyword": "healthcare financial management course",
+      "synonyms": [
+        "hospital finance course"
+      ],
+      "priceEGP": 9500,
+      "linksIn": 0,
+      "linksOut": 0,
+      "verdict": "NO SUPPORTING CONTENT — nothing on the site can link to it"
+    },
+    {
+      "url": "/cphq-course/egypt",
+      "keyword": "cphq course egypt",
+      "synonyms": [
+        "cphq course cairo",
+        "cphq egypt"
+      ],
+      "priceEGP": null,
+      "linksIn": 0,
+      "linksOut": 0,
+      "verdict": "NEW — live since the audit. Needs links from the CPHQ cluster"
+    }
+  ],
+  "articles": [
+    {
+      "slug": "healthcare-hr-management-guide",
+      "cluster": "Management",
+      "linksToNow": "NONE",
+      "shouldLinkTo": "healthcare-hr-management-diploma",
+      "action": "ADD",
+      "notes": ""
+    },
+    {
+      "slug": "hospital-management-diploma-worth-it",
+      "cluster": "Management",
+      "linksToNow": "NONE",
+      "shouldLinkTo": "hospital-management-diploma",
+      "action": "ADD",
+      "notes": ""
+    },
+    {
+      "slug": "hospital-management-guide",
+      "cluster": "Management",
+      "linksToNow": "NONE",
+      "shouldLinkTo": "hospital-management-diploma",
+      "action": "ADD",
+      "notes": ""
+    },
+    {
+      "slug": "strategic-management-healthcare",
+      "cluster": "Management",
+      "linksToNow": "NONE",
+      "shouldLinkTo": "healthcare-strategic-management-diploma",
+      "action": "ADD",
+      "notes": ""
+    },
+    {
+      "slug": "core-ipc-practices",
+      "cluster": "IPC practice",
+      "linksToNow": "cic-preparation",
+      "shouldLinkTo": "infection-control-diploma",
+      "action": "CHANGE",
+      "notes": ""
+    },
+    {
+      "slug": "infection-control-accreditation",
+      "cluster": "IPC practice",
+      "linksToNow": "cic-preparation",
+      "shouldLinkTo": "infection-control-diploma",
+      "action": "CHANGE",
+      "notes": ""
+    },
+    {
+      "slug": "infection-control-nurse-career",
+      "cluster": "IPC practice",
+      "linksToNow": "cic-preparation",
+      "shouldLinkTo": "infection-control-diploma",
+      "action": "CHANGE",
+      "notes": ""
+    },
+    {
+      "slug": "infection-control-program",
+      "cluster": "IPC practice",
+      "linksToNow": "cic-preparation",
+      "shouldLinkTo": "infection-control-diploma",
+      "action": "CHANGE",
+      "notes": ""
+    },
+    {
+      "slug": "healthcare-accreditation-career-egypt",
+      "cluster": "Accreditation careers",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "healthcare-accreditation-career-saudi",
+      "cluster": "Accreditation careers",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "cbahi-accreditation-guide",
+      "cluster": "CBAHI",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "cbahi-accreditation-process",
+      "cluster": "CBAHI",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "cbahi-common-non-compliances",
+      "cluster": "CBAHI",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "cbahi-essential-safety-requirements",
+      "cluster": "CBAHI",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "cbahi-standards-explained",
+      "cluster": "CBAHI",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "cbahi-survey-preparation",
+      "cluster": "CBAHI",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "cbahi-vs-jci",
+      "cluster": "CBAHI",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "gahar-accreditation-guide",
+      "cluster": "GAHAR",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "gahar-accreditation-process",
+      "cluster": "GAHAR",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "gahar-egycap-certification",
+      "cluster": "GAHAR",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "gahar-standards-explained",
+      "cluster": "GAHAR",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "gahar-survey-preparation",
+      "cluster": "GAHAR",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "gahar-universal-health-insurance",
+      "cluster": "GAHAR",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "gahar-vs-cbahi-vs-jci",
+      "cluster": "GAHAR",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "hospital-accreditation-diploma  (not built yet)",
+      "action": "INTERIM",
+      "notes": ""
+    },
+    {
+      "slug": "cic-certification-guide",
+      "cluster": "CIC exam prep",
+      "linksToNow": "cic-preparation",
+      "shouldLinkTo": "cic-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cic-cost-recertification",
+      "cluster": "CIC exam prep",
+      "linksToNow": "cic-preparation",
+      "shouldLinkTo": "cic-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cic-eligibility-requirements",
+      "cluster": "CIC exam prep",
+      "linksToNow": "cic-preparation",
+      "shouldLinkTo": "cic-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cic-exam-preparation",
+      "cluster": "CIC exam prep",
+      "linksToNow": "cic-preparation",
+      "shouldLinkTo": "cic-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cphq-certification-guide",
+      "cluster": "CPHQ",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cphq-eligibility-requirements",
+      "cluster": "CPHQ",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cphq-exam-sample-questions",
+      "cluster": "CPHQ",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cphq-exam-study-plan",
+      "cluster": "CPHQ",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cphq-renewal-continuing-education",
+      "cluster": "CPHQ",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cphq-vs-six-sigma-vs-cpps",
+      "cluster": "CPHQ",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "healthcare-quality-manager-career",
+      "cluster": "CPHQ",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "is-cphq-worth-it-cost-salary-roi",
+      "cluster": "CPHQ",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "best-healthcare-certifications-gcc-egypt",
+      "cluster": "Cross-cutting",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "dha-prometric-vs-quality-certifications",
+      "cluster": "Cross-cutting",
+      "linksToNow": "cphq-preparation",
+      "shouldLinkTo": "cphq-preparation",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "healthcare-quality-management-salaries",
+      "cluster": "Cross-cutting",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "healthcare-marketing-guide",
+      "cluster": "Management",
+      "linksToNow": "healthcare-marketing-diploma",
+      "shouldLinkTo": "healthcare-marketing-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cphrm-certification-guide",
+      "cluster": "Patient safety",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cpps-certification-guide",
+      "cluster": "Patient safety",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "cpxp-certification-guide",
+      "cluster": "Patient safety",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "lean-six-sigma-healthcare",
+      "cluster": "Patient safety",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "patient-safety-certifications-guide",
+      "cluster": "Patient safety",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "patient-safety-goals-culture",
+      "cluster": "Patient safety",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "patient-safety-officer-career",
+      "cluster": "Patient safety",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    },
+    {
+      "slug": "root-cause-analysis-healthcare",
+      "cluster": "Patient safety",
+      "linksToNow": "healthcare-quality-management-diploma",
+      "shouldLinkTo": "healthcare-quality-management-diploma",
+      "action": "KEEP",
+      "notes": ""
+    }
+  ],
+  "tasks": [
+    {
+      "n": 1,
+      "task": "Add an editorial link from /blog/hospital-management-guide to /courses/hospital-management-diploma",
+      "why": "A 17,800 EGP product whose own pillar guide does not link to it",
+      "effort": "5 min"
+    },
+    {
+      "n": 2,
+      "task": "Add an editorial link from /blog/hospital-management-diploma-worth-it to the same course page",
+      "why": "The article is literally about whether to buy it",
+      "effort": "5 min"
+    },
+    {
+      "n": 3,
+      "task": "Add an editorial link from /blog/healthcare-hr-management-guide to /courses/healthcare-hr-management-diploma",
+      "why": "Same pattern — sidebar widget was mistaken for a real link",
+      "effort": "5 min"
+    },
+    {
+      "n": 4,
+      "task": "Add an editorial link from /blog/strategic-management-healthcare to /courses/healthcare-strategic-management-diploma",
+      "why": "Same pattern",
+      "effort": "5 min"
+    },
+    {
+      "n": 5,
+      "task": "Re-point /blog/core-ipc-practices to /courses/infection-control-diploma",
+      "why": "Practice content should sell the practitioner diploma, not the exam prep course",
+      "effort": "5 min"
+    },
+    {
+      "n": 6,
+      "task": "Re-point /blog/infection-control-program to the diploma",
+      "why": "Same — building an IPC programme is diploma content, not exam content",
+      "effort": "5 min"
+    },
+    {
+      "n": 7,
+      "task": "Re-point /blog/infection-control-nurse-career to the diploma",
+      "why": "Career intent maps to the diploma",
+      "effort": "5 min"
+    },
+    {
+      "n": 8,
+      "task": "Re-point /blog/infection-control-accreditation to the diploma",
+      "why": "Completes the fix: the diploma goes from 0 to 4 editorial links",
+      "effort": "5 min"
+    },
+    {
+      "n": 9,
+      "task": "Add 3–5 links from /courses/infection-control-diploma back down to its articles",
+      "why": "It currently links to zero articles. Links must run both ways",
+      "effort": "20 min"
+    },
+    {
+      "n": 10,
+      "task": "Add links from /courses/hospital-management-diploma to its 2 articles",
+      "why": "Only 2 blog links out today",
+      "effort": "10 min"
+    },
+    {
+      "n": 11,
+      "task": "Link the CPHQ cluster to the new /cphq-course/egypt page",
+      "why": "It went live with no internal links pointing at it",
+      "effort": "15 min"
+    },
+    {
+      "n": 12,
+      "task": "Decide: build the accreditation diploma, or accept 16 articles selling the quality diploma",
+      "why": "The single biggest revenue question on this sheet — 16 articles, no matching product",
+      "effort": "Decision"
+    }
+  ]
+}

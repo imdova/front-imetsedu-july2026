@@ -389,6 +389,17 @@ export const ADMIN_NAV: NavSection[] = [
     ],
   },
   {
+    labelKey: "sectionGrowth",
+    items: [
+      {
+        titleKey: "moneyPages",
+        href: "/admin/money-pages",
+        icon: "Target",
+        requiredPermissions: ["marketing.money_pages.view"],
+      },
+    ],
+  },
+  {
     labelKey: "sectionOrientation",
     items: [
       {

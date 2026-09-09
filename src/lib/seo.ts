@@ -259,6 +259,14 @@ export function personLd(opts: {
 export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 
 /**
+ * The `@id` of a course as an entity — always anchored to the course page,
+ * which is its canonical home, whatever page is doing the referencing.
+ */
+export function courseEntityId(slug: string): string {
+  return `${SITE_URL}/courses/${slug}#course`;
+}
+
+/**
  * How long a promotional price is advertised as valid, for `Offer.priceValidUntil`.
  *
  * ⚠️ ROLL THIS when the promotion changes or the year turns. An offer whose
@@ -328,6 +336,8 @@ function isoMinutes(min: number): string | undefined {
 }
 
 export function courseLd(opts: {
+  /** Course slug — anchors the entity `@id`, which must not vary by locale. */
+  slug: string;
   name: string;
   description: string;
   url: string;
@@ -394,6 +404,15 @@ export function courseLd(opts: {
   return {
     "@context": "https://schema.org",
     "@type": "Course",
+    /*
+     * A stable id for this course as an entity, so other pages can reference it
+     * instead of describing it again. The market landing pages
+     * (`/cphq-course/<market>`) attach their own local Offer to this id rather
+     * than emitting a second Course node — two Course entities for one product
+     * makes Google pick which is canonical, and it would not pick the course
+     * page.
+     */
+    "@id": courseEntityId(opts.slug),
     name: opts.name,
     description: opts.description,
     url: opts.url,

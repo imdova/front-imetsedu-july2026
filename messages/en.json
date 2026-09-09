@@ -174,7 +174,10 @@
     "navPartnership": "Partnership",
     "sectionOrientation": "Orientation",
     "salesOrientation": "Sales Orientation",
-    "salesOrientationDesc": "Day-one conversation training for the sales team — the path, the four rules, and practice on real enquiries."
+    "salesOrientationDesc": "Day-one conversation training for the sales team — the path, the four rules, and practice on real enquiries.",
+    "sectionGrowth": "Growth",
+    "moneyPages": "Money Pages",
+    "moneyPagesDesc": "The commercial landing pages, their content gate, and the linking work behind them."
   },
   "Header": {
     "newCourse": "New Course",

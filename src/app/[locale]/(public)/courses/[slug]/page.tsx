@@ -800,6 +800,7 @@ export default async function CourseDetailPage({
       <JsonLd
         data={[
           courseLd({
+            slug: course.slug,
             name: courseTitle,
             description: metaDescription(description, courseTitle),
             url: courseUrl,

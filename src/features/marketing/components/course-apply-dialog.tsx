@@ -48,6 +48,7 @@ export function CourseApplyDialog({
   courseTitle,
   trigger,
   webhookUrl,
+  source,
 }: {
   courseId: string;
   courseTitle: string;
@@ -55,6 +56,15 @@ export function CourseApplyDialog({
   trigger?: React.ReactNode;
   /** Optional external webhook to also receive the lead (best-effort). */
   webhookUrl?: string;
+  /**
+   * Where the lead came from, e.g. `money-page:saudi-arabia`.
+   *
+   * Every lead used to arrive tagged "Website" regardless of which page took
+   * it, which makes a landing page's revenue impossible to attribute — and the
+   * whole argument for taking enrolment on a market page rather than handing
+   * off to the course page rests on being able to measure it.
+   */
+  source?: string;
 }) {
   const t = useTranslations("Marketing");
   const [open, setOpen] = React.useState(false);
@@ -77,7 +87,7 @@ export function CourseApplyDialog({
       whatsApp: form.phone.trim(),
       whatsAppCountryCode: form.code,
       specialty: form.specialty.trim() || undefined,
-      source: "Website",
+      source: source ?? "Website",
       leadType: "warm",
       coursesOfInterest: [courseId],
     });
@@ -87,7 +97,7 @@ export function CourseApplyDialog({
         postWebhook(webhookUrl, {
           fullName: form.fullName.trim(), email: form.email.trim(),
           phone: `${form.code} ${form.phone.trim()}`, specialty: form.specialty.trim() || undefined,
-          course: courseTitle, courseId, source: "course-apply",
+          course: courseTitle, courseId, source: source ?? "course-apply",
         });
       }
       toast.success(t("applySuccess"));

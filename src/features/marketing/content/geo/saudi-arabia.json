@@ -1,0 +1,106 @@
+{
+  "country": "saudi-arabia",
+  "countryCode": "SA",
+  "currency": "SAR",
+  "courseSlug": "cphq-preparation",
+  "en": {
+    "countryName": "Saudi Arabia",
+    "title": "CPHQ Course in Saudi Arabia | Fees in SAR & Exam Dates",
+    "metaDescription": "Live online CPHQ preparation for candidates in Saudi Arabia: fees in SAR, the four international exam windows, and how CPHQ fits alongside CBAHI.",
+    "h1": "CPHQ Course in Saudi Arabia",
+    "intro": "IMETS runs a live online CPHQ preparation course for candidates in Saudi Arabia: ten weeks, bilingual Arabic and English, delivered on Zoom in evening sessions that work with a Riyadh, Jeddah or Dammam schedule. Fees are {price}. The part most Saudi candidates find out too late is that international candidates cannot sit the CPHQ whenever they like — NAHQ opens four testing windows a year, and applications close roughly a month before each one.",
+    "sections": [
+      {
+        "heading": "Why the exam calendar decides when you start",
+        "paragraphs": [
+          "If you are testing from Saudi Arabia, you are an international candidate, and international candidates do not get the year-round scheduling that candidates in the United States do. NAHQ runs four windows in 2026: **3–24 February, 4–25 May, 3–24 August and 2–23 November**, with applications closing on 31 January, 30 April, 31 July and 31 October respectively.",
+          "That has a practical consequence worth being blunt about. If you miss an application deadline, your next opportunity is about three months away — and a ten-week preparation course started too late lands you outside the window you were aiming for. Work backwards: pick your window, subtract the application deadline, subtract ten weeks of preparation, and that is the date you need to start.",
+          "The exam itself is 140 questions — 125 scored, 15 unscored pretest items — in three hours. PSI administers it, and you can sit it either at a test centre or at home with a live remote proctor. Most of our Saudi candidates take the remote option; it removes the travel question entirely. Before you commit to a window, it is worth reading [what the CPHQ exam actually covers](/blog/cphq-exam-study-plan), because the balance surprises people."
+        ],
+        "table": {
+          "head": ["If you want to sit", "Apply by", "Start preparing around"],
+          "rows": [
+            ["February", "31 January", "Mid-November"],
+            ["May", "30 April", "Mid-February"],
+            ["August", "31 July", "Mid-May"],
+            ["November", "31 October", "Mid-August"]
+          ]
+        }
+      },
+      {
+        "heading": "CPHQ and CBAHI are doing different jobs",
+        "paragraphs": [
+          "This is the question we are asked most often in Saudi Arabia, and it is usually framed as a choice. It is not one.",
+          "CBAHI is the national body that accredits healthcare facilities in the Kingdom. It assesses the *organisation* — your hospital's systems, documentation, patient safety practices and evidence of improvement. CPHQ certifies the *individual*: it says that the person holding it understands quality methodology well enough to run those systems.",
+          "The connection is direct and practical. When a CBAHI survey is coming, the people who make the difference are the ones who can build a measurement plan, run a root cause analysis that survives scrutiny, and show a documented improvement cycle rather than a folder of policies. That is CPHQ content. Roughly a fifth of the exam is Performance and Process Improvement and another fifth is Health Data Analytics — the two things a survey actually tests you on in practice.",
+          "So the honest framing is: CBAHI is what your organisation is measured against, and CPHQ is how you become the person who can meet it. If you are preparing for a survey, our explainers on [CBAHI accreditation standards](/blog/cbahi-standards-explained) and [how CBAHI compares to JCI](/blog/cbahi-vs-jci) are the place to start, and they are free.",
+          "A note on what CPHQ is *not*: it is not a licensing requirement, and SCFHS classification is a separate process concerned with academic qualifications. CPHQ is a professional certification that opens quality roles and strengthens a CV. It is not a licence. Anyone telling you otherwise is selling something. If you want the numbers rather than the claim, we have written up [what CPHQ does to earning potential](/blog/is-cphq-worth-it-cost-salary-roi)."
+        ]
+      },
+      {
+        "heading": "Who can sit it, and who actually should",
+        "paragraphs": [
+          "NAHQ sets **no formal eligibility requirements** for the CPHQ exam. There is no degree gate, no minimum years, no application panel. What NAHQ publishes is a recommendation: about two years of experience in healthcare quality before you sit.",
+          "We are direct with candidates about the difference. You are *permitted* to sit with no quality experience. Whether you should is another question — the exam is heavily applied, and candidates who have never run an improvement project tend to struggle with the analytics and process-improvement domains, which together are over 40% of the paper.",
+          "The candidates who do well from Saudi Arabia are usually one of:"
+        ],
+        "bullets": [
+          "**Clinicians moving into quality** — nurses, pharmacists and physicians who have sat on quality committees and want the role to be formal",
+          "**Existing quality staff without a credential** — often people who have run surveys for years and need the certification their job description now asks for",
+          "**Accreditation coordinators** preparing for a CBAHI or JCI cycle",
+          "**Infection control practitioners** broadening from IPC into wider quality work"
+        ]
+      },
+      {
+        "heading": "What it costs from Saudi Arabia",
+        "paragraphs": [
+          "Two separate costs, and candidates routinely budget for only the first.",
+          "**The preparation course: {price}.** Ten weeks, live sessions, recordings, practice questions and a full mock exam. Paid in Saudi riyals.",
+          "**The NAHQ exam fee, paid to NAHQ, not to us.** At the international rate: **$799** for non-members, **$559** for standard members and **$400** for premium members. NAHQ membership costs less than the fee difference, so for most candidates joining first is straightforwardly cheaper — work it out before you apply rather than after.",
+          "Budget for both from the start. The most common financial mistake we see is a candidate who completes the course and then discovers the exam fee is a separate line item they had not planned for, which pushes them past an application deadline and into the next window. If you are unsure which side of the eligibility line you sit on, [whether you meet the eligibility bar](/blog/cphq-eligibility-requirements) walks through it honestly, including when we tell people to wait a year."
+        ]
+      },
+      {
+        "heading": "How the course runs",
+        "paragraphs": [
+          "Ten weeks, one live session a week, on Zoom. Sessions are bilingual — the technical vocabulary stays in English because that is how the exam is written and how your hospital documents things, while the explanation happens in whichever language makes the concept land. Every session is recorded, which matters on a rotating shift.",
+          "The syllabus follows NAHQ's published content outline in proportion, so the time spent on each domain reflects the weight it carries on the paper rather than what is easiest to teach. Performance and Process Improvement and Health Data Analytics get the most hours, because between them they are over 40% of the exam.",
+          "You get 500+ practice questions and a full-length timed mock exam. The mock is the useful part: three hours, 140 questions, no pauses. Most candidates discover their real problem is pacing, and it is much better to discover that in week eight than in the exam.",
+          "Full curriculum, instructor profiles and cohort dates are on the [CPHQ preparation course](/courses/cphq-preparation) page. If your goal is broader than the certificate — running a quality department rather than passing an exam — the [Healthcare Quality Management Diploma](/courses/healthcare-quality-management-diploma) covers more ground over a longer period, and we will say so if that is the better fit for you."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "Can I sit the CPHQ exam from inside Saudi Arabia?",
+        "a": "Yes. The exam is offered both at test centres and online with a live remote proctor, so you can sit it from home. You schedule through your NAHQ account, which hands off to PSI."
+      },
+      {
+        "q": "When can I take the exam?",
+        "a": "As an international candidate you have four windows in 2026: 3–24 February, 4–25 May, 3–24 August and 2–23 November. Applications close about a month before each — 31 January, 30 April, 31 July and 31 October."
+      },
+      {
+        "q": "Do I need SCFHS approval to take the CPHQ?",
+        "a": "No. SCFHS classification and registration deal with academic qualifications and professional practice. CPHQ is an independent professional certification from NAHQ in the United States and sits outside that process."
+      },
+      {
+        "q": "Is CPHQ recognised in Saudi Arabia?",
+        "a": "It is widely recognised by employers as the standard credential for healthcare quality roles, and it appears regularly in job specifications for quality departments. It is not a government licence and does not replace one."
+      },
+      {
+        "q": "Do I need two years of experience?",
+        "a": "No. NAHQ sets no formal eligibility requirement. Two years is a recommendation, and a sensible one — but it is not a gate."
+      },
+      {
+        "q": "Are the sessions in Arabic or English?",
+        "a": "Both. Technical terms stay in English because the exam is in English; explanation happens in Arabic where that helps."
+      },
+      {
+        "q": "What if I fail?",
+        "a": "You can retake in a later window. We give you the next cohort at no additional course fee — the NAHQ exam fee is payable again to NAHQ, and that is outside our control."
+      }
+    ],
+    "ctaHeading": "Join the next cohort from Saudi Arabia",
+    "ctaBody": "Pick the exam window you are aiming for and we will tell you which cohort gets you there with time to spare. Fees are {price}, payable in riyals. If you are unsure whether the exam or the diploma is the right fit, say so in the form and we will give you a straight answer rather than a sales pitch."
+  }
+}

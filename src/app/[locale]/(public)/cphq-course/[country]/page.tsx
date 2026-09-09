@@ -6,12 +6,13 @@ import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { JsonLd } from "@/components/seo/json-ld";
-import { localeUrl, seoAlternates, breadcrumbLd, socialMeta } from "@/lib/seo";
+import { localeUrl, breadcrumbLd, socialMeta, courseEntityId, SITE_URL } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 import {
   getGeoCoursePage,
   geoContent,
   geoCoursePath,
+  geoLocale,
   listGeoCoursePages,
 } from "@/features/marketing/lib/geo-course-pages";
 import {
@@ -47,6 +48,17 @@ export async function generateMetadata({
   if (!page) return {};
   const c = geoContent(page, locale);
   const path = geoCoursePath(page);
+  /*
+   * A market page exists in the locales it was written in. Until its Arabic
+   * mirror is authored, /ar/cphq-course/<market> serves the English text, so it
+   * canonicalises to the English URL and advertises no `ar` alternate —
+   * claiming one would send Google looking for a translation and find English.
+   */
+  const written = geoLocale(page, locale);
+  const canonical = localeUrl(path, written);
+  const languages: Record<string, string> = { en: localeUrl(path, "en") };
+  if (page.ar) languages.ar = localeUrl(path, "ar");
+  languages["x-default"] = localeUrl(path, "en");
 
   return mergeSeo(path, {
     // Absolute: the title already names the country and the credential, and the
@@ -58,7 +70,7 @@ export async function generateMetadata({
      * would tell Google the page is a duplicate and hand the ranking straight
      * back to the generic page — which is the problem this page exists to fix.
      */
-    alternates: seoAlternates(path, locale),
+    alternates: { canonical, languages },
     ...socialMeta({
       title: c.h1,
       description: c.metaDescription,
@@ -114,6 +126,7 @@ export default async function GeoCoursePageRoute({
     .filter((t) => !!t.name && !!t.quote);
 
   const path = geoCoursePath(page);
+  const written = geoLocale(page, locale);
   const crumb = breadcrumbLd([
     { name: ar ? "الرئيسية" : "Home", url: localeUrl("/", locale) },
     { name: ar ? "الكورسات" : "Courses", url: localeUrl("/courses", locale) },
@@ -122,11 +135,28 @@ export default async function GeoCoursePageRoute({
   ]);
 
   /*
-   * FAQPage only — deliberately no second `Course` node. The course itself is
-   * already described on /courses/cphq-preparation, and emitting a competing
-   * Course entity for the same programme invites Google to treat one of the two
-   * as a duplicate.
+   * One Offer, scoped to this market, attached to the course entity that lives
+   * on the course page. Deliberately NOT a second Course node: two Course
+   * entities for one product forces Google to choose which is canonical for the
+   * product, and it would not choose the course page.
    */
+  const offerLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${SITE_URL}${path}`,
+    name: c.h1,
+    inLanguage: written,
+    mainEntity: {
+      "@type": "Offer",
+      itemOffered: { "@id": courseEntityId(page.courseSlug) },
+      price: String(price.sale > 0 ? price.sale : price.list),
+      priceCurrency: page.currency,
+      areaServed: { "@type": "Country", name: page.en.countryName },
+      availability: "https://schema.org/InStock",
+      url: `${SITE_URL}${path}`,
+    },
+  };
+
   const faqLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -142,7 +172,7 @@ export default async function GeoCoursePageRoute({
 
   return (
     <>
-      <JsonLd data={[crumb, faqLd]} />
+      <JsonLd data={[crumb, offerLd, faqLd]} />
       <nav
         aria-label="Breadcrumb"
         className="mx-auto flex max-w-4xl flex-wrap items-center gap-1 px-4 pt-8 text-xs text-muted-foreground sm:px-6"
@@ -163,6 +193,7 @@ export default async function GeoCoursePageRoute({
         salePrice={price.sale}
         testimonials={testimonials}
         webhookUrl={applyWebhook}
+        source={`money-page:${page.country}`}
       />
     </>
   );
