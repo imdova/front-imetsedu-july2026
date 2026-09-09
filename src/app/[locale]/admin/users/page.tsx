@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { dal } from "@/lib/dal";
 import { computeUmStats } from "@/lib/admin/map-user-mgmt";
 import { UsersWorkspace } from "@/features/admin/components/users-workspace";
+import { DataLoadError, failedSources } from "@/components/shared/data-load-error";
 
 export default async function AdminUsersPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -13,6 +14,15 @@ export default async function AdminUsersPage({ params }: { params: Promise<{ loc
     dal.userManagement.fetchUmInvitations(),
     dal.userManagement.fetchUmRoles(),
     dal.userManagement.fetchUmDepartments(),
+  ]);
+
+  // Without this the page reports "No users found" for an auth failure, which
+  // is a claim about the data and is wrong in a way nobody can act on.
+  const failures = failedSources([
+    ["Staff directory", usersRes],
+    ["Invitations", invitesRes],
+    ["Roles", rolesRes],
+    ["Departments", deptsRes],
   ]);
 
   const rawUsers = usersRes.ok ? usersRes.data : [];
@@ -51,7 +61,8 @@ export default async function AdminUsersPage({ params }: { params: Promise<{ loc
   const stats = computeUmStats(allUsers);
 
   return (
-    <div className="mx-auto max-w-375">
+    <div className="mx-auto max-w-375 space-y-4">
+      <DataLoadError sources={failures} />
       <UsersWorkspace users={allUsers} stats={stats} roles={roles} departments={departments} />
     </div>
   );

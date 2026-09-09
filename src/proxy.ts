@@ -17,6 +17,42 @@ const AREA_ROLES: Record<string, AppRole[]> = {
   "/student": ["student"],
 };
 
+/**
+ * Whether the session JWT has expired.
+ *
+ * Only the `exp` claim is read and the signature is deliberately NOT verified:
+ * this is a routing decision, not an authorisation one. The API verifies every
+ * token properly on every request; the job here is just to stop sending someone
+ * into the console holding a token the API will reject.
+ *
+ * Why this exists: the session cookies are re-stamped with a fresh 7-day
+ * max-age on every navigation (`persistSessionCookie`, called by the
+ * permissions refresher), but the JWT inside `imets_token` still expires 7 days
+ * after login and nothing renews it — `/auth/refresh` exists in the service
+ * layer and is never called. Gating on the presence of `imets_role` alone
+ * therefore let someone browse indefinitely with a dead token: pages rendered,
+ * layouts passed their checks against the `imets_user` cookie, and every
+ * server-side API call quietly 401'd. The result was a console that worked
+ * except that every list was empty, with nothing on screen saying why.
+ *
+ * Unreadable tokens are treated as valid so a decoding quirk can never lock
+ * anyone out; the API stays the real gate.
+ */
+function tokenExpired(token: string | undefined): boolean {
+  if (!token) return true;
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return false;
+    const claims = JSON.parse(
+      atob(payload.replace(/-/g, "+").replace(/_/g, "/")),
+    ) as { exp?: number };
+    if (typeof claims.exp !== "number") return false;
+    return claims.exp * 1000 <= Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -43,11 +79,19 @@ export default async function proxy(req: NextRequest) {
   const role = req.cookies.get("imets_role")?.value as AppRole | undefined;
 
   if (area) {
-    if (!role) {
+    // No session, or one whose token the API will reject — either way the only
+    // useful destination is login. Letting an expired session through produces a
+    // console that renders but cannot load anything.
+    if (!role || tokenExpired(req.cookies.get("imets_token")?.value)) {
       const url = req.nextUrl.clone();
       url.pathname = `${localePrefix}/login`;
       url.search = `?next=${encodeURIComponent(pathname)}`;
-      return NextResponse.redirect(url);
+      const res = NextResponse.redirect(url);
+      // Clear the stale session so the next request does not loop straight back.
+      for (const name of ["imets_role", "imets_token", "imets_user"]) {
+        res.cookies.delete(name);
+      }
+      return res;
     }
 
     // Logged in, but wrong area for this role (e.g. a student opening /admin) — send them home.
