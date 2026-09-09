@@ -389,17 +389,22 @@ export const ADMIN_NAV: NavSection[] = [
     ],
   },
   {
-    /*
-     * Onboarding, deliberately ungated. Every person who answers a customer
-     * needs it on their first day, and that includes staff whose permission map
-     * grants them almost nothing else yet.
-     */
     labelKey: "sectionOrientation",
     items: [
       {
         titleKey: "salesOrientation",
         href: "/admin/orientation",
         icon: "GraduationCap",
+        /*
+         * Gated so a role can be given the training without being given the
+         * console around it. Note the page carries the same key — a nav entry
+         * and its destination drifting apart is the classic failure here.
+         *
+         * It was ungated when first built. It holds current programme fees and
+         * the exact wording reps may and may not use about accreditation, so
+         * who sees it is worth being able to decide.
+         */
+        requiredPermissions: ["training.orientation.view"],
       },
     ],
   },

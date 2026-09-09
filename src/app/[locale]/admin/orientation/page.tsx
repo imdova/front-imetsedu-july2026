@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
+import { requirePermission } from "@/lib/permission-guard";
 import { PageHeader } from "@/components/shared/page-header";
 import { SalesOrientation } from "@/features/orientation/components/sales-orientation";
 import {
@@ -15,6 +16,10 @@ export default async function OrientationPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  // Matches the nav entry's `requiredPermissions`. Super-admins pass; a staff
+  // member without the key gets a 404 rather than the page.
+  await requirePermission("training.orientation.view");
+
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Nav");

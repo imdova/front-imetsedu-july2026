@@ -335,6 +335,28 @@ export const PERMISSION_REGISTRY: UmCategory[] = [
       },
     ],
   },
+  {
+    key: "training",
+    en: "TRAINING",
+    ar: "التدريب",
+    modules: [
+      {
+        key: "orientation", en: "Sales Orientation", ar: "تدريب المبيعات",
+        descEn: "Day-one conversation training: the path, the four rules, the objection bank and programme numbers.",
+        descAr: "تدريب اليوم الأول على المحادثة: المسار والقواعد الأربع وبنك الاعتراضات وأرقام البرامج.",
+        icon: "GraduationCap", accent: "#6366f1",
+        permissions: [
+          p(
+            "training.orientation.view",
+            "View",
+            "عرض",
+            "Includes current programme fees",
+            "يتضمن أسعار البرامج الحالية",
+          ),
+        ],
+      },
+    ],
+  },
 ];
 
 /** Flat list of every permission id — denominator for "X / 51". */
