@@ -20,6 +20,7 @@ import { courseAnchorText } from "@/features/blog/lib/course-anchors";
 import { splitAtSecondHeading } from "@/features/blog/lib/split-sections";
 import { revisionDate } from "@/features/blog/lib/revision-date";
 import { relatedPosts } from "@/features/blog/lib/related-posts";
+import { geoPagesCiting } from "@/features/marketing/lib/geo-course-pages";
 import { RelatedArticles } from "@/features/blog/components/related-articles";
 
 // Memoize per request so generateMetadata + the page share one fetch
@@ -198,6 +199,9 @@ export default async function ArticleDetailPage({
    */
   const [primaryCourse, ...secondaryCourses] = related;
 
+  // Market pages that cite this article, so the link runs both ways.
+  const markets = geoPagesCiting(post.slug);
+
   /*
    * Sibling articles. One list fetch, already public + ISR-cached and shared
    * with the course pages, so this costs no extra round-trip per slug.
@@ -281,7 +285,7 @@ export default async function ArticleDetailPage({
             <>
               <ArticleSections sections={sectionsBefore} />
               {primaryCourse && (
-                <CourseCallout course={primaryCourse} postSlug={post.slug} locale={locale} />
+                <CourseCallout course={primaryCourse} postSlug={post.slug} locale={locale} markets={markets} />
               )}
               {sectionsAfter.length > 0 && <ArticleSections sections={sectionsAfter} />}
             </>
@@ -289,7 +293,7 @@ export default async function ArticleDetailPage({
             <>
               <ArticleContent html={post.content} />
               {primaryCourse && (
-                <CourseCallout course={primaryCourse} postSlug={post.slug} locale={locale} />
+                <CourseCallout course={primaryCourse} postSlug={post.slug} locale={locale} markets={markets} />
               )}
             </>
           )}

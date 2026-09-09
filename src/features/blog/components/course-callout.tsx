@@ -3,6 +3,11 @@ import { ArrowRight, GraduationCap } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import type { CourseRow } from "@/types";
 import { courseAnchorText, courseCalloutBlurb } from "@/features/blog/lib/course-anchors";
+import {
+  geoContent,
+  geoCoursePath,
+  type GeoCoursePage,
+} from "@/features/marketing/lib/geo-course-pages";
 
 /**
  * A single in-body link from an article to the course it supports.
@@ -19,10 +24,18 @@ export function CourseCallout({
   course,
   postSlug,
   locale,
+  markets = [],
 }: {
   course: CourseRow;
   postSlug: string;
   locale: string;
+  /**
+   * Market pages that cite this article. Rendered as a second line so the
+   * reader who has already decided *where* they are can jump straight to local
+   * fees and exam dates — and so those pages stop being reachable only from the
+   * course page.
+   */
+  markets?: GeoCoursePage[];
 }) {
   const anchor = courseAnchorText(course, postSlug, locale);
   const blurb = courseCalloutBlurb(course, locale);
@@ -55,6 +68,22 @@ export function CourseCallout({
         <ArrowRight className="mt-1 size-4 shrink-0 text-primary/70 rtl:rotate-180" />
         <span>{blurb}</span>
       </p>
+
+      {markets.length > 0 && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-primary/15 pt-3 text-sm text-muted-foreground">
+          <span>{ar ? "بتقدّم من:" : "Applying from:"}</span>
+          {markets.map((m) => (
+            <Link
+              key={m.country}
+              href={geoCoursePath(m)}
+              className="font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
+            >
+              {geoContent(m, locale).countryName}
+            </Link>
+          ))}
+          <span>{ar ? "— شوف الرسوم ومواعيد الامتحان عندك." : "— see local fees and exam dates."}</span>
+        </p>
+      )}
     </aside>
   );
 }

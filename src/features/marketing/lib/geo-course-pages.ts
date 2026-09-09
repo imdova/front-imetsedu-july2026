@@ -119,3 +119,35 @@ export function geoLocale(page: GeoCoursePage, locale: string): "en" | "ar" {
 export function geoContent(page: GeoCoursePage, locale: string): GeoLocaleContent {
   return locale === "ar" && page.ar ? page.ar : page.en;
 }
+
+/**
+ * The market pages that cite a given article, for the reciprocal link.
+ *
+ * The relevance is not inferred: each market page's own copy chose which
+ * articles to cite, so pointing back at exactly those is a link the content
+ * author already made in one direction. Guessing "this article mentions Egypt,
+ * so link it" would be the fabricated version of the same idea.
+ *
+ * The citation is the whole test. An earlier version also required the article
+ * to already promote that page's course, which quietly dropped the genuine
+ * cases — the Saudi page cites `cbahi-vs-jci`, but that article's primary course
+ * is the quality diploma, so the reciprocal link never rendered. A money page
+ * citing an article outside its own topic would be an authoring mistake, not
+ * something worth filtering good links to guard against.
+ */
+export function geoPagesCiting(articleSlug: string): GeoCoursePage[] {
+  const href = `](/blog/${articleSlug})`;
+  return PAGES.filter((page) =>
+    (["en", "ar"] as const).some((locale) => {
+      const c = page[locale];
+      if (!c) return false;
+      const prose = [
+        c.intro,
+        ...c.sections.flatMap((s) => [...s.paragraphs, ...(s.bullets ?? [])]),
+        ...c.faqs.map((f) => f.a),
+        c.ctaBody,
+      ].join(" ");
+      return prose.includes(href);
+    }),
+  );
+}
