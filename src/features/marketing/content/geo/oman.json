@@ -1,0 +1,170 @@
+{
+  "country": "oman",
+  "countryCode": "OM",
+  "currency": "USD",
+  "courseSlug": "cphq-preparation",
+  "en": {
+    "countryName": "Oman",
+    "title": "CPHQ Course in Oman | Online Preparation for Omani Staff",
+    "metaDescription": "CPHQ exam preparation for healthcare staff in Oman — ten weeks, live online and recorded, {price}. How the certification fits alongside OMSB registration.",
+    "h1": "CPHQ Course for Healthcare Staff in Oman",
+    "intro": "Oman's health system is organised around the Ministry of Health and delivered through a governorate structure, with a national policy of building Omani professionals into senior roles rather than importing them indefinitely. If you are an Omani practitioner with an eye on a quality or leadership post, that policy is working in your favour — and the constraint on moving up is usually a documented specialism rather than an opportunity. This is a ten-week programme aimed at that, {price}.",
+    "sections": [
+      {
+        "heading": "Workforce nationalisation makes a documented specialism worth more",
+        "paragraphs": [
+          "A deliberate policy of developing national staff into senior positions changes the arithmetic of professional development. When a system is filling leadership from within, the question stops being whether there is an opening and becomes who among the internal candidates has evidence of being ready for it.",
+          "Quality and patient safety is a particularly favourable place to be standing when that question is asked, for an unglamorous reason: it is a function every facility needs, few people are formally qualified in, and it can be entered from almost any clinical background. A nurse, a pharmacist, a laboratory scientist and a physician can all end up running it.",
+          "What distinguishes candidates in that field is rarely clinical seniority. It is whether you can define an indicator, defend a measurement, run an improvement cycle and explain the result to people who did not do the work — which is the ground the CPHQ examination covers."
+        ],
+        "bullets": [
+          "**Clinical staff already sitting on quality committees** who want the role formalised rather than additional",
+          "**Ministry facility staff** in a governorate hospital where the quality function is one or two people",
+          "**Practitioners returning from postgraduate study abroad** who want a credential that reads internationally",
+          "**Private and polyclinic staff** whose employers compete on standards and want certified staff named"
+        ]
+      },
+      {
+        "heading": "Registration is one system; certification is another",
+        "paragraphs": [
+          "Professional registration and specialty training in Oman are administered through the Oman Medical Specialty Board and the Ministry of Health, each under its own regulations. Those processes decide whether and in what capacity you may practise. CPHQ has no bearing on them whatsoever, and any provider suggesting a course can influence your registration is telling you something about themselves.",
+          "The certification does something different and narrower. It is an examined, voluntary credential in healthcare quality, issued by NAHQ in the United States, that says you know a defined body of knowledge to an assessed standard. Its value is in a hiring or promotion conversation, not a regulatory one.",
+          "For most Omani candidates that distinction resolves the question of timing. There is no deadline imposed by a regulator, so the right moment is determined by your own readiness and by NAHQ's application windows — which close roughly a month before each testing period, four times a year."
+        ]
+      },
+      {
+        "heading": "Being eligible and being ready are different tests",
+        "paragraphs": [
+          "NAHQ's eligibility rules pair education with healthcare quality experience in several accepted combinations, so more people qualify than expect to. That is not the useful question. The useful question is whether you have done enough of the work for an applied examination to feel like recognition rather than ambush.",
+          "The paper asks what you would do in a situation, not what a term means. Candidates who have collected data, watched an improvement effort fail, or argued with a colleague about what a denominator should include recognise the questions. Candidates who have only studied the vocabulary do not. We would rather tell you to wait a cycle than take a fee for that outcome — [the eligibility rules, plainly stated](/blog/cphq-eligibility-requirements) lets you assess yourself first.",
+          "It is also worth knowing what you are committing to beyond the exam itself. The certification carries ongoing renewal obligations, and [what renewal and continuing education involve](/blog/cphq-renewal-continuing-education) sets those out before rather than after you sit."
+        ]
+      },
+      {
+        "heading": "What it costs and what you are buying",
+        "paragraphs": [
+          "The programme fee is {price}, in US dollars. Oman is served by our international offer rather than a local price list, so this is the amount charged rather than a converted estimate that moves with the rate. NAHQ charges its examination fee separately and directly — $799 without membership, $559 at standard membership, $400 at premium — and since membership costs less than the difference, joining first is usually the cheaper route.",
+          "Both numbers should be in your plan from the beginning. The recurring failure we see is a candidate who completes preparation, then spends three weeks arranging the exam fee and misses the application deadline, losing a quarter to an administrative problem.",
+          "For the return side of that calculation, [what the certification does and does not do for earnings](/blog/is-cphq-worth-it-cost-salary-roi) gives ranges rather than promises, which is the only honest form of that answer."
+        ]
+      },
+      {
+        "heading": "How the teaching works",
+        "paragraphs": [
+          "Ten weeks, one live Zoom session a week in the evening, all recorded. Sessions are bilingual — technical terms stay in English because that is the language of both the examination and hospital documentation, with explanation in whichever language is faster for the concept in front of us.",
+          "The syllabus mirrors NAHQ's published content outline proportionally, so the domains carrying the most exam weight get the most hours. You work through a large question bank and finish with a full-length timed mock: three hours, 140 questions, uninterrupted. Most candidates learn more from that single afternoon than from any individual session, because it exposes pacing problems while there is still time to fix them. Curriculum and cohort dates are on the [CPHQ preparation course](/courses/cphq-preparation) page."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "Can candidates in Oman sit the CPHQ exam without travelling abroad?",
+        "a": "The examination is delivered through international testing arrangements that candidates in the region access without relocating. Confirm the current testing options for your location with NAHQ when you apply, since that side is administered by them and can change independently of anything we run."
+      },
+      {
+        "q": "Does the Oman Medical Specialty Board require this certification?",
+        "a": "No. OMSB and the Ministry of Health administer registration and specialty training under their own regulations, and CPHQ forms no part of either. It is a voluntary certification whose value shows up when you are being considered for a quality role, not when you are being registered to practise."
+      },
+      {
+        "q": "Why is the price quoted in US dollars for Oman?",
+        "a": "We publish local currency prices only for markets where we run a local operation. Oman is served through the international programme, so you see the international figure — {price} — rather than a rial conversion that would drift between the day you read it and the day you pay. NAHQ prices its exam fee in dollars for every candidate worldwide."
+      },
+      {
+        "q": "I work in a governorate hospital where quality is one person's job — is this too advanced?",
+        "a": "That is one of the most common situations in the cohort, and it is the opposite of too advanced. A single-handed quality function is where the gap between doing the work and being able to evidence it is widest, and the measurement content is aimed squarely at it."
+      },
+      {
+        "q": "Is a nursing or medical degree required to enrol?",
+        "a": "The programme takes physicians, nurses, pharmacists, laboratory and allied health professionals and healthcare administrators. NAHQ's own eligibility combines education with quality experience in more than one accepted pattern, and we check your position against it before you pay anything."
+      },
+      {
+        "q": "How long after the course before I can actually sit the exam?",
+        "a": "That depends on the application window rather than on your preparation. NAHQ opens four testing periods a year, each with a closing date roughly a month ahead. Choose the window first and count backwards; starting a ten-week course two weeks before a deadline means preparing for the window after it."
+      }
+    ],
+    "ctaHeading": "Be the internal candidate with the evidence",
+    "ctaBody": "When a system promotes from within, the deciding factor is which of several capable people can show they are ready. The programme fee is {price}. Send your details and we will confirm the next cohort and which examination window it is built around."
+  },
+  "ar": {
+    "countryName": "عُمان",
+    "title": "كورس CPHQ في عُمان | تحضير أونلاين للكوادر العُمانية",
+    "metaDescription": "تحضير لامتحان CPHQ للعاملين في القطاع الصحي بسلطنة عُمان: عشرة أسابيع مباشرة ومسجّلة، {price}، وكيف يتموضع الاعتماد بجانب تسجيل المجلس العُماني.",
+    "h1": "كورس CPHQ للكوادر الصحية في عُمان",
+    "intro": "يقوم النظام الصحي في سلطنة عُمان على وزارة الصحة ويُقدَّم عبر بنية محافظات، مع سياسة وطنية لبناء الكوادر العُمانية داخل المواقع القيادية بدل استيرادها إلى ما لا نهاية. وإذا كنت ممارسًا عُمانيًا تنظر إلى وظيفة في الجودة أو القيادة، فهذه السياسة تعمل لصالحك — والقيد على الصعود غالبًا تخصّص موثَّق لا فرصة شاغرة. هذا برنامج من عشرة أسابيع موجَّه إلى ذلك، بـ {price}.",
+    "sections": [
+      {
+        "heading": "توطين الكوادر يرفع قيمة التخصّص الموثَّق",
+        "paragraphs": [
+          "حين تتبنّى منظومة سياسة واضحة لتطوير كوادرها الوطنية نحو المواقع العليا، تتغيّر حسابات التطوير المهني. فالسؤال يتوقّف عن كونه هل هناك شاغر، ويصير: مَن بين المرشحين الداخليين لديه ما يُثبت جاهزيته له.",
+          "والجودة وسلامة المرضى موقع مواتٍ بشكل خاص للوقوف فيه حين يُطرح هذا السؤال، لسبب غير برّاق: هي وظيفة تحتاجها كل منشأة، وقليلون مؤهَّلون فيها رسميًا، ويمكن دخولها من أي خلفية إكلينيكية تقريبًا. فالممرض والصيدلي وأخصائي المختبر والطبيب يمكن أن ينتهي أيٌّ منهم إلى إدارتها.",
+          "وما يميّز المرشحين في هذا المجال نادرًا ما يكون الأقدمية الإكلينيكية. إنما هو قدرتك على تعريف مؤشر، والدفاع عن قياس، وإدارة دورة تحسين، وشرح النتيجة لمن لم يشارك في العمل — وهي الأرضية التي يغطّيها امتحان CPHQ."
+        ],
+        "bullets": [
+          "**كوادر إكلينيكية تجلس في لجان الجودة** وتريد أن يصير الدور رسميًا لا إضافيًا",
+          "**العاملون في منشآت الوزارة** بمستشفى محافظة يقوم فيه قسم الجودة على شخص أو اثنين",
+          "**العائدون من دراسات عليا في الخارج** ممّن يريدون مؤهلًا يُقرأ دوليًا",
+          "**كوادر القطاع الخاص والمجمّعات** حيث تنافس جهة العمل على المعايير وتريد كوادر معتمدة بالاسم"
+        ]
+      },
+      {
+        "heading": "التسجيل نظام، والاعتماد المهني نظام آخر",
+        "paragraphs": [
+          "يُدار التسجيل المهني والتدريب التخصّصي في عُمان عبر المجلس العُماني للاختصاصات الطبية ووزارة الصحة، كلٌّ وفق لوائحه. وتلك الإجراءات هي التي تقرّر ما إذا كان يحقّ لك أن تمارس وبأي صفة. ولا علاقة لـ CPHQ بها إطلاقًا، ومن يوحي لك بأن كورسًا يمكن أن يؤثّر في تسجيلك فهو يخبرك بشيء عن نفسه.",
+          "أما الاعتماد فيفعل شيئًا آخر وأضيق. هو مؤهل اختياري بامتحان في جودة الرعاية الصحية، تصدره NAHQ في الولايات المتحدة، ويقول إنك تعرف مجموعة معرفة محدَّدة بمستوى مُقيَّم. وقيمته تظهر في حديث توظيف أو ترقية، لا في حديث تنظيمي.",
+          "ولأغلب المرشحين العُمانيين يحسم هذا التمييز مسألة التوقيت. فلا موعد نهائي تفرضه جهة تنظيمية، واللحظة الصحيحة يحدّدها استعدادك أنت ونوافذ التقديم لدى NAHQ — التي تُغلق قبل نحو شهر من كل فترة اختبار، أربع مرات في السنة."
+        ]
+      },
+      {
+        "heading": "أن تكون مؤهلًا شيء وأن تكون جاهزًا شيء آخر",
+        "paragraphs": [
+          "تجمع شروط NAHQ بين التعليم والخبرة في جودة الرعاية الصحية بتركيبات مقبولة عدة، فيتأهّل عدد أكبر مما يتوقّع. لكن هذا ليس السؤال المفيد. السؤال المفيد هو هل أدّيت من العمل ما يكفي ليصبح امتحان تطبيقي اعترافًا بما تعرفه لا مباغتة لك.",
+          "فالورقة تسألك ماذا تفعل في موقف، لا ما معنى مصطلح. ومن جمع بيانات، أو شاهد مشروع تحسين يفشل، أو تجادل مع زميل حول ما ينبغي أن يشمله المقام — يتعرّف على الأسئلة. ومن درس المفردات فقط لا يتعرّف عليها. ونحن نفضّل أن نقول لك انتظر دورة على أن نأخذ رسومًا مقابل تلك النتيجة — و[شروط الأهلية بصيغتها الواضحة](/blog/cphq-eligibility-requirements) تتيح لك تقييم نفسك أولًا.",
+          "ويجدر كذلك أن تعرف ما تلتزم به بعد الامتحان نفسه. فللاعتماد التزامات تجديد مستمرة، ويعرض [ما الذي يتطلّبه التجديد والتعليم المستمر](/blog/cphq-renewal-continuing-education) تلك الالتزامات قبل أن تجلس للامتحان لا بعده."
+        ]
+      },
+      {
+        "heading": "ما تكلفته وما الذي تشتريه",
+        "paragraphs": [
+          "رسوم البرنامج {price} بالدولار الأمريكي. وعُمان تُخدَم عبر عرضنا الدولي لا عبر قائمة أسعار محلية، فهذا هو المبلغ المُحاسَب به لا تقديرًا محوَّلًا يتحرّك مع سعر الصرف. وتفرض NAHQ رسوم امتحانها منفصلةً ومباشرةً — 799 دولارًا دون عضوية، و559 دولارًا بالعضوية العادية، و400 دولار بالمميّزة — ولأن العضوية أقل من الفرق فالانضمام أولًا أرخص عادةً.",
+          "وينبغي أن يكون الرقمان في خطتك من البداية. والإخفاق المتكرّر الذي نراه هو مرشح ينهي التحضير ثم يقضي ثلاثة أسابيع في ترتيب رسوم الامتحان فيفوت موعد التقديم، ويخسر ربع سنة بسبب مشكلة إدارية.",
+          "وفي الجانب المقابل من هذه المعادلة، يعطيك [ما تفعله الشهادة وما لا تفعله في الدخل](/blog/is-cphq-worth-it-cost-salary-roi) نطاقات لا وعودًا، وهي الصيغة الصادقة الوحيدة لتلك الإجابة."
+        ]
+      },
+      {
+        "heading": "كيف يجري التدريس",
+        "paragraphs": [
+          "عشرة أسابيع، جلسة مباشرة أسبوعية على Zoom مساءً، وكلها مسجّلة. والجلسات ثنائية اللغة: تبقى المصطلحات التقنية بالإنجليزية لأنها لغة الامتحان ولغة توثيق المستشفى، مع شرح باللغة الأسرع في إيصال المفهوم المطروح.",
+          "ويعكس المنهج مخطط المحتوى المنشور من NAHQ بالنِّسب نفسها، فتأخذ المجالات الأثقل وزنًا في الامتحان أكبر عدد من الساعات. وتعمل على بنك أسئلة كبير وتنتهي بامتحان محاكاة كامل بتوقيت حقيقي: ثلاث ساعات و140 سؤالًا دون انقطاع. وأغلب المرشحين يتعلّمون من ذلك اليوم الواحد أكثر مما يتعلّمون من أي جلسة منفردة، لأنه يكشف مشكلة إدارة الوقت وما زال في العمر متّسع لإصلاحها. المنهج ومواعيد الدفعات على صفحة [كورس التحضير لشهادة CPHQ](/courses/cphq-preparation)."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "هل يستطيع المرشحون في عُمان أداء الامتحان دون السفر للخارج؟",
+        "a": "يُقدَّم الامتحان عبر ترتيبات اختبار دولية يصل إليها المرشحون في المنطقة دون انتقال. تحقّق من خيارات الاختبار المتاحة لموقعك مع NAHQ عند التقديم، لأن هذا الجانب تديره هي ويمكن أن يتغيّر بمعزل عن أي شيء ندير نحن."
+      },
+      {
+        "q": "هل يشترط المجلس العُماني للاختصاصات الطبية هذا الاعتماد؟",
+        "a": "لا. يدير المجلس العُماني ووزارة الصحة التسجيل والتدريب التخصّصي وفق لوائحهما، ولا تدخل CPHQ في أي منهما. هي شهادة اختيارية تظهر قيمتها حين يُنظر في ترشيحك لدور في الجودة، لا حين يُنظر في تسجيلك لممارسة المهنة."
+      },
+      {
+        "q": "لماذا السعر معروض بالدولار الأمريكي لعُمان؟",
+        "a": "ننشر أسعارًا بالعملة المحلية فقط للأسواق التي ندير فيها عملية محلية. وعُمان تُخدَم عبر البرنامج الدولي، فترى الرقم الدولي — {price} — بدل تحويل بالريال ينحرف بين يوم قراءتك ويوم دفعك. وتسعّر NAHQ رسوم امتحانها بالدولار لكل مرشح في العالم."
+      },
+      {
+        "q": "أعمل في مستشفى محافظة تقوم فيه الجودة على شخص واحد — هل هذا متقدّم أكثر من اللازم؟",
+        "a": "هذه من أكثر الحالات شيوعًا في الدفعة، وهي عكس «متقدّم أكثر من اللازم». فالقسم الذي يقوم على فرد واحد هو حيث تتّسع الفجوة إلى أقصاها بين أداء العمل والقدرة على إثباته، ومحتوى القياس موجَّه إليها مباشرة."
+      },
+      {
+        "q": "هل يُشترط مؤهل في الطب أو التمريض للالتحاق؟",
+        "a": "يقبل البرنامج الأطباء والممرضين والصيادلة وأخصائيي المختبرات والمهن الصحية المساندة والإداريين الصحيين. وشروط NAHQ نفسها تجمع بين التعليم وخبرة الجودة بأكثر من نمط مقبول، ونحن نراجع موقفك أمامها قبل أن تدفع شيئًا."
+      },
+      {
+        "q": "كم أنتظر بعد الكورس قبل أن أستطيع الجلوس للامتحان فعلًا؟",
+        "a": "ذلك يتوقّف على نافذة التقديم لا على تحضيرك. تفتح NAHQ أربع فترات اختبار سنويًا لكلٍّ منها موعد إغلاق قبلها بنحو شهر. اختر النافذة أولًا ثم احسب رجوعًا؛ فبدء كورس من عشرة أسابيع قبل أسبوعين من موعد إغلاق يعني أنك تتحضّر للنافذة التي تليه."
+      }
+    ],
+    "ctaHeading": "كن المرشح الداخلي الذي يملك الدليل",
+    "ctaBody": "حين تُرقّي المنظومة من داخلها، يصبح الفيصل أيّ الأكفاء يستطيع أن يُظهر جاهزيته. رسوم البرنامج {price}. أرسل بياناتك لنؤكد لك الدفعة القادمة ونافذة الامتحان المبنية عليها."
+  }
+}

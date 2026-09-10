@@ -1,0 +1,216 @@
+{
+  "country": "qatar",
+  "countryCode": "QA",
+  "currency": "USD",
+  "courseSlug": "cphq-preparation",
+  "en": {
+    "countryName": "Qatar",
+    "title": "CPHQ Course in Qatar | Exam Prep for Doha Practitioners",
+    "metaDescription": "CPHQ preparation for practitioners in Qatar: ten weeks live online, recorded, bilingual. {price}, with NAHQ's separate exam fee explained before you commit.",
+    "h1": "CPHQ Course for Practitioners in Qatar",
+    "intro": "Qatar has spent two decades building a health system deliberately benchmarked against international standards, and it shows in the vocabulary of the job market: accreditation, indicators, patient safety, continuing professional development. For a practitioner here, the question is rarely whether quality matters. It is which credential is worth holding, and how it fits alongside the registration requirements you already carry. This page answers that. The course is ten weeks online, {price}.",
+    "sections": [
+      {
+        "heading": "Three different things get called 'accreditation' here",
+        "paragraphs": [
+          "Conversations about credentials in Doha routinely collapse three separate systems into one word, and the confusion is expensive. Professional registration is what permits you to work. Continuing professional development is an ongoing obligation attached to keeping that registration current. A professional certification like CPHQ is neither — it is a voluntary, examined credential in a specialism.",
+          "The Department of Healthcare Professions, through the Qatar Council for Healthcare Practitioners, governs the first two. It registers practitioners and it accredits the CPD activities that count toward renewal. It does not issue CPHQ, and no training provider can place a certification into your registration file on your behalf.",
+          "Getting this straight matters before you spend money. The table below is the shortest honest version."
+        ],
+        "table": {
+          "head": [
+            "What it is",
+            "Who controls it",
+            "What it does for you"
+          ],
+          "rows": [
+            [
+              "Professional registration",
+              "DHP / QCHP, under the Ministry of Public Health",
+              "Permits you to practise your profession in Qatar"
+            ],
+            [
+              "Continuing professional development",
+              "QCHP accredits the activities; you accumulate them",
+              "Keeps your registration current over time"
+            ],
+            [
+              "CPHQ certification",
+              "NAHQ, in the United States",
+              "Evidences examined competence in healthcare quality, portable anywhere"
+            ]
+          ]
+        }
+      },
+      {
+        "heading": "Why the demand is real rather than aspirational",
+        "paragraphs": [
+          "Qatar's principal public provider operates at a scale and standard that made international accreditation a working requirement rather than a marketing badge, and the private sector followed. Where a hospital is genuinely accredited — as opposed to preparing for a first survey — quality stops being a department and becomes a set of obligations distributed across every service line.",
+          "That creates the demand pattern you can see in Doha job listings: quality specialists, patient safety officers, accreditation coordinators, risk managers, and clinical staff expected to sit on committees and understand what they are approving. [The healthcare quality manager career path](/blog/healthcare-quality-manager-career) sets out where those roles lead.",
+          "It also creates a specific hazard. In a mature accredited environment, the person who can talk about quality but cannot construct an indicator, run a root cause analysis or read a control chart gets found out quickly. The CPHQ syllabus is weighted toward exactly those skills, which is both why the exam is hard and why the credential means something."
+        ]
+      },
+      {
+        "heading": "How this compares with the other certifications you are weighing",
+        "paragraphs": [
+          "CPHQ is the broadest of the healthcare quality credentials — it covers organisational leadership, performance improvement, patient safety, and health data analytics rather than specialising in one. That breadth is its strength if you are heading toward a quality management role, and its weakness if you want depth in a single area.",
+          "Practitioners in Qatar most often weigh it against patient-safety-specific certification, against Lean Six Sigma, and against a longer academic qualification. [CPHQ compared with Six Sigma and CPPS](/blog/cphq-vs-six-sigma-vs-cpps) works through the first two properly. The short version: Six Sigma teaches a methodology, CPPS concentrates on safety, and CPHQ covers the territory a quality department is actually accountable for.",
+          "If your work sits closer to accreditation preparation than to quality management generally, it is worth understanding how international schemes differ from regional ones — [that comparison](/blog/cbahi-vs-jci) is a useful orientation even though it is written from a Saudi starting point."
+        ],
+        "bullets": [
+          "**Quality and patient safety staff** in accredited facilities who need a credential matching the role",
+          "**Accreditation coordinators** who own survey readiness and want the measurement half formalised",
+          "**Clinicians on quality committees** who want to contribute beyond the clinical view",
+          "**Practitioners planning a regional move** who need something read the same way in every Gulf market"
+        ]
+      },
+      {
+        "heading": "Fees, both of them",
+        "paragraphs": [
+          "Our course fee is {price} in US dollars. NAHQ's examination fee is entirely separate and goes to NAHQ: $799 non-member, $559 standard member, $400 premium member. Because membership costs less than the difference between the non-member and member rates, joining before you apply is the cheaper path for almost everyone. Work that out first rather than discovering it afterwards.",
+          "Applications close before each testing window, and the gap between windows is about three months. That deadline, not your study schedule, is what determines when you should start — a point candidates in Doha discover with some regularity. [A ten-week study plan](/blog/cphq-exam-study-plan) shows how the preparation actually distributes across that period."
+        ]
+      },
+      {
+        "heading": "What the ten weeks contain",
+        "paragraphs": [
+          "One live session each week, on Zoom, scheduled for Gulf evenings and recorded without exception. Delivery is bilingual: technical terminology stays in English, because the exam and your hospital's documentation are both in English, while explanation happens in whichever language makes a concept land faster.",
+          "Time is allocated across the syllabus in proportion to NAHQ's published content outline rather than by what is easiest to teach, so the analytics and improvement domains get the hours their exam weighting justifies. The programme ends with a full-length timed mock under real conditions. Curriculum, instructors and cohort dates are on the [CPHQ preparation course](/courses/cphq-preparation) page — and if the diploma-length [Healthcare Quality Management Diploma](/courses/healthcare-quality-management-diploma) is the better fit for what you are trying to do, we will say so."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "Does CPHQ count toward my QCHP continuing professional development?",
+        "a": "CPD accreditation is decided by QCHP under its own rules, activity by activity, and we cannot promise on its behalf what will or will not be recognised — check directly with them for anything you are relying on. CPHQ's value in Qatar is as a portable examined certification in its own right, which is a separate benefit from CPD credit."
+      },
+      {
+        "q": "Is CPHQ needed to register as a healthcare practitioner in Qatar?",
+        "a": "No. Registration is granted by the Department of Healthcare Professions through its own assessment process, and this certification plays no part in it. CPHQ is voluntary and specialised — it distinguishes you within the quality field once you are already registered to practise."
+      },
+      {
+        "q": "What does the preparation course cost for someone in Doha?",
+        "a": "{price} in US dollars for the ten-week programme, including live sessions, recordings, the practice bank and the mock exam. The NAHQ examination fee is charged separately by NAHQ and should be budgeted alongside it from the outset."
+      },
+      {
+        "q": "Are the live sessions scheduled at a workable hour for Qatar?",
+        "a": "They run in the evening on Gulf time, which is when the regional cohort can realistically attend. Every session is recorded and released, so an on-call night or a clashing shift costs you the live discussion rather than the content."
+      },
+      {
+        "q": "Is CPHQ recognised in the private sector as well as the public one?",
+        "a": "It is issued internationally and read the same way by both, which is much of its appeal in a market where practitioners move between the two. That said, recognition is a hiring decision made by an employer, and no training provider can commit an employer to anything on your behalf."
+      },
+      {
+        "q": "I already hold Lean Six Sigma — is CPHQ redundant?",
+        "a": "They do different jobs. Six Sigma gives you a methodology for improving a process; CPHQ covers the territory a quality function is accountable for, including governance, safety and measurement. Plenty of people hold both, and the combination is well regarded. If you can only do one, it depends on whether you want to run projects or run the function."
+      }
+    ],
+    "ctaHeading": "Match the credential to the system you work in",
+    "ctaBody": "In an environment where accreditation is genuinely operational, the gap between talking about quality and being able to measure it becomes visible fast. The course fee is {price}. Leave your details and we will confirm the next cohort and the application window it targets."
+  },
+  "ar": {
+    "countryName": "قطر",
+    "title": "كورس CPHQ في قطر | تحضير للامتحان لممارسي الدوحة",
+    "metaDescription": "كورس تحضيري لشهادة CPHQ للممارسين في قطر: عشرة أسابيع مباشرة أونلاين ومسجّلة وثنائية اللغة. {price}، مع توضيح رسوم امتحان NAHQ المنفصلة قبل الالتزام.",
+    "h1": "كورس CPHQ للممارسين في قطر",
+    "intro": "أمضت قطر عقدين في بناء نظام صحي مقيس عن قصد على المعايير الدولية، وهو ما يظهر في مفردات سوق العمل نفسها: اعتماد، ومؤشرات، وسلامة مرضى، وتطوير مهني مستمر. والسؤال بالنسبة للممارس هنا نادرًا ما يكون هل الجودة مهمة، بل أي اعتماد يستحق أن تحمله وكيف يتموضع بجانب متطلبات التسجيل التي تحملها أصلًا. هذه الصفحة تجيب عن ذلك. والكورس عشرة أسابيع أونلاين بـ {price}.",
+    "sections": [
+      {
+        "heading": "ثلاثة أشياء مختلفة تُسمّى هنا «اعتمادًا»",
+        "paragraphs": [
+          "تخلط النقاشات حول المؤهلات في الدوحة بين ثلاثة أنظمة منفصلة تحت كلمة واحدة، والخلط مكلف. فالتسجيل المهني هو ما يسمح لك بالعمل. والتطوير المهني المستمر التزام متواصل مرتبط بإبقاء ذلك التسجيل ساريًا. أما الاعتماد المهني مثل CPHQ فليس أيًّا منهما — هو مؤهل اختياري بامتحان في تخصّص بعينه.",
+          "وتتولّى إدارة المهن الصحية، عبر المجلس القطري للتخصصات الصحية، الأمرين الأولين: تسجّل الممارسين وتعتمد أنشطة التطوير المهني التي تُحتسب عند التجديد. وهي لا تصدر CPHQ، ولا تستطيع أي جهة تدريبية أن تُدرج اعتمادًا في ملف تسجيلك نيابةً عنك.",
+          "وضبط هذا التمييز قبل إنفاق المال مهم. والجدول التالي أقصر صيغة صادقة له."
+        ],
+        "table": {
+          "head": [
+            "ما هو",
+            "من يتحكم فيه",
+            "ماذا يفعل لك"
+          ],
+          "rows": [
+            [
+              "التسجيل المهني",
+              "إدارة المهن الصحية والمجلس القطري، تحت وزارة الصحة العامة",
+              "يسمح لك بممارسة مهنتك في قطر"
+            ],
+            [
+              "التطوير المهني المستمر",
+              "المجلس القطري يعتمد الأنشطة وأنت تراكمها",
+              "يبقي تسجيلك ساريًا مع الوقت"
+            ],
+            [
+              "اعتماد CPHQ",
+              "NAHQ في الولايات المتحدة",
+              "يُثبت كفاءة مُمتحَنة في جودة الرعاية، وينتقل معك أينما ذهبت"
+            ]
+          ]
+        }
+      },
+      {
+        "heading": "لماذا الطلب حقيقي لا تطلّعي",
+        "paragraphs": [
+          "يعمل مقدّم الخدمة العام الرئيسي في قطر بحجم ومستوى جعلا الاعتماد الدولي متطلبًا تشغيليًا لا شارة تسويقية، وتبع القطاع الخاص الأمر نفسه. وحيث يكون المستشفى معتمدًا فعليًا — لا في طور الاستعداد لمسح أول — تتوقّف الجودة عن كونها قسمًا وتتحوّل إلى التزامات موزّعة على كل خط خدمة.",
+          "وهذا يولّد نمط الطلب الذي تراه في إعلانات وظائف الدوحة: أخصائيو جودة، ومسؤولو سلامة مرضى، ومنسّقو اعتماد، ومديرو مخاطر، وكوادر إكلينيكية يُنتظر منها الجلوس في اللجان وفهم ما توقّع عليه. ويعرض [المسار المهني لمدير الجودة الصحية](/blog/healthcare-quality-manager-career) إلى أين تقود هذه الأدوار.",
+          "كما يولّد خطرًا محدّدًا: في بيئة معتمدة ناضجة، مَن يجيد الحديث عن الجودة دون أن يستطيع بناء مؤشر أو إجراء تحليل جذري أو قراءة مخطط ضبط يُكشف سريعًا. ومنهج CPHQ موزون نحو هذه المهارات تحديدًا، وهو ما يفسّر صعوبة الامتحان وقيمة الشهادة معًا."
+        ]
+      },
+      {
+        "heading": "كيف تقارن بالشهادات الأخرى التي توازنها",
+        "paragraphs": [
+          "CPHQ أوسع اعتمادات جودة الرعاية الصحية: تغطّي القيادة التنظيمية وتحسين الأداء وسلامة المرضى وتحليل البيانات الصحية بدل التخصّص في واحد منها. وهذا الاتّساع قوّتها إن كنت متّجهًا إلى إدارة الجودة، وضعفها إن كنت تريد عمقًا في مجال واحد.",
+          "ويوازنها الممارسون في قطر غالبًا أمام اعتماد متخصّص في سلامة المرضى، وأمام Lean Six Sigma، وأمام مؤهل أكاديمي أطول. ويعالج [مقارنة CPHQ بـ Six Sigma و CPPS](/blog/cphq-vs-six-sigma-vs-cpps) الأولين بجدّية. والخلاصة القصيرة: Six Sigma يعلّمك منهجية، و CPPS يركّز على السلامة، و CPHQ يغطّي المساحة التي يُساءل عنها قسم الجودة فعلًا.",
+          "وإن كان عملك أقرب إلى الاستعداد للاعتماد منه إلى إدارة الجودة عمومًا، فيفيدك فهم كيف تختلف المنظومات الدولية عن الإقليمية — و[هذه المقارنة](/blog/cbahi-vs-jci) توجيه نافع وإن كُتبت من منطلق سعودي."
+        ],
+        "bullets": [
+          "**كوادر الجودة وسلامة المرضى** في المنشآت المعتمدة ممّن يحتاجون مؤهلًا يوازي الدور",
+          "**منسّقو الاعتماد** الذين يملكون جاهزية المسح ويريدون توثيق نصفها القياسي",
+          "**الإكلينيكيون في لجان الجودة** الراغبون في الإسهام بأكثر من الزاوية الإكلينيكية",
+          "**من يخطّط لانتقال إقليمي** ويحتاج شيئًا يُقرأ بالطريقة نفسها في كل سوق خليجي"
+        ]
+      },
+      {
+        "heading": "الرسوم، وكلتاهما",
+        "paragraphs": [
+          "رسوم الكورس عندنا {price} بالدولار الأمريكي. ورسوم امتحان NAHQ منفصلة تمامًا وتذهب إلى NAHQ: 799 دولارًا لغير الأعضاء، و559 دولارًا للعضوية العادية، و400 دولار للعضوية المميّزة. ولأن اشتراك العضوية أقل من الفرق بين سعر غير العضو وسعر العضو، فالانضمام قبل التقديم هو الطريق الأرخص لأغلب الناس. احسبها أولًا لا لاحقًا.",
+          "ويُغلق التقديم قبل كل فترة اختبار، والفاصل بين النوافذ نحو ثلاثة أشهر. وهذا الموعد النهائي — لا جدول مذاكرتك — هو ما يحدّد متى ينبغي أن تبدأ، وهي نقطة يكتشفها المرشحون في الدوحة بانتظام. ويوضّح [خطة مذاكرة على عشرة أسابيع](/blog/cphq-exam-study-plan) كيف يتوزّع التحضير فعليًا على تلك المدة."
+        ]
+      },
+      {
+        "heading": "ماذا تتضمّن الأسابيع العشرة",
+        "paragraphs": [
+          "جلسة مباشرة واحدة أسبوعيًا على Zoom، مجدولة لمساء الخليج ومسجّلة دون استثناء. والتقديم ثنائي اللغة: تبقى المصطلحات التقنية بالإنجليزية لأن الامتحان وتوثيق مستشفاك كليهما بالإنجليزية، بينما يجري الشرح باللغة التي تصل بها الفكرة أسرع.",
+          "ويُوزَّع الوقت على المنهج بنسب مخطط المحتوى المنشور من NAHQ لا بحسب سهولة التدريس، فتأخذ مجالات التحليل والتحسين الساعات التي يبرّرها وزنها في الامتحان. ويُختتم البرنامج بامتحان محاكاة كامل بتوقيت حقيقي. المنهج والمدرّبون ومواعيد الدفعات على صفحة [كورس التحضير لشهادة CPHQ](/courses/cphq-preparation) — وإن كانت [دبلومة إدارة الجودة الصحية](/courses/healthcare-quality-management-diploma) الأنسب لما تحاول الوصول إليه فسنقول لك ذلك."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "هل تُحتسب CPHQ ضمن ساعات التطوير المهني المستمر لدى المجلس القطري؟",
+        "a": "اعتماد أنشطة التطوير المهني قرار يتّخذه المجلس القطري وفق قواعده الخاصة ونشاطًا بنشاط، ولا نستطيع أن نَعِد نيابةً عنه بما سيُعترف به — راجعه مباشرةً في أي أمر تبني عليه. وقيمة CPHQ في قطر هي كونها اعتمادًا مُمتحَنًا قابلًا للانتقال بحدّ ذاته، وهي فائدة منفصلة عن احتساب ساعات التطوير."
+      },
+      {
+        "q": "هل شهادة CPHQ لازمة للتسجيل كممارس صحي في قطر؟",
+        "a": "لا. التسجيل تمنحه إدارة المهن الصحية عبر إجراءات تقييم خاصة بها، ولا تدخل هذه الشهادة فيه إطلاقًا. CPHQ اعتماد اختياري ومتخصّص — يميّزك داخل مجال الجودة بعد أن تكون مسجّلًا للممارسة أصلًا."
+      },
+      {
+        "q": "كم تبلغ تكلفة الكورس التحضيري لمن يقيم في الدوحة؟",
+        "a": "{price} بالدولار الأمريكي للبرنامج كاملًا على عشرة أسابيع، شاملةً الجلسات المباشرة والتسجيلات وبنك الأسئلة وامتحان المحاكاة. أما رسوم امتحان NAHQ فتفرضها NAHQ منفصلةً وينبغي إدراجها في الميزانية معها من البداية."
+      },
+      {
+        "q": "هل مواعيد الجلسات المباشرة عملية بالنسبة لقطر؟",
+        "a": "تُعقد مساءً بتوقيت الخليج، وهو الوقت الذي تستطيع فيه الدفعة الإقليمية الحضور واقعيًا. وكل جلسة تُسجَّل وتُرفع، فليلة مناوبة أو تعارض في الوردية يكلّفك النقاش المباشر لا المحتوى."
+      },
+      {
+        "q": "هل يعترف القطاع الخاص بها كما يعترف بها القطاع العام؟",
+        "a": "هي صادرة دوليًا ويقرأها الاثنان بالطريقة نفسها، وهذا جزء كبير من جاذبيتها في سوق ينتقل فيه الممارسون بين القطاعين. ومع ذلك يبقى الاعتراف قرار توظيف يخصّ جهة العمل، ولا تستطيع جهة تدريب أن تلزمها بشيء نيابةً عنك."
+      },
+      {
+        "q": "أحمل بالفعل Lean Six Sigma — هل تصبح CPHQ زائدة؟",
+        "a": "كلٌّ منهما يؤدّي وظيفة مختلفة. Six Sigma يمنحك منهجية لتحسين عملية، و CPHQ تغطّي المساحة التي يُساءل عنها قسم الجودة كاملةً بما فيها الحوكمة والسلامة والقياس. وكثيرون يحملون الاثنين والمزيج مُقدَّر. وإن كان أمامك خيار واحد فالأمر يتوقّف على ما إذا كنت تريد إدارة مشاريع أم إدارة الوظيفة نفسها."
+      }
+    ],
+    "ctaHeading": "اجعل المؤهل مناسبًا للنظام الذي تعمل فيه",
+    "ctaBody": "في بيئة يكون فيها الاعتماد تشغيليًا فعلًا، تظهر سريعًا المسافة بين الحديث عن الجودة والقدرة على قياسها. رسوم الكورس {price}. اترك بياناتك لنؤكد لك الدفعة القادمة ونافذة التقديم التي تستهدفها."
+  }
+}

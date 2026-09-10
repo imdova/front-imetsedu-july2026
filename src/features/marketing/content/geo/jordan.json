@@ -1,0 +1,194 @@
+{
+  "country": "jordan",
+  "countryCode": "JO",
+  "currency": "USD",
+  "courseSlug": "cphq-preparation",
+  "en": {
+    "countryName": "Jordan",
+    "title": "CPHQ Course in Jordan | Exam Prep for Amman Practitioners",
+    "metaDescription": "CPHQ preparation for practitioners in Jordan — ten weeks live online and recorded, {price}. Where the certification sits alongside HCAC accreditation work.",
+    "h1": "CPHQ Course for Practitioners in Jordan",
+    "intro": "Jordan occupies an unusual position in regional healthcare. It runs its own national accreditation body, it draws patients from across the region into its private hospitals, and it exports trained professionals to every Gulf market. Each of those three facts changes what a healthcare quality certification is worth to someone working in Amman or Irbid — and they pull in slightly different directions. Ten weeks, live online, {price}.",
+    "sections": [
+      {
+        "heading": "Jordan built its own accreditation body, and that matters",
+        "paragraphs": [
+          "The Health Care Accreditation Council is Jordan's national accreditation organisation, developed domestically rather than imported, and internationally recognised in its own right. That is genuinely unusual in the region and it has a consequence for the workforce: Jordan has a comparatively deep bench of people who understand accreditation from the inside, because the system was built here rather than arriving as a consultancy engagement.",
+          "It also means quality roles in Jordanian hospitals tend to assume more baseline literacy than their equivalents elsewhere. Being able to describe what an accreditation standard requires is not a distinguishing skill in this market; being able to design the measurement that proves compliance still is.",
+          "That is the gap CPHQ addresses. It is not an accreditation qualification and does not overlap with HCAC's own work. It certifies the underlying discipline — improvement methodology, safety systems, governance and data analysis — that accreditation work draws on."
+        ]
+      },
+      {
+        "heading": "Two markets, and the certification behaves differently in each",
+        "paragraphs": [
+          "Most Jordanian candidates are implicitly choosing between two futures, and it is worth being deliberate about which one you are preparing for, because the credential earns its keep differently in each."
+        ],
+        "table": {
+          "head": [
+            "If you stay in Jordan",
+            "If you are heading to the Gulf"
+          ],
+          "rows": [
+            [
+              "Competes against a workforce already fluent in accreditation, so the differentiator is measurement and analytics depth",
+              "Competes against applicants from a dozen countries, where an internationally issued credential is one of the few directly comparable signals"
+            ],
+            [
+              "Private hospitals serving regional patients need demonstrable standards for referral and insurer relationships",
+              "Employers are frequently accredited groups running formal quality departments with defined job specifications"
+            ],
+            [
+              "Value shows up in promotion into an existing quality function",
+              "Value shows up at the shortlisting stage, before anyone has met you"
+            ]
+          ]
+        }
+      },
+      {
+        "heading": "Medical tourism raises the stakes on measurement",
+        "paragraphs": [
+          "Jordan's private hospitals attract patients from across the region, and that trade depends on reputation in a way domestic-only provision does not. A referring physician in another country, or an insurer approving treatment abroad, is making a decision about a facility they cannot inspect. Documented outcomes and credible standards are what fills that gap.",
+          "For quality staff this converts an internal discipline into an externally facing one. The numbers leave the building. Definitions have to be defensible to people with no stake in flattering them, and inconsistency between reporting periods becomes a commercial problem rather than an administrative one.",
+          "This is why the analytics half of the syllabus matters more here than the leadership half, and it is worth knowing that going in. [The quality manager career path](/blog/healthcare-quality-manager-career) covers where this leads; [what quality and management roles pay](/blog/healthcare-quality-management-salaries) gives ranges for both the domestic and regional versions."
+        ]
+      },
+      {
+        "heading": "The two costs, and the deadline that matters more",
+        "paragraphs": [
+          "The course is {price} in US dollars — the figure we charge, not a dinar conversion that shifts between reading and paying. NAHQ's examination fee is separate and paid to NAHQ: $799 for non-members, $559 at standard membership, $400 at premium. Membership costs less than the difference between the non-member and member rate, so joining first is the cheaper path for nearly everyone. Confirm that before you apply.",
+          "The constraint that actually governs your timeline is neither figure. NAHQ runs four testing windows a year, each closing to applications roughly a month beforehand, so a candidate who begins ten weeks of preparation without checking the calendar frequently finishes ready for a window that shut a fortnight earlier. Choose the window, then count backwards — [a study plan built that way](/blog/cphq-exam-study-plan) shows the shape of it.",
+          "If you are not yet sure this is the right credential rather than a patient-safety or methodology certification, [the comparison between CPHQ, Six Sigma and CPPS](/blog/cphq-vs-six-sigma-vs-cpps) is worth reading before you commit money to any of them."
+        ]
+      },
+      {
+        "heading": "Format",
+        "paragraphs": [
+          "Ten weeks, one live session a week on Zoom, timed for the evening and recorded without exception. Bilingual delivery: technical vocabulary stays in English, since the examination and most hospital documentation are in English, with explanation in Arabic wherever that lands the concept faster.",
+          "Hours follow NAHQ's published content outline in proportion rather than by teaching convenience, so improvement and analytics take the largest share. The programme closes with a full-length timed mock — three hours, 140 questions, no breaks — under conditions matching the real thing. Curriculum, instructors and cohort dates sit on the [CPHQ preparation course](/courses/cphq-preparation) page. If your ambition is to run a department rather than to pass a single examination, the [Healthcare Quality Management Diploma](/courses/healthcare-quality-management-diploma) is the broader programme and we will tell you if it is the better fit."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "How does CPHQ relate to HCAC accreditation work?",
+        "a": "They operate at different levels and do not substitute for one another. HCAC accredits healthcare organisations against Jordanian national standards; CPHQ certifies an individual's knowledge of quality methodology. People preparing a hospital for accreditation often hold it, because the measurement and improvement skills the survey examines are exactly what the exam covers."
+      },
+      {
+        "q": "Is the certification useful if I intend to stay in Jordan rather than move to the Gulf?",
+        "a": "Yes, though it earns its keep differently. In Jordan you are competing with colleagues who already understand accreditation, so the differentiator is analytical depth rather than familiarity. In the Gulf it works earlier in the process, as a comparable signal among applicants from many countries."
+      },
+      {
+        "q": "What is the fee for candidates based in Jordan?",
+        "a": "{price}, quoted in US dollars, covering the ten weeks of live sessions, the recordings, the practice bank and the mock examination. NAHQ's exam fee is charged separately by NAHQ and needs budgeting alongside it from the start."
+      },
+      {
+        "q": "Do I need to travel to sit the examination?",
+        "a": "The exam is delivered through international testing arrangements available to candidates in the region, so travel is generally not required — confirm the current options for your location with NAHQ at application, since they administer that independently."
+      },
+      {
+        "q": "Are Jordanian qualifications a barrier to eligibility?",
+        "a": "No. NAHQ's eligibility rules combine an educational qualification with healthcare quality experience, and they are not tied to any particular country's degree structure. We review your specific position against the published criteria before you commit any money."
+      },
+      {
+        "q": "What language is the examination itself in?",
+        "a": "English only. That is why our sessions keep technical terminology in English even while explaining in Arabic — encountering the exam's vocabulary for the first time on exam day is an avoidable handicap, and the practice bank exists partly to remove it."
+      }
+    ],
+    "ctaHeading": "Prepare for the market you are actually entering",
+    "ctaBody": "Whether the next role is in Amman or in the Gulf changes what you should emphasise, and we will talk through which before you enrol rather than after. The course fee is {price}. Leave your details for the next cohort and the examination window it targets."
+  },
+  "ar": {
+    "countryName": "الأردن",
+    "title": "كورس CPHQ في الأردن | تحضير للامتحان لممارسي عمّان",
+    "metaDescription": "تحضير لامتحان CPHQ للممارسين في الأردن: عشرة أسابيع مباشرة أونلاين ومسجّلة، {price}. وأين يقع الاعتماد بجانب عمل اعتماد المؤسسات الصحية HCAC.",
+    "h1": "كورس CPHQ للممارسين في الأردن",
+    "intro": "يحتلّ الأردن موقعًا غير معتاد في الرعاية الصحية الإقليمية. فهو يدير جهة اعتماد وطنية خاصة به، ويستقطب مرضى من أنحاء المنطقة إلى مستشفياته الخاصة، ويصدّر كوادر مدرَّبة إلى كل سوق خليجي. وكلٌّ من هذه الحقائق الثلاث يغيّر قيمة اعتماد الجودة لمن يعمل في عمّان أو إربد — وهي تشدّ في اتجاهات متباينة قليلًا. عشرة أسابيع مباشرة أونلاين، بـ {price}.",
+    "sections": [
+      {
+        "heading": "بنى الأردن جهة اعتماد خاصة به، وهذا له أثر",
+        "paragraphs": [
+          "مجلس اعتماد المؤسسات الصحية هو جهة الاعتماد الوطنية في الأردن، طُوِّر محليًا لا مستوردًا، ومعترَف به دوليًا في ذاته. وهذا نادر فعلًا في المنطقة وله أثر على سوق العمل: لدى الأردن عمق أكبر نسبيًا من الأشخاص الذين يفهمون الاعتماد من الداخل، لأن المنظومة بُنيت هنا ولم تصل كمشروع استشاري.",
+          "ويعني ذلك أيضًا أن وظائف الجودة في المستشفيات الأردنية تفترض حدًّا أساسيًا من الإلمام أعلى من نظيراتها في أماكن أخرى. فالقدرة على وصف ما يتطلّبه معيار اعتماد ليست ميزة مميِّزة في هذا السوق؛ أما القدرة على تصميم القياس الذي يُثبت الالتزام فما زالت كذلك.",
+          "وهذه هي الفجوة التي تعالجها CPHQ. فهي ليست مؤهلًا في الاعتماد ولا تتداخل مع عمل المجلس. إنما تعتمد الانضباط الذي يستند إليه عمل الاعتماد: منهجية التحسين، ونُظم السلامة، والحوكمة، وتحليل البيانات."
+        ]
+      },
+      {
+        "heading": "سوقان، والشهادة تتصرّف في كلٍّ منهما بشكل مختلف",
+        "paragraphs": [
+          "أغلب المرشحين الأردنيين يختارون ضمنيًا بين مستقبلين، ويستحق الأمر أن تحدّد أيّهما تتحضّر له، لأن الشهادة تكسب قيمتها بطريقة مختلفة في كلٍّ منهما."
+        ],
+        "table": {
+          "head": [
+            "إن بقيت في الأردن",
+            "إن كنت متّجهًا إلى الخليج"
+          ],
+          "rows": [
+            [
+              "تنافس كوادر تجيد لغة الاعتماد أصلًا، فيصير الفارق في عمق القياس والتحليل",
+              "تنافس متقدّمين من عشرات الدول، حيث يكون المؤهل الصادر دوليًا من الإشارات القليلة القابلة للمقارنة مباشرة"
+            ],
+            [
+              "المستشفيات الخاصة التي تخدم مرضى المنطقة تحتاج معايير قابلة للإثبات في علاقات الإحالة والتأمين",
+              "جهات العمل غالبًا مجموعات معتمدة تدير أقسام جودة رسمية بتوصيفات وظيفية محدّدة"
+            ],
+            [
+              "تظهر القيمة عند الترقية داخل قسم جودة قائم",
+              "تظهر القيمة في مرحلة الفرز الأولي، قبل أن يقابلك أحد"
+            ]
+          ]
+        }
+      },
+      {
+        "heading": "السياحة العلاجية ترفع كلفة الخطأ في القياس",
+        "paragraphs": [
+          "تستقطب المستشفيات الخاصة الأردنية مرضى من أنحاء المنطقة، وهذه التجارة تعتمد على السمعة بصورة لا تحتاجها الخدمة المحلية وحدها. فالطبيب المحيل في بلد آخر، أو شركة التأمين التي توافق على علاج في الخارج، يتّخذ قراره بشأن منشأة لا يستطيع معاينتها. والنتائج الموثَّقة والمعايير الموثوقة هي ما يسدّ تلك الفجوة.",
+          "وهذا يحوّل انضباطًا داخليًا إلى انضباط مواجه للخارج بالنسبة لكوادر الجودة. فالأرقام تغادر المبنى. والتعريفات يجب أن تصمد أمام أشخاص لا مصلحة لهم في تجميلها، ويصير التذبذب بين فترات التقارير مشكلة تجارية لا إدارية.",
+          "ولهذا يهمّ النصف التحليلي من المنهج هنا أكثر من النصف القيادي، ومن الجيد أن تعرف ذلك قبل أن تبدأ. ويغطّي [المسار المهني لمدير الجودة](/blog/healthcare-quality-manager-career) إلى أين يقود هذا؛ ويعطي [رواتب الجودة والإدارة الصحية](/blog/healthcare-quality-management-salaries) نطاقات للنسختين المحلية والإقليمية."
+        ]
+      },
+      {
+        "heading": "التكلفتان، والموعد الذي يهمّ أكثر منهما",
+        "paragraphs": [
+          "الكورس {price} بالدولار الأمريكي — الرقم الذي نتقاضاه لا تحويلًا بالدينار ينحرف بين القراءة والدفع. ورسوم امتحان NAHQ منفصلة وتُدفع إليها: 799 دولارًا لغير الأعضاء، و559 دولارًا للعضوية العادية، و400 دولار للمميّزة. واشتراك العضوية أقل من الفرق بين سعر غير العضو والعضو، فالانضمام أولًا هو الطريق الأرخص لأغلب الناس. تأكّد من ذلك قبل التقديم.",
+          "والقيد الذي يحكم جدولك الزمني فعلًا ليس أيًّا من الرقمين. تدير NAHQ أربع نوافذ اختبار سنويًا يُغلق التقديم لكلٍّ منها قبلها بنحو شهر، فالمرشح الذي يبدأ عشرة أسابيع من التحضير دون النظر في التقويم كثيرًا ما ينتهي جاهزًا لنافذة أُغلقت قبل أسبوعين. اختر النافذة ثم احسب رجوعًا — و[خطة مذاكرة مبنية بهذه الطريقة](/blog/cphq-exam-study-plan) تبيّن شكلها.",
+          "وإن لم تكن واثقًا بعد أن هذا هو الاعتماد الصحيح بدل اعتماد في سلامة المرضى أو في المنهجيات، فإن [المقارنة بين CPHQ و Six Sigma و CPPS](/blog/cphq-vs-six-sigma-vs-cpps) تستحق القراءة قبل أن تلتزم بمال لأيٍّ منها."
+        ]
+      },
+      {
+        "heading": "الصيغة",
+        "paragraphs": [
+          "عشرة أسابيع، جلسة مباشرة أسبوعية على Zoom مسائية ومسجّلة دون استثناء. وتقديم ثنائي اللغة: تبقى المصطلحات التقنية بالإنجليزية لأن الامتحان ومعظم توثيق المستشفيات بالإنجليزية، مع شرح بالعربية حيثما أوصل الفكرة أسرع.",
+          "وتتبع الساعات مخطط المحتوى المنشور من NAHQ بالنِّسب لا بسهولة التدريس، فيأخذ التحسين والتحليل النصيب الأكبر. ويُختتم البرنامج بامتحان محاكاة كامل بتوقيت حقيقي — ثلاث ساعات و140 سؤالًا دون فواصل — بظروف مطابقة للواقع. المنهج والمدرّبون ومواعيد الدفعات على صفحة [كورس التحضير لشهادة CPHQ](/courses/cphq-preparation). وإن كان طموحك إدارة قسم لا اجتياز امتحان واحد، فإن [دبلومة إدارة الجودة الصحية](/courses/healthcare-quality-management-diploma) هي البرنامج الأوسع وسنخبرك إن كانت الأنسب."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "ما علاقة CPHQ بعمل اعتماد المؤسسات الصحية في الأردن؟",
+        "a": "يعملان على مستويين مختلفين ولا يُغني أحدهما عن الآخر. فمجلس اعتماد المؤسسات الصحية يعتمد المنظمات الصحية أمام معايير وطنية أردنية، بينما تعتمد CPHQ معرفة الفرد بمنهجية الجودة. ومن يُعدّون مستشفى لدورة اعتماد يحملونها كثيرًا، لأن مهارات القياس والتحسين التي يفحصها المسح هي نفسها ما يغطّيه الامتحان."
+      },
+      {
+        "q": "هل الشهادة مفيدة إن كنت أنوي البقاء في الأردن لا الانتقال إلى الخليج؟",
+        "a": "نعم، وإن كانت تكسب قيمتها بطريقة مختلفة. ففي الأردن تنافس زملاء يفهمون الاعتماد أصلًا، فيصير الفارق في العمق التحليلي لا في الإلمام العام. وفي الخليج تعمل في مرحلة أبكر، بوصفها إشارة قابلة للمقارنة بين متقدّمين من بلدان كثيرة."
+      },
+      {
+        "q": "كم تبلغ الرسوم للمرشحين المقيمين في الأردن؟",
+        "a": "{price} بالدولار الأمريكي، تغطّي عشرة أسابيع من الجلسات المباشرة والتسجيلات وبنك الأسئلة وامتحان المحاكاة. أما رسوم امتحان NAHQ فتفرضها NAHQ منفصلةً وتحتاج إدراجًا في الميزانية معها منذ البداية."
+      },
+      {
+        "q": "هل أحتاج السفر لأداء الامتحان؟",
+        "a": "يُقدَّم الامتحان عبر ترتيبات اختبار دولية متاحة للمرشحين في المنطقة، فالسفر غير مطلوب عمومًا — تحقّق من الخيارات المتاحة لموقعك مع NAHQ عند التقديم لأنها تدير هذا الجانب باستقلال."
+      },
+      {
+        "q": "هل تشكّل المؤهلات الأردنية عائقًا أمام الأهلية؟",
+        "a": "لا. تجمع شروط NAHQ بين مؤهل تعليمي وخبرة في جودة الرعاية الصحية، وهي غير مرتبطة ببنية شهادات بلد بعينه. ونحن نراجع موقفك تحديدًا أمام المعايير المنشورة قبل أن تلتزم بأي مبلغ."
+      },
+      {
+        "q": "بأي لغة يُعقد الامتحان نفسه؟",
+        "a": "بالإنجليزية فقط. ولهذا نُبقي المصطلحات التقنية بالإنجليزية في جلساتنا حتى ونحن نشرح بالعربية — فمواجهة مفردات الامتحان لأول مرة يوم الامتحان عائق يمكن تفاديه، وبنك الأسئلة موجود جزئيًا لإزالته."
+      }
+    ],
+    "ctaHeading": "تحضّر للسوق الذي ستدخله فعلًا",
+    "ctaBody": "كون الوظيفة القادمة في عمّان أو في الخليج يغيّر ما ينبغي أن تركّز عليه، وسنناقش أيّهما معك قبل التسجيل لا بعده. رسوم الكورس {price}. اترك بياناتك لمعرفة الدفعة القادمة ونافذة الامتحان التي تستهدفها."
+  }
+}

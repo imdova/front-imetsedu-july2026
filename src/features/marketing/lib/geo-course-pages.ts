@@ -7,6 +7,11 @@ import ipcUae from "../content/geo/infection-control-diploma-uae.json";
 import hmEgypt from "../content/geo/hospital-management-diploma-egypt.json";
 import hmSaudiArabia from "../content/geo/hospital-management-diploma-saudi-arabia.json";
 import hmUae from "../content/geo/hospital-management-diploma-uae.json";
+import kuwait from "../content/geo/kuwait.json";
+import qatar from "../content/geo/qatar.json";
+import oman from "../content/geo/oman.json";
+import jordan from "../content/geo/jordan.json";
+import ipcKuwait from "../content/geo/infection-control-diploma-kuwait.json";
 
 /**
  * Country landing pages for a course (`/cphq-course/egypt`).
@@ -83,13 +88,14 @@ export interface GeoCoursePage {
  * Saudi Arabia and the UAE, then the same three markets for the infection
  * control and hospital management diplomas.
  *
- * Wave 3 (Kuwait, Qatar, Oman, Jordan) is deliberately absent. Those markets
- * cannot satisfy the blueprint's own requirement to quote a local price: the
- * course records hold EGP, SAR and USD only, so a Kuwait page could quote
- * nothing more local than dollars — which is what the UAE page already does,
- * leaving the page with no market-specific substance a reader could not get
- * from the UAE one. An unregistered market has no URL at all, which is the
- * intended outcome until that changes.
+ * Wave 3 (Kuwait, Qatar, Oman, Jordan) quotes in US dollars by decision, not by
+ * oversight: the course records hold EGP, SAR and USD only, and rather than cut
+ * the markets the programme prices them from the international offer and says so
+ * on the page. That removes local pricing as a differentiator, so each of these
+ * pages has to earn its place on regulatory substance alone — MOH-run delivery
+ * in Kuwait, QCHP registration and CPD in Qatar, OMSB and workforce
+ * nationalisation in Oman, HCAC and medical tourism in Jordan. The content gate
+ * is what holds that line.
  */
 const PAGES: GeoCoursePage[] = [
   egypt as GeoCoursePage,
@@ -101,6 +107,11 @@ const PAGES: GeoCoursePage[] = [
   hmEgypt as GeoCoursePage,
   hmSaudiArabia as GeoCoursePage,
   hmUae as GeoCoursePage,
+  kuwait as GeoCoursePage,
+  qatar as GeoCoursePage,
+  oman as GeoCoursePage,
+  jordan as GeoCoursePage,
+  ipcKuwait as GeoCoursePage,
 ];
 
 /** Every country page that exists. */
