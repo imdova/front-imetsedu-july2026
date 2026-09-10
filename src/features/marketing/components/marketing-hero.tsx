@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Sparkles, Star, ArrowRight, Check, type LucideIcon } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
+import { dal } from "@/lib/dal";
 import { cn } from "@/lib/utils";
 import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
 
@@ -11,14 +12,37 @@ interface MarketingHeroProps {
   videoId?: string;
 }
 
-/** Small overlapping learner faces — Coursera-style social proof next to the video. */
-const LEARNER_FACES = [
-  "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=96&h=96&fit=crop&crop=faces&q=80",
-  "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=96&h=96&fit=crop&crop=faces&q=80",
-  "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=96&h=96&fit=crop&crop=faces&q=80",
-  "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=96&h=96&fit=crop&crop=faces&q=80",
-  "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?w=96&h=96&fit=crop&crop=faces&q=80",
-];
+/** How many faces the overlapping stack shows. */
+const FACE_COUNT = 5;
+
+/**
+ * Faces for the stack beside the learner-count line — real graduates.
+ *
+ * These were five Unsplash stock portraits of strangers. The same five files
+ * were also being used as the invented "faculty" on this page and as invented
+ * students giving testimonials on the CPHQ landing pages, so one person's face
+ * appeared in three different fabricated identities across the site.
+ *
+ * The graduation cohorts hold real, already-published photographs of actual
+ * IMETS graduates — the same images shown on /graduates/<cohort> — so the stack
+ * draws from those, one per cohort first so it is not five faces from a single
+ * class. No cohorts with photos, no stack.
+ */
+async function learnerFaces(): Promise<string[]> {
+  const res = await dal.graduates.fetchPublishedCohorts().catch(() => null);
+  if (!res || !res.ok) return [];
+  const byCohort = res.data.map((c) => c.previewPhotos.filter(Boolean));
+  const out: string[] = [];
+  for (let round = 0; out.length < FACE_COUNT; round++) {
+    const before = out.length;
+    for (const photos of byCohort) {
+      if (photos[round]) out.push(photos[round]);
+      if (out.length >= FACE_COUNT) break;
+    }
+    if (out.length === before) break; // nothing left to take
+  }
+  return out;
+}
 
 /**
  * Modern two-column hero: badge + headline + CTAs + social proof on one side,
@@ -27,6 +51,7 @@ const LEARNER_FACES = [
  */
 export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: MarketingHeroProps) {
   const t = await getTranslations("Marketing");
+  const faces = await learnerFaces();
   const satisfaction = stats.find((s) => s.rating) ?? stats.find((s) => s.value.includes(".")) ?? stats[1];
   const valueBadges = [t("heroBadge1"), t("heroBadge2"), t("heroBadge3")] as const;
 
@@ -101,11 +126,12 @@ export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: Marketin
             </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md sm:justify-start lg:gap-4">
-              {/* An anonymous avatar stack — purely a visual device for the
-                  social-proof line beside it. It depicts no identifiable
-                  student and names no one, so it is decorative and says so. */}
+              {/* Real graduate photographs, unnamed here and aria-hidden: the
+                  stack is a visual device for the line beside it, and the names
+                  belong on the cohort page where the consent was given. */}
+              {faces.length > 0 && (
               <div className="flex items-center -space-x-2 rtl:space-x-reverse" aria-hidden="true">
-                {LEARNER_FACES.map((src, i) => (
+                {faces.map((src, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     key={src}
@@ -118,10 +144,11 @@ export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: Marketin
                     width={36}
                     height={36}
                     className="size-9 rounded-full border-2 border-[#0a2f7a] object-cover shadow-sm"
-                    style={{ zIndex: LEARNER_FACES.length - i }}
+                    style={{ zIndex: faces.length - i }}
                   />
                 ))}
               </div>
+              )}
 
               <div className="flex min-w-0 flex-col gap-0.5 text-center sm:text-start">
                 {/* The star rating that sat here was unsourced — see the stats

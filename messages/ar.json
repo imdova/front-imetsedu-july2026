@@ -865,9 +865,7 @@
     "instructorsSubtitle": "ممارسون من مستشفيات رائدة — أدوار حقيقية، خبرة حقيقية، ومؤهلات حقيقية.",
     "viewAllInstructors": "عرض كل المدربين",
     "facultyPosition": "المنصب الحالي",
-    "facultyHospital": "المستشفى",
     "facultyExperience": "سنوات الخبرة",
-    "facultyCourses": "البرامج",
     "facultyLinkedIn": "لينكدإن",
     "testimonialsTitle": "قصص نجاح الطلاب",
     "testimonialsSubtitle": "أصوات حقيقية من أدوار تشبهك — العناية المركزة، الجودة، مكافحة العدوى، والمزيد.",
@@ -1304,7 +1302,7 @@
     "orgWhyBilingualText": "بالإنجليزية والعربية لتناسب كل كوادرك.",
     "orgWhyTrust": "موثوق به من مستشفيات رائدة في المنطقة",
     "alumniTitle": "قصص نجاح من متخصصي الرعاية الصحية",
-    "alumniSubtitle": "متخصصون حقيقيون، وأدوار حقيقية، ونمو مهني حقيقي بعد التعلّم مع IMETS.",
+    "alumniSubtitle": "خريجو دفعاتنا — تخصصهم، وبلدهم، والبرنامج الذي أتمّوه.",
     "alumniProgram": "البرنامج",
     "philLabel": "منهجنا التعليمي",
     "philTitle": "كيف نُعلّم",
@@ -1328,7 +1326,10 @@
     "footerResources": "الموارد",
     "footerNews": "الأخبار",
     "homeMetaTitle": "كورسات ودبلومات الرعاية الصحية أونلاين | IMETS",
-    "homeMetaDescription": "دبلومات وشهادات مباشرة أونلاين في الرعاية الصحية لمصر والخليج: CPHQ وCIC ومكافحة العدوى والجودة وإدارة المستشفيات، مع دعم بالعربية."
+    "homeMetaDescription": "دبلومات وشهادات مباشرة أونلاين في الرعاية الصحية لمصر والخليج: CPHQ وCIC ومكافحة العدوى والجودة وإدارة المستشفيات، مع دعم بالعربية.",
+    "facultyCertificates": "الشهادات",
+    "facultyViewProfile": "عرض الملف",
+    "alumniViewAll": "عرض كل دفعات التخرج"
   },
   "Student": {
     "dashboardTitle": "تعلّمي",

@@ -1,10 +1,12 @@
-import {
-  Building2,
-  Briefcase,
-  Clock3,
-  BookOpen,
-  ArrowRight,
-} from "lucide-react";
+import { Award, Briefcase, Clock3, ArrowRight } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+
+import { Link } from "@/i18n/navigation";
+import { dal } from "@/lib/dal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { getInitials } from "@/lib/utils";
+import type { InstructorLookup } from "@/types";
 
 /** LinkedIn glyph — lucide-react dropped brand icons, so inline the logo. */
 function LinkedinGlyph({ className }: { className?: string }) {
@@ -19,73 +21,51 @@ function LinkedinGlyph({ className }: { className?: string }) {
     </svg>
   );
 }
-import { getTranslations } from "next-intl/server";
 
-import { Link } from "@/i18n/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { getInitials } from "@/lib/utils";
+/** How many fit the grid without leaving a ragged final row. */
+const MAX_SHOWN = 4;
 
-export interface FacultyMember {
-  name: string;
-  position: string;
-  hospital: string;
-  yearsExperience: number;
-  courses: string[];
-  photo: string;
-  linkedinUrl: string;
+function linkedinOf(person: InstructorLookup): string | undefined {
+  return person.socialLinks?.find((s) => /linkedin/i.test(s.key))?.value?.trim() || undefined;
 }
 
-/** Curated healthcare faculty for the home trust section. */
-export const HOME_FACULTY: FacultyMember[] = [
-  {
-    name: "Dr. Sara Al-Khalid",
-    position: "Director of Quality & Patient Safety",
-    hospital: "King Faisal Specialist Hospital",
-    yearsExperience: 14,
-    courses: ["CPHQ Preparation", "Patient Safety"],
-    photo:
-      "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=faces&q=80",
-    linkedinUrl: "https://www.linkedin.com/",
-  },
-  {
-    name: "Dr. Ahmed Mansour",
-    position: "Quality Manager",
-    hospital: "Mediclinic Middle East",
-    yearsExperience: 12,
-    courses: ["Healthcare Quality", "Accreditation"],
-    photo:
-      "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop&crop=faces&q=80",
-    linkedinUrl: "https://www.linkedin.com/",
-  },
-  {
-    name: "Noura Al-Otaibi, RN",
-    position: "Infection Control Lead",
-    hospital: "Cleveland Clinic Abu Dhabi",
-    yearsExperience: 11,
-    courses: ["Infection Control", "Patient Safety"],
-    photo:
-      "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=400&h=400&fit=crop&crop=faces&q=80",
-    linkedinUrl: "https://www.linkedin.com/",
-  },
-  {
-    name: "Dr. Layla Hassan",
-    position: "Clinical Governance Consultant",
-    hospital: "Jordan University Hospital",
-    yearsExperience: 15,
-    courses: ["Hospital Management", "Healthcare Leadership"],
-    photo:
-      "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?w=400&h=400&fit=crop&crop=faces&q=80",
-    linkedinUrl: "https://www.linkedin.com/",
-  },
-];
-
+/**
+ * The faculty strip on the home page and /about.
+ *
+ * Every field here comes from a stored instructor record, and the section
+ * renders nothing at all when there are none.
+ *
+ * It used to render four hard-coded people — invented names, stock photographs
+ * of real strangers used as their portraits, each attributed to a real named
+ * hospital (King Faisal Specialist, Cleveland Clinic Abu Dhabi, Mediclinic,
+ * Jordan University Hospital), with a "LinkedIn" button that went to
+ * linkedin.com. That is a fabricated credential claim about named institutions
+ * on the site's two highest-traffic pages, and it is the exact thing
+ * `InstructorLookup` warns against: never assert a credential, an affiliation
+ * or a number of years that is not stored against this person.
+ *
+ * So there is no sample data and no placeholder path. An empty roster shows an
+ * empty page — the same decision /instructors already makes when it de-indexes
+ * itself, and the same one the market pages make with testimonials. Fill the
+ * roster in Admin → Instructors and this section appears on its own.
+ */
 export async function HealthcareFacultySection({
-  faculty = HOME_FACULTY,
+  faculty,
 }: {
-  faculty?: FacultyMember[];
+  /** Overridable for a page that has already fetched the roster. */
+  faculty?: InstructorLookup[];
 }) {
   const t = await getTranslations("Marketing");
+
+  let people = faculty;
+  if (!people) {
+    // A failed fetch is treated as an empty roster: the section disappears
+    // rather than falling back to anything.
+    const res = await dal.lookups.fetchInstructors().catch(() => null);
+    people = res && res.ok ? res.data : [];
+  }
+
+  if (people.length === 0) return null;
 
   return (
     <section className="border-y border-blue-100 bg-gradient-to-b from-white to-blue-50/70">
@@ -112,77 +92,95 @@ export async function HealthcareFacultySection({
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {faculty.map((member) => (
-            <article
-              key={member.name}
-              className="group flex h-full flex-col rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-[#0b3fa8]/35 hover:shadow-md"
-            >
-              <div className="flex flex-col items-center text-center">
-                <Avatar className="size-24 border-4 border-white shadow-lg ring-2 ring-[#0b3fa8]/30">
-                  <AvatarImage
-                    src={member.photo}
-                    alt={member.name}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="bg-[#0b3fa8] text-xl font-semibold text-white">
-                    {getInitials(member.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <h3 className="mt-4 text-base font-bold text-[#0a2f7a]">
-                  {member.name}
-                </h3>
-              </div>
+          {people.slice(0, MAX_SHOWN).map((person) => {
+            const href = `/instructors/${person.slug || person.id}`;
+            const role = person.title || person.specialty;
+            const linkedin = linkedinOf(person);
 
-              <dl className="mt-4 flex-1 space-y-2.5 text-sm">
-                <div>
-                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    <Briefcase className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
-                    {t("facultyPosition")}
-                  </dt>
-                  <dd className="ps-[22px] font-medium text-slate-700">
-                    {member.position}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    <Building2 className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
-                    {t("facultyHospital")}
-                  </dt>
-                  <dd className="ps-[22px] font-medium text-slate-700">
-                    {member.hospital}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    <Clock3 className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
-                    {t("facultyExperience")}
-                  </dt>
-                  <dd className="ps-[22px] font-medium text-slate-700">
-                    {member.yearsExperience}+
-                  </dd>
-                </div>
-                <div>
-                  <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    <BookOpen className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
-                    {t("facultyCourses")}
-                  </dt>
-                  <dd className="ps-[22px] font-medium text-slate-700">
-                    {member.courses.join(" · ")}
-                  </dd>
-                </div>
-              </dl>
-
-              <a
-                href={member.linkedinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#0b3fa8]/20 bg-[#0b3fa8]/5 px-3 py-2.5 text-sm font-semibold text-[#0b3fa8] transition hover:bg-[#0b3fa8] hover:text-white"
+            return (
+              <article
+                key={person.id}
+                className="group flex h-full flex-col rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-[#0b3fa8]/35 hover:shadow-md"
               >
-                <LinkedinGlyph className="size-4" />
-                {t("facultyLinkedIn")}
-              </a>
-            </article>
-          ))}
+                <Link href={href} className="flex flex-col items-center text-center">
+                  <Avatar className="size-24 border-4 border-white shadow-lg ring-2 ring-[#0b3fa8]/30">
+                    {/* Only a stored portrait. No stock photograph stands in for
+                        a person who has not supplied one. */}
+                    {person.avatarUrl && (
+                      <AvatarImage src={person.avatarUrl} alt={person.label} className="object-cover" />
+                    )}
+                    <AvatarFallback className="bg-[#0b3fa8] text-xl font-semibold text-white">
+                      {getInitials(person.label)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h3 className="mt-4 text-base font-bold text-[#0a2f7a] group-hover:underline">
+                    {person.label}
+                  </h3>
+                </Link>
+
+                {/* Each row appears only when that field is filled in — an
+                    instructor with a name and nothing else renders a card with
+                    a name and nothing else. */}
+                <dl className="mt-4 flex-1 space-y-2.5 text-sm">
+                  {role && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        <Briefcase className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
+                        {t("facultyPosition")}
+                      </dt>
+                      <dd className="ps-[22px] font-medium text-slate-700">{role}</dd>
+                    </div>
+                  )}
+
+                  {typeof person.yearsOfExperience === "number" && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        <Clock3 className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
+                        {t("facultyExperience")}
+                      </dt>
+                      <dd className="ps-[22px] font-medium text-slate-700">
+                        {person.yearsOfExperience}+
+                      </dd>
+                    </div>
+                  )}
+
+                  {person.certificates && person.certificates.length > 0 && (
+                    <div>
+                      <dt className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        <Award className="size-3.5 shrink-0 text-[#0b3fa8]" aria-hidden />
+                        {t("facultyCertificates")}
+                      </dt>
+                      <dd className="ps-[22px] font-medium text-slate-700">
+                        {person.certificates.slice(0, 3).join(" · ")}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+
+                {/* A real stored profile URL, or no button. The previous version
+                    linked every card to linkedin.com's home page. */}
+                {linkedin ? (
+                  <a
+                    href={linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#0b3fa8]/20 bg-[#0b3fa8]/5 px-3 py-2.5 text-sm font-semibold text-[#0b3fa8] transition hover:bg-[#0b3fa8] hover:text-white"
+                  >
+                    <LinkedinGlyph className="size-4" />
+                    {t("facultyLinkedIn")}
+                  </a>
+                ) : (
+                  <Link
+                    href={href}
+                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#0b3fa8]/20 bg-[#0b3fa8]/5 px-3 py-2.5 text-sm font-semibold text-[#0b3fa8] transition hover:bg-[#0b3fa8] hover:text-white"
+                  >
+                    {t("facultyViewProfile")}
+                    <ArrowRight className="size-4 rtl:rotate-180" />
+                  </Link>
+                )}
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

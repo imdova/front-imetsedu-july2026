@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { Star } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { getInitials } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { staticPageMeta } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -62,24 +61,36 @@ export default async function InstructorsPage({
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {instructors.map((ins, i) => (
+        {/*
+          Nothing on this card is derived from the row's position in the list.
+          It used to show `4.5 + (i % 5) * 0.1` as a star rating and `6 + i` as
+          years of experience — invented numbers about named people, assigned by
+          array index, which is the same defect as the site-wide 4.9 rating and
+          harder to spot. There are no instructor ratings stored anywhere, so
+          there is no rating here; experience shows only when it is on record.
+        */}
+        {instructors.map((ins) => (
           <Link
             key={ins.id}
             href={`/instructors/${ins.slug || ins.id}`}
             className="flex items-center gap-4 rounded-2xl border border-border/70 bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
           >
             <Avatar className="size-16 border">
+              {ins.avatarUrl && <AvatarImage src={ins.avatarUrl} alt={ins.label} className="object-cover" />}
               <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
                 {getInitials(ins.label)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
               <p className="font-medium">{ins.label}</p>
-              <p className="truncate text-sm text-muted-foreground">{ins.title}</p>
-              <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Star className="size-3.5 fill-warning text-warning" />
-                {(4.5 + (i % 5) * 0.1).toFixed(1)} · {t("yearsExperience", { count: 6 + i })}
-              </p>
+              {(ins.title || ins.specialty) && (
+                <p className="truncate text-sm text-muted-foreground">{ins.title || ins.specialty}</p>
+              )}
+              {typeof ins.yearsOfExperience === "number" && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("yearsExperience", { count: ins.yearsOfExperience })}
+                </p>
+              )}
             </div>
           </Link>
         ))}

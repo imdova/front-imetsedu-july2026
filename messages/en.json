@@ -865,9 +865,7 @@
     "instructorsSubtitle": "Practitioners from leading hospitals — real roles, real experience, real credentials.",
     "viewAllInstructors": "View all instructors",
     "facultyPosition": "Current Position",
-    "facultyHospital": "Hospital",
     "facultyExperience": "Years Experience",
-    "facultyCourses": "Programs",
     "facultyLinkedIn": "LinkedIn",
     "testimonialsTitle": "Student Success Stories",
     "testimonialsSubtitle": "Real voices from roles like yours — ICU, quality, infection control, and more.",
@@ -1304,7 +1302,7 @@
     "orgWhyBilingualText": "English and Arabic to fit your entire workforce.",
     "orgWhyTrust": "Trusted by leading hospitals across the region",
     "alumniTitle": "Success Stories From Healthcare Professionals",
-    "alumniSubtitle": "Real professionals, real roles, and real career growth after learning with IMETS.",
+    "alumniSubtitle": "Graduates from our cohorts — their profession, their country, and the program they completed.",
     "alumniProgram": "Program",
     "philLabel": "Our educational philosophy",
     "philTitle": "How We Teach",
@@ -1328,7 +1326,10 @@
     "footerResources": "Resources",
     "footerNews": "News",
     "homeMetaTitle": "Healthcare Courses & Diplomas Online | IMETS Medical School",
-    "homeMetaDescription": "Live online healthcare diplomas and certification prep for Egypt and the Gulf — CPHQ, CIC, infection control, quality and hospital management."
+    "homeMetaDescription": "Live online healthcare diplomas and certification prep for Egypt and the Gulf — CPHQ, CIC, infection control, quality and hospital management.",
+    "facultyCertificates": "Certificates",
+    "facultyViewProfile": "View profile",
+    "alumniViewAll": "See all graduation cohorts"
   },
   "Student": {
     "dashboardTitle": "My learning",
