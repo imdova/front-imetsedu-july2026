@@ -59,6 +59,20 @@ const MAX_SIMILARITY = 0.35;
 const SHINGLE = 3;
 /** A money page that routes nowhere is a dead end for readers and crawlers. */
 const MIN_ARTICLE_LINKS = 3;
+/**
+ * Google truncates a description around 155-160 characters on desktop. Past
+ * that the sentence doing the persuading is the one that gets cut, so the limit
+ * is checked rather than eyeballed — an audit found four pages over it, all
+ * written by someone counting the raw string and forgetting `{price}` expands.
+ */
+const MAX_DESCRIPTION = 155;
+/**
+ * Widest plausible substitution per currency, so the check measures what a
+ * reader would see rather than a worst case that flags healthy pages. Prices
+ * are editable in the admin, so this budgets for the widest value each currency
+ * could reasonably reach rather than the one stored today.
+ */
+const WIDEST_PRICE = { EGP: "EGP 16,500", SAR: "SAR 3,200", USD: "$1,500" };
 
 const LOCALES = ["en", "ar"];
 
@@ -181,6 +195,17 @@ for (const page of pages) {
       }
     }
 
+    const shownDescription = content.metaDescription.replaceAll(
+      "{price}",
+      WIDEST_PRICE[page.currency] ?? WIDEST_PRICE.EGP,
+    );
+    if (shownDescription.length > MAX_DESCRIPTION) {
+      errors.push(
+        `${idOf(page)} [${locale}]: description renders at ${shownDescription.length} chars, ` +
+          `limit ${MAX_DESCRIPTION}. Remember "{price}" expands.`,
+      );
+    }
+
     const hrefs = links(content);
     const articleLinks = new Set(hrefs.filter((h) => h.startsWith("/blog/")));
     const coursePath = `/courses/${page.courseSlug}`;
@@ -284,6 +309,12 @@ for (const page of comparePages) {
       );
     } else {
       console.log(`  ok  compare/${page.slug} [${locale}] — ${count} words`);
+    }
+
+    if (content.metaDescription.length > MAX_DESCRIPTION) {
+      errors.push(
+        `compare/${page.slug} [${locale}]: description is ${content.metaDescription.length} chars, limit ${MAX_DESCRIPTION}.`,
+      );
     }
 
     if (content.options.length < 2) {
