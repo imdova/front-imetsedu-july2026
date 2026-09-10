@@ -192,7 +192,33 @@ export async function collectSitemapRows(): Promise<{
     pages.push({ path: "/instructors" });
     for (const i of instRes.data) pages.push({ path: `/instructors/${i.slug || i.id}` });
   }
-  if (blogCatsRes?.ok) for (const c of blogCatsRes.data) if (c.slug) pages.push({ path: `/blog/category/${c.slug}` });
+  /*
+   * Blog categories, minus the empty ones.
+   *
+   * `healthcare` has been live in both locales with zero articles — a heading, a
+   * colour wash and nothing to read, submitted twice. The category page
+   * de-indexes itself when empty (see its `generateMetadata`), and submitting a
+   * URL that carries `noindex` asks the crawler to spend budget confirming it
+   * should ignore the page. Posts carry their category by name, which is what
+   * the landing page matches on too.
+   */
+  if (blogCatsRes?.ok) {
+    const postsPerCategory = new Map<string, number>();
+    if (blogRes?.ok) {
+      for (const post of blogRes.data.data) {
+        const name = (post.category ?? "").trim();
+        if (name) postsPerCategory.set(name, (postsPerCategory.get(name) ?? 0) + 1);
+      }
+    }
+    for (const c of blogCatsRes.data) {
+      if (!c.slug) continue;
+      // A failed article fetch must not empty the sitemap: with no counts at
+      // all, fall back to submitting every category as before.
+      const known = postsPerCategory.size > 0;
+      if (known && (postsPerCategory.get((c.name ?? "").trim()) ?? 0) === 0) continue;
+      pages.push({ path: `/blog/category/${c.slug}` });
+    }
+  }
 
   /*
    * Free-lecture detail pages are deliberately absent. They are noindexed (lead

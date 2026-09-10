@@ -37,12 +37,27 @@ export async function generateMetadata({
     });
   }
   const c = res.data.category;
-  return staticPageMeta({
+  const meta = await staticPageMeta({
     title: c.seoTitle || `${c.name} articles`,
     description: c.seoDescription || c.description || `Articles in ${c.name}.`,
     path: `/blog/category/${slug}`,
     locale,
   });
+
+  /*
+   * A category with no articles de-indexes itself.
+   *
+   * `/blog/category/healthcare` has been live and empty in both locales — two
+   * URLs offering a heading, a colour wash and nothing to read. Thin pages are
+   * judged against the whole site rather than in isolation, so an empty archive
+   * costs more than the zero it returns. It starts indexing again by itself the
+   * moment an article is filed under it, which is the same rule /instructors
+   * follows for an empty faculty roster. `follow` stays on so the crawler still
+   * walks through to the blog.
+   */
+  return res.data.data.length === 0
+    ? { ...meta, robots: { index: false, follow: true } }
+    : meta;
 }
 
 export default async function BlogCategoryPage({
