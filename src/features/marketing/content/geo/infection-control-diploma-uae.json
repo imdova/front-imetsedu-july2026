@@ -1,0 +1,95 @@
+{
+  "country": "uae",
+  "countryCode": "AE",
+  "currency": "USD",
+  "courseSlug": "infection-control-diploma",
+  "en": {
+    "countryName": "the UAE",
+    "title": "Infection Control Course UAE | IPC Diploma for DHA & DOH Staff",
+    "metaDescription": "Infection prevention training for practitioners in Dubai, Abu Dhabi and the Northern Emirates. Eight modules, online and recorded, {price}.",
+    "h1": "Infection Control Diploma for the UAE",
+    "intro": "Healthcare in the Emirates is regulated emirate by emirate, delivered largely by private hospital groups, and audited against international accreditation more often than anywhere else in the region. For an infection prevention practitioner that combination is unusual: your licence comes from one authority, your standards come from another, and the person who actually reads your surveillance report is a group quality director. This diploma covers the practice that all three are looking at — eight modules, {price}.",
+    "sections": [
+      {
+        "heading": "Three licensing authorities, one set of clinical expectations",
+        "paragraphs": [
+          "A practitioner in the UAE is licensed by the authority for the emirate they work in, not by a single federal body. Move from Dubai to Abu Dhabi and the licence changes hands even though the clinical work does not. That trips up newcomers constantly, and it matters here because people conflate the licensing process with professional training and assume one substitutes for the other.",
+          "It does not. The licence establishes that you may practise your profession. It says nothing about whether you can design a surveillance programme, investigate a cluster of surgical site infections, or defend a reprocessing decision to an accreditation surveyor. Those are learned separately — which is the gap this diploma addresses."
+        ],
+        "table": {
+          "head": ["Where you work", "Who licenses you"],
+          "rows": [
+            ["Dubai", "Dubai Health Authority (DHA)"],
+            ["Abu Dhabi and Al Ain", "Department of Health – Abu Dhabi (DOH)"],
+            ["Sharjah, Ajman, RAK, Fujairah, Umm Al Quwain", "Ministry of Health and Prevention (MOHAP)"]
+          ]
+        }
+      },
+      {
+        "heading": "The licence exam and this diploma are not competing",
+        "paragraphs": [
+          "The most common question from candidates in the Emirates is whether to spend the year on licensing preparation or on a professional qualification. Framed that way the question has no good answer, because the two do different jobs and are needed at different moments. [Licensing exams versus quality certifications](/blog/dha-prometric-vs-quality-certifications) works through that comparison properly.",
+          "The short version: you cannot work without the licence, and you rarely advance on it. Practitioners who move into IPC roles in the Emirates almost always add something that demonstrates specialised capability — because the private groups that dominate hiring here are recruiting for a named function with a job description, and 'licensed nurse' does not distinguish one applicant from forty others."
+        ]
+      },
+      {
+        "heading": "Why accreditation pressure is higher in the Emirates than the fee suggests",
+        "paragraphs": [
+          "A large share of UAE hospitals hold international accreditation, and the private groups treat it as a market signal rather than a regulatory chore — it is on their websites, in their insurer negotiations, and in their medical-tourism positioning. Abu Dhabi's regulator additionally runs a quality-indicator programme that facilities report into, which means measured infection outcomes travel outside the hospital's own walls.",
+          "The practical effect on an IPC practitioner is that your numbers are read by people you will never meet. Surveillance stops being an internal exercise and becomes a reported one, which raises the bar on definitions, denominators and consistency far above what an internally-facing programme needs. [How JCI-style accreditation differs from regional schemes](/blog/cbahi-vs-jci) is a useful orientation if you are arriving from a market where accreditation was optional.",
+          "That is the part of the syllabus UAE participants tend to lean on hardest: surveillance design, data management and analysis, outbreak detection, and the epidemiologic investigation techniques that turn a suspicious cluster into a defensible conclusion."
+        ],
+        "bullets": [
+          "Surveillance programme design, case definitions and rate calculation",
+          "Outbreak detection and structured epidemiologic investigation",
+          "Device reprocessing by intended use, verified through direct observation",
+          "Occupational health, exposure follow-up and work-restriction decisions",
+          "Environment of care — waste, construction risk, environmental cleaning audit",
+          "Programme leadership: committee structure, annual planning, reporting upward"
+        ]
+      },
+      {
+        "heading": "Fees, format and studying around Emirates rotas",
+        "paragraphs": [
+          "The fee for participants in the Emirates is {price}, quoted in US dollars, which is the currency most international candidates here are comparing in. Eighteen sessions run online across roughly six months and every session is recorded — necessary given how many participants are working twelve-hour rotations in group hospitals.",
+          "The cohort is deliberately mixed: nurses, physicians, pharmacists, medical technologists and hospital administrators sit in the same programme, which reflects how IPC committees are actually staffed in the Emirates. Session details and the certificate description are on the [course page](/courses/infection-control-diploma)."
+        ]
+      },
+      {
+        "heading": "Arriving in the UAE, or moving within it",
+        "paragraphs": [
+          "A significant number of participants take this diploma while still outside the Emirates, planning a move. That is a reasonable use of it — the training is portable, and it arrives on your CV before you start competing with locally-experienced candidates. It does not, however, do anything about your licence, your data-flow verification, or your employer's sponsorship, and it should not be sold to you as if it did.",
+          "For practitioners already in the Emirates, the more common motivation is lateral: moving out of a clinical unit into infection prevention, or from IPC into the broader quality function. [The infection control nurse career path](/blog/infection-control-nurse-career) covers the first move; [choosing between healthcare certifications across the GCC](/blog/best-healthcare-certifications-gcc-egypt) is the better starting point if you are still deciding which direction to specialise in at all."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "Does this diploma give me a DHA or DOH licence?",
+        "a": "No, and no course can. Licensing is decided by the authority for your emirate through its own application and assessment process. This is professional training that sits alongside a licence you obtain separately — it is what distinguishes you once licensed, not a route to becoming licensed."
+      },
+      {
+        "q": "What is the fee for participants based in the Emirates?",
+        "a": "{price} in US dollars, covering all eight modules and the completion certificate. Pricing in dollars rather than dirhams reflects how most candidates here compare international programmes; the amount does not change with your emirate."
+      },
+      {
+        "q": "Is infection control a realistic career move in the UAE private sector?",
+        "a": "It is one of the more portable specialisations here, because accreditation-driven demand exists across every group and every emirate. The function is small in each hospital, so openings are less frequent than general nursing posts — which is exactly why a documented qualification changes your odds when one appears."
+      },
+      {
+        "q": "Can I start the diploma before relocating to the UAE?",
+        "a": "Yes. The programme is delivered online and a large share of participants study from outside the country. Be clear-eyed that it addresses capability only — licensing, credential verification and employment sponsorship are separate processes you will still have to work through."
+      },
+      {
+        "q": "How does an internationally accredited hospital use infection surveillance data?",
+        "a": "It leaves the building. Accredited facilities and, in Abu Dhabi, facilities reporting into the emirate's quality-indicator programme submit measured outcomes externally, so definitions and denominators have to hold up to scrutiny from outside your department. The surveillance modules are built around producing data of that standard."
+      },
+      {
+        "q": "Are the eighteen sessions scheduled in Gulf Standard Time?",
+        "a": "Live sessions are scheduled with regional participants in mind, and every one is recorded and released afterwards. Anyone on a rotating twelve-hour roster should plan on the recordings as their primary route through the material rather than the exception."
+      }
+    ],
+    "ctaHeading": "Specialise into a role the Emirates is actually recruiting for",
+    "ctaBody": "Every accredited hospital in the country needs infection prevention run properly, and each of them needs only a handful of people who can do it. Fee for the Emirates is {price}. Send your details for the next intake date and the session schedule."
+  }
+}

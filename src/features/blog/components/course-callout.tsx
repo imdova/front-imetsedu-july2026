@@ -72,9 +72,11 @@ export function CourseCallout({
       {markets.length > 0 && (
         <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-primary/15 pt-3 text-sm text-muted-foreground">
           <span>{ar ? "بتقدّم من:" : "Applying from:"}</span>
+          {/* Keyed by path, not country: two programmes can both have an Egypt
+              page, and both can cite the same article. */}
           {markets.map((m) => (
             <Link
-              key={m.country}
+              key={geoCoursePath(m)}
               href={geoCoursePath(m)}
               className="font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
             >

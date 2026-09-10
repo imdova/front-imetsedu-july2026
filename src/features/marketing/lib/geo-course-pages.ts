@@ -1,6 +1,12 @@
 import egypt from "../content/geo/egypt.json";
 import saudiArabia from "../content/geo/saudi-arabia.json";
 import uae from "../content/geo/uae.json";
+import ipcEgypt from "../content/geo/infection-control-diploma-egypt.json";
+import ipcSaudiArabia from "../content/geo/infection-control-diploma-saudi-arabia.json";
+import ipcUae from "../content/geo/infection-control-diploma-uae.json";
+import hmEgypt from "../content/geo/hospital-management-diploma-egypt.json";
+import hmSaudiArabia from "../content/geo/hospital-management-diploma-saudi-arabia.json";
+import hmUae from "../content/geo/hospital-management-diploma-uae.json";
 
 /**
  * Country landing pages for a course (`/cphq-course/egypt`).
@@ -73,15 +79,28 @@ export interface GeoCoursePage {
 }
 
 /*
- * Wave 1 of the money-page programme: Egypt (live since SEO-08), plus Saudi
- * Arabia and the UAE. Later waves — other Gulf markets, other courses, the
- * Arabic mirrors — are deliberately not registered until their content is
- * written to the same bar, because an unregistered market has no URL at all.
+ * Waves 1 and 2 of the money-page programme: CPHQ in Egypt (live since SEO-08),
+ * Saudi Arabia and the UAE, then the same three markets for the infection
+ * control and hospital management diplomas.
+ *
+ * Wave 3 (Kuwait, Qatar, Oman, Jordan) is deliberately absent. Those markets
+ * cannot satisfy the blueprint's own requirement to quote a local price: the
+ * course records hold EGP, SAR and USD only, so a Kuwait page could quote
+ * nothing more local than dollars — which is what the UAE page already does,
+ * leaving the page with no market-specific substance a reader could not get
+ * from the UAE one. An unregistered market has no URL at all, which is the
+ * intended outcome until that changes.
  */
 const PAGES: GeoCoursePage[] = [
   egypt as GeoCoursePage,
   saudiArabia as GeoCoursePage,
   uae as GeoCoursePage,
+  ipcEgypt as GeoCoursePage,
+  ipcSaudiArabia as GeoCoursePage,
+  ipcUae as GeoCoursePage,
+  hmEgypt as GeoCoursePage,
+  hmSaudiArabia as GeoCoursePage,
+  hmUae as GeoCoursePage,
 ];
 
 /** Every country page that exists. */
@@ -89,9 +108,22 @@ export function listGeoCoursePages(): GeoCoursePage[] {
   return PAGES;
 }
 
-/** One country page, or undefined — the route 404s on undefined. */
-export function getGeoCoursePage(country: string): GeoCoursePage | undefined {
-  return PAGES.find((p) => p.country === country.toLowerCase());
+/**
+ * One market page, or undefined — the route 404s on undefined.
+ *
+ * Keyed by segment *and* country, not country alone: once a second programme
+ * has market pages, `/cphq-course/egypt` and `/infection-control-diploma/egypt`
+ * both have country "egypt", and a country-only lookup would serve whichever
+ * happened to be registered first — CPHQ content under an infection-control URL.
+ */
+export function getGeoCoursePage(
+  segment: string,
+  country: string,
+): GeoCoursePage | undefined {
+  const wanted = country.toLowerCase();
+  return PAGES.find(
+    (p) => p.country === wanted && PROGRAM_SEGMENT[p.courseSlug] === segment,
+  );
 }
 
 /** The country pages for one course, used to link them from the course page. */
@@ -100,14 +132,37 @@ export function geoCoursePagesFor(courseSlug: string): GeoCoursePage[] {
 }
 
 /**
- * Locale-independent path for a country page.
+ * URL segment each programme's market pages live under.
  *
- * The `/cphq-course` segment is the route directory name, so it is fixed here
- * rather than derived from `courseSlug`. A second course wanting geo pages
- * needs its own route folder — and a matching branch in this function.
+ * CPHQ uses `cphq-course` rather than its course slug because that is the URL
+ * that shipped and is already indexed; changing it would throw away whatever
+ * the Egypt page has earned. Every other programme uses its own slug, which is
+ * what the blueprint specifies.
+ *
+ * A programme absent from this map has no market pages, and `geoCoursePath`
+ * says so loudly rather than inventing a URL that no route serves.
  */
+export const PROGRAM_SEGMENT: Record<string, string> = {
+  "cphq-preparation": "cphq-course",
+  "infection-control-diploma": "infection-control-diploma",
+  "hospital-management-diploma": "hospital-management-diploma",
+};
+
+/** Locale-independent path for a market page. */
 export function geoCoursePath(page: GeoCoursePage): string {
-  return `/cphq-course/${page.country}`;
+  const segment = PROGRAM_SEGMENT[page.courseSlug];
+  if (!segment) {
+    throw new Error(
+      `No URL segment registered for "${page.courseSlug}". Add it to PROGRAM_SEGMENT ` +
+        `and create the matching route folder, or the page will 404.`,
+    );
+  }
+  return `/${segment}/${page.country}`;
+}
+
+/** Market pages grouped by the route segment that serves them. */
+export function geoPagesBySegment(segment: string): GeoCoursePage[] {
+  return PAGES.filter((p) => PROGRAM_SEGMENT[p.courseSlug] === segment);
 }
 
 /** The locale a page is actually written in, for canonical + hreflang. */

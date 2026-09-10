@@ -1,0 +1,98 @@
+{
+  "country": "egypt",
+  "countryCode": "EG",
+  "currency": "EGP",
+  "courseSlug": "infection-control-diploma",
+  "en": {
+    "countryName": "Egypt",
+    "title": "Infection Control Diploma Egypt | GAHAR-Ready IPC Training",
+    "metaDescription": "Infection control diploma for Egyptian hospitals: 8 modules, 18 sessions, {price}. Built around the evidence GAHAR surveyors ask an IPC team to produce.",
+    "h1": "Infection Control Diploma in Egypt",
+    "intro": "Egypt is in the middle of the largest reorganisation of its health system in fifty years, and infection prevention sits near the centre of it. Facilities entering the universal health insurance system have to be accredited by GAHAR, and GAHAR does not accept a policy binder as proof that infection control works — it asks for surveillance data, competency records and evidence that someone owns the programme. This diploma is written for the person who is being handed that responsibility: 8 modules, 18 sessions, {price} for participants in Egypt.",
+    "sections": [
+      {
+        "heading": "Why Egyptian hospitals are suddenly recruiting for infection control",
+        "paragraphs": [
+          "For most of the last decade, infection control in an Egyptian hospital was a duty added to a nursing supervisor's existing job. Accreditation changed the economics of that arrangement. The General Authority for Healthcare Accreditation and Regulation was created under the universal health insurance law, and a facility that wants to contract with the new insurance system has to pass its standards — which means someone has to be accountable for infection prevention full-time, with a name on the programme and a paper trail behind it.",
+          "The result is a hiring pattern you can see in job postings from Cairo, Alexandria, Port Said and the governorates that entered the insurance system first: infection control nurse, IPC coordinator, IPC supervisor, all asking for a formal qualification that a fresh nursing degree does not supply. [How GAHAR accreditation actually works](/blog/gahar-accreditation-guide) covers the accreditation side of that story; this page is about the training side.",
+          "Private groups are moving for a second reason. Egyptian hospitals competing for insured patients, for medical tourism, and for international accreditation all need infection rates they are willing to publish. That is a measurement problem before it is a clinical one, and measurement is what an IPC programme does."
+        ]
+      },
+      {
+        "heading": "What a GAHAR surveyor asks an infection control team to produce",
+        "paragraphs": [
+          "Reading the standards is not the same as being ready for the survey. Surveyors ask for artefacts — the risk assessment that set your priorities, the surveillance definitions you used, the numerator and denominator behind the rate you reported, the isolation decision on a specific patient last month, the training record for the nurse in front of them. The diploma is structured around producing those artefacts rather than around describing them.",
+          "The table below maps the programme's modules to the kind of evidence an accreditation survey tends to request. It is not a claim that this course is a GAHAR product — it is not, and no training provider can grant accreditation readiness on your behalf. It is a map of where the overlap sits, so you can judge whether the course covers the gaps you actually have."
+        ],
+        "table": {
+          "head": ["Programme module", "What a survey usually wants to see"],
+          "rows": [
+            ["Surveillance and epidemiologic investigation", "Written surveillance plan, case definitions, rate calculations, trend review"],
+            ["Preventing transmission of infectious agents", "Standard and transmission-based precaution policies, and observed practice matching them"],
+            ["Cleaning, disinfection and sterilisation", "Spaulding-based reprocessing decisions, CSSD monitoring records, direct observation of critical steps"],
+            ["Employee and occupational health", "Immunisation and screening records, exposure follow-up, work-restriction decisions"],
+            ["Environment of care", "Waste segregation, construction risk assessment, environmental cleaning audits"],
+            ["Management and communication", "IPC committee minutes, an annual plan, and reporting lines to hospital leadership"]
+          ]
+        }
+      },
+      {
+        "heading": "The curriculum, in the order you will use it",
+        "paragraphs": [
+          "Eight modules run across roughly eighteen weeks. The first two build the clinical foundation — the chain of infection, healthcare-associated infections, standard and transmission-based precautions — because every later decision refers back to them. [Core IPC practices](/blog/core-ipc-practices) gives a preview of that ground.",
+          "The middle of the programme is where most participants say the value sits: reprocessing decisions by Spaulding classification, then surveillance design, data management, outbreak detection and epidemiologic investigation. Occupational health and environment of care follow, and the diploma closes on education, communication and running the programme as a programme — committee structure, annual planning, and getting other departments to act on your findings. [Building an infection control programme](/blog/infection-control-program) sets out that final piece in more detail."
+        ],
+        "bullets": [
+          "Identification of infectious disease processes — HAIs, the chain of infection, monitoring and reporting",
+          "Preventing and controlling transmission — precautions, environmental controls, HAI prevention",
+          "Cleaning, disinfection and sterilisation of devices, including direct observation of critical steps",
+          "Surveillance and epidemiologic investigation — programme design, data analysis, outbreak response",
+          "Employee and occupational health — screening, immunisation, exposure follow-up, work restrictions",
+          "Environment of care, education and research, and management and communication"
+        ]
+      },
+      {
+        "heading": "Fees, scheduling and studying from an Egyptian rota",
+        "paragraphs": [
+          "The fee for participants in Egypt is {price}, quoted in Egyptian pounds rather than converted from a dollar price at the day's rate. Ask the admissions team about instalment options before you enrol — they are arranged case by case rather than published as a fixed plan.",
+          "Sessions are delivered online and recorded, which is the only workable arrangement for someone rotating through nights. Most participants finish inside six months while working; a smaller group moves faster because their hospital has an accreditation date in the calendar and wants the programme documented before it. The [full course page](/courses/infection-control-diploma) carries the current schedule and the certificate details."
+        ]
+      },
+      {
+        "heading": "What this diploma is, and what it is not",
+        "paragraphs": [
+          "It is a training diploma, not a licence and not a government registration. It does not appear on any Egyptian regulator's mandatory list, and nobody selling you infection control training in Egypt can honestly claim otherwise. What it does is give you a documented, structured competency in the specific work an IPC role consists of — which is what an employer is checking when the job description says 'formal infection control qualification'.",
+          "It is also not the CIC exam. CIC is a US board certification with its own eligibility rules and its own examination, and people often mistake the two because the subject matter overlaps. If your target is the credential rather than the capability, read [CIC eligibility requirements](/blog/cic-eligibility-requirements) first — several Egyptian applicants discover they need more documented IPC practice hours before they can sit it, and this diploma is a reasonable way to spend that period. [The infection control nurse career path](/blog/infection-control-nurse-career) covers how the two usually sequence."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "Does GAHAR require an infection control qualification for Egyptian hospital staff?",
+        "a": "GAHAR's standards require the facility to have a functioning infection prevention and control programme with defined responsibility and competent staff — they set the outcome rather than naming a specific course. In practice, Egyptian hospitals meet that by appointing someone with formal IPC training and keeping their competency record on file, which is the role this diploma is built for."
+      },
+      {
+        "q": "How much is the Infection Control Diploma for participants in Egypt?",
+        "a": "{price}, priced in Egyptian pounds. That is the participant fee for the full 8-module programme, not a per-module or per-session rate. Instalment arrangements exist but are agreed individually — ask before enrolling rather than assuming."
+      },
+      {
+        "q": "Can I complete this while working full shifts in an Egyptian hospital?",
+        "a": "Yes — that is the assumption the schedule is built on. Sessions are online and recorded, so a night rota or an on-call week does not cost you the material. Most Egyptian participants finish within the six-month window while working full time."
+      },
+      {
+        "q": "Should an Egyptian nurse take this diploma or go straight for the CIC exam?",
+        "a": "They answer different questions. CIC is a board certification with documented-experience eligibility rules; this diploma is structured training in the work itself. If you cannot yet evidence enough IPC practice to sit CIC, doing the diploma while you accumulate it is the sequence most people end up following."
+      },
+      {
+        "q": "Do I need a nursing degree to enrol from Egypt?",
+        "a": "No. The programme admits doctors, pharmacists, nursing specialists, public health professionals, medical technologists and hospital administrators alongside nurses. IPC in an Egyptian hospital is a multidisciplinary function, and the cohort reflects that."
+      },
+      {
+        "q": "Will an Egyptian employer recognise the certificate?",
+        "a": "The certificate evidences completed structured training in infection prevention and control — that is what a hiring manager or an accreditation file needs from it. No training provider, in Egypt or anywhere else, can promise a specific employer's recognition, and you should treat anyone who does with suspicion."
+      }
+    ],
+    "ctaHeading": "Take the IPC role before the accreditation date does",
+    "ctaBody": "Hospitals tend to look for an infection control lead in the months before a survey, which is the worst moment to start learning surveillance. Fee in Egypt is {price}. Send your details and the admissions team will confirm the next intake date and what the certificate covers."
+  }
+}

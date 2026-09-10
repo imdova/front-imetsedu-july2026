@@ -111,6 +111,17 @@ if (files.length === 0) {
 }
 
 const pages = files.map((f) => JSON.parse(readFileSync(join(CONTENT_DIR, f), "utf8")));
+
+/**
+ * A page's identity is its programme *and* its market.
+ *
+ * Once a second programme has market pages, "egypt" names two different pages.
+ * Keying any of the checks below on the country alone would let the CPHQ Egypt
+ * page and the infection-control Egypt page share FAQ questions with each other
+ * — which is precisely the templating the FAQ check exists to catch — and would
+ * print error labels that name neither page unambiguously.
+ */
+const idOf = (p) => `${p.courseSlug}/${p.country}`;
 const errors = [];
 
 /* 1 + 4 + 5 — per page. */
@@ -119,18 +130,18 @@ for (const page of pages) {
     const content = page[locale];
     // Arabic is optional: a market without it is served in English at both URLs.
     if (!content) {
-      if (locale === "en") errors.push(`${page.country}: missing "en" content`);
+      if (locale === "en") errors.push(`${idOf(page)}: missing "en" content`);
       continue;
     }
 
     const count = words(prose(content)).length;
     if (count < MIN_WORDS) {
       errors.push(
-        `${page.country} [${locale}]: ${count} words, needs ${MIN_WORDS}. ` +
+        `${idOf(page)} [${locale}]: ${count} words, needs ${MIN_WORDS}. ` +
           `Write real local content or drop the market — a thin page hurts every other page on the site.`,
       );
     } else {
-      console.log(`  ok  ${page.country} [${locale}] — ${count} words`);
+      console.log(`  ok  ${idOf(page)} [${locale}] — ${count} words`);
     }
 
     const hrefs = links(content);
@@ -138,11 +149,11 @@ for (const page of pages) {
     const coursePath = `/courses/${page.courseSlug}`;
     if (articleLinks.size < MIN_ARTICLE_LINKS) {
       errors.push(
-        `${page.country} [${locale}]: links to ${articleLinks.size} article(s), needs ${MIN_ARTICLE_LINKS}.`,
+        `${idOf(page)} [${locale}]: links to ${articleLinks.size} article(s), needs ${MIN_ARTICLE_LINKS}.`,
       );
     }
     if (!hrefs.includes(coursePath)) {
-      errors.push(`${page.country} [${locale}]: never links to ${coursePath}.`);
+      errors.push(`${idOf(page)} [${locale}]: never links to ${coursePath}.`);
     }
   }
 }
@@ -155,7 +166,7 @@ for (let i = 0; i < pages.length; i++) {
       const b = pages[j][locale];
       if (!a || !b) continue;
       const score = jaccard(shingles(prose(a)), shingles(prose(b)));
-      const label = `${pages[i].country} vs ${pages[j].country} [${locale}]`;
+      const label = `${idOf(pages[i])} vs ${idOf(pages[j])} [${locale}]`;
       if (score > MAX_SIMILARITY) {
         errors.push(
           `${label}: ${(score * 100).toFixed(1)}% similar, limit ${(MAX_SIMILARITY * 100).toFixed(0)}%. ` +
@@ -175,10 +186,10 @@ for (const page of pages) {
     for (const faq of page[locale]?.faqs ?? []) {
       const key = faq.q.trim().toLowerCase();
       const prev = seenQuestions.get(key);
-      if (prev && prev !== page.country) {
-        errors.push(`FAQ reused between ${prev} and ${page.country}: "${faq.q}"`);
+      if (prev && prev !== idOf(page)) {
+        errors.push(`FAQ reused between ${prev} and ${idOf(page)}: "${faq.q}"`);
       }
-      seenQuestions.set(key, page.country);
+      seenQuestions.set(key, idOf(page));
     }
   }
 }

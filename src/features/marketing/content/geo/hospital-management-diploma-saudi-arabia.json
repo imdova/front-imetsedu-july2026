@@ -1,0 +1,96 @@
+{
+  "country": "saudi-arabia",
+  "countryCode": "SA",
+  "currency": "SAR",
+  "courseSlug": "hospital-management-diploma",
+  "en": {
+    "countryName": "Saudi Arabia",
+    "title": "Hospital Management Diploma Saudi Arabia | Live Online",
+    "metaDescription": "Management training for healthcare professionals in the Kingdom — operations, finance, supply chain, HR, strategy and quality. Live online sessions, {price}.",
+    "h1": "Hospital Management Diploma in Saudi Arabia",
+    "intro": "Saudi Arabia is rebuilding how its hospitals are owned, funded and held to account. Under the health sector transformation programme, ministry facilities are being organised into clusters, purchasing is separating from provision, and a generation of clinical leaders is being asked to manage entities that behave far more like companies than like departments. That is a management problem, and this diploma is aimed squarely at it — six courses, twenty-four live sessions, {price}.",
+    "sections": [
+      {
+        "heading": "Clusters changed who a hospital manager answers to",
+        "paragraphs": [
+          "Under the old arrangement a ministry hospital's performance conversation was largely vertical and largely about inputs: staffing, supplies, the budget it was allocated. Organising facilities into integrated health clusters inverts that. A cluster is accountable for a population, its facilities are expected to work as one system, and the questions arriving at a department head shift from 'did you spend your allocation' to 'what did the population get for it'.",
+          "Middle management is where that lands hardest. Referral pathways between cluster facilities, capacity shared rather than hoarded, performance reported against measures set outside your hospital — none of it works if the people running departments are managing the way they always did. [Strategic management in healthcare](/blog/strategic-management-healthcare) covers the analytical side of that shift.",
+          "The private sector is not exempt. Groups expanding across the Kingdom face the same requirement for managers who can run a facility to a plan, and they are competing for the same small pool of people who can."
+        ]
+      },
+      {
+        "heading": "What corporatisation actually asks of you",
+        "paragraphs": [
+          "The word does a lot of work in Saudi healthcare conversations without being unpacked. Concretely, it means a facility is expected to know its costs, justify its spending against outcomes, manage its workforce as a managed resource rather than a headcount, and hold its own against external quality scrutiny. Each of those is a learnable discipline, and each is a course in this programme."
+        ],
+        "table": {
+          "head": ["What used to be true", "What is expected now"],
+          "rows": [
+            ["Budget allocated centrally and defended annually", "Costs understood per service, with a case made for the spending"],
+            ["Supplies ordered when they run low", "Inventory, procurement and vendor performance actively managed"],
+            ["Staffing measured as headcount", "Recruitment, retention, engagement and performance managed deliberately"],
+            ["Quality reviewed before an accreditation survey", "Performance measured continuously and reported outward"],
+            ["Strategy written at ministry or group level", "Departments expected to translate it into their own operating plan"]
+          ]
+        }
+      },
+      {
+        "heading": "The financial course is the one Saudi participants underestimate",
+        "paragraphs": [
+          "Ask a cohort at the start which block they expect to matter most and they say strategy. Ask at the end and it is finance. The reason is structural: as purchasing separates from provision, revenue cycle management stops being a back-office function and starts determining whether a service line survives. A department head who cannot read what their service costs and what it earns is managing blind in a system that has started keeping score.",
+          "The course covers budgeting and financial planning, revenue cycle management, cost control and financial reporting — at the level a hospital manager needs to use, argue with and act on, not at the level of an accountant preparing the statements. It is paired with the supply chain course for a reason: procurement and inventory are where the controllable cost usually is.",
+          "The quality and patient safety course sits alongside both. In the Kingdom, accreditation is not a badge you pursue when convenient, and the leadership and governance expectations run through it — [how CBAHI accreditation works](/blog/cbahi-accreditation-guide) is worth reading if that side is new to you."
+        ],
+        "bullets": [
+          "Budgeting, revenue cycle, cost control and reporting for non-financial managers",
+          "Procurement, inventory and vendor management as the main controllable cost",
+          "Workforce practice — recruitment, retention, engagement, performance ([healthcare HR](/blog/healthcare-hr-management-guide))",
+          "Strategic analysis, formulation, implementation and performance control",
+          "Quality, clinical risk, measurement and improvement"
+        ]
+      },
+      {
+        "heading": "Fees, scheduling and studying from the Kingdom",
+        "paragraphs": [
+          "The fee for participants in Saudi Arabia is {price}, quoted in riyals. Twenty-four sessions run live with recordings released afterwards, across roughly six months, which is what makes it survivable alongside a full clinical or administrative post.",
+          "On the return side, be sceptical of anyone quoting you a precise salary uplift for a diploma — it depends on your sector, your employer and your existing seniority far more than on the certificate. [Healthcare quality and management salaries](/blog/healthcare-quality-management-salaries) gives ranges rather than promises, which is the honest form of that answer. Programme details are on the [course page](/courses/hospital-management-diploma)."
+        ]
+      },
+      {
+        "heading": "Diploma, degree, or your employer's leadership track",
+        "paragraphs": [
+          "Large Saudi employers increasingly run internal leadership development, and if yours does and it is well-resourced, use it — it comes with sponsorship and internal visibility that no external course can replicate. The gap those programmes usually leave is technical depth: they teach leadership behaviour and organisational culture, and stop short of revenue cycle mechanics or procurement strategy.",
+          "A masters is the other alternative and a genuinely different commitment — years rather than months, admission requirements, and a much larger fee. This diploma occupies the space between: structured, applied, finishable while working. [The hospital management guide](/blog/hospital-management-guide) sets out the wider landscape of that decision."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "What is the fee in Saudi riyals?",
+        "a": "{price}, priced in SAR for participants in the Kingdom. It covers all six courses across the twenty-four live sessions plus the completion certificate — not a per-module rate."
+      },
+      {
+        "q": "Is this useful for someone working in a ministry health cluster?",
+        "a": "That is one of the situations it is most directly aimed at. Cluster working shifts accountability from inputs to population outcomes, which is a management change rather than a clinical one, and the operations, finance and strategy content maps onto exactly that shift."
+      },
+      {
+        "q": "Does the certificate carry any recognition with Saudi regulators?",
+        "a": "It is a professional training certificate, not a regulatory qualification, and it confers no licensing or classification status. Registration and classification are decided by the Saudi Commission for Health Specialties under its own rules. Any provider implying otherwise is misleading you."
+      },
+      {
+        "q": "I am a pharmacist, not a physician — is this relevant?",
+        "a": "Yes. Pharmacists, nurses, technologists and administrators are all part of the intended audience, and pharmacy leadership in particular runs into supply chain, inventory and cost control constantly — three of the areas the programme covers in depth."
+      },
+      {
+        "q": "What is the time commitment alongside a full-time hospital post?",
+        "a": "Roughly six months of live sessions plus applied work between them. Recordings mean a missed session is recoverable, but participants who rely on recordings exclusively tend to get less out of the strategy and finance blocks, where the discussion is most of the value."
+      },
+      {
+        "q": "Can my employer sponsor the enrolment?",
+        "a": "Employer sponsorship is common and the admissions team can issue the documentation a training or HR department typically asks for. Arrange it before enrolling rather than afterwards — retrospective approval is a much harder conversation inside a large Saudi organisation."
+      }
+    ],
+    "ctaHeading": "Manage the facility the transformation is asking for",
+    "ctaBody": "Clusters, purchasing reform and external performance reporting have all landed at once, and the managers who can operate in that environment are being identified now. The fee for Saudi Arabia is {price}. Send your details for the next intake and the session times."
+  }
+}

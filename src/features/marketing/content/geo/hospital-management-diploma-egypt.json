@@ -1,0 +1,96 @@
+{
+  "country": "egypt",
+  "countryCode": "EG",
+  "currency": "EGP",
+  "courseSlug": "hospital-management-diploma",
+  "en": {
+    "countryName": "Egypt",
+    "title": "Hospital Management Diploma Egypt | 6 Courses, Live Sessions",
+    "metaDescription": "Hospital management diploma for Egypt: operations, finance, supply chain, HR, strategy and quality across 24 live sessions. Fee in Egyptian pounds: {price}.",
+    "h1": "Hospital Management Diploma in Egypt",
+    "intro": "The hardest part of running an Egyptian hospital today is not clinical. It is that the money now arrives differently, the standards are externally audited, and the person expected to reconcile those two things is usually a doctor or a senior nurse who was promoted for being good at something else entirely. This diploma is built for that promotion — six courses, twenty-four live sessions, {price} for participants in Egypt.",
+    "sections": [
+      {
+        "heading": "Universal health insurance changed what a manager is measured on",
+        "paragraphs": [
+          "When a hospital is paid per case by an insurance purchaser rather than funded by a budget line, length of stay stops being a clinical statistic and becomes a financial one. Bed turnover, theatre utilisation, revenue cycle, denied claims, cost per case — these move from the finance office to the department manager's desk, because they are now consequences of operational decisions made on the ward.",
+          "Egypt is working through that shift governorate by governorate as the universal health insurance system extends, and every facility inside it also has to hold accreditation. [How universal health insurance and GAHAR fit together](/blog/gahar-universal-health-insurance) explains the structure. The management consequence is the point here: a hospital manager in Egypt is now accountable for operational efficiency, documented quality, and a functioning revenue cycle at the same time.",
+          "Private groups face the same arithmetic from the other direction. They are expanding, competing for the same insured patients, and finding that the constraint on opening the next facility is not capital but people who can run one."
+        ]
+      },
+      {
+        "heading": "Where the clinician-to-manager move usually stalls",
+        "paragraphs": [
+          "The promotion is rarely the problem. A consultant becomes a department head, a nursing supervisor becomes an operations coordinator, and for six months clinical authority carries them. The stall comes later and it is always the same three things: they cannot build or defend a budget, they cannot manage the performance of people who used to be peers, and they cannot make a case to the board in the language the board uses.",
+          "None of that is taught in a medical or nursing degree, and almost none of it is picked up on the job — because on the job you are given the outcome and not the method. [Is a hospital management diploma worth it](/blog/hospital-management-diploma-worth-it) is an honest look at whether formal training closes that gap or whether experience alone eventually does.",
+          "The programme is sequenced against those failure points rather than against an academic syllabus: fundamentals first so the vocabulary is shared, then strategy, supply chain, HR, finance, and quality — with finance deliberately late, because a budget conversation only makes sense once you understand what generates the numbers in it."
+        ]
+      },
+      {
+        "heading": "What the six courses actually cover",
+        "paragraphs": [
+          "Twenty-four sessions, delivered live with recordings, across roughly six months. The table sets out what each block is for in operational terms rather than in course-catalogue terms."
+        ],
+        "table": {
+          "head": ["Course", "The problem it is meant to solve"],
+          "rows": [
+            ["Hospital Management Fundamentals", "OPD, ER, OR and inpatient flow; bed management and length of stay; governance and where your authority actually ends"],
+            ["Advanced & Strategic Management", "Turning a vague 'expand the service' instruction into an analysed, resourced, measurable plan"],
+            ["Healthcare Supply Chain", "Inventory, procurement and vendor management — where Egyptian hospitals leak the most avoidable cost"],
+            ["Healthcare HR Management", "Recruitment, retention, engagement and performance in a market where staff turnover is the binding constraint"],
+            ["Healthcare Financial Management", "Budgeting, revenue cycle, cost control and reporting that a board will accept"],
+            ["Quality & Patient Safety", "Clinical risk, performance measurement and improvement — the accreditation-facing half of the job"]
+          ]
+        },
+        "bullets": [
+          "Live instructor-led sessions, recorded and released for participants working clinical rotas",
+          "Open to physicians, pharmacists, nurses, department heads, administrators and clinic owners",
+          "Roughly six months end to end, designed around full-time employment",
+          "Career targets range from department supervisor through operations manager to healthcare director"
+        ]
+      },
+      {
+        "heading": "Fees and payment for participants in Egypt",
+        "paragraphs": [
+          "The fee for Egypt is {price}, quoted in Egyptian pounds. Instalment arrangements are available and are agreed with the admissions team rather than published as a fixed schedule — worth raising in your first conversation rather than after enrolling.",
+          "Compared against the alternatives an Egyptian professional is realistically weighing — an MBA, a hospital administration masters, or nothing — this sits deliberately in the middle: substantially more structured than self-study, substantially shorter and cheaper than a degree. Whether that is the right trade depends on what your employer rewards, which is worth checking before you spend either the money or the six months. The [full course page](/courses/hospital-management-diploma) lists the current schedule and certificate details."
+        ]
+      },
+      {
+        "heading": "Who should not take this",
+        "paragraphs": [
+          "If your goal is an academic credential for a university post, take a masters. If you need a specific regulatory qualification, this is not one — it is a professional training diploma and carries no licensing status in Egypt or anywhere else. And if you are three months from a promotion decision, six months of study will not arrive in time to influence it.",
+          "It fits best when you are already doing some of the work and doing parts of it by instinct, or when you can see the management track from where you stand and know you are missing the finance and HR half of it. For a broader view of where healthcare management roles are heading in Egypt, [the accreditation career path](/blog/healthcare-accreditation-career-egypt) and [the hospital management guide](/blog/hospital-management-guide) are both better read before you enrol than after."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "What does the Hospital Management Diploma cost in Egypt?",
+        "a": "{price}, priced in Egyptian pounds for participants based in Egypt. That covers all six courses across the twenty-four sessions and the completion certificate. Instalments are arranged individually with admissions."
+      },
+      {
+        "q": "Do I need management experience before enrolling?",
+        "a": "No. A large part of the cohort is made up of clinicians moving into their first management role, which is why the programme opens with fundamentals — governance, organisational structure, and how hospital operations fit together — before it gets to strategy or finance."
+      },
+      {
+        "q": "Is this equivalent to a healthcare MBA?",
+        "a": "No, and it is not sold as one. An MBA is an academic degree with admission requirements, a longer timeline and a much higher cost. This is a focused professional diploma covering the operational, financial and quality content a hospital manager uses. Different instruments for different situations."
+      },
+      {
+        "q": "Are the sessions live, or recorded lectures?",
+        "a": "Live and instructor-led, with recordings released afterwards. The live element matters for the strategy and finance blocks in particular, where most of the value comes out of working through real hospital situations with the instructor rather than watching a presentation."
+      },
+      {
+        "q": "Will this help a physician move into a hospital director role in Egypt?",
+        "a": "It covers the content that transition requires — finance, HR, supply chain, strategy and quality. Whether any particular organisation promotes you is a matter of its own succession decisions, and no training provider can honestly claim otherwise. What the diploma removes is the objection that you have no formal management preparation."
+      },
+      {
+        "q": "How much time per week should I plan for?",
+        "a": "Plan for the session plus reading and applied work around it. Participants who treat it as attendance-only get noticeably less from the finance and strategy courses, where the material only lands once you have tried it against your own department's numbers."
+      }
+    ],
+    "ctaHeading": "Move up before the next reorganisation decides for you",
+    "ctaBody": "Egyptian hospitals are restructuring around insurance contracting and accreditation, and those reorganisations promote the people who already speak the operational language. Fee in Egypt is {price}. Leave your details for the next intake date and the session schedule."
+  }
+}

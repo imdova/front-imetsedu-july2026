@@ -103,17 +103,25 @@ export async function collectSitemapRows(): Promise<{
   }
 
   /*
-   * Country landing pages (`/cphq-course/egypt`). They sit with the courses
+   * Market landing pages (`/cphq-course/egypt`). They sit with the courses
    * rather than the marketing pages because that is what they are — a course
-   * page for one market. Both locales are emitted by `urlsetXml`, so the
-   * Arabic version is submitted too. No `lastModified`: the content lives in a
-   * checked-in JSON file with no publish timestamp, and inventing one would put
-   * a meaningless date in front of a crawler. A page whose course is no longer
+   * page for one market. No `lastModified`: the content lives in a checked-in
+   * JSON file with no publish timestamp, and inventing one would put a
+   * meaningless date in front of a crawler. A page whose course is no longer
    * published is skipped, matching what the route itself does.
+   *
+   * Only the locales the market was actually written in are submitted. A page
+   * with no Arabic version serves English at /ar/... and canonicalises to the
+   * English URL, so listing the Arabic URL here would submit a URL the page
+   * itself declares non-canonical — the sitemap and the canonical tag telling a
+   * crawler two different things about the same address.
    */
   for (const geo of listGeoCoursePages()) {
     if (!publishedSlugs.has(geo.courseSlug)) continue;
-    courses.push({ path: geoCoursePath(geo) });
+    courses.push({
+      path: geoCoursePath(geo),
+      locales: geo.ar ? ["en", "ar"] : ["en"],
+    });
   }
 
   // The public list returns only PUBLISHED articles.

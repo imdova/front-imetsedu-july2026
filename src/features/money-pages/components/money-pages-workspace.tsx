@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   AlertTriangle,
   ArrowUpRight,
+  Ban,
   BookOpen,
   Check,
   CircleDashed,
@@ -206,6 +207,8 @@ export function MoneyPagesWorkspace({
                         <span className="flex items-center gap-2">
                           {isBuilt ? (
                             <Check className="size-4 shrink-0 text-emerald-600" />
+                          ) : p.blocked ? (
+                            <Ban className="size-4 shrink-0 text-amber-600" />
                           ) : (
                             <CircleDashed className="size-4 shrink-0 text-muted-foreground/60" />
                           )}
@@ -225,7 +228,16 @@ export function MoneyPagesWorkspace({
                         </span>
                       </td>
                       <td className="px-4 py-2.5">{p.owns}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{p.hook}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">
+                        {p.hook}
+                        {/* A blocker is shown on the row rather than in a note
+                            elsewhere: it is the reason this row is not moving. */}
+                        {!isBuilt && p.blocked && (
+                          <span className="mt-1 block text-xs text-amber-700 dark:text-amber-500">
+                            Blocked — {p.blocked}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-2.5">
                         <Badge variant="secondary">Wave {p.wave}</Badge>
                       </td>

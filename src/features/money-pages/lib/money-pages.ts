@@ -69,6 +69,15 @@ export interface PlannedPage {
   /** What has to be researched before the page can be written. */
   hook: string;
   wave: 1 | 2 | 3 | 4 | 5;
+  /**
+   * Why this page cannot be written today, if it cannot.
+   *
+   * A planned page that is merely un-started and one that is *blocked on a fact
+   * nobody has* look identical on a roadmap, and the second kind quietly gets
+   * re-attempted every planning cycle. Naming the blocker stops that: the entry
+   * stays on the roadmap, and the reason it is not moving is on the row.
+   */
+  blocked?: string;
 }
 
 /**
@@ -94,11 +103,11 @@ export const PLANNED_PAGES: PlannedPage[] = [
   { path: "/hospital-management-diploma/saudi-arabia", owns: "hospital management diploma saudi arabia", convertsTo: "hospital-management-diploma", hook: "Vision 2030 corporatisation · CBAHI leadership", wave: 2 },
   { path: "/hospital-management-diploma/uae", owns: "hospital management course uae", convertsTo: "hospital-management-diploma", hook: "DHA facility licensing · private hospital groups", wave: 2 },
 
-  { path: "/cphq-course/kuwait", owns: "cphq course kuwait", convertsTo: "cphq-preparation", hook: "MOH Kuwait licensing", wave: 3 },
-  { path: "/cphq-course/qatar", owns: "cphq course qatar", convertsTo: "cphq-preparation", hook: "MOPH · QCHP licensing", wave: 3 },
-  { path: "/cphq-course/oman", owns: "cphq course oman", convertsTo: "cphq-preparation", hook: "MOH Oman · verify accreditation body", wave: 3 },
-  { path: "/cphq-course/jordan", owns: "cphq course jordan", convertsTo: "cphq-preparation", hook: "HCAC accreditation", wave: 3 },
-  { path: "/infection-control-diploma/kuwait", owns: "infection control diploma kuwait", convertsTo: "infection-control-diploma", hook: "MOH Kuwait IPC", wave: 3 },
+  { path: "/cphq-course/kuwait", owns: "cphq course kuwait", convertsTo: "cphq-preparation", hook: "MOH Kuwait licensing", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars." },
+  { path: "/cphq-course/qatar", owns: "cphq course qatar", convertsTo: "cphq-preparation", hook: "MOPH · QCHP licensing", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars." },
+  { path: "/cphq-course/oman", owns: "cphq course oman", convertsTo: "cphq-preparation", hook: "MOH Oman · verify accreditation body", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars. The blueprint's own hook here is unverified." },
+  { path: "/cphq-course/jordan", owns: "cphq course jordan", convertsTo: "cphq-preparation", hook: "HCAC accreditation", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars." },
+  { path: "/infection-control-diploma/kuwait", owns: "infection control diploma kuwait", convertsTo: "infection-control-diploma", hook: "MOH Kuwait IPC", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars." },
 
   { path: "/ar/cphq-course/egypt", owns: "كورس CPHQ مصر", convertsTo: "cphq-preparation", hook: "Arabic mirror of wave 1", wave: 4 },
   { path: "/ar/cphq-course/saudi-arabia", owns: "كورس CPHQ السعودية", convertsTo: "cphq-preparation", hook: "Arabic mirror of wave 1", wave: 4 },

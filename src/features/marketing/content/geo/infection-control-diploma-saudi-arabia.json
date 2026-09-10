@@ -1,0 +1,96 @@
+{
+  "country": "saudi-arabia",
+  "countryCode": "SA",
+  "currency": "SAR",
+  "courseSlug": "infection-control-diploma",
+  "en": {
+    "countryName": "Saudi Arabia",
+    "title": "Infection Control Diploma Saudi Arabia | CBAHI-Aligned IPC",
+    "metaDescription": "IPC diploma for practitioners in Saudi Arabia — surveillance, reprocessing and outbreak response mapped to CBAHI's infection control expectations. {price}.",
+    "h1": "Infection Control Diploma in Saudi Arabia",
+    "intro": "In the Kingdom, infection prevention is not a soft standard. CBAHI treats it as survey-critical, national accreditation is not optional for a licensed facility, and a hospital that cannot evidence its IPC programme has a problem that no amount of clinical excellence elsewhere compensates for. This diploma trains the person responsible for that evidence — eight modules covering surveillance through outbreak response, {price} for participants in Saudi Arabia.",
+    "sections": [
+      {
+        "heading": "Infection control is where CBAHI surveys get uncomfortable",
+        "paragraphs": [
+          "The Saudi Central Board for Accreditation of Healthcare Institutions runs a national accreditation programme that healthcare facilities in the Kingdom are expected to hold, and its Essential Safety Requirements single out a set of items that a facility cannot simply score poorly on and move past. Several of them are infection prevention items — reprocessing of medical devices, isolation practice, hand hygiene compliance, and the surveillance that proves any of it is working.",
+          "That structure changes what a Saudi hospital needs from its IPC staff. A department that can describe good practice but cannot produce a surveillance plan, a defined denominator, or a competency file is exposed on exactly the requirements that carry the most weight. [CBAHI's essential safety requirements](/blog/cbahi-essential-safety-requirements) explains the mechanism; [preparing for a CBAHI survey](/blog/cbahi-survey-preparation) covers the run-up.",
+          "The demand this creates is steady rather than seasonal. Facilities re-survey, clusters standardise practice across member hospitals, and each cycle finds the same shortage: people who can run an infection prevention programme as a measured programme, not as a set of reminders taped above a sink."
+        ]
+      },
+      {
+        "heading": "Who enrols from the Kingdom",
+        "paragraphs": [
+          "Three patterns account for most Saudi-based participants, and they want different things from the same eight modules. Knowing which one you are makes it easier to judge whether the programme is worth your six months."
+        ],
+        "table": {
+          "head": ["Enrolling as", "What they are usually solving"],
+          "rows": [
+            ["Newly appointed IPC nurse or coordinator", "Given the role on clinical credibility, now needs the surveillance and data half of it"],
+            ["Ward or unit nurse planning a move", "Wants a documented specialisation before applying, rather than after being rejected"],
+            ["Quality or patient safety officer", "Owns the accreditation file and needs to challenge IPC numbers competently"],
+            ["CSSD or OR supervisor", "Reprocessing sits with them and the survey questions land on their department"],
+            ["Physician or pharmacist on the IPC committee", "Sits on the committee, wants to contribute beyond the clinical view"]
+          ]
+        }
+      },
+      {
+        "heading": "Where the syllabus goes past hospital orientation",
+        "paragraphs": [
+          "Every Saudi hospital runs induction training on hand hygiene and precautions. That is not what this is. The programme spends its middle third on the parts a hospital rarely teaches internally: designing a surveillance programme, choosing case definitions, managing and analysing the resulting data, detecting an outbreak in it, and running an epidemiologic investigation once you have.",
+          "It also treats device reprocessing as a decision framework rather than a checklist — matching cleaning, high-level disinfection and sterilisation to intended use under Spaulding classification, then verifying critical steps by direct observation. That distinction is precisely what a surveyor probes when they follow an endoscope from the procedure room to CSSD and back.",
+          "The closing modules deal with the organisational problem: occupational health for staff exposures, environment of care including waste and construction risk, education of patients and families, and then leadership, communication and managing the programme itself. [Infection control and accreditation](/blog/infection-control-accreditation) covers how those pieces are read from the outside."
+        ],
+        "bullets": [
+          "18 sessions across roughly six months, delivered online and recorded",
+          "Surveillance design, data management and outbreak investigation as a connected sequence",
+          "Reprocessing by intended use, with direct observation of critical steps",
+          "Occupational health, environment of care, and IPC committee leadership",
+          "Open to nurses, physicians, pharmacists, technologists and healthcare administrators"
+        ]
+      },
+      {
+        "heading": "Fees in riyals, and what registration actually requires",
+        "paragraphs": [
+          "The participant fee in Saudi Arabia is {price}, quoted in riyals. It covers the full eight-module programme and the certificate on completion; details are on the [course page](/courses/infection-control-diploma).",
+          "One point worth being blunt about: professional registration and classification with the Saudi Commission for Health Specialties is a separate process governed by the Commission, and no training provider can add a diploma to it or shortcut it. What structured training of this kind does contribute to is continuing professional development and, more directly, the competency evidence your employer keeps in your file. Treat any course sold to you as a route around SCFHS requirements as a warning sign about the seller."
+        ]
+      },
+      {
+        "heading": "Diploma or CIC — the honest comparison for the Saudi market",
+        "paragraphs": [
+          "CIC carries more weight on a Saudi CV than any training diploma, and pretending otherwise would be dishonest. It is also a board certification with experience-based eligibility rules, a demanding examination, and a recertification obligation that runs for as long as you hold it — [CIC cost and recertification](/blog/cic-cost-recertification) sets out that commitment.",
+          "The practical sequence most people in the Kingdom follow is not either-or. They take a structured diploma to learn the work and to make their current IPC role defensible, accumulate the documented practice that CIC eligibility asks for, and sit the exam from a position of actually doing the job. [Accreditation careers in Saudi Arabia](/blog/healthcare-accreditation-career-saudi) shows where that path tends to lead in salary terms."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "q": "Is infection control training mandatory for CBAHI accreditation?",
+        "a": "CBAHI requires the facility to run a functioning infection prevention and control programme with qualified staff and demonstrable results — it holds the hospital to the outcome rather than mandating a named course. Hospitals meet it by staffing the function with people who have documented IPC training and can produce surveillance evidence on request."
+      },
+      {
+        "q": "What does the diploma cost in Saudi riyals?",
+        "a": "{price}, priced directly in SAR rather than converted from another currency at enrolment. That is the full-programme participant fee covering all eight modules and the completion certificate."
+      },
+      {
+        "q": "Does this diploma count towards SCFHS classification?",
+        "a": "Classification and registration are decided by the Saudi Commission for Health Specialties under its own rules, and no course provider can place a qualification into that process. Structured training contributes to your continuing professional development and to the competency file your employer maintains — which is a real benefit, and a different one."
+      },
+      {
+        "q": "I work in a CSSD department — is this relevant or is it a nursing course?",
+        "a": "Reprocessing is one of the eight modules and one of the areas surveyors examine most closely, so CSSD and operating room supervisors are a regular part of the cohort. The programme is multidisciplinary by design; it is not restricted to nursing."
+      },
+      {
+        "q": "Are the sessions live, and what happens if a shift clashes?",
+        "a": "Sessions run online and are recorded, so a clash costs you the live discussion rather than the content. Participants working rotating shifts in Riyadh, Jeddah and the Eastern Province complete the programme this way routinely."
+      },
+      {
+        "q": "How long does the programme take for someone working full time?",
+        "a": "About six months across eighteen sessions. Participants who need to be ready for a specific accreditation cycle sometimes compress it by working through the recordings ahead of the live schedule."
+      }
+    ],
+    "ctaHeading": "Own the IPC evidence before the next survey cycle",
+    "ctaBody": "Surveillance data is the one thing that cannot be produced retrospectively the week a survey is announced. The fee for Saudi Arabia is {price}. Leave your details and the admissions team will confirm the next start date and the session schedule in Kingdom time."
+  }
+}
