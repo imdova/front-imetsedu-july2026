@@ -22,6 +22,22 @@ import { Link } from "@/i18n/navigation";
 /** Matches `[label](/path)` or `**bold**`, capturing the parts. */
 const TOKEN = /\[([^\]]+)\]\((\/[^)]*)\)|\*\*([^*]+)\*\*/g;
 
+/**
+ * The same string as plain prose, for places that take text rather than JSX —
+ * structured data, chiefly.
+ *
+ * Both substitutions matter there. Emitting a FAQ answer straight from the
+ * content file publishes the literal `{price}` placeholder and raw `[label](…)`
+ * syntax into the FAQ rich result, where a reader sees them verbatim in the
+ * search listing. The visible page has always run its copy through `richText`
+ * and a price substitution; the JSON-LD beside it was reading the same fields
+ * unprocessed.
+ */
+export function plainText(text: string, price?: string): string {
+  const priced = price === undefined ? text : text.replaceAll("{price}", price);
+  return priced.replace(TOKEN, (_m, label, _href, bold) => label ?? bold ?? "");
+}
+
 export function richText(text: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   let last = 0;

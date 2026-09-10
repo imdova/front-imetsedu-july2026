@@ -170,6 +170,19 @@ function linksOf(text: string): string[] {
   return [...text.matchAll(/\[[^\]]+\]\((\/[^)]+)\)/g)].map((m) => m[1]);
 }
 
+/**
+ * The URL a market's content is actually served at, per locale.
+ *
+ * The roadmap lists the Arabic mirrors as their own pages (`/ar/cphq-course/egypt`)
+ * because that is what they are to a crawler and to a reader. `geoCoursePath` is
+ * locale-independent, so anything comparing against the roadmap has to add the
+ * prefix itself or every Arabic mirror reads as un-built after it ships.
+ */
+function localePath(page: GeoCoursePage, locale: "en" | "ar"): string {
+  const path = geoCoursePath(page);
+  return locale === "ar" ? `/ar${path}` : path;
+}
+
 /** Measure every built market against the gate, live. */
 export function measureGate(): GateResult[] {
   const out: GateResult[] = [];
@@ -183,7 +196,7 @@ export function measureGate(): GateResult[] {
       const linksToCourse = hrefs.includes(`/courses/${page.courseSlug}`);
       const words = countWords(text);
       out.push({
-        path: geoCoursePath(page),
+        path: localePath(page, locale),
         market: c.countryName,
         locale,
         words,
@@ -201,9 +214,21 @@ export function measureGate(): GateResult[] {
   return out;
 }
 
-/** Which planned paths are actually built and routable today. */
+/**
+ * Which planned paths are actually built and routable today.
+ *
+ * A market with Arabic content contributes two: the English URL and the Arabic
+ * one. A market without it contributes only the English URL — /ar/... does
+ * resolve there, but it serves English and canonicalises away, so counting it
+ * as a built Arabic page would overstate the programme to its own dashboard.
+ */
 export function builtPaths(): Set<string> {
-  return new Set(listGeoCoursePages().map((p) => geoCoursePath(p)));
+  const out = new Set<string>();
+  for (const p of listGeoCoursePages()) {
+    out.add(localePath(p, "en"));
+    if (p.ar) out.add(localePath(p, "ar"));
+  }
+  return out;
 }
 
 export function liveMarkets(): GeoCoursePage[] {

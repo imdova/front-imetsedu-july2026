@@ -14,11 +14,14 @@ import {
   geoCoursePath,
   geoLocale,
   geoPagesBySegment,
+  type GeoCoursePage,
 } from "@/features/marketing/lib/geo-course-pages";
 import {
   GeoCourseLanding,
   type GeoTestimonial,
 } from "@/features/marketing/components/geo-course-landing";
+import { plainText } from "@/features/marketing/lib/geo-rich-text";
+import { formatCurrency } from "@/lib/utils";
 
 /**
  * One market page, as a route factory.
@@ -47,6 +50,23 @@ async function loadCourse(slug: string) {
   return (res.ok ? res.data : []).find((c) => c.slug === slug) ?? null;
 }
 
+type LoadedCourse = NonNullable<Awaited<ReturnType<typeof loadCourse>>>;
+
+/** The market's own currency, list and sale, from the stored offer. */
+function marketPrice(course: LoadedCourse, currency: GeoCoursePage["currency"]) {
+  return currency === "SAR"
+    ? { list: course.priceSAR ?? 0, sale: course.salePriceSAR ?? 0 }
+    : currency === "USD"
+      ? { list: course.priceUSD ?? 0, sale: course.salePriceUSD ?? 0 }
+      : { list: course.priceEGP, sale: course.salePriceEGP };
+}
+
+/** What the page displays as *the* price — the sale figure when one applies. */
+function shownPriceOf(course: LoadedCourse, currency: GeoCoursePage["currency"]): string {
+  const p = marketPrice(course, currency);
+  return formatCurrency(p.sale > 0 && p.sale < p.list ? p.sale : p.list, currency);
+}
+
 export function geoMarketRoute(segment: string) {
   function generateStaticParams() {
     return geoPagesBySegment(segment).map((p) => ({ country: p.country }));
@@ -56,6 +76,19 @@ export function geoMarketRoute(segment: string) {
     const { locale, country } = await params;
     const page = getGeoCoursePage(segment, country);
     if (!page) return {};
+    /*
+     * The course is loaded here as well as in the page body because the meta
+     * description quotes the price. A market page whose whole pitch is "here is
+     * what this costs in your currency" wants that figure in the SERP snippet,
+     * and the `{price}` placeholder is only substituted where something does the
+     * substituting — the visible copy did, the description did not, so every
+     * wave-2 page was publishing the literal token to search results.
+     *
+     * No course means the page itself 404s, so there is no metadata to emit.
+     */
+    const course = await loadCourse(page.courseSlug);
+    if (!course || course.status !== "published") return {};
+
     const c = geoContent(page, locale);
     const path = geoCoursePath(page);
     /*
@@ -74,7 +107,7 @@ export function geoMarketRoute(segment: string) {
       // Absolute: the title already names the country and the credential, and
       // the layout's brand suffix would push it past the SERP truncation point.
       title: { absolute: c.title },
-      description: c.metaDescription,
+      description: plainText(c.metaDescription, shownPriceOf(course, page.currency)),
       /*
        * Self-referencing canonical. Pointing this at the course page would tell
        * Google the page is a duplicate and hand the ranking straight back to the
@@ -83,7 +116,7 @@ export function geoMarketRoute(segment: string) {
       alternates: { canonical, languages },
       ...socialMeta({
         title: c.h1,
-        description: c.metaDescription,
+        description: plainText(c.metaDescription, shownPriceOf(course, page.currency)),
         path,
         locale,
       }),
@@ -104,12 +137,7 @@ export function geoMarketRoute(segment: string) {
     const ar = locale === "ar";
     const courseTitle = ar ? course.titleAr || course.titleEn : course.titleEn;
 
-    const price =
-      page.currency === "SAR"
-        ? { list: course.priceSAR ?? 0, sale: course.salePriceSAR ?? 0 }
-        : page.currency === "USD"
-          ? { list: course.priceUSD ?? 0, sale: course.salePriceUSD ?? 0 }
-          : { list: course.priceEGP, sale: course.salePriceEGP };
+    const price = marketPrice(course, page.currency);
 
     /*
      * Country-attributed testimonials, from the course's own consented reviews.
@@ -166,13 +194,20 @@ export function geoMarketRoute(segment: string) {
       },
     };
 
+    /*
+     * The FAQ answers go through the same two substitutions the visible page
+     * applies: the `{price}` placeholder becomes the market's real price, and
+     * `[label](/path)` becomes its label. Emitting the raw field would publish
+     * "{price}, priced in Egyptian pounds" into the FAQ rich result.
+     */
+    const shownPrice = shownPriceOf(course, page.currency);
     const faqLd = {
       "@context": "https://schema.org",
       "@type": "FAQPage",
       mainEntity: c.faqs.map((f) => ({
         "@type": "Question",
-        name: f.q,
-        acceptedAnswer: { "@type": "Answer", text: f.a },
+        name: plainText(f.q, shownPrice),
+        acceptedAnswer: { "@type": "Answer", text: plainText(f.a, shownPrice) },
       })),
     };
 

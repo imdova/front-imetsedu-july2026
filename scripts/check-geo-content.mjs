@@ -14,7 +14,8 @@
  *   2. no two markets are more alike than MAX_SIMILARITY;
  *   3. no FAQ question is reused across markets;
  *   4. each page links out to at least MIN_ARTICLE_LINKS articles;
- *   5. each page links to the course page it sells.
+ *   5. each page links to the course page it sells;
+ *   6. the `{price}` placeholder appears only in fields something substitutes.
  *
  * Similarity is trigram-shingle Jaccard. Word-frequency comparison is not
  * enough: two pages built from one template share whole sentences, and shingles
@@ -142,6 +143,32 @@ for (const page of pages) {
       );
     } else {
       console.log(`  ok  ${idOf(page)} [${locale}] — ${count} words`);
+    }
+
+    /*
+     * `{price}` is substituted in the body copy at render and in the meta
+     * description at metadata time. Everywhere else it would reach a reader
+     * verbatim — a title, a heading, a table cell or an FAQ question reading
+     * "... {price}". That shipped once, in the FAQ structured data, so it is
+     * checked rather than remembered.
+     */
+    const unsubstituted = [
+      ["title", content.title],
+      ["h1", content.h1],
+      ["ctaHeading", content.ctaHeading],
+      ...content.sections.map((s) => ["section heading", s.heading]),
+      ...content.sections.flatMap((s) =>
+        s.table ? [...s.table.head, ...s.table.rows.flat()].map((cell) => ["table cell", cell]) : [],
+      ),
+      ...content.faqs.map((f) => ["FAQ question", f.q]),
+    ];
+    for (const [where, text] of unsubstituted) {
+      if (String(text).includes("{price}")) {
+        errors.push(
+          `${idOf(page)} [${locale}]: "{price}" in ${where} — nothing substitutes it there, ` +
+            `so the reader sees the placeholder. Use it in body copy or the meta description.`,
+        );
+      }
     }
 
     const hrefs = links(content);
