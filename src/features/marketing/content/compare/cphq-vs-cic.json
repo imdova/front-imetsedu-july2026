@@ -1,0 +1,160 @@
+{
+  "slug": "cphq-vs-cic",
+  "en": {
+    "title": "CPHQ vs CIC | Which Certification Fits Your Career",
+    "metaDescription": "CPHQ and CIC are not competing credentials — they certify different disciplines. Which one matches the job you are actually trying to get, and when neither does.",
+    "h1": "CPHQ vs CIC: which certification fits the job you want",
+    "intro": "These two get compared constantly, usually by people who have been told to \"get certified\" without being told in what. They are not rival credentials in the same field. CPHQ certifies healthcare quality management; CIC certifies infection prevention and control. Choosing between them is really choosing which of two careers you are building, and that is a much easier question once it is asked properly.",
+    "options": [
+      {
+        "key": "cphq",
+        "name": "CPHQ",
+        "summary": "Certified Professional in Healthcare Quality, issued by NAHQ. Covers quality management across the organisation — governance, improvement, safety and data.",
+        "courseSlug": "cphq-preparation",
+        "bestFor": [
+          "You are moving into a quality, patient safety or accreditation role and need the credential the job description names",
+          "Your work spans several clinical areas rather than one specialism",
+          "You want the broadest quality credential recognised across the Gulf and beyond",
+          "You are comfortable with data — the analytics domains carry substantial exam weight"
+        ],
+        "notFor": [
+          "Your work is entirely infection prevention; CIC certifies that discipline directly and CPHQ only touches it",
+          "You want a methodology to apply next week — this certifies knowledge, it is not a Lean or Six Sigma toolkit",
+          "You have never run an improvement cycle or interrogated an indicator; the exam is applied and it shows",
+          "You need something quickly — the application windows are fixed and missing one costs about three months"
+        ]
+      },
+      {
+        "key": "cic",
+        "name": "CIC",
+        "summary": "Certification in Infection Prevention and Control, issued by CBIC. A board certification in a single, deep clinical discipline.",
+        "courseSlug": "cic-preparation",
+        "bestFor": [
+          "Infection prevention is your actual job, or the job you are moving into",
+          "You want the credential that carries the most weight in an IPC department anywhere",
+          "You already have documented IPC practice behind you and want it recognised",
+          "Your background is clinical — microbiology, epidemiology and sterilisation are on the paper"
+        ],
+        "notFor": [
+          "You are heading toward general quality management; CIC will not be what those job descriptions ask for",
+          "You cannot yet evidence enough hands-on IPC practice to meet the eligibility rules",
+          "You want a credential that covers finance, governance or organisational strategy — it does not go there",
+          "You are looking for something to hold alongside a non-clinical administrative role"
+        ]
+      }
+    ],
+    "matrix": [
+      {
+        "label": "Issued by",
+        "values": [
+          "NAHQ (United States)",
+          "CBIC (United States)"
+        ]
+      },
+      {
+        "label": "Field certified",
+        "values": [
+          "Healthcare quality management, broadly",
+          "Infection prevention and control, specifically"
+        ]
+      },
+      {
+        "label": "Typical job titles",
+        "values": [
+          "Quality specialist, patient safety officer, accreditation coordinator, quality manager",
+          "Infection control nurse, IPC coordinator, infection preventionist"
+        ]
+      },
+      {
+        "label": "Core content",
+        "values": [
+          "Organisational leadership, performance improvement, patient safety, health data analytics",
+          "Infectious disease processes, surveillance, sterilisation and disinfection, occupational health"
+        ]
+      },
+      {
+        "label": "Eligibility",
+        "values": [
+          "Education combined with healthcare quality experience, in several accepted patterns",
+          "Documented infection prevention practice — the binding constraint for most applicants"
+        ]
+      },
+      {
+        "label": "Our preparation course",
+        "values": [
+          "Ten weeks, live and recorded",
+          "Three months, twelve sessions"
+        ]
+      },
+      {
+        "label": "Exam fee",
+        "values": [
+          "Paid to NAHQ, separate from any course",
+          "Paid to CBIC, separate from any course"
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "heading": "The question underneath the question",
+        "paragraphs": [
+          "Almost everyone who asks us to compare these two is really asking something else: which one gets me promoted. That depends entirely on what the roles above you are called, and the fastest way to answer it is to stop reading and go look at four or five job postings you would actually want.",
+          "If those postings say quality, patient safety, accreditation, risk or performance improvement, the answer is CPHQ and you can stop here. If they say infection control, infection prevention or IPC, the answer is CIC. The two credentials are not really in competition; the job market has already separated them and the listings tell you how.",
+          "Where it genuinely gets difficult is when the postings say both — which happens in smaller facilities where one person covers quality and infection control together. [The healthcare quality manager career path](/blog/healthcare-quality-manager-career) and [the infection control career path](/blog/infection-control-nurse-career) set out where each leads over five or ten years, which is the better basis for choosing than what your current job happens to be called."
+        ]
+      },
+      {
+        "heading": "Eligibility is where most people actually get stuck",
+        "paragraphs": [
+          "Both certifications have entry requirements, and they bind differently. CPHQ's rules combine education with healthcare quality experience in more than one accepted pattern, so most working professionals in the field qualify. CIC's requirements centre on documented infection prevention practice, which is a harder bar for someone trying to enter the discipline rather than certify time already served.",
+          "This asymmetry produces a common and frustrating situation: someone decides infection prevention is their career, and discovers they cannot sit the certification that would prove it because they have not yet done enough of the work. [What CIC eligibility actually requires](/blog/cic-eligibility-requirements) sets that out honestly, and [CPHQ's own eligibility rules](/blog/cphq-eligibility-requirements) do the same on the other side.",
+          "If you are in that gap, structured training in the discipline while you accumulate the practice is the usual answer — which is a different purchase from exam preparation and worth being clear about before you buy either."
+        ]
+      },
+      {
+        "heading": "Cost, and the part people forget",
+        "paragraphs": [
+          "Each certification has two costs: preparation, and the examination fee paid to the awarding body. The exam fees go to NAHQ and CBIC respectively, never to a training provider, and they are not small. Anyone quoting you a single all-in number for either certification is either including an exam fee they do not control or leaving it out entirely — ask which.",
+          "The recurring planning failure is identical for both: candidates budget for the course, complete it, then spend weeks arranging the exam fee and miss an application window. Work out both numbers before you enrol in anything. [Whether CPHQ repays the investment](/blog/is-cphq-worth-it-cost-salary-roi) and [what CIC costs including recertification](/blog/cic-cost-recertification) both give ranges rather than promises.",
+          "Both also carry ongoing renewal obligations for as long as you hold them. That is a commitment measured in years, not a one-off purchase, and it is worth understanding before rather than after."
+        ]
+      }
+    ],
+    "verdict": {
+      "heading": "How to actually decide",
+      "paragraphs": [
+        "Look at the job you want, not the job you have. If its title contains quality, safety, accreditation or risk, take CPHQ. If it contains infection control or infection prevention, take CIC. That single test resolves the great majority of cases and no amount of further comparison improves on it.",
+        "If you genuinely do both jobs — common in smaller hospitals — take the one matching the half you want to grow into, not the half you spend more hours on today. Certifications are bets on a direction.",
+        "And if you cannot yet meet either eligibility bar, neither answer is \"buy the exam prep anyway\". Get the documented practice first. We would rather tell you to come back in a year than sell you preparation for an examination you are not permitted to sit."
+      ]
+    },
+    "faqs": [
+      {
+        "q": "Can I hold both CPHQ and CIC?",
+        "a": "Yes, and some people do — typically an infection preventionist who moves into broader quality management and adds CPHQ later, or occasionally the reverse. It is an expensive combination to maintain, because each carries its own renewal obligation, so it is worth having a reason beyond collecting credentials."
+      },
+      {
+        "q": "Which one is harder?",
+        "a": "They are hard in different ways. CPHQ is broad, and candidates usually struggle with the data analytics and performance improvement domains. CIC is deep, and candidates struggle with the microbiology and epidemiology content if their background is not clinical. Neither is a memorisation exam."
+      },
+      {
+        "q": "Does one pay better than the other?",
+        "a": "Not reliably, and anyone quoting you a specific difference is guessing. Compensation tracks seniority, sector and market far more than which credential you hold. Quality management roles have a longer ladder above them in most organisations, which matters more over a decade than the certification itself."
+      },
+      {
+        "q": "I work in a small hospital where one person covers both. What then?",
+        "a": "Pick the direction you want in five years rather than the split of your current week. If you are unsure, CPHQ tends to keep more doors open because quality management is a broader field, but that is a general tendency and not advice about your specific situation."
+      },
+      {
+        "q": "Are these recognised outside the country that issues them?",
+        "a": "Both are widely recognised internationally, which is much of their value in the Gulf, where employers hire from many countries and need credentials they can compare. Recognition is still an employer's decision, and no training provider can commit one on your behalf."
+      },
+      {
+        "q": "Do I need a preparation course at all?",
+        "a": "No — both can be attempted by self-study, and people pass that way. A course buys structure, a question bank, a timed mock and someone to ask, which matters most if you are working full time or your knowledge is uneven across the domains. It is a reasonable thing to decline."
+      }
+    ],
+    "ctaHeading": "Still not sure which one applies to you?",
+    "ctaBody": "Send us the job postings you are aiming at and we will tell you which credential they are asking for — including when the answer is neither yet. Both preparation programmes are below."
+  }
+}

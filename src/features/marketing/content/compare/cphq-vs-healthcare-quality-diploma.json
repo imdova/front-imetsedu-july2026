@@ -1,0 +1,175 @@
+{
+  "slug": "cphq-vs-healthcare-quality-diploma",
+  "en": {
+    "title": "CPHQ or a Healthcare Quality Diploma | Honest Comparison",
+    "metaDescription": "We sell both, so here is the uncomfortable version: one is exam preparation for an external credential, the other teaches you to run a quality department.",
+    "h1": "CPHQ or a healthcare quality diploma?",
+    "intro": "We sell both of these, which is exactly why this page needs to be blunt rather than balanced-sounding. They are not two versions of the same product at different prices. One prepares you to pass somebody else's examination and walk away with a credential; the other teaches you to run a quality function and gives you a certificate from us. Those are different purchases and roughly half the people who ask us about one should buy the other.",
+    "options": [
+      {
+        "key": "cphq",
+        "name": "CPHQ preparation",
+        "summary": "Ten weeks aimed at one thing: passing NAHQ's examination and earning an internationally recognised credential.",
+        "courseSlug": "cphq-preparation",
+        "bestFor": [
+          "A job description names CPHQ, or the roles you are targeting consistently do",
+          "You already work in quality and need the credential rather than the knowledge",
+          "You want something an employer in another country will recognise immediately",
+          "You are comfortable that the value is the certification, not the teaching"
+        ],
+        "notFor": [
+          "You do not yet meet NAHQ's eligibility criteria — no course changes that",
+          "You want to learn to run a department; this is exam preparation and is shaped accordingly",
+          "You want broad coverage over depth in what the exam happens to test",
+          "You are not prepared to pay NAHQ's separate exam fee on top of the course"
+        ]
+      },
+      {
+        "key": "diploma",
+        "name": "Healthcare Quality Management Diploma",
+        "summary": "Five months across six modules, teaching the discipline itself — leadership, safety, improvement, accreditation and data.",
+        "courseSlug": "healthcare-quality-management-diploma",
+        "bestFor": [
+          "You are moving into quality management and need the knowledge, not just a credential",
+          "You want depth in accreditation preparation, risk management and performance improvement",
+          "You are ineligible for CPHQ today and want the waiting period to build something",
+          "Your employer values demonstrable capability over a specific certification name"
+        ],
+        "notFor": [
+          "A job posting specifically requires CPHQ — this will not satisfy that requirement",
+          "You want a credential issued by an independent international body",
+          "You need something finished in ten weeks",
+          "You already run a quality department confidently and only need certification"
+        ]
+      }
+    ],
+    "matrix": [
+      {
+        "label": "What you end up holding",
+        "values": [
+          "A NAHQ certification, issued independently of us",
+          "An IMETS diploma certificate"
+        ]
+      },
+      {
+        "label": "Primary purpose",
+        "values": [
+          "Passing an examination",
+          "Learning the discipline"
+        ]
+      },
+      {
+        "label": "Length",
+        "values": [
+          "Ten weeks",
+          "Five months, sixteen sessions"
+        ]
+      },
+      {
+        "label": "Second cost",
+        "values": [
+          "NAHQ's exam fee, paid to NAHQ",
+          "None"
+        ]
+      },
+      {
+        "label": "Entry requirement",
+        "values": [
+          "NAHQ eligibility criteria apply",
+          "Open to healthcare professionals"
+        ]
+      },
+      {
+        "label": "Coverage",
+        "values": [
+          "Shaped by the exam blueprint",
+          "Six modules including accreditation and analytics"
+        ]
+      },
+      {
+        "label": "Recognised by an external body",
+        "values": [
+          "Yes — that is the point",
+          "No — it evidences training, not certification"
+        ]
+      },
+      {
+        "label": "Ongoing obligation",
+        "values": [
+          "Renewal for as long as you hold it",
+          "None"
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "heading": "The eligibility question comes first, and it is not ours to answer",
+        "paragraphs": [
+          "Before comparing anything else, check whether you can sit the CPHQ examination at all. NAHQ's criteria combine education with healthcare quality experience, and if you do not meet them the comparison is over — no preparation course, ours included, changes eligibility.",
+          "This matters commercially in a way worth naming. We could sell CPHQ preparation to someone ineligible and they would never know until they applied. We would rather tell you now, which is why [the eligibility rules are set out plainly](/blog/cphq-eligibility-requirements) rather than buried. If you do not qualify yet, the diploma is a genuinely useful way to spend the intervening period, and that is a recommendation with an obvious commercial interest attached — weigh it accordingly."
+        ]
+      },
+      {
+        "heading": "What a credential does that training does not",
+        "paragraphs": [
+          "An externally issued certification is legible to people who know nothing about the institution that trained you. That is its entire advantage and it is a real one, particularly in Gulf markets where a hiring manager is comparing applicants trained in a dozen countries and needs a signal that means the same thing in all of them.",
+          "Our diploma certificate does not do that job and we will not pretend otherwise. It evidences that you completed a structured programme with us. An employer who knows us reads it accordingly; an employer who does not has to take it on trust in a way they do not with a NAHQ credential.",
+          "So if a specific job posting names CPHQ, or if the roles you are aiming at consistently do, the decision is already made. [Whether the certification repays its cost](/blog/is-cphq-worth-it-cost-salary-roi) covers the economics of that, and [what quality and management roles pay](/blog/healthcare-quality-management-salaries) gives the ranges."
+        ]
+      },
+      {
+        "heading": "What training does that a credential does not",
+        "paragraphs": [
+          "Exam preparation is shaped by the blueprint. Time goes where marks are, which is the right way to prepare for an examination and the wrong way to learn a job. Topics carrying few marks get proportionally little attention regardless of how often you will meet them at work.",
+          "The diploma is not organised that way. Its five months cover quality leadership and integration, patient safety and risk management, performance and process improvement, accreditation preparation, and health data analytics — sequenced for use rather than for scoring. Someone who has done it can build a quality management system; someone who has passed CPHQ can prove they know about one. Those often coincide and sometimes do not.",
+          "If accreditation is a large part of your actual work, that distinction matters more than usual — the diploma spends a full module there, while the examination touches it in proportion to its blueprint weight. [How accreditation schemes differ](/blog/gahar-vs-cbahi-vs-jci) will tell you how much of your job that is."
+        ]
+      },
+      {
+        "heading": "The case for doing both, and the case against",
+        "paragraphs": [
+          "Some people do both, usually diploma first and certification later, and for the right person that sequence works well: learn the discipline, apply it, accumulate the experience, then certify from a position of competence rather than revision.",
+          "But we are not going to pretend that is the right answer for everyone, because it is the most expensive one and we would be the beneficiaries. If you already work in quality and simply need the credential, the diploma would largely restate what you do daily. If you need capability and your employer does not care about certification names, the exam fee buys you nothing you need.",
+          "Doing both makes sense when you are early in a quality career, intend to stay in it, and want both the ability and the portable proof. It makes much less sense as a way of resolving indecision."
+        ]
+      }
+    ],
+    "verdict": {
+      "heading": "Which to buy",
+      "paragraphs": [
+        "If a job posting names CPHQ and you meet the eligibility criteria: CPHQ preparation. Nothing else satisfies that requirement, and the diploma will not.",
+        "If you are moving into quality management and need to actually know how to do the work: the diploma. It covers more ground, in more depth, in the order you will use it.",
+        "If you are ineligible for CPHQ today: the diploma, then CPHQ once you can document the experience. That is the sequence, not a consolation.",
+        "If you already run a quality department competently and want portable proof: CPHQ preparation only. Skip the diploma — you would be paying to be taught what you already do."
+      ]
+    },
+    "faqs": [
+      {
+        "q": "You sell both — why should I trust this comparison?",
+        "a": "You shouldn't, entirely. Read it against the specific job postings you are targeting, which have no commercial interest in your decision. What we can do is state the structural difference accurately: one is preparation for an external examination with its own eligibility rules and fee, the other is a longer taught programme with a certificate from us. Everything else follows from that."
+      },
+      {
+        "q": "Does the diploma prepare me for the CPHQ exam?",
+        "a": "It covers overlapping material but it is not exam preparation and we do not sell it as such. The exam has a published blueprint, a question style and a pacing problem that a taught programme does not drill you against. People who do the diploma and then want CPHQ still take the preparation course."
+      },
+      {
+        "q": "Is the diploma just a cheaper CPHQ?",
+        "a": "No — it is longer and it is not cheaper once you account for NAHQ's separate exam fee on the CPHQ side. They are different products for different situations, and framing one as a budget version of the other would misdescribe both."
+      },
+      {
+        "q": "Which looks better on a CV in the Gulf?",
+        "a": "CPHQ, generally, because it is issued by an independent international body and means the same thing to every employer. That is an honest answer that costs us the more expensive sale in some cases. The diploma's advantage is capability, not signalling."
+      },
+      {
+        "q": "Can I start the diploma and switch to CPHQ preparation?",
+        "a": "Talk to admissions rather than assuming — arrangements depend on where you are in the programme and on cohort timing. What we would not do is take payment for both and let you work out afterwards that you only needed one."
+      },
+      {
+        "q": "What if my employer will pay for one but not both?",
+        "a": "Then the question is what your employer is buying. If they want a certified quality professional on the accreditation file, CPHQ. If they want someone who can build the quality system, the diploma. Ask them which problem they are solving — the answer is usually clear once posed that way."
+      }
+    ],
+    "ctaHeading": "Tell us the situation and we will say which",
+    "ctaBody": "Send the job postings you are targeting, or describe what your employer has asked for, and we will tell you which of the two fits — including when the answer is neither. Both programmes are linked below."
+  }
+}

@@ -1,5 +1,9 @@
 import audit from "../content/audit.json";
 import {
+  listComparisonPages,
+  comparisonPath,
+} from "@/features/marketing/lib/comparison-pages";
+import {
   listGeoCoursePages,
   geoCoursePath,
   type GeoCoursePage,
@@ -76,6 +80,11 @@ export interface PlannedPage {
    * nobody has* look identical on a roadmap, and the second kind quietly gets
    * re-attempted every planning cycle. Naming the blocker stops that: the entry
    * stays on the roadmap, and the reason it is not moving is on the row.
+   *
+   * Wave 3 carried one — no KWD, QAR, OMR or JOD anywhere in the course data —
+   * until the call was made to price those markets from the international USD
+   * offer and say so on the page. The field stays because the next blocker will
+   * not be a pricing one.
    */
   blocked?: string;
 }
@@ -103,11 +112,11 @@ export const PLANNED_PAGES: PlannedPage[] = [
   { path: "/hospital-management-diploma/saudi-arabia", owns: "hospital management diploma saudi arabia", convertsTo: "hospital-management-diploma", hook: "Vision 2030 corporatisation · CBAHI leadership", wave: 2 },
   { path: "/hospital-management-diploma/uae", owns: "hospital management course uae", convertsTo: "hospital-management-diploma", hook: "DHA facility licensing · private hospital groups", wave: 2 },
 
-  { path: "/cphq-course/kuwait", owns: "cphq course kuwait", convertsTo: "cphq-preparation", hook: "MOH Kuwait licensing", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars." },
-  { path: "/cphq-course/qatar", owns: "cphq course qatar", convertsTo: "cphq-preparation", hook: "MOPH · QCHP licensing", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars." },
-  { path: "/cphq-course/oman", owns: "cphq course oman", convertsTo: "cphq-preparation", hook: "MOH Oman · verify accreditation body", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars. The blueprint's own hook here is unverified." },
-  { path: "/cphq-course/jordan", owns: "cphq course jordan", convertsTo: "cphq-preparation", hook: "HCAC accreditation", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars." },
-  { path: "/infection-control-diploma/kuwait", owns: "infection control diploma kuwait", convertsTo: "infection-control-diploma", hook: "MOH Kuwait IPC", wave: 3, blocked: "No local currency: the course records price in EGP, SAR and USD only, so this market could quote nothing more local than dollars." },
+  { path: "/cphq-course/kuwait", owns: "cphq course kuwait", convertsTo: "cphq-preparation", hook: "MOH Kuwait licensing", wave: 3 },
+  { path: "/cphq-course/qatar", owns: "cphq course qatar", convertsTo: "cphq-preparation", hook: "MOPH · QCHP licensing", wave: 3 },
+  { path: "/cphq-course/oman", owns: "cphq course oman", convertsTo: "cphq-preparation", hook: "MOH Oman · verify accreditation body", wave: 3 },
+  { path: "/cphq-course/jordan", owns: "cphq course jordan", convertsTo: "cphq-preparation", hook: "HCAC accreditation", wave: 3 },
+  { path: "/infection-control-diploma/kuwait", owns: "infection control diploma kuwait", convertsTo: "infection-control-diploma", hook: "MOH Kuwait IPC", wave: 3 },
 
   { path: "/ar/cphq-course/egypt", owns: "كورس CPHQ مصر", convertsTo: "cphq-preparation", hook: "Arabic mirror of wave 1", wave: 4 },
   { path: "/ar/cphq-course/saudi-arabia", owns: "كورس CPHQ السعودية", convertsTo: "cphq-preparation", hook: "Arabic mirror of wave 1", wave: 4 },
@@ -116,6 +125,17 @@ export const PLANNED_PAGES: PlannedPage[] = [
   { path: "/ar/infection-control-diploma/saudi-arabia", owns: "دبلومة مكافحة العدوى السعودية", convertsTo: "infection-control-diploma", hook: "Arabic mirror of wave 2", wave: 4 },
   { path: "/ar/hospital-management-diploma/egypt", owns: "دبلومة إدارة المستشفيات مصر", convertsTo: "hospital-management-diploma", hook: "Arabic mirror of wave 2", wave: 4 },
   { path: "/ar/hospital-management-diploma/saudi-arabia", owns: "دبلومة إدارة المستشفيات السعودية", convertsTo: "hospital-management-diploma", hook: "Arabic mirror of wave 2", wave: 4 },
+  /*
+   * Added after wave 3 shipped. The original wave-4 list was drawn up when the
+   * only markets that existed were Egypt, Saudi Arabia and the UAE; Kuwait,
+   * Qatar, Oman and Jordan are Arabic-first markets, which makes their mirrors
+   * a stronger bet than several of the entries planned above them.
+   */
+  { path: "/ar/cphq-course/kuwait", owns: "كورس CPHQ الكويت", convertsTo: "cphq-preparation", hook: "Arabic mirror of wave 3", wave: 4 },
+  { path: "/ar/cphq-course/qatar", owns: "كورس CPHQ قطر", convertsTo: "cphq-preparation", hook: "Arabic mirror of wave 3", wave: 4 },
+  { path: "/ar/cphq-course/oman", owns: "كورس CPHQ عمان", convertsTo: "cphq-preparation", hook: "Arabic mirror of wave 3", wave: 4 },
+  { path: "/ar/cphq-course/jordan", owns: "كورس CPHQ الأردن", convertsTo: "cphq-preparation", hook: "Arabic mirror of wave 3", wave: 4 },
+  { path: "/ar/infection-control-diploma/kuwait", owns: "دبلومة مكافحة العدوى الكويت", convertsTo: "infection-control-diploma", hook: "Arabic mirror of wave 3", wave: 4 },
 
   { path: "/compare/cphq-vs-cic", owns: "cphq vs cic", convertsTo: "cphq-preparation + cic-preparation", hook: "Decision stage, not purchase — different template", wave: 5 },
   { path: "/compare/healthcare-quality-certifications", owns: "best healthcare quality certification", convertsTo: "/category/healthcare-quality", hook: "Comparison across CPHQ, CPPS, CPHRM, Six Sigma", wave: 5 },
@@ -227,6 +247,17 @@ export function builtPaths(): Set<string> {
   for (const p of listGeoCoursePages()) {
     out.add(localePath(p, "en"));
     if (p.ar) out.add(localePath(p, "ar"));
+  }
+  /*
+   * Wave 5's comparison pages live in a different registry with a different
+   * content shape, so they are absent from `measureGate` below — that table
+   * measures words, FAQs and article links per *market*, and a comparison has
+   * no market. They are still built pages on the roadmap, and leaving them out
+   * of this set would show four live URLs as un-started.
+   */
+  for (const c of listComparisonPages()) {
+    out.add(comparisonPath(c));
+    if (c.ar) out.add(`/ar${comparisonPath(c)}`);
   }
   return out;
 }

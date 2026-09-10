@@ -28,6 +28,16 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+const COMPARE_DIR = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "src",
+  "features",
+  "marketing",
+  "content",
+  "compare",
+);
+
 const CONTENT_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
   "..",
@@ -221,6 +231,128 @@ for (const page of pages) {
   }
 }
 console.log(`  ok  ${seenQuestions.size} FAQ questions, none shared between markets`);
+
+/* ── comparison pages ──────────────────────────────────────────────────────
+ *
+ * Same machinery, different failure mode. A market page fails by being thin;
+ * a comparison page fails by being a sales page wearing a table. The check that
+ * matters here is `notFor`: every option must say who it does not suit. Two of
+ * these pages compare products we sell against each other, and a comparison
+ * that only lists strengths on both sides tells the reader nothing they could
+ * act on — which is the failure this exists to make impossible rather than
+ * merely discouraged.
+ */
+const MIN_COMPARE_WORDS = 900;
+
+function comparePros(content) {
+  return [
+    content.h1,
+    content.intro,
+    ...content.options.flatMap((o) => [o.name, o.summary, ...o.bestFor, ...o.notFor]),
+    ...content.matrix.flatMap((r) => [r.label, ...r.values]),
+    ...content.sections.flatMap((s) => [s.heading, ...s.paragraphs, ...(s.bullets ?? [])]),
+    content.verdict.heading,
+    ...content.verdict.paragraphs,
+    ...content.faqs.flatMap((f) => [f.q, f.a]),
+    content.ctaHeading,
+    content.ctaBody,
+  ].join(" ");
+}
+
+let comparePages = [];
+try {
+  comparePages = readdirSync(COMPARE_DIR)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => JSON.parse(readFileSync(join(COMPARE_DIR, f), "utf8")));
+} catch {
+  comparePages = [];
+}
+
+for (const page of comparePages) {
+  for (const locale of LOCALES) {
+    const content = page[locale];
+    if (!content) {
+      if (locale === "en") errors.push(`compare/${page.slug}: missing "en" content`);
+      continue;
+    }
+
+    const text = comparePros(content);
+    const count = words(text).length;
+    if (count < MIN_COMPARE_WORDS) {
+      errors.push(
+        `compare/${page.slug} [${locale}]: ${count} words, needs ${MIN_COMPARE_WORDS}.`,
+      );
+    } else {
+      console.log(`  ok  compare/${page.slug} [${locale}] — ${count} words`);
+    }
+
+    if (content.options.length < 2) {
+      errors.push(`compare/${page.slug} [${locale}]: a comparison needs at least two options.`);
+    }
+
+    for (const o of content.options) {
+      if (!Array.isArray(o.notFor) || o.notFor.length === 0) {
+        errors.push(
+          `compare/${page.slug} [${locale}]: option "${o.key}" has no "notFor". ` +
+            `A comparison that will not say who an option is wrong for is a catalogue.`,
+        );
+      }
+      if (!Array.isArray(o.bestFor) || o.bestFor.length === 0) {
+        errors.push(`compare/${page.slug} [${locale}]: option "${o.key}" has no "bestFor".`);
+      }
+    }
+
+    // Every matrix row has to line up with the columns, or the table lies.
+    for (const row of content.matrix) {
+      if (row.values.length !== content.options.length) {
+        errors.push(
+          `compare/${page.slug} [${locale}]: matrix row "${row.label}" has ` +
+            `${row.values.length} values for ${content.options.length} options.`,
+        );
+      }
+    }
+
+    const hrefs = [];
+    for (const m of text.matchAll(/\[[^\]]+\]\((\/[^)]+)\)/g)) hrefs.push(m[1]);
+    const articleLinks = new Set(hrefs.filter((h) => h.startsWith("/blog/")));
+    if (articleLinks.size < MIN_ARTICLE_LINKS) {
+      errors.push(
+        `compare/${page.slug} [${locale}]: links to ${articleLinks.size} article(s), needs ${MIN_ARTICLE_LINKS}.`,
+      );
+    }
+  }
+}
+
+/* Comparison FAQs share the market pages' uniqueness namespace. */
+for (const page of comparePages) {
+  for (const locale of LOCALES) {
+    for (const faq of page[locale]?.faqs ?? []) {
+      const key = faq.q.trim().toLowerCase();
+      const id = `compare/${page.slug}`;
+      const prev = seenQuestions.get(key);
+      if (prev && prev !== id) errors.push(`FAQ reused between ${prev} and ${id}: "${faq.q}"`);
+      seenQuestions.set(key, id);
+    }
+  }
+}
+
+/* Two comparisons must not be each other's template either. */
+for (let i = 0; i < comparePages.length; i++) {
+  for (let j = i + 1; j < comparePages.length; j++) {
+    for (const locale of LOCALES) {
+      const a = comparePages[i][locale];
+      const b = comparePages[j][locale];
+      if (!a || !b) continue;
+      const score = jaccard(shingles(comparePros(a)), shingles(comparePros(b)));
+      const label = `compare/${comparePages[i].slug} vs compare/${comparePages[j].slug} [${locale}]`;
+      if (score > MAX_SIMILARITY) {
+        errors.push(`${label}: ${(score * 100).toFixed(1)}% similar, limit ${(MAX_SIMILARITY * 100).toFixed(0)}%.`);
+      } else {
+        console.log(`  ok  ${label} — ${(score * 100).toFixed(1)}% similar`);
+      }
+    }
+  }
+}
 
 if (errors.length) {
   console.error("\ncheck:geo FAILED\n");

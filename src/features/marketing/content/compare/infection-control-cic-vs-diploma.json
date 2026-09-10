@@ -1,0 +1,160 @@
+{
+  "slug": "infection-control-cic-vs-diploma",
+  "en": {
+    "title": "CIC or an Infection Control Diploma | Which You Need",
+    "metaDescription": "One certifies what you already know; the other teaches you the work. How to tell which you need in infection prevention, and why most people need them in sequence.",
+    "h1": "CIC or an infection control diploma: exam or practice?",
+    "intro": "This comparison confuses people because the two things overlap almost completely in subject matter and not at all in purpose. CIC is a board certification: an examination that verifies knowledge you already have. A diploma is structured training: it teaches you the discipline. Asking which is better is like asking whether a driving test is better than driving lessons — the honest answer is that most people need both, in a particular order.",
+    "options": [
+      {
+        "key": "cic",
+        "name": "CIC certification",
+        "summary": "A board credential from CBIC, earned by passing an examination. Verifies competence; does not teach it.",
+        "courseSlug": "cic-preparation",
+        "bestFor": [
+          "You already work in infection prevention and can document the practice hours the eligibility rules require",
+          "You want the credential that carries the most weight in an IPC department internationally",
+          "Your knowledge is solid but uneven, and you need structured revision against the exam blueprint",
+          "Your employer or your next one specifically asks for CIC by name"
+        ],
+        "notFor": [
+          "You are new to infection prevention — you will likely fail the eligibility check before you reach the exam",
+          "You want to learn how to design a surveillance programme rather than be tested on knowing about one",
+          "You are unwilling to commit to recertification, which continues for as long as you hold the credential",
+          "You need the knowledge for a job starting next month; certification is a slower path than training"
+        ]
+      },
+      {
+        "key": "diploma",
+        "name": "Infection Control Diploma",
+        "summary": "Structured training across eight modules and eighteen sessions. Teaches the practice, assessed on completion.",
+        "courseSlug": "infection-control-diploma",
+        "bestFor": [
+          "You have been handed an IPC role and need to learn the work properly, quickly",
+          "You are moving into infection prevention and need a documented qualification before you apply",
+          "You need the surveillance, data and reprocessing skills that hospitals rarely teach internally",
+          "You are accumulating the practice CIC eligibility requires and want the waiting period to be useful"
+        ],
+        "notFor": [
+          "You already run a mature IPC programme confidently and only need a credential to prove it",
+          "Your employer has specified CIC by name and will not accept an alternative",
+          "You want a US board certification — this is a training diploma and does not claim to be one",
+          "You need something completable in a few weeks; this runs about six months"
+        ]
+      }
+    ],
+    "matrix": [
+      {
+        "label": "What it is",
+        "values": [
+          "An examination that verifies knowledge",
+          "A programme that teaches the discipline"
+        ]
+      },
+      {
+        "label": "Awarded by",
+        "values": [
+          "CBIC, an independent certification board",
+          "IMETS, on completion"
+        ]
+      },
+      {
+        "label": "Entry requirement",
+        "values": [
+          "Documented infection prevention practice",
+          "Open to healthcare professionals across disciplines"
+        ]
+      },
+      {
+        "label": "Length",
+        "values": [
+          "Study time varies; the exam is a single sitting",
+          "Roughly six months, eighteen sessions"
+        ]
+      },
+      {
+        "label": "Ongoing obligation",
+        "values": [
+          "Recertification for as long as you hold it",
+          "None once completed"
+        ]
+      },
+      {
+        "label": "What it proves",
+        "values": [
+          "That you meet an international competence standard",
+          "That you completed structured training in the practice"
+        ]
+      },
+      {
+        "label": "Best sequence",
+        "values": [
+          "After you have the documented practice",
+          "While you are getting it"
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Why the eligibility rules decide this for most people",
+        "paragraphs": [
+          "The comparison usually resolves itself the moment someone reads CIC's eligibility criteria carefully. It requires documented infection prevention practice — not interest, not attendance at training, not a related clinical role. Candidates who have been doing IPC as one duty among several frequently discover they cannot yet demonstrate what is required.",
+          "That is not a reason to give up on the certification. It is a reason to sequence properly: learn the discipline, do the work, document it, then certify. [What CIC eligibility actually requires](/blog/cic-eligibility-requirements) is worth reading before you spend anything on either option, because it will probably make the decision for you.",
+          "The reverse case exists too and is less common. Someone with years of genuine IPC practice, confident in surveillance and outbreak management, who needs revision and a credential rather than instruction. For them the diploma would be largely a review of things they already do, and exam preparation is the better purchase."
+        ]
+      },
+      {
+        "heading": "What structured training gives you that an exam does not",
+        "paragraphs": [
+          "Passing an examination proves you know things. It does not by itself teach you to design a surveillance programme that produces usable numbers, choose case definitions your team will apply consistently, or work out why a reprocessing step keeps being skipped on the night shift.",
+          "The diploma spends its middle third on exactly those problems — surveillance design, data management, outbreak detection and epidemiologic investigation, plus reprocessing as a decision framework under Spaulding classification rather than as a checklist. [Building an infection control programme](/blog/infection-control-program) covers the structural half, and [core IPC practices](/blog/core-ipc-practices) the clinical foundation underneath it.",
+          "It also spends time on the organisational part that clinical training ignores entirely: committee structure, annual planning, occupational health, and persuading other departments to act on what you have found. Those skills do not appear on an examination and they determine whether an IPC programme works."
+        ]
+      },
+      {
+        "heading": "Where the two genuinely overlap",
+        "paragraphs": [
+          "Both cover the same eight domains, because the discipline has an agreed shape: identification of infectious disease processes, prevention of transmission, cleaning and sterilisation, surveillance and epidemiologic investigation, employee health, environment of care, education, and programme management.",
+          "That overlap is why people ask this question. But covering the same ground with different purposes produces different experiences: exam preparation prioritises recall and pattern recognition against a blueprint, while training prioritises being able to do the thing afterwards. Neither is a substitute for the other, and a provider who tells you a diploma will get you through CIC — or that CIC preparation will teach you to run a programme — is overselling.",
+          "[How infection control work is read from outside the department](/blog/infection-control-accreditation) is a useful reality check on which of the two your current situation actually calls for."
+        ]
+      }
+    ],
+    "verdict": {
+      "heading": "The honest answer for most people",
+      "paragraphs": [
+        "If you can document the practice CIC requires, prepare for the exam. The credential carries weight a training diploma does not, and there is no reason to defer it.",
+        "If you cannot — which describes most people asking this question — do the diploma. Learn the work properly, do it, document it, and sit CIC in a year or two from a position where the exam confirms something true rather than testing something rehearsed.",
+        "What we would not recommend is buying exam preparation while ineligible in the hope the rules bend. They do not, and the money is spent either way."
+      ]
+    },
+    "faqs": [
+      {
+        "q": "Does completing the diploma make me eligible for CIC?",
+        "a": "No, and we want to be unambiguous about that. CBIC sets its eligibility criteria around documented infection prevention practice, not around training completed. The diploma is a good way to spend the period while you accumulate that practice, and it will make you better at the job, but it does not substitute for the experience requirement."
+      },
+      {
+        "q": "If I can only afford one, which should it be?",
+        "a": "Whichever matches where you are. Without the practice hours, exam preparation is money spent on something you cannot yet use. With them, the diploma will largely restate what you already do. The wrong purchase is not the more expensive one; it is the one that does not match your situation."
+      },
+      {
+        "q": "Is the diploma recognised the way CIC is?",
+        "a": "No, and it does not claim to be. CIC is an international board certification with an independent awarding body. The diploma is a training qualification evidencing completed structured study. They serve different purposes, and a hiring manager reads them differently."
+      },
+      {
+        "q": "How much practice does CIC actually want?",
+        "a": "CBIC publishes the specific criteria and they are the only authority on it — check them directly rather than relying on any provider's summary, including ours. What we can say generally is that the requirement is about sustained infection prevention responsibility rather than occasional involvement."
+      },
+      {
+        "q": "Can I do the diploma and the exam preparation together?",
+        "a": "You could, but we would usually advise against it. They pull in different directions — one toward doing the work, one toward answering questions about it — and doing both at once tends to mean neither lands properly. Sequence them."
+      },
+      {
+        "q": "Does the diploma help with accreditation surveys?",
+        "a": "More directly than the certification does, because it is built around producing the evidence a survey asks for — surveillance plans, case definitions, competency records, reprocessing observation. That is a practical benefit rather than a credential one."
+      }
+    ],
+    "ctaHeading": "Not sure which situation you are in?",
+    "ctaBody": "Tell us what your IPC responsibility actually looks like day to day and we will tell you whether you are ready for the certification or better served learning the discipline first. Both programmes are linked below."
+  }
+}

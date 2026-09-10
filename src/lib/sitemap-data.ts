@@ -1,6 +1,7 @@
 import { dal } from "@/lib/dal";
 import { localeUrl } from "@/lib/seo";
 import { listGeoCoursePages, geoCoursePath } from "@/features/marketing/lib/geo-course-pages";
+import { listComparisonPages, comparisonPath } from "@/features/marketing/lib/comparison-pages";
 import { revisionDate } from "@/features/blog/lib/revision-date";
 
 /**
@@ -121,6 +122,19 @@ export async function collectSitemapRows(): Promise<{
     courses.push({
       path: geoCoursePath(geo),
       locales: geo.ar ? ["en", "ar"] : ["en"],
+    });
+  }
+
+  /*
+   * Comparison pages. They sit with the courses because that is what they
+   * decide between, and they carry no timestamp for the same reason the market
+   * pages do not — the content is a checked-in file with no publish date, and
+   * inventing one would put a meaningless signal in front of a crawler.
+   */
+  for (const cmp of listComparisonPages()) {
+    courses.push({
+      path: comparisonPath(cmp),
+      locales: cmp.ar ? ["en", "ar"] : ["en"],
     });
   }
 

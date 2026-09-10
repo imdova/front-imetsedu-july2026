@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Flame,
   MapPin,
+  Scale,
 } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -42,6 +43,11 @@ import {
   CoursePullQuote,
 } from "@/features/marketing/components/course-detail-sections";
 import { CourseKnowledgeArticles } from "@/features/marketing/components/course-knowledge-articles";
+import {
+  comparisonsForCourse,
+  comparisonContent,
+  comparisonPath,
+} from "@/features/marketing/lib/comparison-pages";
 import {
   geoCoursePagesFor,
   geoContent,
@@ -233,6 +239,14 @@ export default async function CourseDetailPage({
 
   /** Country landing pages that exist for this course (SEO-08). */
   const geoPages = geoCoursePagesFor(course.slug);
+  /*
+   * Comparisons that discuss this course — including the ones where it is the
+   * option we would not recommend. Linking to a page that sometimes argues
+   * against this programme looks like an error and is not: the reader weighing
+   * two options will find a comparison somewhere, and ours at least describes
+   * both accurately.
+   */
+  const comparisons = comparisonsForCourse(course.slug);
 
   /*
    * Link the course's instructor block to a real faculty profile when one
@@ -1171,6 +1185,26 @@ export default async function CourseDetailPage({
                         </Link>
                       );
                     })}
+                  </div>
+                </CourseSectionBand>
+              )}
+
+              {comparisons.length > 0 && (
+                <CourseSectionBand tone="muted" spacing="lg">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {tr("Weighing it against something else?", "تقارنه بشيء آخر؟")}
+                    </span>
+                    {comparisons.map((cmp) => (
+                      <Link
+                        key={cmp.slug}
+                        href={comparisonPath(cmp)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-4 py-1.5 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
+                      >
+                        <Scale className="size-3.5" />
+                        {comparisonContent(cmp, locale).h1}
+                      </Link>
+                    ))}
                   </div>
                 </CourseSectionBand>
               )}
