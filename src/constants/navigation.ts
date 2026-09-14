@@ -88,7 +88,9 @@ export const ADMIN_NAV: NavSection[] = [
         titleKey: "office",
         href: "/admin/crm/office",
         icon: "Briefcase",
-        requiredPermissions: ["crm.office.view"],
+        // Office also holds the Sales Orientation tab, gated by its own key — a
+        // role given only the training still reaches it through here.
+        requiredPermissions: ["crm.office.view", "training.orientation.view"],
       },
       {
         titleKey: "paymentLinks",
@@ -432,26 +434,6 @@ export const ADMIN_NAV: NavSection[] = [
         href: "/admin/money-pages",
         icon: "Target",
         requiredPermissions: ["marketing.money_pages.view"],
-      },
-    ],
-  },
-  {
-    labelKey: "sectionOrientation",
-    items: [
-      {
-        titleKey: "salesOrientation",
-        href: "/admin/orientation",
-        icon: "GraduationCap",
-        /*
-         * Gated so a role can be given the training without being given the
-         * console around it. Note the page carries the same key — a nav entry
-         * and its destination drifting apart is the classic failure here.
-         *
-         * It was ungated when first built. It holds current programme fees and
-         * the exact wording reps may and may not use about accreditation, so
-         * who sees it is worth being able to decide.
-         */
-        requiredPermissions: ["training.orientation.view"],
       },
     ],
   },

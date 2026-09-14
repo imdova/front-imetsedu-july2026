@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { MessageSquareText, ClipboardList, Coins, Wallet, FileText, Link2, Plus, Upload } from "lucide-react";
+import { MessageSquareText, ClipboardList, Coins, Wallet, FileText, GraduationCap, Link2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,8 +11,10 @@ import { RegistrationSheetsTab } from "@/features/crm/components/registration-sh
 import { PricingSheetTab } from "@/features/crm/components/pricing-sheet-tab";
 import { PaymentMethodsTab } from "@/features/crm/components/payment-methods-tab";
 import { LinksHub } from "@/features/crm/components/links-hub";
+import { SalesOrientation } from "@/features/orientation/components/sales-orientation";
+import type { ProgrammeNumbers } from "@/features/orientation/lib/sales-orientation";
 
-const TABS = [
+const OFFICE_TABS = [
   { value: "messages", label: "Message Templates", icon: MessageSquareText },
   { value: "links", label: "Links", icon: Link2 },
   { value: "registration", label: "Registration Sheets", icon: ClipboardList },
@@ -20,6 +22,8 @@ const TABS = [
   { value: "payment", label: "Payment Methods", icon: Wallet },
   { value: "word", label: "Word Templates", icon: FileText },
 ] as const;
+
+const ORIENTATION_TAB = { value: "orientation", label: "Sales Orientation", icon: GraduationCap } as const;
 
 const PLACEHOLDERS: Record<string, { icon: React.ElementType; label: string; desc: string; action: string; actionIcon: React.ElementType }> = {
   word: {
@@ -49,23 +53,53 @@ function Placeholder({ id }: { id: keyof typeof PLACEHOLDERS }) {
   );
 }
 
-export function OfficePanel() {
+/**
+ * Office tabs. Which tabs render is decided by the server page from the
+ * viewer's permissions: `showOffice` for the day-to-day tools, and
+ * `orientationProgrammes` (null ⇒ no access) for Sales Orientation.
+ */
+export function OfficePanel({
+  showOffice = true,
+  orientationProgrammes = null,
+  initialTab,
+}: {
+  showOffice?: boolean;
+  orientationProgrammes?: ProgrammeNumbers[] | null;
+  /** `?tab=` from the URL — e.g. the old /admin/orientation link lands on "orientation". */
+  initialTab?: string;
+}) {
+  const tabs = [
+    ...(showOffice ? OFFICE_TABS : []),
+    ...(orientationProgrammes ? [ORIENTATION_TAB] : []),
+  ];
+  const defaultTab = tabs.some((t) => t.value === initialTab) ? initialTab! : tabs[0]?.value;
+
   return (
-    <Tabs defaultValue="messages" className="space-y-6">
+    <Tabs defaultValue={defaultTab} className="space-y-6">
       <TabsList className="h-auto flex-wrap gap-1 rounded-2xl bg-muted/60 p-1.5">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <TabsTrigger key={t.value} value={t.value} className="gap-1.5 rounded-xl px-3.5 py-2 data-[state=active]:shadow-sm">
             <t.icon className="size-4" /> {t.label}
           </TabsTrigger>
         ))}
       </TabsList>
 
-      <TabsContent value="messages"><MessageTemplatesTab /></TabsContent>
-      <TabsContent value="links"><LinksHub /></TabsContent>
-      <TabsContent value="registration"><RegistrationSheetsTab /></TabsContent>
-      <TabsContent value="pricing"><PricingSheetTab /></TabsContent>
-      <TabsContent value="payment"><PaymentMethodsTab /></TabsContent>
-      <TabsContent value="word"><Placeholder id="word" /></TabsContent>
+      {showOffice && (
+        <>
+          <TabsContent value="messages"><MessageTemplatesTab /></TabsContent>
+          <TabsContent value="links"><LinksHub /></TabsContent>
+          <TabsContent value="registration"><RegistrationSheetsTab /></TabsContent>
+          <TabsContent value="pricing"><PricingSheetTab /></TabsContent>
+          <TabsContent value="payment"><PaymentMethodsTab /></TabsContent>
+          <TabsContent value="word"><Placeholder id="word" /></TabsContent>
+        </>
+      )}
+      {orientationProgrammes && (
+        <TabsContent value="orientation">
+          {/* The training content stays Arabic in both locales — see `sales-orientation.tsx`. */}
+          <SalesOrientation programmes={orientationProgrammes} />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }
