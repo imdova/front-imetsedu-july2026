@@ -157,7 +157,7 @@
     "navVerifyDesc": "Check that an IMETS certificate is genuine.",
     "navHelpDesc": "Answers to common questions about our programs.",
     "navContact": "Contact",
-    "navCareers": "Careers",
+    "navCareers": "Career Hub",
     "sectionBlog": "Blog",
     "blogArticles": "Articles",
     "blogTemplates": "Templates",
@@ -178,7 +178,8 @@
     "sectionGrowth": "Growth",
     "moneyPages": "Money Pages",
     "moneyPagesDesc": "The commercial landing pages, their content gate, and the linking work behind them.",
-    "authorApplications": "Author applications"
+    "authorApplications": "Author applications",
+    "careerHub": "Career Hub"
   },
   "Header": {
     "newCourse": "New Course",

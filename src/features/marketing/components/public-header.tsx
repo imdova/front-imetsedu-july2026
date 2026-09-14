@@ -131,7 +131,7 @@ export function PublicHeader({
               key={l.href}
               href={l.href}
               className={cn(
-                "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isHome
                   ? l.active
                     ? "text-white"

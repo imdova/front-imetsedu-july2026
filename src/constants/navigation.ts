@@ -171,6 +171,12 @@ export const ADMIN_NAV: NavSection[] = [
         icon: "Award",
         requiredPermissions: ["crm.groups.view"],
       },
+      {
+        titleKey: "careerHub",
+        href: "/admin/career-hub",
+        icon: "Briefcase",
+        adminOnly: true,
+      },
     ],
   },
   {
@@ -469,6 +475,7 @@ export const STUDENT_NAV: NavSection[] = [
         href: "/student/certificates",
         icon: "Award",
       },
+      { titleKey: "careerHub", href: "/student/career-hub", icon: "Briefcase" },
       { titleKey: "favorites", href: "/student/favorites", icon: "Heart" },
       { titleKey: "billing", href: "/student/billing", icon: "ReceiptText" },
       { titleKey: "payments", href: "/student/installments", icon: "Coins" },
@@ -577,6 +584,7 @@ export const PUBLIC_NAV: NavItem[] = [
   { titleKey: "navResources", href: RESOURCES_HREF, icon: "BookOpen" },
   { titleKey: "navInstructors", href: "/instructors", icon: "Users" },
   { titleKey: "navGraduates", href: "/graduates", icon: "Award" },
+  { titleKey: "navCareers", href: "/careers", icon: "Briefcase" },
   { titleKey: "navPartnership", href: "/lp/partnership", icon: "Handshake" },
   { titleKey: "navContact", href: "/contact", icon: "Mail" },
 ];

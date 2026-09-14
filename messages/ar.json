@@ -157,7 +157,7 @@
     "navVerifyDesc": "تأكّد من صحة شهادة صادرة من IMETS.",
     "navHelpDesc": "إجابات على الأسئلة الشائعة حول برامجنا.",
     "navContact": "اتصل بنا",
-    "navCareers": "الوظائف",
+    "navCareers": "مركز الوظائف",
     "sectionBlog": "المدونة",
     "blogArticles": "المقالات",
     "blogTemplates": "القوالب",
@@ -178,7 +178,8 @@
     "sectionGrowth": "النمو",
     "moneyPages": "الصفحات الربحية",
     "moneyPagesDesc": "صفحات الهبوط التجارية، ومعيار المحتوى، وأعمال الربط الداخلي وراءها.",
-    "authorApplications": "طلبات الكتّاب"
+    "authorApplications": "طلبات الكتّاب",
+    "careerHub": "مركز الوظائف"
   },
   "Header": {
     "newCourse": "دورة جديدة",

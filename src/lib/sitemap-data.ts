@@ -222,6 +222,24 @@ export async function collectSitemapRows(): Promise<{
   }
 
   /*
+   * Career Hub listings, in the one language each is written in. Closed and
+   * expired listings are absent because the public API no longer returns them.
+   * The API caps a page at 50, so this walks the pages (bounded).
+   */
+  for (let page = 1; page <= 20; page++) {
+    const res = await dal.careerHub.fetchJobs({ page, limit: 50 }).catch(() => null);
+    if (!res?.ok) break;
+    for (const job of res.data.data) {
+      pages.push({
+        path: `/careers/${job.slug}`,
+        lastModified: realDate(job.updatedAt ?? job.postedAt),
+        locales: [job.language === "ar" ? "ar" : "en"],
+      });
+    }
+    if (page * 50 >= res.data.total) break;
+  }
+
+  /*
    * Free-lecture detail pages are deliberately absent. They are noindexed (lead
    * capture, not search assets) and several duplicate the H1 of a paid course
    * page — submitting a noindexed URL only asks Google to crawl something it is
