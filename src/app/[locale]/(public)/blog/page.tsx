@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
 import { staticPageMeta } from "@/lib/seo";
+import { Link } from "@/i18n/navigation";
 import { BlogExplorerLive } from "@/features/blog/components/blog-explorer-live";
 
 export async function generateMetadata({
@@ -57,6 +58,12 @@ export default async function BlogPage({
               {ar ? "أقسام" : "topics"}
             </span>
           )}
+          <Link
+            href="/become-author"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          >
+            {ar ? "اكتب مع IMETS" : "Write for IMETS"}
+          </Link>
         </div>
       </div>
 

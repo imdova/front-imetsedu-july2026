@@ -32,6 +32,7 @@ export async function PublicFooter({ logoLight }: { logoLight?: string }) {
       links: [
         { label: tm("footerResources"), href: "/help" },
         { label: tm("footerNews"), href: "/blog" },
+        { label: tm("footerWriteForUs"), href: "/become-author" },
         { label: tn("navContact"), href: "/contact" },
       ],
     },

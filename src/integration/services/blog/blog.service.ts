@@ -1,6 +1,6 @@
 import { api, type Result } from "@integration/services/http/client";
 import {
-  API_BLOG, apiBlogBySlug, API_BLOG_CATEGORIES_PUBLIC, API_BLOG_TOPICS, apiBlogCategoryLanding,
+  API_BLOG, apiBlogBySlug, API_BLOG_CATEGORIES_PUBLIC, API_BLOG_TOPICS, API_BLOG_TAXONOMY, apiBlogCategoryLanding,
   API_ADMIN_BLOG, apiAdminBlog, apiAdminBlogAction, apiAdminBlogFeatured, API_ADMIN_BLOG_AI,
   API_ADMIN_BLOG_CATEGORIES, apiAdminBlogCategory,
   API_ADMIN_BLOG_SUBCATEGORIES, apiAdminBlogSubcategory,
@@ -9,7 +9,7 @@ import {
 } from "@integration/constants/api/blog";
 import type {
   BlogPostDto, BlogCategoryDto, BlogSubcategoryDto, BlogAuthorDto, BlogTemplateDto,
-  BlogCategoryLandingDto, PaginatedDto,
+  BlogCategoryLandingDto, PaginatedDto, BlogTaxonomyDto,
 } from "./types";
 import type { BlogListParams } from "@/types/blog";
 
@@ -34,6 +34,8 @@ export const publicCategoryNames = (): Promise<Result<string[]>> =>
   api.get(API_BLOG_CATEGORIES_PUBLIC, { requireAuth: false, revalidate: 300 });
 export const topics = (): Promise<Result<BlogCategoryDto[]>> =>
   api.get(API_BLOG_TOPICS, { requireAuth: false, revalidate: 300 });
+export const taxonomy = (): Promise<Result<BlogTaxonomyDto[]>> =>
+  api.get(API_BLOG_TAXONOMY, { requireAuth: false, revalidate: 300 });
 export const categoryLanding = (slug: string, p?: BlogListParams): Promise<Result<BlogCategoryLandingDto>> =>
   api.get(apiBlogCategoryLanding(slug), { requireAuth: false, params: listParams(p), revalidate: 120 });
 

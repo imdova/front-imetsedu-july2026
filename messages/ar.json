@@ -177,7 +177,8 @@
     "salesOrientationDesc": "تدريب اليوم الأول على المحادثة مع العميل — المسار، والقواعد الأربع، وتدريب على استفسارات حقيقية.",
     "sectionGrowth": "النمو",
     "moneyPages": "الصفحات الربحية",
-    "moneyPagesDesc": "صفحات الهبوط التجارية، ومعيار المحتوى، وأعمال الربط الداخلي وراءها."
+    "moneyPagesDesc": "صفحات الهبوط التجارية، ومعيار المحتوى، وأعمال الربط الداخلي وراءها.",
+    "authorApplications": "طلبات الكتّاب"
   },
   "Header": {
     "newCourse": "دورة جديدة",
@@ -1329,7 +1330,8 @@
     "homeMetaDescription": "دبلومات وشهادات مباشرة أونلاين في الرعاية الصحية لمصر والخليج: CPHQ وCIC ومكافحة العدوى والجودة وإدارة المستشفيات، مع دعم بالعربية.",
     "facultyCertificates": "الشهادات",
     "facultyViewProfile": "عرض الملف",
-    "alumniViewAll": "عرض كل دفعات التخرج"
+    "alumniViewAll": "عرض كل دفعات التخرج",
+    "footerWriteForUs": "اكتب مع IMETS"
   },
   "Student": {
     "dashboardTitle": "تعلّمي",

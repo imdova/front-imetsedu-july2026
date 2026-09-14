@@ -5,6 +5,7 @@ export const ROUTES = {
   HOME: "/",
   ABOUT: "/about",
   BECOME_INSTRUCTOR: "/become-instructor",
+  BECOME_AUTHOR: "/become-author",
   CONTACT: "/contact",
   COURSES: "/courses",
   COURSE_DETAIL: (id: string) => `/courses/${id}`,

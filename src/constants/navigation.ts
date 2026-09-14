@@ -315,6 +315,13 @@ export const ADMIN_NAV: NavSection[] = [
         adminOnly: true,
         feature: "blog",
       },
+      {
+        titleKey: "authorApplications",
+        href: "/admin/blog/author-applications",
+        icon: "UserPlus",
+        adminOnly: true,
+        feature: "blog",
+      },
     ],
   },
   {

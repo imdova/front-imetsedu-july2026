@@ -33,6 +33,10 @@ export async function fetchTopics(): Promise<Result<BlogCategory[]>> {
   const res = await svc.topics();
   return res.ok ? ok(res.data.map((d) => mapId<BlogCategory>(d))) : res;
 }
+/** A public blog section and the topics under it. */
+export type BlogTaxonomyCategory = svc.BlogTaxonomyDto;
+/** Public: active categories with their active subcategories, for forms that ask which topics. */
+export const fetchPublicTaxonomy = (): Promise<Result<BlogTaxonomyCategory[]>> => svc.taxonomy();
 export async function fetchCategoryLanding(slug: string, p?: BlogListParams): Promise<Result<BlogCategoryLanding>> {
   const res = await svc.categoryLanding(slug, p);
   return res.ok ? ok({ category: mapId<BlogCategory>(res.data.category), data: res.data.data.map((d) => mapId<BlogPost>(d)), meta: res.data.meta }) : res;

@@ -177,7 +177,8 @@
     "salesOrientationDesc": "Day-one conversation training for the sales team — the path, the four rules, and practice on real enquiries.",
     "sectionGrowth": "Growth",
     "moneyPages": "Money Pages",
-    "moneyPagesDesc": "The commercial landing pages, their content gate, and the linking work behind them."
+    "moneyPagesDesc": "The commercial landing pages, their content gate, and the linking work behind them.",
+    "authorApplications": "Author applications"
   },
   "Header": {
     "newCourse": "New Course",
@@ -1329,7 +1330,8 @@
     "homeMetaDescription": "Live online healthcare diplomas and certification prep for Egypt and the Gulf — CPHQ, CIC, infection control, quality and hospital management.",
     "facultyCertificates": "Certificates",
     "facultyViewProfile": "View profile",
-    "alumniViewAll": "See all graduation cohorts"
+    "alumniViewAll": "See all graduation cohorts",
+    "footerWriteForUs": "Write for IMETS"
   },
   "Student": {
     "dashboardTitle": "My learning",

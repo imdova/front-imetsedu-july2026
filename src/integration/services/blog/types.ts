@@ -8,6 +8,14 @@ export type Raw<T> = Omit<T, "id"> & { _id: string };
 export type BlogPostDto = Raw<BlogPost>;
 export type BlogCategoryDto = Raw<BlogCategory>;
 export type BlogSubcategoryDto = Raw<BlogSubcategory>;
+/** Public taxonomy: each active category with its active subcategories (ids already strings). */
+export interface BlogTaxonomyDto {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  subcategories: { id: string; name: string; slug: string }[];
+}
 export type BlogAuthorDto = Raw<BlogAuthor>;
 export type BlogTemplateDto = Raw<BlogTemplate>;
 export type BlogCategoryLandingDto = { category: BlogCategoryDto; data: BlogPostDto[]; meta: BlogCategoryLanding["meta"] };

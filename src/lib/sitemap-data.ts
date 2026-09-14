@@ -36,6 +36,7 @@ const STATIC_PATHS = [
   "/free-courses",
   "/about",
   "/become-instructor",
+  "/become-author",
   "/contact",
   "/help",
   "/blog",

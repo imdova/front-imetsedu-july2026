@@ -3,6 +3,7 @@ export const API_BLOG = "/blog";
 export const apiBlogBySlug = (slug: string) => `/blog/${slug}`;
 export const API_BLOG_CATEGORIES_PUBLIC = "/blog/categories";
 export const API_BLOG_TOPICS = "/blog/topics";
+export const API_BLOG_TAXONOMY = "/blog/taxonomy";
 export const apiBlogCategoryLanding = (slug: string) => `/blog/category/${slug}`;
 
 // Admin — articles
