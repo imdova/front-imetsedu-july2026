@@ -46,7 +46,7 @@ export default async function CategoryPage({
 
   const [catRes, courseRes] = await Promise.all([
     dal.courseTaxonomy.fetchPublicCategories(),
-    dal.courses.fetchCourses(),
+    dal.courses.fetchPublishedCourses(),
   ]);
   const cats = catRes.ok ? catRes.data : [];
   const category = cats.find((c) => (c.slug || c.id) === slug);

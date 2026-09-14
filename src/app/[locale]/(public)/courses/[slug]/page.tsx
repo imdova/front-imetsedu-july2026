@@ -89,7 +89,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const res = await dal.courses.fetchCourses();
+  const res = await dal.courses.fetchPublishedCourses();
   const course = (res.ok ? res.data : []).find((c) => c.slug === slug);
   if (!course) return {};
   const ar = locale === "ar";
@@ -176,7 +176,7 @@ export default async function CourseDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations("Marketing");
 
-  const coursesRes = await dal.courses.fetchCourses();
+  const coursesRes = await dal.courses.fetchPublishedCourses();
   const courses = coursesRes.ok ? coursesRes.data : [];
   const course = courses.find((c) => c.slug === slug);
   if (!course) notFound();

@@ -91,7 +91,7 @@ export default async function FreeCourseDetailPage({
 
   // The paid course this lecture previews — free programmes reuse the course
   // slug, so the pairing needs no extra field.
-  const coursesRes = await dal.courses.fetchCourses();
+  const coursesRes = await dal.courses.fetchPublishedCourses();
   const paidCourse = (coursesRes.ok ? coursesRes.data : []).find((c) => c.slug === slug) ?? null;
 
   const name = (locale === "ar" ? program.titleAr : program.titleEn) || program.titleEn;

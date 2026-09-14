@@ -75,7 +75,7 @@ export default async function HomePage({
   setRequestLocale(locale);
   const t = await getTranslations("Marketing");
 
-  const coursesRes = await dal.courses.fetchCourses();
+  const coursesRes = await dal.courses.fetchPublishedCourses();
   // Home "Featured Healthcare Programs" should show more options.
   const courses = (coursesRes.ok ? coursesRes.data : []).slice(0, 8);
 

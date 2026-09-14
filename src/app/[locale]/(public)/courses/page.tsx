@@ -38,7 +38,7 @@ export default async function CatalogPage({
   const t = await getTranslations("Marketing");
 
   const [coursesRes, instructorsRes, articlesRes] = await Promise.all([
-    dal.courses.fetchCourses(),
+    dal.courses.fetchPublishedCourses(),
     dal.lookups.fetchInstructors(),
     dal.blog.fetchPublicArticles({ limit: 40 }),
   ]);

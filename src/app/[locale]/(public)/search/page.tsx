@@ -15,7 +15,7 @@ export default async function SearchPage({ params }: { params: Promise<{ locale:
   setRequestLocale(locale);
   const t = await getTranslations("Pages");
 
-  const res = await dal.courses.fetchCourses();
+  const res = await dal.courses.fetchPublishedCourses();
   const courses = res.ok ? res.data : [];
 
   return (

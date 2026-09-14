@@ -20,7 +20,7 @@ export default async function CheckoutPage({
   const { course: courseParam } = await searchParams;
   setRequestLocale(locale);
 
-  const res = await dal.courses.fetchCourses();
+  const res = await dal.courses.fetchPublishedCourses();
   const list = res.ok ? res.data : [];
   const course = courseParam
     ? list.find((c) => c.slug === courseParam) ?? list.find((c) => c.id === courseParam) ?? null

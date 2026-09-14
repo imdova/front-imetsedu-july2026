@@ -35,6 +35,25 @@ export async function fetchCourses(
   }
 }
 
+/**
+ * Published courses only — the call every public page should make.
+ *
+ * `GET /courses` applies a status filter only when one is passed, so
+ * `fetchCourses()` returns drafts and unpublished courses alongside live ones.
+ * That went unnoticed while every course in the catalogue happened to be
+ * published, but a draft would have rendered at its own URL, appeared in the
+ * `/courses` listing and search, and been purchasable through checkout —
+ * priced at zero, because an unpriced course maps to 0.
+ *
+ * Admin, staff and CRM screens keep calling `fetchCourses()` because they need
+ * to see drafts. Anything a visitor can reach calls this.
+ */
+export function fetchPublishedCourses(
+  params: Omit<db.ListCoursesParams, "status"> = {},
+): Promise<Result<CourseRow[]>> {
+  return fetchCourses({ ...params, status: "published" });
+}
+
 /** LIVE: single course from GET /courses/:id, mapped to the UI shape. */
 export async function fetchCourse(
   id: string,

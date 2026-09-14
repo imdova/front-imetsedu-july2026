@@ -19,7 +19,7 @@ export default async function StudentCheckoutPage({
   setRequestLocale(locale);
   const t = await getTranslations("Student");
 
-  const res = await dal.courses.fetchCourses();
+  const res = await dal.courses.fetchPublishedCourses();
   const courses = res.ok ? res.data : [];
   const course = (slug && courses.find((c) => c.slug === slug)) || courses[0];
 
