@@ -1136,7 +1136,8 @@ function CampaignsPanel({ initial, confirm }: {
     setBusyId(c.id);
     const r = await dal.whatsapp.sendCampaign(c.id);
     setBusyId(null);
-    if (!r.ok) { toast.error(r.error); return; }
+    // A refused send stores its reason on the campaign — refresh so the row shows it.
+    if (!r.ok) { toast.error(r.error); refresh(); return; }
     toast.success(`Sent ${r.data.sent}/${r.data.total}${r.data.failed ? ` · ${r.data.failed} failed` : ""}`);
     refresh();
   };
@@ -1171,7 +1172,7 @@ function CampaignsPanel({ initial, confirm }: {
           </div>
           <div className="divide-y divide-border/60">
             {campaigns.map((c) => {
-              const undelivered = c.deliveryFailedCount > 0;
+              const undelivered = c.deliveryFailedCount > 0 || c.status === "failed";
               return (
                 <div key={c.id} className="grid gap-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_120px_200px_150px_110px] md:items-center md:gap-3">
                   <div className="flex min-w-0 items-center gap-3">
@@ -1185,13 +1186,21 @@ function CampaignsPanel({ initial, confirm }: {
                   </div>
                   <div><CampaignStatusBadge status={c.status} /></div>
                   <div className="min-w-0 text-xs text-muted-foreground">
-                    {c.status === "sent" ? (
+                    {c.status === "failed" ? (
+                      <>
+                        <span className="tabular-nums text-destructive">{c.failedCount} of {c.total} rejected</span>
+                        {c.lastError && <p className="mt-0.5 truncate text-[11px] text-destructive" title={c.lastError}>{c.lastError}</p>}
+                      </>
+                    ) : c.status === "sent" ? (
                       <>
                         <span className="tabular-nums">{c.sentCount} accepted</span>
                         {c.deliveredCount > 0 && <span className="text-success"> · {c.deliveredCount} delivered</span>}
                         {c.deliveryFailedCount > 0 && <span className="text-destructive"> · {c.deliveryFailedCount} failed</span>}
                         {undelivered && c.deliveryError && <p className="mt-0.5 truncate text-[11px] text-destructive" title={c.deliveryError}>{c.deliveryError}</p>}
                       </>
+                    ) : c.lastError ? (
+                      // A draft the pre-flight refused to send — say why instead of "—".
+                      <p className="truncate text-[11px] text-destructive" title={c.lastError}>{c.lastError}</p>
                     ) : "—"}
                   </div>
                   <div className="text-xs text-muted-foreground">{c.sentAt ? new Date(c.sentAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—"}</div>
@@ -1289,7 +1298,7 @@ function AutomationsPanel({ templates, groups, initial, confirm }: {
 }
 
 /* ───────────────────────── Templates ───────────────────────── */
-const EMPTY_TPL = { name: "", language: "ar", category: "marketing", folder: "", body: "", variables: 0, status: "approved", headerUrl: "", headerKind: "", headerFilename: "" };
+const EMPTY_TPL = { name: "", language: "ar", category: "marketing", folder: "", body: "", variables: 0, headerUrl: "", headerKind: "", headerFilename: "" };
 const WA_UNCAT = "__uncat__";
 
 function TemplatesPanel({ templates, setTemplates, confirm, wabaId }: {
@@ -1356,7 +1365,7 @@ function TemplatesPanel({ templates, setTemplates, confirm, wabaId }: {
     setForm({ ...EMPTY_TPL, folder: activeCat && activeCat !== WA_UNCAT ? activeCat : "" });
     setOpen(true);
   };
-  const openEdit = (t: WaTemplate) => { setEditing(t); setForm({ name: t.name, language: t.language, category: t.category, folder: t.folder ?? "", body: t.body, variables: t.variables, status: t.status, headerUrl: t.headerUrl ?? "", headerKind: t.headerKind ?? "", headerFilename: t.headerFilename ?? "" }); setOpen(true); };
+  const openEdit = (t: WaTemplate) => { setEditing(t); setForm({ name: t.name, language: t.language, category: t.category, folder: t.folder ?? "", body: t.body, variables: t.variables, headerUrl: t.headerUrl ?? "", headerKind: t.headerKind ?? "", headerFilename: t.headerFilename ?? "" }); setOpen(true); };
 
   const [checkingStatus, setCheckingStatus] = React.useState(false);
   const [submittingId, setSubmittingId] = React.useState<string | null>(null);

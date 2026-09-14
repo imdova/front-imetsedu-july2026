@@ -71,6 +71,8 @@ export function DetailRow({ k, v }: { k: string; v: React.ReactNode }) {
 /** Campaign lifecycle status → badge. */
 export function CampaignStatusBadge({ status }: { status: string }) {
   if (status === "sent") return <Badge className="bg-success/12 text-success hover:bg-success/15">Sent</Badge>;
+  // Meta accepted none of the messages — distinct from a sent campaign with some failures.
+  if (status === "failed") return <Badge variant="destructive">Failed</Badge>;
   if (status === "sending") return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300">Sending…</Badge>;
   return <Badge variant="secondary" className="capitalize">{status || "draft"}</Badge>;
 }

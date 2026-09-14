@@ -15,7 +15,7 @@ export interface WaCampaign {
   id: string; name: string; mode: "template" | "manual"; templateName: string; language: string; bodyPreview: string;
   text: string; mediaUrl: string; mediaKind: string; mediaFilename: string;
   defaultParams: string[]; recipients: { phone: string; name?: string }[];
-  status: string; total: number; sentCount: number; failedCount: number; sentAt?: string; createdAt: string;
+  status: string; total: number; sentCount: number; failedCount: number; sentAt?: string; createdAt: string; lastError?: string;
   deliveredCount: number; deliveryFailedCount: number; deliveryError: string;
 }
 export type WaMediaUpload = svc.WaMediaUploadDto;
@@ -29,7 +29,7 @@ const mapTpl = (d: svc.WaTemplateDto): WaTemplate => ({
 });
 const mapCamp = (d: svc.WaCampaignDto): WaCampaign => {
   let defaultParams: string[] = []; try { defaultParams = JSON.parse(d.defaultParams || "[]"); } catch { defaultParams = []; }
-  return { id: d._id, name: d.name, mode: d.mode === "manual" ? "manual" : "template", templateName: d.templateName, language: d.language, bodyPreview: d.bodyPreview, text: d.text ?? "", mediaUrl: d.mediaUrl ?? "", mediaKind: d.mediaKind ?? "", mediaFilename: d.mediaFilename ?? "", defaultParams, recipients: d.recipients ?? [], status: d.status, total: d.total ?? 0, sentCount: d.sentCount ?? 0, failedCount: d.failedCount ?? 0, sentAt: d.sentAt, createdAt: d.createdAt, deliveredCount: d.deliveredCount ?? 0, deliveryFailedCount: d.deliveryFailedCount ?? 0, deliveryError: d.deliveryError ?? "" };
+  return { id: d._id, name: d.name, mode: d.mode === "manual" ? "manual" : "template", templateName: d.templateName, language: d.language, bodyPreview: d.bodyPreview, text: d.text ?? "", mediaUrl: d.mediaUrl ?? "", mediaKind: d.mediaKind ?? "", mediaFilename: d.mediaFilename ?? "", defaultParams, recipients: d.recipients ?? [], status: d.status, total: d.total ?? 0, sentCount: d.sentCount ?? 0, failedCount: d.failedCount ?? 0, sentAt: d.sentAt, createdAt: d.createdAt, deliveredCount: d.deliveredCount ?? 0, deliveryFailedCount: d.deliveryFailedCount ?? 0, deliveryError: d.deliveryError ?? "", lastError: d.lastError ?? "" };
 };
 const mapAuto = (d: svc.WaAutomationDto): WaAutomation => ({
   id: d._id, name: d.name, trigger: d.trigger, triggerTag: d.triggerTag ?? "", steps: d.steps ?? "", active: !!d.active, sentCount: d.sentCount ?? 0, createdAt: d.createdAt,

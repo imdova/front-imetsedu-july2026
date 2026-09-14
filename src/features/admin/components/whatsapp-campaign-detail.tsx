@@ -81,6 +81,18 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
         </div>
       </div>
 
+      {c.lastError && (
+        <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+          <div className="min-w-0">
+            <p className="font-medium text-destructive">
+              {c.status === "failed" ? "Meta rejected every message in this campaign" : "Last send error"}
+            </p>
+            <p className="mt-0.5 break-words text-muted-foreground">{c.lastError}</p>
+          </div>
+        </div>
+      )}
+
       {/* Overview stats */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard label="Recipients" value={stats.total.toLocaleString()} icon={Users} intent="primary" />
