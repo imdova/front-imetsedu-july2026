@@ -1391,6 +1391,26 @@ function TemplatesPanel({ templates, setTemplates, confirm, wabaId }: {
     setCheckingStatus(false);
   };
 
+  // Meta reviews templates on its side and doesn't tell us when it's done. Refresh
+  // quietly when the tab opens with anything still pending, so an approved template
+  // doesn't sit at "Pending" until someone clicks Check approvals.
+  const hasPending = templates.some((t) => ["pending", "in_appeal"].includes(String(t.status)));
+  React.useEffect(() => {
+    if (!hasPending) return;
+    let alive = true;
+    (async () => {
+      const r = await dal.whatsapp.syncTemplateStatuses();
+      if (!alive || !r.ok) return;
+      const tr = await dal.whatsapp.fetchTemplates();
+      if (alive && tr.ok) setTemplates(tr.data);
+    })();
+    return () => {
+      alive = false;
+    };
+    // Once per open, not after every edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const onTplHeaderFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
