@@ -179,7 +179,12 @@
     "moneyPages": "Money Pages",
     "moneyPagesDesc": "The commercial landing pages, their content gate, and the linking work behind them.",
     "authorApplications": "Author applications",
-    "careerHub": "Career Hub"
+    "careerHub": "Career Hub",
+    "sectionCareerHub": "Career Hub",
+    "careerHubOverview": "Overview",
+    "careerJobs": "Job listings",
+    "careerProfiles": "Graduate profiles",
+    "careerVacancies": "Employer vacancies"
   },
   "Header": {
     "newCourse": "New Course",

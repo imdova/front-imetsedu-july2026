@@ -75,6 +75,8 @@ export interface CareerProfile {
   courseSlugs: string[];
   tracks: string[];
   countries: string[];
+  /** Opt-in to being recommended to employers. */
+  shareWithEmployers: boolean;
 }
 
 export interface CareerProfileDto extends CareerProfile {
@@ -103,4 +105,77 @@ export interface CareerMatch {
 export interface CareerMatches {
   hasProfile: boolean;
   matches: CareerMatch[];
+}
+
+/* ── admin: graduate profiles ── */
+
+export interface CareerProfileAdminParams {
+  profession?: string;
+  track?: string;
+  country?: string;
+  sharing?: "true";
+  q?: string;
+}
+
+export interface CareerProfileAdminRow extends CareerProfile {
+  _id: string;
+  userId: string;
+  user: { name: string; email: string; number: string; country: string; specialty: string } | null;
+  /** Open listings that currently match this profile. */
+  matchCount: number;
+  updatedAt?: string;
+}
+
+/* ── employer vacancy submissions ── */
+
+export type CareerVacancyStatus = "new" | "reviewing" | "converted" | "rejected";
+
+export interface CareerVacancyInput {
+  companyName: string;
+  contactName: string;
+  email: string;
+  /** International format, e.g. "+966500000000". */
+  phone: string;
+  country: string;
+  city?: string;
+  jobTitle: string;
+  employmentType?: string;
+  description: string;
+  applyUrl?: string;
+  /** Honeypot — always empty from a real browser. */
+  website?: string;
+}
+
+export interface CareerVacancyDto extends Omit<CareerVacancyInput, "website"> {
+  _id: string;
+  status: CareerVacancyStatus;
+  jobId: string | null;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/* ── admin: overview ── */
+
+export interface CareerOverview {
+  jobs: {
+    byStatus: Record<string, number>;
+    open: number;
+    expired: number;
+    byCountry: Record<string, number>;
+    byTrack: Record<string, number>;
+    byProfession: Record<string, number>;
+  };
+  profiles: {
+    total: number;
+    sharing: number;
+    /** Profiles with no country preference. */
+    anywhere: number;
+    byProfession: Record<string, number>;
+    byCountry: Record<string, number>;
+    byTrack: Record<string, number>;
+  };
+  vacancies: { total: number; byStatus: Record<string, number> };
+  recentJobs: Pick<CareerJobDto, "_id" | "title" | "employer" | "country" | "status" | "createdAt">[];
+  recentVacancies: Pick<CareerVacancyDto, "_id" | "companyName" | "jobTitle" | "country" | "status" | "createdAt">[];
 }

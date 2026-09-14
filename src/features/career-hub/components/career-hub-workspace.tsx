@@ -28,6 +28,7 @@ import type {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -62,6 +63,7 @@ const EMPTY: CareerProfile = {
   courseSlugs: [],
   tracks: [],
   countries: [],
+  shareWithEmployers: false,
 };
 
 const toggle = (list: string[], value: string) =>
@@ -121,6 +123,7 @@ export function CareerHubWorkspace({
       courseSlugs: res.data.courseSlugs,
       tracks: res.data.tracks,
       countries: res.data.countries,
+      shareWithEmployers: res.data.shareWithEmployers ?? false,
     };
     setSaved(profile);
     setDraft(profile);
@@ -228,8 +231,8 @@ export function CareerHubWorkspace({
               {!saved && (
                 <p className="rounded-xl bg-primary/[0.06] p-3 text-xs leading-relaxed text-primary">
                   {tr(
-                    "Tell us what you do and where you want to work. We use it only to match you with openings.",
-                    "أخبرنا بما تعمل وأين تريد العمل. نستخدم ذلك فقط لمطابقتك مع الوظائف.",
+                    "Tell us what you do and where you want to work. We use it to match you with openings — employers only hear about you if you choose to share your profile.",
+                    "أخبرنا بما تعمل وأين تريد العمل. نستخدم ذلك لمطابقتك مع الوظائف — ولا يعرف عنك أصحاب العمل إلا إذا اخترت مشاركة ملفك.",
                   )}
                 </p>
               )}
@@ -328,6 +331,22 @@ export function CareerHubWorkspace({
                 </Field>
               )}
 
+              <label className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-border/70 p-3">
+                <span>
+                  <span className="block text-xs font-semibold">{tr("Recommend me to employers", "رشّحني لأصحاب العمل")}</span>
+                  <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">
+                    {tr(
+                      "IMETS may share your name, contact details and this profile with employers hiring for roles that fit you.",
+                      "يجوز لـ IMETS مشاركة اسمك وبيانات التواصل وهذا الملف مع جهات العمل التي توظّف في وظائف تناسبك.",
+                    )}
+                  </span>
+                </span>
+                <Switch
+                  checked={draft.shareWithEmployers}
+                  onCheckedChange={(v) => setDraft((d) => ({ ...d, shareWithEmployers: v }))}
+                />
+              </label>
+
               <div className="flex gap-2">
                 <Button className="flex-1 gap-1.5" disabled={saving} onClick={save}>
                   {saving ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
@@ -371,6 +390,9 @@ export function CareerHubWorkspace({
                 </Summary>
                 <Summary label={tr("Programmes", "البرامج")}>
                   <TagList items={saved.courseSlugs.map(courseTitle)} empty="—" />
+                </Summary>
+                <Summary label={tr("Recommend me to employers", "رشّحني لأصحاب العمل")}>
+                  {saved.shareWithEmployers ? tr("Yes", "نعم") : tr("No", "لا")}
                 </Summary>
               </dl>
             )

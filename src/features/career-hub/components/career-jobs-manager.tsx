@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type { CareerJobDto, CareerJobInput, CareerJobStatus } from "@/lib/dal/career-hub";
 import { cn } from "@/lib/utils";
@@ -191,16 +191,38 @@ const isExpired = (j: CareerJobDto) => !!j.expiresAt && new Date(j.expiresAt).ge
  * Every listing is typed in by a person, so the form insists on the two things
  * that keep the board honest: a way to apply, and where the opening was found.
  */
-export function CareerJobsManager({ courses }: { courses: { slug: string; title: string }[] }) {
+/** An employer submission to turn into a listing — opens the add form prefilled. */
+export interface VacancyDraft {
+  vacancyId: string;
+  values: Partial<
+    Pick<
+      FormState,
+      "title" | "employer" | "country" | "city" | "employmentType" | "description" | "applyUrl" | "applyEmail" | "sourceName" | "notes"
+    >
+  >;
+}
+
+export function CareerJobsManager({
+  courses,
+  initialDraft,
+}: {
+  courses: { slug: string; title: string }[];
+  initialDraft?: VacancyDraft;
+}) {
   const { confirm, Confirmation } = useConfirm();
+  const router = useRouter();
+  // The submission being converted, if any — marked converted once the listing saves.
+  const vacancyRef = React.useRef<string | null>(initialDraft?.vacancyId ?? null);
   const [rows, setRows] = React.useState<CareerJobDto[]>([]);
   const [counts, setCounts] = React.useState<Record<string, number>>({});
   const [filter, setFilter] = React.useState<CareerJobStatus | "all">("all");
   const [query, setQuery] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [editing, setEditing] = React.useState<CareerJobDto | null>(null);
-  const [open, setOpen] = React.useState(false);
-  const [form, setForm] = React.useState<FormState>(EMPTY_FORM);
+  const [open, setOpen] = React.useState(!!initialDraft);
+  const [form, setForm] = React.useState<FormState>(() =>
+    initialDraft ? { ...EMPTY_FORM, postedAt: today(), ...initialDraft.values } : EMPTY_FORM,
+  );
   const [saving, setSaving] = React.useState(false);
 
   const load = React.useCallback(async (status: CareerJobStatus | "all") => {
@@ -248,6 +270,7 @@ export function CareerJobsManager({ courses }: { courses: { slug: string; title:
     }));
 
   const startCreate = () => {
+    vacancyRef.current = null;
     setEditing(null);
     setForm({ ...EMPTY_FORM, postedAt: today() });
     setOpen(true);
@@ -284,6 +307,12 @@ export function CareerJobsManager({ courses }: { courses: { slug: string; title:
     }
     toast.success(editing ? "Listing updated" : "Listing added");
     setOpen(false);
+    if (!editing && vacancyRef.current) {
+      const linked = await dal.careerHub.updateVacancy(vacancyRef.current, { status: "converted", jobId: res.data._id });
+      if (!linked.ok) toast.error(`Listing saved, but the vacancy wasn't marked converted: ${linked.error}`);
+      vacancyRef.current = null;
+      router.replace("/admin/career-hub/jobs");
+    }
     load(filter);
   };
 

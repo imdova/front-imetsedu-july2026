@@ -179,7 +179,12 @@
     "moneyPages": "الصفحات الربحية",
     "moneyPagesDesc": "صفحات الهبوط التجارية، ومعيار المحتوى، وأعمال الربط الداخلي وراءها.",
     "authorApplications": "طلبات الكتّاب",
-    "careerHub": "مركز الوظائف"
+    "careerHub": "مركز الوظائف",
+    "sectionCareerHub": "مركز الوظائف",
+    "careerHubOverview": "نظرة عامة",
+    "careerJobs": "إعلانات الوظائف",
+    "careerProfiles": "ملفات الخريجين",
+    "careerVacancies": "وظائف من أصحاب العمل"
   },
   "Header": {
     "newCourse": "دورة جديدة",

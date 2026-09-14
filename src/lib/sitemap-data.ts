@@ -41,6 +41,7 @@ const STATIC_PATHS = [
   "/help",
   "/blog",
   "/careers",
+  "/careers/post-a-job",
   "/privacy",
   "/terms",
   "/success-stories",

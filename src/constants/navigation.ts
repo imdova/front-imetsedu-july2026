@@ -171,10 +171,33 @@ export const ADMIN_NAV: NavSection[] = [
         icon: "Award",
         requiredPermissions: ["crm.groups.view"],
       },
+    ],
+  },
+  {
+    labelKey: "sectionCareerHub",
+    items: [
       {
-        titleKey: "careerHub",
+        titleKey: "careerHubOverview",
         href: "/admin/career-hub",
+        icon: "LayoutDashboard",
+        adminOnly: true,
+      },
+      {
+        titleKey: "careerJobs",
+        href: "/admin/career-hub/jobs",
         icon: "Briefcase",
+        adminOnly: true,
+      },
+      {
+        titleKey: "careerProfiles",
+        href: "/admin/career-hub/profiles",
+        icon: "UsersRound",
+        adminOnly: true,
+      },
+      {
+        titleKey: "careerVacancies",
+        href: "/admin/career-hub/vacancies",
+        icon: "Mail",
         adminOnly: true,
       },
     ],

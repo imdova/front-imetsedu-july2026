@@ -466,7 +466,7 @@ export default async function CareersPage({
               </p>
             </div>
             <Button size="lg" variant="secondary" className="gap-2" asChild>
-              <Link href="/contact">
+              <Link href="/careers/post-a-job">
                 {tr("Share a vacancy", "أرسل وظيفة")}
                 <ArrowRight className="size-4 rtl:rotate-180" />
               </Link>
