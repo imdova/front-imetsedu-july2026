@@ -28,6 +28,8 @@ export function taskConfigFields(courseOptions: { value: string; label: string }
     },
     { kind: "text", key: "entryLabel", label: "What one entry is called", hint: "e.g. منافس" },
     { kind: "number", key: "minEntries", label: "Minimum entries per programme", min: 1, max: 50 },
+    { kind: "boolean", key: "allowFiles", label: "Allow file attachments", hint: "PDF, Word and images, up to 10 MB each" },
+    { kind: "boolean", key: "allowVoice", label: "Allow voice notes", hint: "Recorded in the browser and attached directly" },
     {
       kind: "list",
       key: "fields",
@@ -232,11 +234,28 @@ export function lessonContentFields(id: LessonId, courseOptions: { value: string
           hint: "Fees, lecture counts and learners come from the live published course",
           minItems: 1,
           itemTitle: (p) => p?.name ?? p?.slug ?? "",
-          newItem: () => ({ slug: courseOptions[0]?.value ?? "", name: "", subtitle: "" }),
+          newItem: () => ({ slug: courseOptions[0]?.value ?? "", name: "", subtitle: "", videos: [] }),
           item: [
             { kind: "select", key: "slug", label: "Course", options: courseOptions },
             { kind: "text", key: "name", label: "Name shown to reps" },
             { kind: "text", key: "subtitle", label: "Subtitle" },
+            {
+              kind: "list",
+              key: "videos",
+              label: "YouTube videos",
+              hint: "Shown when a rep opens this programme",
+              itemTitle: (v) => v?.title || v?.url || "",
+              newItem: () => ({
+                id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
+                title: "",
+                provider: "youtube",
+                url: "",
+              }),
+              item: [
+                { kind: "text", key: "title", label: "Title" },
+                { kind: "text", key: "url", label: "YouTube link", hint: "youtube.com/watch?v=… or youtu.be/…", ltr: true },
+              ],
+            },
           ],
         },
       ];

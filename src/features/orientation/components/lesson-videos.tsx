@@ -28,7 +28,14 @@ export function VideoFrame({ video, className }: { video: OrientationVideo; clas
  * A lesson's videos, above its interactive content. One video plays inline;
  * several get a picker so the lesson doesn't turn into a wall of players.
  */
-export function LessonVideos({ videos }: { videos: OrientationVideo[] }) {
+export function LessonVideos({
+  videos,
+  label,
+}: {
+  videos: OrientationVideo[];
+  /** Heading wording — defaults to the lesson's («فيديو الدرس»). */
+  label?: { one: string; many: string };
+}) {
   const [active, setActive] = React.useState(0);
   if (videos.length === 0) return null;
   const current = videos[Math.min(active, videos.length - 1)];
@@ -37,7 +44,9 @@ export function LessonVideos({ videos }: { videos: OrientationVideo[] }) {
     <section className="mt-5 rounded-2xl border border-border/70 bg-muted/30 p-3 sm:p-4">
       <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
         <PlayCircle className="size-4 text-primary" />
-        {videos.length === 1 ? "فيديو الدرس" : `فيديوهات الدرس (${videos.length})`}
+        {videos.length === 1
+          ? (label?.one ?? "فيديو الدرس")
+          : `${label?.many ?? "فيديوهات الدرس"} (${videos.length})`}
       </p>
       <div className={cn("grid gap-3", videos.length > 1 && "lg:grid-cols-[1fr_14rem]")}>
         <div className="min-w-0">

@@ -5,12 +5,13 @@ import { Check, CheckCircle2, Clock, Loader2, MessageSquareText, Plus, Save, Sen
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
-import type { OrientationTaskSubmissionDto } from "@/lib/dal/orientation";
+import type { OrientationTaskAttachment, OrientationTaskSubmissionDto } from "@/lib/dal/orientation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { LessonTask, TaskField } from "@/features/orientation/lib/sales-orientation";
+import { TaskAttachments } from "./task-attachments";
 
 type Entry = Record<string, string>;
 
@@ -24,10 +25,13 @@ const STATUS_LABEL = {
 
 /**
  * A task lesson — the learner fills the task's form once per programme (e.g.
- * one competitor analysis for each course), saves drafts, and submits.
+ * one competitor analysis for each course), attaches files or voice notes,
+ * saves drafts, and submits.
  *
  * The lesson completes when every programme has been submitted. What was
  * submitted stays editable; submitting again sends it back for review.
+ * Attachments save the moment they're added, so a recorded voice note is sent
+ * without any extra step.
  */
 export function TaskLesson({
   lessonId,
@@ -43,8 +47,9 @@ export function TaskLesson({
   const [loading, setLoading] = React.useState(true);
   const [subs, setSubs] = React.useState<Record<string, OrientationTaskSubmissionDto>>({});
   const [entries, setEntries] = React.useState<Record<string, Entry[]>>({});
+  const [attachments, setAttachments] = React.useState<Record<string, OrientationTaskAttachment[]>>({});
   const [program, setProgram] = React.useState(task.programs[0]?.slug ?? "");
-  const [saving, setSaving] = React.useState<"draft" | "submit" | null>(null);
+  const [saving, setSaving] = React.useState<"draft" | "submit" | "attachments" | null>(null);
 
   React.useEffect(() => {
     let alive = true;
@@ -60,6 +65,7 @@ export function TaskLesson({
           task.programs.map((p) => [p.slug, map[p.slug]?.entries?.length ? map[p.slug].entries : [{}]]),
         ),
       );
+      setAttachments(Object.fromEntries(task.programs.map((p) => [p.slug, map[p.slug]?.attachments ?? []])));
       setLoading(false);
     })();
     return () => {
@@ -78,6 +84,7 @@ export function TaskLesson({
   const current = task.programs.find((p) => p.slug === program) ?? task.programs[0];
   if (!current) return null;
   const rows = entries[current.slug] ?? [{}];
+  const files = attachments[current.slug] ?? [];
   const sub = subs[current.slug];
   const submittedCount = task.programs.filter((p) => subs[p.slug] && subs[p.slug].status !== "draft").length;
 
@@ -101,7 +108,11 @@ export function TaskLesson({
       }
     }
     setSaving(submit ? "submit" : "draft");
-    const res = await dal.orientation.saveMyTaskSubmission(lessonId, current.slug, { entries: rows, submit });
+    const res = await dal.orientation.saveMyTaskSubmission(lessonId, current.slug, {
+      entries: rows,
+      attachments: files,
+      submit,
+    });
     setSaving(null);
     if (!res.ok) {
       toast.error(res.error);
@@ -109,6 +120,27 @@ export function TaskLesson({
     }
     setSubs((all) => ({ ...all, [current.slug]: res.data }));
     toast.success(submit ? `اتبعت تحليل ${current.name}` : "اتحفظت كمسودة");
+  };
+
+  /** Attachments persist immediately; the answer's status is left as it is. */
+  const saveAttachments = async (next: OrientationTaskAttachment[]): Promise<boolean> => {
+    const slug = current.slug;
+    const previous = attachments[slug] ?? [];
+    setAttachments((all) => ({ ...all, [slug]: next }));
+    setSaving("attachments");
+    const res = await dal.orientation.saveMyTaskSubmission(lessonId, slug, {
+      entries: entries[slug] ?? [{}],
+      attachments: next,
+      submit: false,
+    });
+    setSaving(null);
+    if (!res.ok) {
+      setAttachments((all) => ({ ...all, [slug]: previous }));
+      toast.error(res.error);
+      return false;
+    }
+    setSubs((all) => ({ ...all, [slug]: res.data }));
+    return true;
   };
 
   return (
@@ -199,23 +231,37 @@ export function TaskLesson({
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" className="gap-1.5" onClick={() => setRows([...rows, {}])} disabled={rows.length >= 50}>
-              <Plus className="size-4" />
-              أضف {task.entryLabel}
-            </Button>
-            <div className="ms-auto flex gap-2">
-              {(!sub || sub.status === "draft") && (
-                <Button type="button" variant="ghost" className="gap-1.5" onClick={() => save(false)} disabled={!!saving}>
-                  {saving === "draft" ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                  احفظ مسودة
-                </Button>
-              )}
-              <Button type="button" className="gap-1.5" onClick={() => save(true)} disabled={!!saving}>
-                {saving === "submit" ? <Loader2 className="size-4 animate-spin" /> : sub && sub.status !== "draft" ? <Check className="size-4" /> : <Send className="size-4" />}
-                {sub && sub.status !== "draft" ? "حدّث الإرسال" : `ابعت تحليل ${current.name}`}
+          <Button type="button" variant="outline" className="gap-1.5" onClick={() => setRows([...rows, {}])} disabled={rows.length >= 50}>
+            <Plus className="size-4" />
+            أضف {task.entryLabel}
+          </Button>
+
+          <TaskAttachments
+            key={current.slug}
+            items={files}
+            allowFiles={task.allowFiles}
+            allowVoice={task.allowVoice}
+            disabled={saving === "draft" || saving === "submit"}
+            onChange={saveAttachments}
+          />
+
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {(!sub || sub.status === "draft") && (
+              <Button type="button" variant="ghost" className="gap-1.5" onClick={() => save(false)} disabled={!!saving}>
+                {saving === "draft" ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                احفظ مسودة
               </Button>
-            </div>
+            )}
+            <Button type="button" className="gap-1.5" onClick={() => save(true)} disabled={!!saving}>
+              {saving === "submit" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : sub && sub.status !== "draft" ? (
+                <Check className="size-4" />
+              ) : (
+                <Send className="size-4" />
+              )}
+              {sub && sub.status !== "draft" ? "حدّث الإرسال" : `ابعت تحليل ${current.name}`}
+            </Button>
           </div>
         </>
       )}

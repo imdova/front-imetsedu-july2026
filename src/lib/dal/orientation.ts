@@ -11,6 +11,7 @@ import * as svc from "@integration/services/orientation";
 import type {
   OrientationProgressDto,
   OrientationProgressStatus,
+  OrientationTaskAttachment,
   OrientationTaskStatus,
   OrientationTaskSubmissionDto,
   OrientationTeamProgress,
@@ -22,6 +23,7 @@ import { ok, type Result } from "@integration/lib/api-client";
 export type {
   OrientationProgressDto,
   OrientationProgressStatus,
+  OrientationTaskAttachment,
   OrientationTaskStatus,
   OrientationTaskSubmissionDto,
   OrientationTeamProgress,
@@ -70,7 +72,7 @@ export const fetchMyTaskSubmissions = (lessonId: string): Promise<Result<Orienta
 export const saveMyTaskSubmission = (
   lessonId: string,
   programSlug: string,
-  input: { entries: Record<string, string>[]; submit: boolean },
+  input: { entries: Record<string, string>[]; submit: boolean; attachments?: OrientationTaskAttachment[] },
 ): Promise<Result<OrientationTaskSubmissionDto>> => svc.saveMyTaskSubmission(SALES, lessonId, programSlug, input);
 
 /** LIVE: admin — submitted answers from the team for a task. */

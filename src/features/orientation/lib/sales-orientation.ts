@@ -94,6 +94,8 @@ export interface ProgrammeRef {
   slug: string;
   name: string;
   subtitle: string;
+  /** YouTube videos about the programme, shown when a rep opens it. */
+  videos?: OrientationVideo[];
 }
 
 /** A programme with its live numbers resolved, ready to quote. */
@@ -230,6 +232,10 @@ export interface LessonTask {
   /** Rows required before submitting. */
   minEntries: number;
   fields: TaskField[];
+  /** Learners can attach PDF, Word and image files to their answer. */
+  allowFiles: boolean;
+  /** Learners can record and attach voice notes. */
+  allowVoice: boolean;
 }
 
 export const TASK_FIELD_TYPES: TaskFieldType[] = ["text", "textarea", "number", "yesno", "select", "url"];
@@ -241,6 +247,8 @@ export const blankTask = (): LessonTask => ({
   programs: [],
   entryLabel: "إدخال",
   minEntries: 1,
+  allowFiles: true,
+  allowVoice: true,
   fields: [{ key: newTaskFieldKey(), label: "", type: "text", options: [], required: true, hint: "" }],
 });
 
@@ -254,6 +262,8 @@ export const competitorAnalysisTask = (): LessonTask => ({
   ],
   entryLabel: "منافس",
   minEntries: 1,
+  allowFiles: true,
+  allowVoice: true,
   fields: [
     { key: "competitor", label: "اسم المنافس", type: "text", options: [], required: true, hint: "اسم الأكاديمية أو المدرب أو الجهة" },
     { key: "location", label: "المكان", type: "text", options: [], required: true, hint: "الدولة والمدينة، أو «أونلاين بس»" },
@@ -280,7 +290,7 @@ export const COMPETITOR_ANALYSIS_LESSON = {
   heading: "مهمة: تحليل المنافسين لكل برنامج",
   intro: "اختار كل برنامج، وسجّل المنافسين اللي بيقدّموا نفس البرنامج أو برنامج شبهه. المهمة بتكمل لما تبعت تحليل كل البرامج.",
   body:
-    "لكل برنامج، دوّر على المنافسين اللي بيقدّموا نفس البرنامج أو برنامج قريب منه، وسجّل بياناتهم في الفورم.\n\n- سجّل منافس واحد على الأقل لكل برنامج.\n- اكتب مصدر كل معلومة (رابط صفحة، إعلان، أو بوست).\n- اكتب اللي لقيته فعلًا، ولو معلومة مش معلنة اكتب «غير معلن» — ما تخمّنش.\n- التحليل ده للفريق من جوه بس: ما تذكرش اسم أي منافس للعميل، وما تهاجمش حد.",
+    "لكل برنامج، دوّر على المنافسين اللي بيقدّموا نفس البرنامج أو برنامج قريب منه، وسجّل بياناتهم في الفورم.\n\n- سجّل منافس واحد على الأقل لكل برنامج.\n- اكتب مصدر كل معلومة (رابط صفحة، إعلان، أو بوست).\n- اكتب اللي لقيته فعلًا، ولو معلومة مش معلنة اكتب «غير معلن» — ما تخمّنش.\n- تقدر ترفق صور الإعلانات أو ملفات PDF أو Word، أو تسجّل ملاحظة صوتية وتبعتها على طول.\n- التحليل ده للفريق من جوه بس: ما تذكرش اسم أي منافس للعميل، وما تهاجمش حد.",
 };
 
 /** Ids for admin-added lessons — prefixed so they can never collide with a built-in id. */
@@ -406,7 +416,7 @@ export const DEFAULT_ORIENTATION_LESSONS: OrientationLesson[] = [
     en: "Programme numbers",
     heading: "أرقام البرامج — احفظها قبل ما تتكلم في السعر",
     intro:
-      "اختار برنامجًا وهتلاقي سعره وعدد محاضراته وتكلفة المحاضرة الواحدة وتقسيم الدفعتين. الأرقام دي هي سلاحك في اعتراض «غالي»، مش الخصم.",
+      "اختار برنامجًا وهتلاقي سعره وعدد محاضراته وتقسيم الدفعتين. الأرقام دي هي سلاحك في اعتراض «غالي»، مش الخصم.",
     kind: "module",
     body: "",
     videos: [],
@@ -484,6 +494,9 @@ function normalizeTask(raw: unknown): LessonTask | null {
     fields,
     entryLabel: nonEmpty(t.entryLabel, "إدخال"),
     minEntries: Math.max(1, Math.min(50, Math.round(Number(t.minEntries)) || 1)),
+    // Tasks saved before attachments existed get them switched on.
+    allowFiles: t.allowFiles !== false,
+    allowVoice: t.allowVoice !== false,
   };
 }
 

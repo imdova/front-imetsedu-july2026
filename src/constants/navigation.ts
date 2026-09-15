@@ -88,9 +88,14 @@ export const ADMIN_NAV: NavSection[] = [
         titleKey: "office",
         href: "/admin/crm/office",
         icon: "Briefcase",
-        // Office also holds the Sales Orientation tab, gated by its own key — a
-        // role given only the training still reaches it through here.
-        requiredPermissions: ["crm.office.view", "training.orientation.view"],
+        requiredPermissions: ["crm.office.view"],
+      },
+      {
+        titleKey: "salesOrientation",
+        href: "/admin/orientation",
+        icon: "GraduationCap",
+        // Its own key, so a role can be given the training without the rest of the console.
+        requiredPermissions: ["training.orientation.view"],
       },
       {
         titleKey: "paymentLinks",

@@ -45,12 +45,24 @@ export interface OrientationTeamProgress {
 
 export type OrientationTaskStatus = "draft" | "submitted" | "reviewed";
 
+/** A file or voice note attached to a task answer (uploaded via /upload/file). */
+export interface OrientationTaskAttachment {
+  kind: "file" | "voice";
+  url: string;
+  name: string;
+  mime: string;
+  size: number;
+  /** Voice notes only. */
+  durationSec?: number;
+}
+
 /** A learner's answer to a task for one programme: rows keyed by the task's field keys. */
 export interface OrientationTaskSubmissionDto {
   _id: string;
   lessonId: string;
   programSlug: string;
   entries: Record<string, string>[];
+  attachments?: OrientationTaskAttachment[];
   status: OrientationTaskStatus;
   adminNote?: string;
   submittedAt: string | null;
@@ -95,7 +107,7 @@ export const saveMyTaskSubmission = (
   key: string,
   lessonId: string,
   programSlug: string,
-  input: { entries: Record<string, string>[]; submit: boolean },
+  input: { entries: Record<string, string>[]; submit: boolean; attachments?: OrientationTaskAttachment[] },
 ): Promise<Result<OrientationTaskSubmissionDto>> =>
   api.put(`${BASE}/${key}/tasks/${encodeURIComponent(lessonId)}/${encodeURIComponent(programSlug)}/me`, input);
 

@@ -297,6 +297,13 @@ function CustomLesson({ body, done, onComplete }: { body: string; done: boolean;
 
 /* ── course shell ────────────────────────────────────────────────────────── */
 
+/**
+ * The curriculum menu reads in English: a title an admin already wrote in
+ * English is kept as written; an Arabic title shows its English label instead
+ * (falling back to the Arabic when no English label exists yet).
+ */
+const menuLabel = (l: OrientationLesson) => (/[؀-ۿ]/.test(l.short) ? l.en.trim() || l.short : l.short);
+
 const formatDay = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : null;
 
@@ -439,14 +446,18 @@ export function SalesOrientation({
         )}
       </section>
 
-    <div className="grid gap-6 lg:grid-cols-[17rem_1fr] lg:gap-8">
+    {/*
+      The grid is LTR so the curriculum sits on the left of the lesson; the
+      curriculum itself reads in English, the lesson stays Arabic (RTL).
+    */}
+    <div dir="ltr" className="grid gap-6 lg:grid-cols-[17rem_1fr] lg:gap-8">
       {/* Curriculum */}
-      <aside className="lg:sticky lg:top-20 lg:self-start">
+      <aside dir="ltr" className="lg:sticky lg:top-20 lg:self-start">
         <div className="rounded-2xl border border-border/70 bg-card p-4">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-sm font-semibold">
               <ListChecks className="size-4 text-primary" />
-              محتوى التدريب
+              Training content
             </span>
             <span className="text-sm font-bold text-primary">
               {progress.count}/{progress.total}
@@ -486,7 +497,9 @@ export function SalesOrientation({
                     >
                       {finished ? <Check className="size-3" /> : i + 1}
                     </span>
-                    <span className="min-w-0 flex-1 truncate">{l.short}</span>
+                    <span dir="auto" title={menuLabel(l)} className="min-w-0 flex-1 truncate">
+                      {menuLabel(l)}
+                    </span>
                   </button>
                 </li>
               );
@@ -501,14 +514,14 @@ export function SalesOrientation({
               onClick={progress.reset}
             >
               <RotateCcw className="size-3.5" />
-              إعادة التقدّم
+              Reset progress
             </Button>
           )}
         </div>
       </aside>
 
       {/* Lesson */}
-      <div className="min-w-0">
+      <div dir="rtl" className="min-w-0">
         <article className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">

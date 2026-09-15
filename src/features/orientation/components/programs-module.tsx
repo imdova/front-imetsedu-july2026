@@ -4,22 +4,17 @@ import * as React from "react";
 import { Check, Copy, Info } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { ProgrammeNumbers } from "@/features/orientation/lib/sales-orientation";
+import { youTubeId, type ProgrammeNumbers } from "@/features/orientation/lib/sales-orientation";
+import { LessonVideos } from "./lesson-videos";
 
 /**
- * Programme numbers — the figures to have ready before price comes up.
+ * Programme numbers — the figures to have ready before price comes up, plus
+ * any YouTube videos the admin attached to the programme.
  *
  * Every number here is read from the live course record rather than a copy kept
  * alongside the training text. A rep quoting a stale fee from a training page is
  * the exact failure this avoids: change a price in Admin → Courses and this
- * lesson changes with it. (Checked when this was built: all eight programmes
- * matched their course records on fee, lecture count and learner numbers.)
- *
- * The per-lecture cost is the point of the whole lesson. "Expensive" is almost
- * never an argument about the total; it is an argument about value that has not
- * been made concrete yet, and dividing by the lecture count is what makes it
- * concrete — which is why the answer to that objection is arithmetic, not a
- * discount.
+ * lesson changes with it.
  */
 
 const eg = (n: number) => n.toLocaleString("en-US");
@@ -52,22 +47,21 @@ export function ProgramsModule({
   }
 
   const p = active === null ? null : programmes[active];
-  const perLecture = p && p.lectures > 0 ? Math.round(p.sale / p.lectures) : 0;
   const first = p ? Math.round(p.sale * 0.5) : 0;
   const off = p && p.price > 0 ? Math.round((1 - p.sale / p.price) * 100) : 0;
+  const videos = (p?.videos ?? []).filter((v) => v && typeof v.url === "string" && youTubeId(v.url));
 
   const pitch = p
-    ? `${p.name} عبارة عن ${p.lectures} محاضرة لايف على Zoom، محاضرة أسبوعيًا، مع تسجيلات متاحة ١٢ شهر ومهام تطبيقية وشهادة. الرسوم ${eg(p.sale)} جنيه، يعني تكلفة المحاضرة حوالي ${eg(perLecture)} جنيه. وتقدر تأكد مقعدك بدفعة أولى ${eg(first)} جنيه، والباقي خلال شهر من بداية البرنامج. تحب أبعتلك خطة الموديولات ومواعيد الدفعة الجاية؟`
+    ? `${p.name} عبارة عن ${p.lectures} محاضرة لايف على Zoom، محاضرة أسبوعيًا، مع تسجيلات متاحة ١٢ شهر ومهام تطبيقية وشهادة. الرسوم ${eg(p.sale)} جنيه، وتقدر تأكد مقعدك بدفعة أولى ${eg(first)} جنيه، والباقي خلال شهر من بداية البرنامج. تحب أبعتلك خطة الموديولات ومواعيد الدفعة الجاية؟`
     : "";
 
   const stats = p
     ? [
-        { v: eg(p.sale), k: `الرسوم بالجنيه (بدل ${eg(p.price)})`, hi: false },
-        { v: eg(perLecture), k: "تكلفة المحاضرة الواحدة", hi: true },
+        { v: eg(p.sale), k: `الرسوم بالجنيه (بدل ${eg(p.price)})`, hi: true },
         { v: String(p.lectures), k: "محاضرة لايف على Zoom", hi: false },
+        { v: `${off}%`, k: "نسبة الخصم الحالية", hi: false },
         { v: eg(first), k: "الدفعة الأولى (٥٠٪)", hi: false },
         { v: eg(p.sale - first), k: "الباقي خلال شهر من البداية", hi: false },
-        { v: `${off}%`, k: "نسبة الخصم الحالية", hi: false },
       ]
     : [];
 
@@ -111,6 +105,12 @@ export function ProgramsModule({
       ) : (
         <>
           <p className="text-sm text-muted-foreground">{p.subtitle}</p>
+
+          <LessonVideos
+            key={p.slug}
+            videos={videos}
+            label={{ one: "فيديو البرنامج", many: "فيديوهات البرنامج" }}
+          />
 
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {stats.map((s) => (

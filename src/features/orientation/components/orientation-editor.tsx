@@ -226,6 +226,12 @@ export function OrientationEditor({
         return;
       }
     }
+    const badProgrammeVideo = content.programmes.find((p) => (p.videos ?? []).some((v) => !youTubeId(v?.url ?? "")));
+    if (badProgrammeVideo) {
+      setActiveId("programs");
+      toast.error(`A video for “${badProgrammeVideo.name}” isn't a valid YouTube link — fix it or delete it first.`);
+      return;
+    }
     const badVideo = lessons.find((l) => l.videos.some((v) => !youTubeId(v.url)));
     if (badVideo) {
       setActiveId(badVideo.id);
@@ -289,8 +295,8 @@ export function OrientationEditor({
       {/* Toolbar */}
       <div className="sticky top-16 z-20 -mx-1 flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-background/90 px-4 py-3 shadow-sm backdrop-blur">
         <Button asChild variant="ghost" size="sm" className="gap-1.5">
-          <Link href="/admin/crm/office?tab=orientation">
-            <ArrowLeft className="size-4" /> Office
+          <Link href="/admin/orientation">
+            <ArrowLeft className="size-4" /> Sales Orientation
           </Link>
         </Button>
         <div className="min-w-0">
@@ -311,7 +317,7 @@ export function OrientationEditor({
           )}
           {lesson && (
             <Button asChild variant="outline" size="sm" className="gap-1.5">
-              <Link href={`/admin/crm/office?tab=orientation#${lesson.id}`} target="_blank">
+              <Link href={`/admin/orientation#${lesson.id}`} target="_blank">
                 <Eye className="size-3.5" /> Preview
               </Link>
             </Button>
@@ -455,7 +461,12 @@ export function OrientationEditor({
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField label="Menu title" value={lesson.short} onChange={(v) => updateLesson({ short: v })} />
-                <TextField label="English label" value={lesson.en} ltr onChange={(v) => updateLesson({ en: v })} />
+                <TextField
+                  label="English title (shown in the training menu)"
+                  value={lesson.en}
+                  ltr
+                  onChange={(v) => updateLesson({ en: v })}
+                />
               </div>
               <TextField label="Heading" value={lesson.heading} onChange={(v) => updateLesson({ heading: v })} />
               <label className="block">

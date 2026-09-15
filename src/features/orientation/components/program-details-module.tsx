@@ -117,8 +117,6 @@ export function ProgramDetailsModule({
 }
 
 function ProgramView({ program, numbers }: { program: ProgramDetail; numbers: ProgrammeNumbers | null }) {
-  const perLecture = numbers && numbers.lectures > 0 ? Math.round(numbers.sale / numbers.lectures) : null;
-
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-gradient-to-br from-primary/[0.08] to-sky-500/[0.05] p-4 ring-1 ring-primary/15 sm:p-5">
@@ -142,7 +140,6 @@ function ProgramView({ program, numbers }: { program: ProgramDetail; numbers: Pr
               )}
             </Stat>
             <Stat label="عدد المحاضرات">{nf.format(numbers.lectures)}</Stat>
-            {perLecture !== null && <Stat label="تكلفة المحاضرة">{nf.format(perLecture)} ج.م</Stat>}
             {numbers.students > 0 && <Stat label="متدرب (منشور على الموقع)">+{nf.format(numbers.students)}</Stat>}
           </dl>
         )}

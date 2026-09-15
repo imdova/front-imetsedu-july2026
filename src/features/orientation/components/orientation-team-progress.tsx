@@ -55,7 +55,7 @@ export function OrientationTeamProgress({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <Button asChild variant="ghost" size="sm" className="-ms-2 mb-1 gap-1.5 text-muted-foreground">
-            <Link href="/admin/crm/office?tab=orientation">
+            <Link href="/admin/orientation">
               <ArrowLeft className="size-4" /> Sales Orientation
             </Link>
           </Button>

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { LessonTask } from "@/features/orientation/lib/sales-orientation";
+import { AttachmentView } from "./task-attachments";
 
 export interface TaskSummary {
   id: string;
@@ -61,7 +62,7 @@ export function OrientationTaskSubmissions({ tasks }: { tasks: TaskSummary[] }) 
             Add one from the editor: <b>Add lesson → Task: competitor analysis</b>.
           </p>
           <Button asChild size="sm" className="mt-4">
-            <Link href="/admin/crm/office/orientation/edit">Open the editor</Link>
+            <Link href="/admin/orientation/edit">Open the editor</Link>
           </Button>
         </div>
       </div>
@@ -74,12 +75,15 @@ export function OrientationTaskSubmissions({ tasks }: { tasks: TaskSummary[] }) 
   const programName = current.task.programs.find((p) => p.slug === program)?.name ?? program;
 
   const exportCsv = () => {
-    const header = ["Submitted by", "Email", "Status", "Submitted", ...fields.map((f) => f.label)];
-    const lines = visible.flatMap((s) =>
-      s.entries.map((e) =>
-        [s.user?.name, s.user?.email, s.status, s.submittedAt?.slice(0, 10), ...fields.map((f) => e[f.key])].map(csvCell).join(","),
-      ),
-    );
+    const header = ["Submitted by", "Email", "Status", "Submitted", ...fields.map((f) => f.label), "Attachments"];
+    const lines = visible.flatMap((s) => {
+      const files = (s.attachments ?? []).map((a) => a.url).join(" \n");
+      return s.entries.map((e) =>
+        [s.user?.name, s.user?.email, s.status, s.submittedAt?.slice(0, 10), ...fields.map((f) => e[f.key]), files]
+          .map(csvCell)
+          .join(","),
+      );
+    });
     if (!lines.length) {
       toast.error("Nothing to export for this programme yet.");
       return;
@@ -175,7 +179,7 @@ export function OrientationTaskSubmissions({ tasks }: { tasks: TaskSummary[] }) 
 function BackLink() {
   return (
     <Button asChild variant="ghost" size="sm" className="-ms-2 mb-1 gap-1.5 text-muted-foreground">
-      <Link href="/admin/crm/office?tab=orientation">
+      <Link href="/admin/orientation">
         <ArrowLeft className="size-4" /> Sales Orientation
       </Link>
     </Button>
@@ -272,6 +276,19 @@ function SubmissionCard({
           </tbody>
         </table>
       </div>
+
+      {(s.attachments?.length ?? 0) > 0 && (
+        <div className="border-t border-border/60 px-4 py-3">
+          <p className="mb-2 text-xs font-semibold">Attachments ({s.attachments!.length})</p>
+          <ul className="grid gap-2 md:grid-cols-2">
+            {s.attachments!.map((a) => (
+              <li key={a.url} className="flex items-center rounded-xl bg-muted/40 p-2.5">
+                <AttachmentView attachment={a} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <footer className="flex flex-col gap-2 border-t border-border/60 px-4 py-3 sm:flex-row sm:items-end">
         <label className="block min-w-0 flex-1">
