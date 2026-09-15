@@ -5,22 +5,26 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  GraduationCap,
   ListChecks,
   MessageSquare,
   PartyPopper,
+  PlayCircle,
   RotateCcw,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  ORIENTATION_LESSONS,
-  SALES_ORIENTATION,
-  type ProgrammeNumbers,
-  type Thread,
+import type {
+  OrientationLesson,
+  PathStep,
+  ProgrammeNumbers,
+  SalesOrientation as SalesOrientationContent,
+  Thread,
 } from "@/features/orientation/lib/sales-orientation";
 import { useOrientationProgress } from "@/features/orientation/hooks/use-orientation-progress";
 import { useLessonHash } from "@/features/orientation/hooks/use-lesson-hash";
+import type { OrientationProgressDto } from "@/lib/dal/orientation";
 import {
   ChecklistModule,
   ClosingModule,
@@ -31,6 +35,8 @@ import {
 import { ObjectionsModule } from "./objections-module";
 import { DrillModule } from "./drill-module";
 import { ProgramsModule } from "./programs-module";
+import { LessonVideos } from "./lesson-videos";
+import { isModuleLesson, type LessonId } from "@/features/orientation/lib/sales-orientation";
 
 /**
  * Sales orientation, as a course rather than a document.
@@ -40,6 +46,9 @@ import { ProgramsModule } from "./programs-module";
  * The earlier single-scroll version put all seven modules on one page, which
  * read as something to skim rather than something to work through — a new joiner
  * could not tell how much was left, and finishing a module produced no moment.
+ *
+ * Content and lesson metadata arrive as props — an admin-edited copy when one
+ * is saved, otherwise the bundled default (see `resolveOrientation`).
  *
  * Everything is RTL regardless of the console language: the content is Egyptian
  * Arabic dialogue, and mirroring it would put the speaker bubbles on the wrong
@@ -121,7 +130,13 @@ function ThreadView({ thread, tone }: { thread: Thread; tone: "bad" | "good" }) 
   );
 }
 
-function ContrastLesson({ onComplete }: { onComplete: () => void }) {
+function ContrastLesson({
+  threads,
+  onComplete,
+}: {
+  threads: SalesOrientationContent["threads"];
+  onComplete: () => void;
+}) {
   const [tab, setTab] = React.useState<"bad" | "good">("bad");
   const [seen, setSeen] = React.useState<Set<string>>(new Set(["bad"]));
 
@@ -166,7 +181,7 @@ function ContrastLesson({ onComplete }: { onComplete: () => void }) {
       </div>
 
       {/* Remounts on tab change so the reveal replays from the top. */}
-      <ThreadView key={tab} thread={SALES_ORIENTATION.threads[tab]} tone={tab} />
+      <ThreadView key={tab} thread={threads[tab]} tone={tab} />
 
       {seen.size < 2 && (
         <p className="mt-4 rounded-xl bg-primary/[0.06] p-3 text-center text-sm text-primary">
@@ -179,8 +194,7 @@ function ContrastLesson({ onComplete }: { onComplete: () => void }) {
 
 /* ── lesson 2: the path ──────────────────────────────────────────────────── */
 
-function PathLesson({ onComplete }: { onComplete: () => void }) {
-  const steps = SALES_ORIENTATION.steps;
+function PathLesson({ steps, onComplete }: { steps: PathStep[]; onComplete: () => void }) {
   const [active, setActive] = React.useState(0);
   const [seen, setSeen] = React.useState<Set<number>>(new Set([0]));
 
@@ -194,7 +208,7 @@ function PathLesson({ onComplete }: { onComplete: () => void }) {
         {steps.map((s, i) => {
           const isActive = active === i;
           return (
-            <li key={s.title}>
+            <li key={`${i}-${s.title}`}>
               <button
                 type="button"
                 onClick={() => {
@@ -221,43 +235,111 @@ function PathLesson({ onComplete }: { onComplete: () => void }) {
         })}
       </ol>
       <p className="mt-3 rounded-xl bg-muted/60 p-4 text-sm leading-relaxed">
-        {steps[active].body}
+        {steps[active]?.body}
       </p>
       {seen.size < steps.length && (
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          افتح الخطوات الخمسة كلها عشان تكمّل الدرس ({seen.size} من {steps.length})
+          افتح الخطوات كلها عشان تكمّل الدرس ({seen.size} من {steps.length})
         </p>
       )}
     </div>
   );
 }
 
+/* ── admin-added lessons ─────────────────────────────────────────────────── */
+
+/**
+ * A lesson an admin wrote: its text (videos render above it, like any lesson)
+ * and an explicit "done" — there is no exercise to finish it by.
+ */
+function CustomLesson({ body, done, onComplete }: { body: string; done: boolean; onComplete: () => void }) {
+  const blocks = body
+    .split(/\n\s*\n/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="space-y-4">
+      {blocks.map((block, i) => {
+        const lines = block.split("\n").map((l) => l.trim());
+        const bullets = lines.every((l) => /^[-•]\s+/.test(l));
+        return bullets ? (
+          <ul key={i} className="space-y-1.5 ps-5 text-sm leading-relaxed [list-style:disc]">
+            {lines.map((l, j) => (
+              <li key={j}>{l.replace(/^[-•]\s+/, "")}</li>
+            ))}
+          </ul>
+        ) : (
+          <p key={i} className="whitespace-pre-line text-sm leading-relaxed">
+            {block}
+          </p>
+        );
+      })}
+
+      <div className="flex justify-center pt-2">
+        {done ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-600">
+            <Check className="size-4" />
+            خلصت الدرس ده
+          </span>
+        ) : (
+          <Button className="gap-1.5" onClick={onComplete}>
+            <Check className="size-4" />
+            علّم الدرس كمكتمل
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── course shell ────────────────────────────────────────────────────────── */
 
+const formatDay = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : null;
+
 export function SalesOrientation({
+  lessons,
+  content,
   programmes,
+  initialProgress,
 }: {
+  /** Lesson titles, intros and videos — an admin-edited copy or the bundled default. */
+  lessons: OrientationLesson[];
+  content: SalesOrientationContent;
   /** Resolved from the live course records by the page — see programs-module. */
   programmes: ProgrammeNumbers[];
+  /** The viewer's saved progress, loaded by the page. Null if it couldn't be read. */
+  initialProgress: OrientationProgressDto | null;
 }) {
-  const lessons = ORIENTATION_LESSONS;
-  const progress = useOrientationProgress(lessons.length);
+  const lessonIds = React.useMemo(() => lessons.map((l) => l.id), [lessons]);
+  const progress = useOrientationProgress({ total: lessons.length, lessonIds, initial: initialProgress });
   const { hash, go, pin } = useLessonHash();
-  const { complete, done } = progress;
+  const { complete, done, visit } = progress;
 
   /*
-   * No fragment ⇒ resume at the first unfinished lesson. On the server that is
-   * always lesson one (nothing is known to be complete); after hydration the
-   * stored progress arrives and the learner lands where they left off.
+   * No fragment ⇒ resume on the lesson the learner was last on (if it isn't
+   * finished), otherwise the first unfinished one. Progress is loaded on the
+   * server, so the first render already lands on the right lesson.
    */
   const firstUnfinished = Math.max(
     0,
     lessons.findIndex((l) => !done.has(l.id)),
   );
+  const resumeIndex = lessons.findIndex((l) => l.id === progress.lastLessonId && !done.has(l.id));
+  const continueIndex = progress.allDone ? 0 : resumeIndex >= 0 ? resumeIndex : firstUnfinished;
   const hashIndex = lessons.findIndex((l) => l.id === hash);
-  const index = hashIndex >= 0 ? hashIndex : firstUnfinished;
+  const index = hashIndex >= 0 ? hashIndex : continueIndex;
   const lesson = lessons[index];
   const isDone = done.has(lesson.id);
+
+  // "Where I am" is saved (debounced) so Continue resumes here on any device.
+  React.useEffect(() => {
+    visit(lesson.id);
+  }, [lesson.id, visit]);
+
+  const startedOn = formatDay(progress.startedAt);
+  const completedOn = formatDay(progress.completedAt);
 
   const completeCurrent = React.useCallback(() => {
     complete(lesson.id);
@@ -272,35 +354,85 @@ export function SalesOrientation({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const body = {
-    contrast: <ContrastLesson onComplete={completeCurrent} />,
-    path: <PathLesson onComplete={completeCurrent} />,
-    rules: <RulesModule rules={SALES_ORIENTATION.rules} onComplete={completeCurrent} />,
-    practice: (
-      <PracticeModule scenarios={SALES_ORIENTATION.scenarios} onComplete={completeCurrent} />
-    ),
+  const moduleBodies: Record<LessonId, React.ReactNode> = {
+    contrast: <ContrastLesson threads={content.threads} onComplete={completeCurrent} />,
+    path: <PathLesson steps={content.steps} onComplete={completeCurrent} />,
+    rules: <RulesModule rules={content.rules} onComplete={completeCurrent} />,
+    practice: <PracticeModule scenarios={content.scenarios} onComplete={completeCurrent} />,
     objections: (
       <ObjectionsModule
-        method={SALES_ORIENTATION.objectionMethod}
-        objections={SALES_ORIENTATION.objections}
+        method={content.objectionMethod}
+        objections={content.objections}
         onComplete={completeCurrent}
       />
     ),
-    drill: (
-      <DrillModule objections={SALES_ORIENTATION.objections} onComplete={completeCurrent} />
-    ),
+    drill: <DrillModule objections={content.objections} onComplete={completeCurrent} />,
     programs: <ProgramsModule programmes={programmes} onComplete={completeCurrent} />,
-    phrases: (
-      <PhraseBankModule phrases={SALES_ORIENTATION.phraseBank} onComplete={completeCurrent} />
-    ),
-    closing: <ClosingModule closings={SALES_ORIENTATION.closings} onComplete={completeCurrent} />,
-    checklist: (
-      <ChecklistModule items={SALES_ORIENTATION.checklist} onComplete={completeCurrent} />
-    ),
-  }[lesson.id];
+    phrases: <PhraseBankModule phrases={content.phraseBank} onComplete={completeCurrent} />,
+    closing: <ClosingModule closings={content.closings} onComplete={completeCurrent} />,
+    checklist: <ChecklistModule items={content.checklist} onComplete={completeCurrent} />,
+  };
+  const body =
+    lesson.kind === "custom" ? (
+      <CustomLesson key={lesson.id} body={lesson.body} done={isDone} onComplete={completeCurrent} />
+    ) : isModuleLesson(lesson.id) ? (
+      moduleBodies[lesson.id]
+    ) : null;
 
   return (
-    <div dir="rtl" className="grid gap-6 lg:grid-cols-[17rem_1fr] lg:gap-8">
+    <div dir="rtl" className="space-y-6">
+      {/* Progress — the same shape as a course's: lessons done, percent, a bar, and a way back in. */}
+      <section className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card p-4 sm:flex-row sm:items-center sm:p-5">
+        <span
+          className={cn(
+            "grid size-12 shrink-0 place-items-center rounded-2xl",
+            progress.allDone ? "bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary",
+          )}
+        >
+          {progress.allDone ? <PartyPopper className="size-6" /> : <GraduationCap className="size-6" />}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-heading text-base font-bold">تقدّمك في التدريب</h2>
+            <span
+              className={cn(
+                "text-sm font-bold tabular-nums",
+                progress.allDone ? "text-emerald-600" : "text-primary",
+              )}
+            >
+              {progress.percent}%
+            </span>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {progress.allDone
+              ? `خلصت التدريب${completedOn ? ` في ${completedOn}` : ""} · ${progress.total} من ${progress.total} دروس`
+              : progress.count === 0
+                ? `لسه ما بدأتش — ${progress.total} دروس في انتظارك`
+                : `${progress.count} من ${progress.total} دروس${startedOn ? ` · بدأت في ${startedOn}` : ""}`}
+          </p>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className={cn(
+                "h-full rounded-full transition-[width] duration-500",
+                progress.allDone ? "bg-emerald-500" : "bg-primary",
+              )}
+              style={{ width: `${progress.percent}%` }}
+            />
+          </div>
+        </div>
+        {(progress.allDone || index !== continueIndex) && (
+          <Button
+            variant={progress.allDone ? "outline" : "default"}
+            className="gap-1.5 sm:self-center"
+            onClick={() => goTo(continueIndex)}
+          >
+            <PlayCircle className="size-4" />
+            {progress.allDone ? "راجع الدروس" : progress.count === 0 ? "ابدأ التدريب" : "كمّل من حيث توقفت"}
+          </Button>
+        )}
+      </section>
+
+    <div className="grid gap-6 lg:grid-cols-[17rem_1fr] lg:gap-8">
       {/* Curriculum */}
       <aside className="lg:sticky lg:top-20 lg:self-start">
         <div className="rounded-2xl border border-border/70 bg-card p-4">
@@ -381,13 +513,17 @@ export function SalesOrientation({
                 مكتمل
               </span>
             )}
-            <span className="ms-auto text-muted-foreground">{lesson.en}</span>
+            {lesson.en && <span className="ms-auto text-muted-foreground">{lesson.en}</span>}
           </div>
 
           <h2 className="mt-3 font-heading text-xl font-bold leading-snug tracking-tight sm:text-2xl">
             {lesson.heading}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{lesson.intro}</p>
+          {lesson.intro && (
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{lesson.intro}</p>
+          )}
+
+          <LessonVideos key={lesson.id} videos={lesson.videos} />
 
           <div className="mt-6">{body}</div>
         </article>
@@ -435,6 +571,7 @@ export function SalesOrientation({
           ما توعد العميل بأي حاجة.
         </p>
       </div>
+    </div>
     </div>
   );
 }

@@ -1,5 +1,9 @@
 import { dal } from "@/lib/dal";
-import { SALES_ORIENTATION, type ProgrammeNumbers } from "@/features/orientation/lib/sales-orientation";
+import {
+  DEFAULT_SALES_ORIENTATION,
+  type ProgrammeNumbers,
+  type ProgrammeRef,
+} from "@/features/orientation/lib/sales-orientation";
 
 /**
  * The programme-numbers lesson quotes fees, lecture counts and learner totals.
@@ -8,12 +12,14 @@ import { SALES_ORIENTATION, type ProgrammeNumbers } from "@/features/orientation
  * are taught to quote. A programme whose course is missing or unpublished is
  * dropped rather than shown with a stale or empty price.
  *
- * Server-side only (reads through the DAL with the session token).
+ * `refs` is the (possibly edited) programme list; server-side only.
  */
-export async function loadOrientationProgrammes(): Promise<ProgrammeNumbers[]> {
+export async function loadOrientationProgrammes(
+  refs: ProgrammeRef[] = DEFAULT_SALES_ORIENTATION.programmes,
+): Promise<ProgrammeNumbers[]> {
   const res = await dal.courses.fetchCourses();
   const courses = res.ok ? res.data : [];
-  return SALES_ORIENTATION.programmes
+  return refs
     .map((ref) => {
       const c = courses.find((x) => x.slug === ref.slug);
       if (!c || c.status !== "published" || c.priceEGP <= 0) return null;
