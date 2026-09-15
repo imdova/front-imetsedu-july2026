@@ -1,5 +1,51 @@
 import type { Field } from "@/features/orientation/components/structured-fields";
-import type { LessonId } from "@/features/orientation/lib/sales-orientation";
+import { newTaskFieldKey, type LessonId } from "@/features/orientation/lib/sales-orientation";
+
+const TASK_FIELD_TYPE_OPTIONS = [
+  { value: "text", label: "Short text" },
+  { value: "textarea", label: "Long text" },
+  { value: "number", label: "Number" },
+  { value: "yesno", label: "Yes / No" },
+  { value: "select", label: "Dropdown" },
+  { value: "url", label: "Link" },
+];
+
+/** The task-lesson form definition: programmes, what a row is called, and the fields. */
+export function taskConfigFields(courseOptions: { value: string; label: string }[]): Field[] {
+  return [
+    {
+      kind: "list",
+      key: "programs",
+      label: "Programmes",
+      hint: "Staff fill the task once for each",
+      minItems: 1,
+      itemTitle: (p) => p?.name || p?.slug || "",
+      newItem: () => ({ slug: courseOptions[0]?.value ?? "", name: courseOptions[0]?.label ?? "" }),
+      item: [
+        { kind: "select", key: "slug", label: "Course", options: courseOptions },
+        { kind: "text", key: "name", label: "Tab name shown to staff" },
+      ],
+    },
+    { kind: "text", key: "entryLabel", label: "What one entry is called", hint: "e.g. منافس" },
+    { kind: "number", key: "minEntries", label: "Minimum entries per programme", min: 1, max: 50 },
+    {
+      kind: "list",
+      key: "fields",
+      label: "Form fields",
+      minItems: 1,
+      itemTitle: (f) =>
+        `${f?.label || "Untitled"} · ${TASK_FIELD_TYPE_OPTIONS.find((o) => o.value === f?.type)?.label ?? f?.type}${f?.required ? " · required" : ""}`,
+      newItem: () => ({ key: newTaskFieldKey(), label: "", type: "text", options: [], required: false, hint: "" }),
+      item: [
+        { kind: "text", key: "label", label: "Label" },
+        { kind: "select", key: "type", label: "Type", options: TASK_FIELD_TYPE_OPTIONS },
+        { kind: "boolean", key: "required", label: "Required before submitting" },
+        { kind: "strings", key: "options", label: "Dropdown choices", hint: "One per line — dropdown fields only" },
+        { kind: "text", key: "hint", label: "Hint under the field" },
+      ],
+    },
+  ];
+}
 
 /**
  * What each lesson's content editor shows, as field specs over the
@@ -236,6 +282,75 @@ export function lessonContentFields(id: LessonId, courseOptions: { value: string
           item: [
             { kind: "text", key: "question", label: "Question" },
             { kind: "text", key: "hint", label: "Hint", multiline: true },
+          ],
+        },
+      ];
+    case "program-details":
+      return [
+        {
+          kind: "group",
+          key: "programDetails",
+          label: "Program details",
+          hint: "Fees, lectures and learner numbers come from the live course — don't type them here",
+          fields: [
+            { kind: "text", key: "intro", label: "Introduction", multiline: true },
+            {
+              kind: "list",
+              key: "programmes",
+              label: "Programmes (one tab each)",
+              minItems: 1,
+              itemTitle: (p) => `${p?.name ?? ""} — ${p?.fullName ?? ""}`,
+              newItem: () => ({
+                slug: courseOptions[0]?.value ?? "",
+                name: "",
+                fullName: "",
+                awardedBy: "",
+                tagline: "",
+                whatItIs: "",
+                whyStudy: [],
+                whoFor: [],
+                eligibility: [],
+                courseFacts: [],
+                curriculum: [],
+                outcomes: [],
+                careerPaths: [],
+                sayThis: [],
+                avoid: [],
+              }),
+              item: [
+                { kind: "select", key: "slug", label: "Course (live fees & lectures)", options: courseOptions },
+                { kind: "text", key: "name", label: "Tab name", hint: "e.g. CPHQ" },
+                { kind: "text", key: "fullName", label: "Full certification name", ltr: true },
+                { kind: "text", key: "awardedBy", label: "Awarded by" },
+                { kind: "text", key: "tagline", label: "One-line summary", multiline: true },
+                { kind: "text", key: "whatItIs", label: "What the certification is", multiline: true },
+                { kind: "strings", key: "whyStudy", label: "Why healthcare professionals study it" },
+                { kind: "strings", key: "whoFor", label: "Who it suits" },
+                { kind: "strings", key: "eligibility", label: "Exam eligibility (verified facts only)" },
+                { kind: "strings", key: "courseFacts", label: "Course facts (format, duration, sessions)" },
+                { kind: "strings", key: "curriculum", label: "Course content (one module per line)" },
+                { kind: "strings", key: "outcomes", label: "What they'll learn" },
+                { kind: "strings", key: "careerPaths", label: "Career paths" },
+                { kind: "strings", key: "sayThis", label: "Say it like this" },
+                { kind: "strings", key: "avoid", label: "Never say" },
+              ],
+            },
+            { kind: "text", key: "audiencesIntro", label: "Professions tab — introduction", multiline: true },
+            {
+              kind: "list",
+              key: "audiences",
+              label: "Why each profession considers management programmes",
+              minItems: 1,
+              itemTitle: (a) => a?.title ?? "",
+              newItem: () => ({ title: "", motivations: [], worries: [], bestFit: "", openingQuestion: "" }),
+              item: [
+                { kind: "text", key: "title", label: "Profession" },
+                { kind: "strings", key: "motivations", label: "Why they consider management programmes" },
+                { kind: "strings", key: "worries", label: "What usually worries them" },
+                { kind: "text", key: "bestFit", label: "Best-fit programmes", multiline: true },
+                { kind: "text", key: "openingQuestion", label: "Question to open with", multiline: true },
+              ],
+            },
           ],
         },
       ];

@@ -23,6 +23,7 @@ export type Field =
   | { kind: "text"; key: string; label: string; multiline?: boolean; hint?: string; ltr?: boolean }
   | { kind: "select"; key: string; label: string; options: { value: string; label: string }[]; hint?: string }
   | { kind: "boolean"; key: string; label: string; hint?: string }
+  | { kind: "number"; key: string; label: string; hint?: string; min?: number; max?: number }
   | { kind: "strings"; key: string; label: string; hint?: string }
   | {
       kind: "list";
@@ -102,6 +103,24 @@ function FieldControl({ field, value, onChange }: { field: Field; value: any; on
               </option>
             ))}
           </select>
+        </label>
+      );
+    case "number":
+      return (
+        <label className="block">
+          <Label label={field.label} hint={field.hint} />
+          <Input
+            type="number"
+            dir="ltr"
+            min={field.min}
+            max={field.max}
+            value={value ?? ""}
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              onChange(e.target.value === "" || Number.isNaN(n) ? field.min ?? 0 : n);
+            }}
+            className="w-32"
+          />
         </label>
       );
     case "boolean":

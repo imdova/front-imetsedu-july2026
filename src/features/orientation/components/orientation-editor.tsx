@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  ClipboardList,
   Eye,
   FileText,
   Film,
@@ -34,10 +35,15 @@ import {
 import { useConfirm } from "@/hooks/use-confirm";
 import { FieldsEditor } from "@/features/orientation/components/structured-fields";
 import { VideoFrame } from "@/features/orientation/components/lesson-videos";
-import { lessonContentFields } from "@/features/orientation/lib/editor-specs";
+import { lessonContentFields, taskConfigFields } from "@/features/orientation/lib/editor-specs";
 import {
+  COMPETITOR_ANALYSIS_LESSON,
   DEFAULT_ORIENTATION_LESSONS,
+  LESSON_IDS,
+  blankTask,
+  competitorAnalysisTask,
   isModuleLesson,
+  type LessonTask,
   newCustomLessonId,
   resolveOrientation,
   youTubeId,
@@ -100,6 +106,7 @@ export function OrientationEditor({
     [lesson, courseOptions],
   );
   const removedBuiltIns = DEFAULT_ORIENTATION_LESSONS.filter((d) => !lessons.some((l) => l.id === d.id));
+  const taskFields = React.useMemo(() => taskConfigFields(courseOptions), [courseOptions]);
 
   const touch = () => setDirty(true);
 
@@ -130,6 +137,27 @@ export function OrientationEditor({
       videos: [],
     };
     // Right after the lesson being edited, so it lands where the admin is working.
+    setLessons((all) => [...all.slice(0, lessonIndex + 1), created, ...all.slice(lessonIndex + 1)]);
+    setActiveId(id);
+    touch();
+  };
+
+  const addTaskLesson = (template: "competitors" | "blank") => {
+    const id = newCustomLessonId();
+    const created: OrientationLesson =
+      template === "competitors"
+        ? { id, kind: "task", ...COMPETITOR_ANALYSIS_LESSON, videos: [], task: competitorAnalysisTask() }
+        : {
+            id,
+            kind: "task",
+            short: "مهمة جديدة",
+            en: "",
+            heading: "مهمة جديدة",
+            intro: "",
+            body: "",
+            videos: [],
+            task: blankTask(),
+          };
     setLessons((all) => [...all.slice(0, lessonIndex + 1), created, ...all.slice(lessonIndex + 1)]);
     setActiveId(id);
     touch();
@@ -178,6 +206,26 @@ export function OrientationEditor({
         return;
       }
     }
+    for (const l of lessons) {
+      if (l.kind !== "task" || !l.task) continue;
+      const problem =
+        l.task.programs.length === 0
+          ? "needs at least one programme"
+          : l.task.programs.some((p) => !p.slug)
+            ? "has a programme without a course"
+            : l.task.fields.length === 0
+              ? "needs at least one form field"
+              : l.task.fields.some((f) => !f.label.trim())
+                ? "has a form field without a label"
+                : l.task.fields.some((f) => f.type === "select" && f.options.filter((o) => o.trim()).length === 0)
+                  ? "has a dropdown field without choices"
+                  : null;
+      if (problem) {
+        setActiveId(l.id);
+        toast.error(`Task “${l.short}” ${problem}.`);
+        return;
+      }
+    }
     const badVideo = lessons.find((l) => l.videos.some((v) => !youTubeId(v.url)));
     if (badVideo) {
       setActiveId(badVideo.id);
@@ -195,7 +243,9 @@ export function OrientationEditor({
     setSaving(true);
     const res = await dal.orientation.saveSalesOrientation({
       lessons,
-      content: content as unknown as Record<string, unknown>,
+      // `knownLessons` records which built-in lessons existed at this save, so a
+      // lesson added to the app later still appears, while one removed here stays removed.
+      content: { ...content, knownLessons: [...LESSON_IDS] } as unknown as Record<string, unknown>,
     });
     setSaving(false);
     if (!res.ok) {
@@ -309,6 +359,7 @@ export function OrientationEditor({
                         {l.short}
                       </span>
                       {l.kind === "custom" && <FileText className="size-3 shrink-0 text-muted-foreground" aria-label="Custom lesson" />}
+                      {l.kind === "task" && <ClipboardList className="size-3 shrink-0 text-muted-foreground" aria-label="Task" />}
                       {l.videos.length > 0 && (
                         <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
                           <Film className="size-3" />
@@ -363,6 +414,20 @@ export function OrientationEditor({
                   <span className="block text-[11px] text-muted-foreground">Your own text + YouTube videos</span>
                 </span>
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addTaskLesson("competitors")} className="gap-2">
+                <ClipboardList className="size-4" />
+                <span>
+                  <span className="block text-sm">Task: competitor analysis</span>
+                  <span className="block text-[11px] text-muted-foreground">CPHQ, CIC, Quality &amp; IC diplomas — ready fields</span>
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addTaskLesson("blank")} className="gap-2">
+                <ClipboardList className="size-4" />
+                <span>
+                  <span className="block text-sm">New task</span>
+                  <span className="block text-[11px] text-muted-foreground">Your own form, filled per programme</span>
+                </span>
+              </DropdownMenuItem>
               {removedBuiltIns.length > 0 && (
                 <>
                   <DropdownMenuSeparator />
@@ -386,7 +451,7 @@ export function OrientationEditor({
             {/* Lesson details */}
             <Card
               title={`Lesson ${lessonIndex + 1} · details`}
-              hint={lesson.kind === "custom" ? "Custom lesson" : lesson.en || "Built-in lesson"}
+              hint={lesson.kind === "custom" ? "Custom lesson" : lesson.kind === "task" ? "Task" : lesson.en || "Built-in lesson"}
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField label="Menu title" value={lesson.short} onChange={(v) => updateLesson({ short: v })} />
@@ -397,10 +462,10 @@ export function OrientationEditor({
                 <span className="mb-1.5 block text-xs font-semibold">Introduction</span>
                 <Textarea dir="auto" rows={3} value={lesson.intro} onChange={(e) => updateLesson({ intro: e.target.value })} />
               </label>
-              {lesson.kind === "custom" && (
+              {(lesson.kind === "custom" || lesson.kind === "task") && (
                 <label className="block">
                   <span className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="text-xs font-semibold">Lesson text</span>
+                    <span className="text-xs font-semibold">{lesson.kind === "task" ? "Instructions" : "Lesson text"}</span>
                     <span className="text-[11px] text-muted-foreground">Blank line = new paragraph · start lines with “- ” for bullets</span>
                   </span>
                   <Textarea
@@ -413,6 +478,17 @@ export function OrientationEditor({
                 </label>
               )}
             </Card>
+
+            {/* Task form */}
+            {lesson.kind === "task" && lesson.task && (
+              <Card title="Task form" hint="Staff fill this once per programme; answers appear in Task submissions">
+                <FieldsEditor
+                  fields={taskFields}
+                  value={lesson.task as unknown as Record<string, unknown>}
+                  onChange={(next) => updateLesson({ task: next as unknown as LessonTask })}
+                />
+              </Card>
+            )}
 
             {/* Videos */}
             <VideosCard key={lesson.id} videos={lesson.videos} onChange={(videos) => updateLesson({ videos })} />

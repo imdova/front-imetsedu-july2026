@@ -35,6 +35,8 @@ import {
 import { ObjectionsModule } from "./objections-module";
 import { DrillModule } from "./drill-module";
 import { ProgramsModule } from "./programs-module";
+import { ProgramDetailsModule } from "./program-details-module";
+import { TaskLesson } from "./task-lesson";
 import { LessonVideos } from "./lesson-videos";
 import { isModuleLesson, type LessonId } from "@/features/orientation/lib/sales-orientation";
 
@@ -371,9 +373,14 @@ export function SalesOrientation({
     phrases: <PhraseBankModule phrases={content.phraseBank} onComplete={completeCurrent} />,
     closing: <ClosingModule closings={content.closings} onComplete={completeCurrent} />,
     checklist: <ChecklistModule items={content.checklist} onComplete={completeCurrent} />,
+    "program-details": (
+      <ProgramDetailsModule details={content.programDetails} programmes={programmes} onComplete={completeCurrent} />
+    ),
   };
   const body =
-    lesson.kind === "custom" ? (
+    lesson.kind === "task" && lesson.task ? (
+      <TaskLesson key={lesson.id} lessonId={lesson.id} body={lesson.body} task={lesson.task} onComplete={completeCurrent} />
+    ) : lesson.kind === "custom" ? (
       <CustomLesson key={lesson.id} body={lesson.body} done={isDone} onComplete={completeCurrent} />
     ) : isModuleLesson(lesson.id) ? (
       moduleBodies[lesson.id]

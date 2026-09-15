@@ -43,6 +43,24 @@ export interface OrientationTeamProgress {
   rows: OrientationTeamRow[];
 }
 
+export type OrientationTaskStatus = "draft" | "submitted" | "reviewed";
+
+/** A learner's answer to a task for one programme: rows keyed by the task's field keys. */
+export interface OrientationTaskSubmissionDto {
+  _id: string;
+  lessonId: string;
+  programSlug: string;
+  entries: Record<string, string>[];
+  status: OrientationTaskStatus;
+  adminNote?: string;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  updatedAt?: string;
+  /** Admin list only. */
+  userId?: string;
+  user?: { name: string; email: string };
+}
+
 const BASE = "/orientation";
 
 /** `data` is null until the training is first edited. */
@@ -69,3 +87,29 @@ export const resetMyProgress = (key: string): Promise<Result<OrientationProgress
 
 export const teamProgress = (key: string): Promise<Result<OrientationTeamProgress>> =>
   api.get(`${BASE}/${key}/progress`, { revalidate: false });
+
+export const myTaskSubmissions = (key: string, lessonId?: string): Promise<Result<OrientationTaskSubmissionDto[]>> =>
+  api.get(`${BASE}/${key}/tasks/me`, { params: lessonId ? { lessonId } : undefined, revalidate: false });
+
+export const saveMyTaskSubmission = (
+  key: string,
+  lessonId: string,
+  programSlug: string,
+  input: { entries: Record<string, string>[]; submit: boolean },
+): Promise<Result<OrientationTaskSubmissionDto>> =>
+  api.put(`${BASE}/${key}/tasks/${encodeURIComponent(lessonId)}/${encodeURIComponent(programSlug)}/me`, input);
+
+export const taskSubmissions = (
+  key: string,
+  query: { lessonId?: string; programSlug?: string } = {},
+): Promise<Result<OrientationTaskSubmissionDto[]>> => {
+  const params = Object.fromEntries(Object.entries(query).filter(([, v]) => !!v)) as Record<string, string>;
+  return api.get(`${BASE}/${key}/tasks`, { params, revalidate: false });
+};
+
+export const reviewTaskSubmission = (
+  key: string,
+  id: string,
+  input: { status?: "submitted" | "reviewed"; adminNote?: string },
+): Promise<Result<{ _id: string; status: OrientationTaskStatus; adminNote: string; reviewedAt: string | null }>> =>
+  api.patch(`${BASE}/${key}/tasks/${id}`, input);

@@ -1,15 +1,18 @@
 /**
- * LIVE: orientation training (`/orientation/:key`) — editable content and
- * learner progress.
+ * LIVE: orientation training (`/orientation/:key`) — editable content, learner
+ * progress and task answers.
  *
- * Reading content and your own progress needs a signed-in user; saving content,
- * resetting it and the team progress view are admin-only server-side. No saved
- * content ⇒ `null`, and the page falls back to the content bundled with the app.
+ * Reading content, your own progress and your own task answers needs a
+ * signed-in user; saving content, resetting it, team progress and reviewing
+ * task answers are admin-only server-side. No saved content ⇒ `null`, and the
+ * page falls back to the content bundled with the app.
  */
 import * as svc from "@integration/services/orientation";
 import type {
   OrientationProgressDto,
   OrientationProgressStatus,
+  OrientationTaskStatus,
+  OrientationTaskSubmissionDto,
   OrientationTeamProgress,
   OrientationTeamRow,
   SavedOrientationDto,
@@ -19,6 +22,8 @@ import { ok, type Result } from "@integration/lib/api-client";
 export type {
   OrientationProgressDto,
   OrientationProgressStatus,
+  OrientationTaskStatus,
+  OrientationTaskSubmissionDto,
   OrientationTeamProgress,
   OrientationTeamRow,
   SavedOrientationDto,
@@ -56,3 +61,26 @@ export const resetMyOrientationProgress = (): Promise<Result<OrientationProgress
 
 /** LIVE: admin — everyone on the training and how far they've got. */
 export const fetchTeamOrientationProgress = (): Promise<Result<OrientationTeamProgress>> => svc.teamProgress(SALES);
+
+/** LIVE: the signed-in user's answers to a task lesson (all programmes). */
+export const fetchMyTaskSubmissions = (lessonId: string): Promise<Result<OrientationTaskSubmissionDto[]>> =>
+  svc.myTaskSubmissions(SALES, lessonId);
+
+/** LIVE: save a draft (`submit: false`) or submit the signed-in user's answer for one programme. */
+export const saveMyTaskSubmission = (
+  lessonId: string,
+  programSlug: string,
+  input: { entries: Record<string, string>[]; submit: boolean },
+): Promise<Result<OrientationTaskSubmissionDto>> => svc.saveMyTaskSubmission(SALES, lessonId, programSlug, input);
+
+/** LIVE: admin — submitted answers from the team for a task. */
+export const fetchTaskSubmissions = (query: {
+  lessonId?: string;
+  programSlug?: string;
+}): Promise<Result<OrientationTaskSubmissionDto[]>> => svc.taskSubmissions(SALES, query);
+
+/** LIVE: admin — mark reviewed / reopen, and leave a note the learner sees. */
+export const reviewTaskSubmission = (
+  id: string,
+  input: { status?: "submitted" | "reviewed"; adminNote?: string },
+) => svc.reviewTaskSubmission(SALES, id, input);

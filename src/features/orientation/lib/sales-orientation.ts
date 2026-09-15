@@ -1,4 +1,5 @@
 import content from "../content/sales-orientation.json";
+import programDetails from "../content/program-details.json";
 
 /**
  * Sales-team orientation content.
@@ -105,6 +106,44 @@ export interface ProgrammeNumbers extends ProgrammeRef {
   students: number;
 }
 
+/** One certification programme in the Program details lesson. Fees/lectures come from the live course by `slug`. */
+export interface ProgramDetail {
+  slug: string;
+  /** Tab label, e.g. "CPHQ". */
+  name: string;
+  fullName: string;
+  awardedBy: string;
+  tagline: string;
+  whatItIs: string;
+  /** Why healthcare professionals study it. */
+  whyStudy: string[];
+  whoFor: string[];
+  /** Exam eligibility — verified facts from the awarding body only. */
+  eligibility: string[];
+  courseFacts: string[];
+  curriculum: string[];
+  outcomes: string[];
+  careerPaths: string[];
+  sayThis: string[];
+  avoid: string[];
+}
+
+/** Why one profession considers management programmes, and how to open the conversation. */
+export interface AudienceProfile {
+  title: string;
+  motivations: string[];
+  worries: string[];
+  bestFit: string;
+  openingQuestion: string;
+}
+
+export interface ProgramDetailsContent {
+  intro: string;
+  programmes: ProgramDetail[];
+  audiencesIntro: string;
+  audiences: AudienceProfile[];
+}
+
 export interface SalesOrientation {
   threads: { bad: Thread; good: Thread };
   steps: PathStep[];
@@ -121,10 +160,13 @@ export interface SalesOrientation {
   };
   objections: Objection[];
   programmes: ProgrammeRef[];
+  programDetails: ProgramDetailsContent;
+  /** Built-in lesson ids that existed when this copy was saved — see `resolveOrientation`. */
+  knownLessons?: string[];
 }
 
 /** The bundled default content. */
-export const DEFAULT_SALES_ORIENTATION = content as SalesOrientation;
+export const DEFAULT_SALES_ORIENTATION = { ...content, programDetails } as SalesOrientation;
 
 /* ── lessons ─────────────────────────────────────────────────────────────── */
 
@@ -139,6 +181,7 @@ export const DEFAULT_SALES_ORIENTATION = content as SalesOrientation;
 export const LESSON_IDS = [
   "contrast",
   "path",
+  "program-details",
   "rules",
   "practice",
   "objections",
@@ -154,8 +197,91 @@ export type LessonId = (typeof LESSON_IDS)[number];
 
 export const isModuleLesson = (id: string): id is LessonId => (LESSON_IDS as readonly string[]).includes(id);
 
-/** `module` = a built-in interactive lesson; `custom` = an admin-written lesson (text + videos). */
-export type LessonKind = "module" | "custom";
+/**
+ * `module` = a built-in interactive lesson; `custom` = an admin-written lesson
+ * (text + videos); `task` = an assignment staff fill in per programme (e.g. a
+ * competitor analysis), reviewed by admins.
+ */
+export type LessonKind = "module" | "custom" | "task";
+
+export type TaskFieldType = "text" | "textarea" | "number" | "yesno" | "select" | "url";
+
+export interface TaskField {
+  /** Stable key the answers are stored under — never shown, never edited. */
+  key: string;
+  label: string;
+  type: TaskFieldType;
+  /** Dropdown choices (select fields only). */
+  options: string[];
+  required: boolean;
+  hint: string;
+}
+
+export interface TaskProgram {
+  /** Course slug — one submission per programme. */
+  slug: string;
+  name: string;
+}
+
+export interface LessonTask {
+  programs: TaskProgram[];
+  /** What one row is called, e.g. «منافس». */
+  entryLabel: string;
+  /** Rows required before submitting. */
+  minEntries: number;
+  fields: TaskField[];
+}
+
+export const TASK_FIELD_TYPES: TaskFieldType[] = ["text", "textarea", "number", "yesno", "select", "url"];
+
+export const newTaskFieldKey = () => `f-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+
+/** A blank task an admin builds up in the editor. */
+export const blankTask = (): LessonTask => ({
+  programs: [],
+  entryLabel: "إدخال",
+  minEntries: 1,
+  fields: [{ key: newTaskFieldKey(), label: "", type: "text", options: [], required: true, hint: "" }],
+});
+
+/** The competitor-analysis template: the four programmes and the fields sales needs about each competitor. */
+export const competitorAnalysisTask = (): LessonTask => ({
+  programs: [
+    { slug: "cphq-preparation", name: "CPHQ Preparation" },
+    { slug: "cic-preparation", name: "CIC Preparation" },
+    { slug: "healthcare-quality-management-diploma", name: "دبلومة إدارة الجودة الصحية" },
+    { slug: "infection-control-diploma", name: "دبلومة مكافحة العدوى" },
+  ],
+  entryLabel: "منافس",
+  minEntries: 1,
+  fields: [
+    { key: "competitor", label: "اسم المنافس", type: "text", options: [], required: true, hint: "اسم الأكاديمية أو المدرب أو الجهة" },
+    { key: "location", label: "المكان", type: "text", options: [], required: true, hint: "الدولة والمدينة، أو «أونلاين بس»" },
+    { key: "instructors", label: "مين المحاضر / المحاضرين", type: "textarea", options: [], required: false, hint: "الاسم والخلفية لو معلنة" },
+    { key: "price", label: "السعر", type: "text", options: [], required: true, hint: "اكتب العملة — ولو مش معلن اكتب «غير معلن»" },
+    { key: "installments", label: "فيه تقسيط ولا لأ؟", type: "yesno", options: [], required: true, hint: "" },
+    { key: "installments-details", label: "تفاصيل التقسيط", type: "text", options: [], required: false, hint: "عدد الدفعات والمدة" },
+    { key: "delivery", label: "أونلاين ولا أوفلاين؟", type: "select", options: ["أونلاين", "أوفلاين", "الاتنين"], required: true, hint: "" },
+    { key: "format", label: "لايف ولا مسجّل؟", type: "select", options: ["لايف", "مسجّل", "الاتنين"], required: false, hint: "" },
+    { key: "duration", label: "مدة البرنامج", type: "text", options: [], required: false, hint: "" },
+    { key: "sessions", label: "عدد المحاضرات / الساعات", type: "text", options: [], required: false, hint: "" },
+    { key: "certificate", label: "الشهادة اللي بيدّيها", type: "text", options: [], required: false, hint: "شهادة حضور؟ اعتماد؟ من مين؟" },
+    { key: "extras", label: "بيقدّم إيه زيادة", type: "textarea", options: [], required: false, hint: "بنك أسئلة، امتحان تجريبي، مواد، متابعة…" },
+    { key: "strengths", label: "نقاط قوته", type: "textarea", options: [], required: false, hint: "" },
+    { key: "weaknesses", label: "نقاط ضعفه مقارنةً بينا", type: "textarea", options: [], required: false, hint: "" },
+    { key: "source", label: "مصدر المعلومة", type: "url", options: [], required: true, hint: "رابط الصفحة أو الإعلان أو البوست" },
+    { key: "notes", label: "ملاحظات", type: "textarea", options: [], required: false, hint: "" },
+  ],
+});
+
+export const COMPETITOR_ANALYSIS_LESSON = {
+  short: "مهمة: تحليل المنافسين",
+  en: "Task: competitor analysis",
+  heading: "مهمة: تحليل المنافسين لكل برنامج",
+  intro: "اختار كل برنامج، وسجّل المنافسين اللي بيقدّموا نفس البرنامج أو برنامج شبهه. المهمة بتكمل لما تبعت تحليل كل البرامج.",
+  body:
+    "لكل برنامج، دوّر على المنافسين اللي بيقدّموا نفس البرنامج أو برنامج قريب منه، وسجّل بياناتهم في الفورم.\n\n- سجّل منافس واحد على الأقل لكل برنامج.\n- اكتب مصدر كل معلومة (رابط صفحة، إعلان، أو بوست).\n- اكتب اللي لقيته فعلًا، ولو معلومة مش معلنة اكتب «غير معلن» — ما تخمّنش.\n- التحليل ده للفريق من جوه بس: ما تذكرش اسم أي منافس للعميل، وما تهاجمش حد.",
+};
 
 /** Ids for admin-added lessons — prefixed so they can never collide with a built-in id. */
 export const newCustomLessonId = () => `c-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -189,9 +315,11 @@ export interface OrientationLesson {
   en: string;
   heading: string;
   intro: string;
-  /** Custom lessons only: the lesson text. Blank line = new paragraph; "- " starts a bullet. */
+  /** Custom lessons: the lesson text. Task lessons: the instructions. Blank line = new paragraph; "- " starts a bullet. */
   body: string;
   videos: OrientationVideo[];
+  /** Task lessons only. */
+  task?: LessonTask;
 }
 
 export const DEFAULT_ORIENTATION_LESSONS: OrientationLesson[] = [
@@ -213,6 +341,17 @@ export const DEFAULT_ORIENTATION_LESSONS: OrientationLesson[] = [
     heading: "مسار المحادثة من أولها لآخرها",
     intro:
       "ده الترتيب اللي بيخلي الحوار استشاري بدل ما يكون عرض كورسات وأسعار. لو اتخطّيت خطوة، غالبًا العميل هيقف عند «هفكر وأرد عليك».",
+    kind: "module",
+    body: "",
+    videos: [],
+  },
+  {
+    id: "program-details",
+    short: "تفاصيل البرامج",
+    en: "Program details",
+    heading: "تفاصيل برنامجي CPHQ وCIC — وليه الكوادر الصحية بتدرس البرامج الإدارية",
+    intro:
+      "افتح كل برنامج واعرف: الشهادة مين بيصدرها، وشروط امتحانها، والكورس عندنا فيه إيه، وتقول إيه وما تقولش إيه. وفي الآخر شوف كل فئة من الكوادر الصحية بتفكر في البرامج الإدارية ليه، وتبدأ معاها بأي سؤال.",
     kind: "module",
     body: "",
     videos: [],
@@ -322,6 +461,50 @@ function isVideo(v: unknown): v is OrientationVideo {
 
 const LESSON_ID = /^[a-z0-9-]{1,40}$/;
 
+/** A saved task definition, cleaned — or null when it's unusable (no programmes or no fields). */
+function normalizeTask(raw: unknown): LessonTask | null {
+  const t = raw as Partial<LessonTask> | undefined;
+  if (!t || !Array.isArray(t.programs) || !Array.isArray(t.fields)) return null;
+  const programs = t.programs
+    .filter((p): p is TaskProgram => !!p && typeof p.slug === "string" && p.slug.length > 0)
+    .map((p) => ({ slug: p.slug, name: nonEmpty(p.name, p.slug) }));
+  const fields = t.fields
+    .filter((f): f is TaskField => !!f && typeof f.key === "string" && typeof f.label === "string" && TASK_FIELD_TYPES.includes(f.type))
+    .map((f) => ({
+      key: f.key,
+      label: f.label,
+      type: f.type,
+      options: Array.isArray(f.options) ? f.options.filter((o): o is string => typeof o === "string" && o.trim().length > 0) : [],
+      required: !!f.required,
+      hint: str(f.hint, ""),
+    }));
+  if (programs.length === 0 || fields.length === 0) return null;
+  return {
+    programs,
+    fields,
+    entryLabel: nonEmpty(t.entryLabel, "إدخال"),
+    minEntries: Math.max(1, Math.min(50, Math.round(Number(t.minEntries)) || 1)),
+  };
+}
+
+/**
+ * The built-in lessons that existed before saves started recording
+ * `knownLessons`. A saved copy without that field is treated as knowing exactly
+ * these, so built-ins added since (like `program-details`) still appear.
+ */
+const LEGACY_LESSON_IDS = [
+  "contrast",
+  "path",
+  "rules",
+  "practice",
+  "objections",
+  "drill",
+  "programs",
+  "phrases",
+  "closing",
+  "checklist",
+];
+
 /**
  * Lay a saved document over the bundled default.
  *
@@ -343,26 +526,56 @@ export function resolveOrientation(
     const id = typeof s?.id === "string" ? s.id : "";
     if (!LESSON_ID.test(id) || seen.has(id)) return [];
     const builtIn = isModuleLesson(id);
-    // A non-built-in id is only a lesson if it was saved as a custom one.
-    if (!builtIn && s.kind !== "custom") return [];
+    // A non-built-in id is only a lesson if it was saved as a custom or task one.
+    if (!builtIn && s.kind !== "custom" && s.kind !== "task") return [];
+    const kind: LessonKind = builtIn ? "module" : s.kind === "task" ? "task" : "custom";
+    const task = kind === "task" ? normalizeTask(s.task) : null;
+    if (kind === "task" && !task) return [];
     const def = DEFAULT_ORIENTATION_LESSONS.find((d) => d.id === id);
     const lesson: OrientationLesson = {
       id,
-      kind: builtIn ? "module" : "custom",
+      kind,
       short: nonEmpty(s.short, def?.short ?? ""),
       en: str(s.en, def?.en ?? ""),
       heading: nonEmpty(s.heading, def?.heading ?? ""),
       intro: str(s.intro, def?.intro ?? ""),
       body: builtIn ? "" : str(s.body, ""),
       videos: Array.isArray(s.videos) ? s.videos.filter(isVideo) : [],
+      ...(task ? { task } : {}),
     };
     if (!lesson.short.trim() || !lesson.heading.trim()) return [];
     seen.add(id);
     return [lesson];
   });
-  const lessons = fromSaved.length > 0 ? fromSaved : DEFAULT_ORIENTATION_LESSONS;
-
   const c = (saved?.content ?? {}) as Record<string, unknown>;
+
+  let lessons = fromSaved.length > 0 ? fromSaved : DEFAULT_ORIENTATION_LESSONS;
+  if (fromSaved.length > 0) {
+    /*
+     * A built-in lesson shipped after this copy was saved isn't in its list —
+     * but it wasn't removed either, so it's slotted in after the lesson it
+     * follows by default. Built-ins the admin did remove were "known" at that
+     * save and stay out.
+     */
+    const known = Array.isArray(c.knownLessons)
+      ? (c.knownLessons as unknown[]).filter((x): x is string => typeof x === "string")
+      : LEGACY_LESSON_IDS;
+    DEFAULT_ORIENTATION_LESSONS.forEach((def, defIndex) => {
+      if (known.includes(def.id) || lessons.some((l) => l.id === def.id)) return;
+      const before = DEFAULT_ORIENTATION_LESSONS.slice(0, defIndex)
+        .reverse()
+        .find((d) => lessons.some((l) => l.id === d.id));
+      const at = before ? lessons.findIndex((l) => l.id === before.id) + 1 : 0;
+      lessons = [...lessons.slice(0, at), def, ...lessons.slice(at)];
+    });
+  }
+
+  const details = c.programDetails as ProgramDetailsContent | undefined;
+  const detailsValid =
+    !!details &&
+    Array.isArray(details.programmes) &&
+    details.programmes.length > 0 &&
+    Array.isArray(details.audiences);
   const D = DEFAULT_SALES_ORIENTATION;
   const arr = <K extends keyof SalesOrientation>(key: K): SalesOrientation[K] =>
     (Array.isArray(c[key]) && (c[key] as unknown[]).length > 0 ? c[key] : D[key]) as SalesOrientation[K];
@@ -383,6 +596,7 @@ export function resolveOrientation(
       objectionMethod: method && Array.isArray(method.steps) ? method : D.objectionMethod,
       objections: arr("objections"),
       programmes: arr("programmes"),
+      programDetails: detailsValid ? details! : D.programDetails,
     },
   };
 }

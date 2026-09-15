@@ -132,6 +132,11 @@ export function OfficePanel({
                 </Link>
               </Button>
               <Button asChild variant="outline" size="sm" className="gap-1.5">
+                <Link href="/admin/crm/office/orientation/tasks">
+                  <ClipboardList className="size-3.5" /> Task submissions
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="gap-1.5">
                 <Link href="/admin/crm/office/orientation/edit">
                   <Pencil className="size-3.5" /> Edit training content &amp; videos
                 </Link>
