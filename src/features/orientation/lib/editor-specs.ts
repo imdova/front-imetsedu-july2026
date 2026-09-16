@@ -63,6 +63,43 @@ export function taskConfigFields(courseOptions: { value: string; label: string }
   ];
 }
 
+/** A module check: pass mark and questions (edited in the language being edited — keep both in the same order). */
+export const moduleCheckFields: Field[] = [
+  { kind: "number", key: "passPercent", label: "Percent needed to pass", min: 1, max: 100 },
+  {
+    kind: "list",
+    key: "questions",
+    label: "Questions",
+    hint: "A real client situation works best. Delete every question to remove the check.",
+    itemTitle: (q) => `${q?.kind === "safe" ? "[Safe to send?] " : ""}${q?.kind === "safe" ? q?.message ?? "" : q?.prompt ?? ""}`,
+    newItem: () => ({ kind: "choice", client: "", prompt: "", message: "", options: [], correct: 0, explain: "" }),
+    item: [
+      {
+        kind: "select",
+        key: "kind",
+        label: "Question type",
+        options: [
+          { value: "choice", label: "Pick the best answer" },
+          { value: "safe", label: "Safe to send? (judge a message)" },
+        ],
+      },
+      { kind: "text", key: "client", label: "Client message (optional)", multiline: true },
+      { kind: "text", key: "prompt", label: "Question", hint: "Required for “pick the best answer”; optional for “safe to send?”", multiline: true },
+      { kind: "text", key: "message", label: "Rep's message to judge", hint: "“Safe to send?” questions only", multiline: true },
+      { kind: "strings", key: "options", label: "Answers", hint: "“Pick the best answer” only — one per line, at least two (order is shuffled for reps)" },
+      {
+        kind: "number",
+        key: "correct",
+        label: "Correct answer",
+        hint: "Pick the best answer: its line counting from 0 · Safe to send?: 0 = safe, 1 = don't send",
+        min: 0,
+        max: 20,
+      },
+      { kind: "text", key: "explain", label: "Coach tip (shown after answering)", multiline: true },
+    ],
+  },
+];
+
 /** Training-wide settings. */
 export const settingsFields: Field[] = [
   {

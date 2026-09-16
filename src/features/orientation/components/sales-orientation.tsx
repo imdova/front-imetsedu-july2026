@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useConfirm } from "@/hooks/use-confirm";
 import type { OrientationProgressDto } from "@/lib/dal/orientation";
-import { MODULES } from "@/features/orientation/lib/course-map";
+import type { OrientationModule } from "@/features/orientation/lib/course-map";
 import { formatMinutes, pick, useOrientationT, type OrientationKey } from "@/features/orientation/lib/i18n";
 import {
   findLessonIndex,
+  gateRequirementFor,
   localizeLesson,
   type LessonView,
   type OrientationLesson,
@@ -24,7 +25,7 @@ import { useOrientationProgress } from "@/features/orientation/hooks/use-orienta
 import { useLessonHash } from "@/features/orientation/hooks/use-lesson-hash";
 import { ContrastLesson, PathLesson } from "./conversation-modules";
 import { ChecklistModule, ClosingModule, PhraseBankModule, PracticeModule, RulesModule } from "./orientation-modules";
-import { ObjectionsModule, objectionCategories } from "./objections-module";
+import { ObjectionsModule } from "./objections-module";
 import { DrillModule } from "./drill-module";
 import { ProgramsModule } from "./programs-module";
 import { ProgramDetailsModule } from "./program-details-module";
@@ -32,6 +33,7 @@ import { TaskLesson } from "./task-lesson";
 import { VideoLesson } from "./video-lesson";
 import { WeekLesson } from "./week-lesson";
 import { QuizLesson } from "./quiz-lesson";
+import { ModuleCheckLesson } from "./module-check";
 import { JourneyHeader } from "./journey-header";
 import { CourseOutline, type OutlineModule } from "./course-outline";
 import { QuickReference } from "./quick-reference";
@@ -80,44 +82,9 @@ function subscribeMode(listener: () => void) {
   };
 }
 
-/* ── gates ───────────────────────────────────────────────────────────────── */
-
-/** How many gate steps finish a lesson, from the content it actually renders. */
-function gateRequirement(v: LessonView, c: SalesOrientationContent, programmes: ProgrammeNumbers[]): number {
-  if (v.kind === "task") return Math.max(1, v.task?.programs.length ?? 1);
-  if (v.kind === "custom") return v.videos.length === 0 || v.gateRequired === 0 ? 1 : Math.min(v.gateRequired, v.videos.length);
-  switch (v.slug) {
-    case "week":
-      return Math.max(1, c.week.checklist.length);
-    case "programs":
-      return Math.max(1, Math.min(3, programmes.length));
-    case "details":
-      return Math.max(1, c.programDetails.programmes.length + (c.programDetails.audiences.length ? 1 : 0));
-    case "path":
-      return Math.max(1, c.steps.length);
-    case "rules":
-      return Math.max(1, c.rules.length);
-    case "contrast":
-      return 2;
-    case "phrases":
-      return Math.max(1, c.phraseBank.length);
-    case "closing":
-      return Math.max(1, Math.min(3, c.closings.length));
-    case "practice":
-      return Math.max(1, c.scenarios.length);
-    case "objections":
-      return Math.max(1, objectionCategories(c.objections).length);
-    case "drill":
-      return 3;
-    case "send":
-      return Math.max(1, c.checklist.length);
-    default:
-      return 1;
-  }
-}
-
 export function SalesOrientation({
   lessons,
+  modules,
   content,
   contentEn,
   programmes,
@@ -126,8 +93,9 @@ export function SalesOrientation({
   toolAccess,
   actions,
 }: {
-  /** An admin-edited copy or the bundled default. */
+  /** An admin-edited copy or the bundled default, in journey order. */
   lessons: OrientationLesson[];
+  modules: OrientationModule[];
   content: SalesOrientationContent;
   contentEn: SalesOrientationContent;
   /** Resolved from the live course records by the page — see programs-module. */
@@ -156,7 +124,7 @@ export function SalesOrientation({
   );
   const lessonIds = React.useMemo(() => lessons.map((l) => l.id), [lessons]);
   const required = React.useMemo(
-    () => Object.fromEntries(views.map((v) => [v.id, gateRequirement(v, c, localProgrammes)])) as Record<string, number>,
+    () => Object.fromEntries(views.map((v) => [v.id, gateRequirementFor(v, c, localProgrammes.length)])) as Record<string, number>,
     [views, c, localProgrammes],
   );
 
@@ -176,9 +144,13 @@ export function SalesOrientation({
   const { hash, go, pin } = useLessonHash();
 
   /* where the learner is */
-  const moduleDone = (moduleIds: string[], exceptId: string) =>
-    views.filter((x) => moduleIds.includes(x.moduleId) && x.id !== exceptId).every((x) => done.has(x.id));
-  const isLocked = (v: LessonView) => !!v.lockedUntil?.length && !done.has(v.id) && !moduleDone(v.lockedUntil, v.id);
+  const moduleRank = (id: string) => modules.findIndex((m) => m.id === id);
+  /** Lessons in earlier modules still to finish before a locked lesson opens. */
+  const blockers = (v: LessonView) =>
+    v.lockedUntilEarlier && !done.has(v.id)
+      ? views.filter((x) => x.id !== v.id && moduleRank(x.moduleId) < moduleRank(v.moduleId) && !done.has(x.id))
+      : [];
+  const isLocked = (v: LessonView) => blockers(v).length > 0;
 
   const firstUnfinished = views.findIndex((v) => !done.has(v.id));
   const resumeIndex = views.findIndex((v) => v.id === progress.lastLessonId && !done.has(v.id));
@@ -242,7 +214,7 @@ export function SalesOrientation({
       ? t("journey.start")
       : t("journey.continue", { lesson: views[continueTarget]?.title ?? "" });
 
-  const moduleGroups: OutlineModule[] = MODULES.map((m, mi) => ({
+  const moduleGroups: OutlineModule[] = modules.map((m, mi) => ({
     id: m.id,
     n: mi + 1,
     title: pick(m.title, locale),
@@ -281,8 +253,8 @@ export function SalesOrientation({
   );
 
   /* the lesson */
-  const moduleIndex = MODULES.findIndex((m) => m.id === lesson.moduleId);
-  const moduleMeta = MODULES[moduleIndex];
+  const moduleIndex = moduleRank(lesson.moduleId);
+  const moduleMeta = modules[moduleIndex];
   const isDone = done.has(lesson.id);
   const locked = isLocked(lesson);
   const count = Math.min(seen.size, need);
@@ -300,12 +272,12 @@ export function SalesOrientation({
 
   let body: React.ReactNode = null;
   if (locked) {
-    const remaining = views.filter((v) => lesson.lockedUntil!.includes(v.moduleId) && !done.has(v.id));
+    const remaining = blockers(lesson);
     body = (
       <div className="grid justify-items-start gap-3 rounded-2xl border border-dashed border-border p-5">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold">
           <Lock className="size-3.5" />
-          {t("lesson.locked")}
+          {moduleIndex <= 1 ? t("lesson.lockedOne") : t("lesson.locked", { n: moduleIndex })}
         </span>
         <p className="text-sm">{t("lesson.finishFirst")}</p>
         <div className="flex flex-wrap gap-2">
@@ -317,6 +289,22 @@ export function SalesOrientation({
         </div>
       </div>
     );
+  } else if (lesson.kind === "check") {
+    const check = c.moduleChecks[lesson.moduleId];
+    const moduleId = lesson.moduleId;
+    body = check ? (
+      <ModuleCheckLesson
+        key={lesson.id}
+        moduleNumber={moduleIndex + 1}
+        check={check}
+        best={progress.moduleChecks[moduleId]}
+        onFinish={async (run) => {
+          const res = await progress.recordModuleCheck(moduleId, { ...run, passPercent: check.passPercent });
+          if (res.passed) markCurrent("pass");
+          return res;
+        }}
+      />
+    ) : null;
   } else if (lesson.kind === "task" && lesson.task) {
     body = <TaskLesson key={lesson.id} lessonId={lesson.id} body={lesson.body} task={lesson.task} {...gate} />;
   } else if (lesson.kind === "custom") {
@@ -429,6 +417,12 @@ export function SalesOrientation({
         allDone={progress.allDone}
         signedOff={!!progress.signedOffAt}
         teamLeadLink={c.teamLeadLink}
+        paceText={c.pace.trim() || t("journey.paceText")}
+        xp={Object.values(progress.moduleChecks).reduce((sum, r) => sum + (r?.xp ?? 0), 0)}
+        starsEarned={views
+          .filter((v) => v.kind === "check")
+          .reduce((sum, v) => sum + (progress.moduleChecks[v.moduleId]?.stars ?? 0), 0)}
+        starsTotal={views.filter((v) => v.kind === "check").length * 3}
         onOpenOutline={() => setSheetOpen(true)}
       />
 

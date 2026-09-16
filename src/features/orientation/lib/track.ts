@@ -11,6 +11,7 @@ export type OrientationEvent =
   | "orientation_practice_answered"
   | "orientation_drill_round"
   | "orientation_quiz_submitted"
+  | "orientation_module_check"
   | "orientation_task_sent"
   | "orientation_reference_search"
   | "orientation_reference_copy"

@@ -17,7 +17,8 @@ export type LessonType = "video" | "read" | "interactive" | "practice" | "quiz" 
 
 export const LESSON_TYPES: LessonType[] = ["video", "read", "interactive", "practice", "quiz", "task", "checklist"];
 
-export type ModuleId = "m1" | "m2" | "m3" | "m4" | "m5";
+/** A module id: `m1`…`m5` for the shipped modules, `m-…` for ones an admin adds. */
+export type ModuleId = string;
 
 export interface Bilingual {
   en: string;
@@ -37,9 +38,10 @@ export const MODULES: OrientationModule[] = [
   { id: "m5", title: { en: "Prove you're ready", ar: "اثبت جاهزيتك" } },
 ];
 
-export const MODULE_IDS = MODULES.map((m) => m.id);
+/** The shipped modules are defaults: admins add, rename, reorder and delete modules (saved as `content.modules`). */
+export const isModuleIdShape = (v: unknown): v is ModuleId => typeof v === "string" && /^[a-z0-9-]{1,40}$/.test(v);
 
-export const isModuleId = (v: unknown): v is ModuleId => typeof v === "string" && (MODULE_IDS as string[]).includes(v);
+export const newModuleId = () => `m-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
 export interface LessonMeta {
   slug: string;
@@ -52,8 +54,8 @@ export interface LessonMeta {
   outcome: Bilingual;
   /** What finishing the lesson takes, e.g. "open all 4 rules". */
   gate: Bilingual;
-  /** The lesson stays locked until every lesson in these modules is complete. */
-  lockedUntilModulesComplete?: ModuleId[];
+  /** The lesson stays locked until every lesson in the modules before its own is complete. */
+  lockedUntilEarlierModules?: boolean;
 }
 
 /**
@@ -274,7 +276,7 @@ export const LESSON_META: Record<string, LessonMeta> = {
       ar: "تثبت لمشرفك إنك جاهز تستقبل استفسارات حقيقية.",
     },
     gate: { en: "score 4 out of 5", ar: "تجيب 4 من 5" },
-    lockedUntilModulesComplete: ["m1", "m2", "m3", "m4"],
+    lockedUntilEarlierModules: true,
   },
   task: {
     slug: "task",

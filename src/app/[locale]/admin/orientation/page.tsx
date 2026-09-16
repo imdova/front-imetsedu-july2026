@@ -33,7 +33,7 @@ export default async function OrientationPage({ params }: { params: Promise<{ lo
     dal.orientation.fetchMyOrientationProgress(),
     getSessionUser(),
   ]);
-  const { lessons, content, contentEn } = resolveOrientation(saved.ok ? saved.data : null);
+  const { lessons, modules, content, contentEn } = resolveOrientation(saved.ok ? saved.data : null);
   const programmes = await loadOrientationProgrammes(content.programmes);
   const isSuperAdmin = !!user && user.role === "admin" && user.staffRole === null;
 
@@ -46,6 +46,7 @@ export default async function OrientationPage({ params }: { params: Promise<{ lo
     <div className="mx-auto max-w-[1320px]">
       <SalesOrientation
         lessons={lessons}
+        modules={modules}
         content={content}
         contentEn={contentEn}
         programmes={programmes}

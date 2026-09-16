@@ -24,6 +24,17 @@ export interface OrientationProgressDto {
   quizAttempts?: number;
   quizPassedAt?: string | null;
   signedOffAt?: string | null;
+  /** Best run of each module check, by module id. */
+  moduleChecks?: Record<string, OrientationModuleCheckRecord>;
+}
+
+export interface OrientationModuleCheckRecord {
+  best: number;
+  total: number;
+  xp: number;
+  stars: number;
+  attempts: number;
+  passedAt: string | null;
 }
 
 /** Field-task status across a learner's submissions. */
@@ -52,6 +63,9 @@ export interface OrientationTeamRow {
   quizPassedAt?: string | null;
   signedOffAt?: string | null;
   taskStatus?: OrientationTaskSummary;
+  moduleChecks?: Record<string, OrientationModuleCheckRecord>;
+  /** Sum of the best XP across module checks. */
+  xp?: number;
 }
 
 export interface OrientationTeamProgress {
@@ -114,6 +128,51 @@ export const submitQuiz = (
   key: string,
   input: { score: number; total: number; passMark: number },
 ): Promise<Result<OrientationProgressDto & { passed: boolean }>> => api.put(`${BASE}/${key}/quiz/me`, input);
+
+/** One employee's full orientation record (admin). */
+export interface OrientationEmployeeReport {
+  user: {
+    userId: string;
+    name: string;
+    email: string;
+    phone: string;
+    role: string;
+    /** Their role grants the training permission. */
+    assigned: boolean;
+    isActive: boolean;
+    joinedAt: string | null;
+  };
+  progress: OrientationProgressDto & {
+    /** First completion time per lesson id (recorded from 2026-09-16 on). */
+    completedLog: Record<string, string>;
+    checkRuns: { moduleId: string; score: number; total: number; xp: number; stars: number; passed: boolean; at: string }[];
+    quizRuns: { score: number; total: number; passed: boolean; at: string }[];
+    signedOffBy: string | null;
+    /** False when they never opened the training. */
+    exists: boolean;
+  };
+  tasks: {
+    lessonId: string;
+    programSlug: string;
+    status: OrientationTaskStatus;
+    entries: number;
+    attachments: number;
+    adminNote: string;
+    submittedAt: string | null;
+    reviewedAt: string | null;
+    updatedAt: string | null;
+  }[];
+}
+
+export const employeeReport = (key: string, userId: string): Promise<Result<OrientationEmployeeReport>> =>
+  api.get(`${BASE}/${key}/progress/${encodeURIComponent(userId)}`, { revalidate: false });
+
+export const submitModuleCheck = (
+  key: string,
+  moduleId: string,
+  input: { score: number; total: number; passPercent: number; xp: number; stars: number },
+): Promise<Result<OrientationProgressDto & { passed: boolean }>> =>
+  api.put(`${BASE}/${key}/checks/${encodeURIComponent(moduleId)}/me`, input);
 
 export const signOff = (key: string, userId: string, signedOff: boolean): Promise<Result<OrientationProgressDto>> =>
   api.patch(`${BASE}/${key}/progress/${encodeURIComponent(userId)}/signoff`, { signedOff });

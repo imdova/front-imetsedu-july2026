@@ -9,6 +9,8 @@
  */
 import * as svc from "@integration/services/orientation";
 import type {
+  OrientationEmployeeReport,
+  OrientationModuleCheckRecord,
   OrientationProgressDto,
   OrientationProgressStatus,
   OrientationTaskAttachment,
@@ -22,6 +24,8 @@ import type {
 import { ok, type Result } from "@integration/lib/api-client";
 
 export type {
+  OrientationEmployeeReport,
+  OrientationModuleCheckRecord,
   OrientationProgressDto,
   OrientationProgressStatus,
   OrientationTaskAttachment,
@@ -64,6 +68,15 @@ export const saveMyOrientationProgress = (input: {
 /** LIVE: record a knowledge-check attempt; the first pass notifies admins for sign-off. */
 export const submitOrientationQuiz = (input: { score: number; total: number; passMark: number }) =>
   svc.submitQuiz(SALES, input);
+
+/** LIVE: admin — one employee's detailed orientation report. */
+export const fetchOrientationEmployeeReport = (userId: string) => svc.employeeReport(SALES, userId);
+
+/** LIVE: record a run of a module check; the best score, XP and stars are kept. */
+export const submitOrientationModuleCheck = (
+  moduleId: string,
+  input: { score: number; total: number; passPercent: number; xp: number; stars: number },
+) => svc.submitModuleCheck(SALES, moduleId, input);
 
 /** LIVE: admin — sign a learner off (or withdraw the sign-off). */
 export const signOffOrientation = (userId: string, signedOff: boolean): Promise<Result<OrientationProgressDto>> =>

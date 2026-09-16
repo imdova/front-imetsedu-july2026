@@ -4,7 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
-import type { OrientationProgressDto } from "@/lib/dal/orientation";
+import type { OrientationModuleCheckRecord, OrientationProgressDto } from "@/lib/dal/orientation";
 import type { Translate } from "@/features/orientation/lib/i18n";
 import { track } from "@/features/orientation/lib/track";
 
@@ -63,6 +63,10 @@ export function useOrientationProgress({
     total: initial?.quizTotal ?? null,
     passedAt: initial?.quizPassedAt ?? null,
   });
+
+  const [moduleChecks, setModuleChecks] = React.useState<Record<string, OrientationModuleCheckRecord>>(
+    () => ({ ...(initial?.moduleChecks ?? {}) }),
+  );
 
   const doneRef = React.useRef(done);
   const gatesRef = React.useRef(gates);
@@ -210,9 +214,32 @@ export function useOrientationProgress({
     return { ok: true, passed: res.data.passed, firstPass };
   }, [quiz.passedAt]);
 
+  /** Save a module-check run. Best score, XP and stars are kept server-side. */
+  const recordModuleCheck = React.useCallback(
+    async (
+      moduleId: string,
+      run: { score: number; total: number; passPercent: number; xp: number; stars: number },
+    ): Promise<{ ok: boolean; passed: boolean; firstPass: boolean; newBest: boolean }> => {
+      const prev = moduleChecks[moduleId];
+      const passed = (run.score / run.total) * 100 >= run.passPercent;
+      track("orientation_module_check", { moduleId, score: run.score, total: run.total, xp: run.xp, stars: run.stars });
+      const res = await dal.orientation.submitOrientationModuleCheck(moduleId, run);
+      if (!res.ok) {
+        toast.error(tRef.current("check.saveFailed", { error: res.error }));
+        return { ok: false, passed, firstPass: false, newBest: false };
+      }
+      setModuleChecks({ ...(res.data.moduleChecks ?? {}) });
+      setStartedAt(res.data.startedAt);
+      return { ok: true, passed, firstPass: passed && !prev?.passedAt, newBest: run.xp > (prev?.xp ?? 0) };
+    },
+    [moduleChecks],
+  );
+
   return {
     done,
     gates,
+    moduleChecks,
+    recordModuleCheck,
     complete,
     mark,
     visit,

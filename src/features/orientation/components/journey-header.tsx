@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, Award, Check, ListTree, MessageCircle } from "lucide-react";
+import { ArrowRight, Award, Check, ListTree, MessageCircle, Star, Zap } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useOrientationT } from "@/features/orientation/lib/i18n";
+import { num, useOrientationT, type OrientationKey } from "@/features/orientation/lib/i18n";
+import { levelFor } from "@/features/orientation/lib/gamification";
 
 export interface JourneyModule {
   id: string;
@@ -15,6 +16,34 @@ export interface JourneyModule {
   total: number;
   current: boolean;
   onClick: () => void;
+}
+
+/** XP, level and stars from the module checks. */
+function ScoreRow({ xp, starsEarned, starsTotal }: { xp: number; starsEarned: number; starsTotal: number }) {
+  const { t } = useOrientationT();
+  const level = levelFor(xp);
+  const toNext = level.next ? level.next.min - xp : 0;
+  const span = level.next ? level.next.min - level.current.min : 1;
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 font-bold tabular-nums text-amber-700 dark:text-amber-400">
+        <Zap className="size-3.5" />
+        {t("journey.xp", { xp: num(xp) })} · {t(level.current.key as OrientationKey)}
+      </span>
+      <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-[#B7801F]">
+        <Star className="size-3.5 fill-[#D89B32] text-[#D89B32]" />
+        {t("journey.stars", { n: num(starsEarned), total: num(starsTotal) })}
+      </span>
+      {level.next && (
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          <span className="h-1.5 w-16 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+            <span className="block h-full rounded-full bg-amber-500" style={{ width: `${Math.round(((xp - level.current.min) / span) * 100)}%` }} />
+          </span>
+          {t("journey.nextLevel", { xp: num(toNext), level: t(level.next.key as OrientationKey) })}
+        </span>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -32,8 +61,18 @@ export function JourneyHeader({
   allDone,
   signedOff,
   teamLeadLink,
+  paceText,
+  xp,
+  starsEarned,
+  starsTotal,
   onOpenOutline,
 }: {
+  paceText: string;
+  /** Best XP across module checks. */
+  xp: number;
+  starsEarned: number;
+  /** 3 per module check; 0 hides the score row. */
+  starsTotal: number;
   percent: number;
   greeting: string;
   summary: string;
@@ -66,6 +105,9 @@ export function JourneyHeader({
         <div className="min-w-0 flex-1">
           <h2 className="font-heading text-lg font-bold leading-tight">{greeting}</h2>
           <p className="text-sm text-muted-foreground tabular-nums">{summary}</p>
+          {starsTotal > 0 && (
+            <ScoreRow xp={xp} starsEarned={starsEarned} starsTotal={starsTotal} />
+          )}
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <Button variant="outline" className="gap-1.5 min-[1080px]:hidden" onClick={onOpenOutline}>
@@ -81,7 +123,10 @@ export function JourneyHeader({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 items-start gap-1.5 min-[761px]:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
+      <div
+        className="grid grid-cols-[repeat(var(--modules),minmax(0,1fr))] items-start gap-1.5 min-[761px]:grid-cols-[repeat(var(--modules),minmax(0,1fr))_auto]"
+        style={{ "--modules": Math.max(1, modules.length) } as React.CSSProperties}
+      >
         {modules.map((m) => {
           const complete = m.total > 0 && m.done >= m.total;
           return (
@@ -127,7 +172,7 @@ export function JourneyHeader({
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-dashed border-border pt-3.5 text-[13px] text-muted-foreground">
         <span>
-          <b className="font-semibold text-foreground/80">{t("journey.pace")}:</b> {t("journey.paceText")}
+          <b className="font-semibold text-foreground/80">{t("journey.pace")}:</b> {paceText}
         </span>
         {teamLeadLink && (
           <span className="ms-auto">

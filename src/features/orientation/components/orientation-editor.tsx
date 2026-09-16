@@ -37,8 +37,22 @@ import {
 import { useConfirm } from "@/hooks/use-confirm";
 import { FieldsEditor } from "@/features/orientation/components/structured-fields";
 import { VideoFrame } from "@/features/orientation/components/lesson-videos";
-import { JOURNEY_VERSION, LESSON_TYPES, MODULES, type LessonType, type ModuleId } from "@/features/orientation/lib/course-map";
-import { lessonContentFields, settingsFields, taskConfigFields, type EditLang } from "@/features/orientation/lib/editor-specs";
+import {
+  JOURNEY_VERSION,
+  LESSON_META,
+  LESSON_TYPES,
+  newModuleId,
+  type LessonType,
+  type ModuleId,
+  type OrientationModule,
+} from "@/features/orientation/lib/course-map";
+import {
+  lessonContentFields,
+  moduleCheckFields,
+  settingsFields,
+  taskConfigFields,
+  type EditLang,
+} from "@/features/orientation/lib/editor-specs";
 import {
   COMPETITOR_ANALYSIS_LESSON,
   DEFAULT_ORIENTATION_LESSONS,
@@ -47,8 +61,10 @@ import {
   competitorAnalysisTask,
   isModuleLesson,
   type LessonTask,
+  type ModuleCheck,
   newCustomLessonId,
   resolveOrientation,
+  sortLessonsByModule,
   youTubeId,
   type OrientationLesson,
   type OrientationVideo,
@@ -89,6 +105,7 @@ function newLesson(kind: "custom" | "task", moduleId: ModuleId, template?: "comp
     gateRequired: 0,
     takeawaysAr: [],
     takeawaysEn: [],
+    lockedUntilEarlier: false,
   };
   if (kind === "custom") return base;
   if (template === "competitors") {
@@ -129,7 +146,10 @@ export function OrientationEditor({
   courses: { slug: string; title: string }[];
 }) {
   const { confirm, Confirmation } = useConfirm();
-  const [lessons, setLessons] = React.useState<OrientationLesson[]>(initial.lessons);
+  // Module checks are generated from `moduleChecks`, never saved as lessons.
+  const [lessons, setLessons] = React.useState<OrientationLesson[]>(() => initial.lessons.filter((l) => l.kind !== "check"));
+  const [modules, setModules] = React.useState<OrientationModule[]>(initial.modules);
+  const [openCheck, setOpenCheck] = React.useState<string | null>(null);
   const [content, setContent] = React.useState<SalesOrientationContent>(initial.content);
   const [contentEn, setContentEn] = React.useState<SalesOrientationContent>(initial.contentEn);
   const [lang, setLang] = React.useState<EditLang>("ar");
@@ -149,8 +169,10 @@ export function OrientationEditor({
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
-  const lessonIndex = Math.max(0, lessons.findIndex((l) => l.id === activeId));
-  const lesson = lessons[lessonIndex];
+  // Lessons always read in journey order: grouped by module, modules in their order.
+  const ordered = React.useMemo(() => sortLessonsByModule(lessons, modules), [lessons, modules]);
+  const lessonIndex = Math.max(0, ordered.findIndex((l) => l.id === activeId));
+  const lesson = ordered[lessonIndex];
   const courseOptions = React.useMemo(() => courses.map((c) => ({ value: c.slug, label: c.title })), [courses]);
   const contentFields = React.useMemo(
     () => (lesson && isModuleLesson(lesson.id) ? lessonContentFields(lesson.id, courseOptions, lang) : []),
@@ -168,25 +190,72 @@ export function OrientationEditor({
     touch();
   };
 
+  /** Up/down within a module; past the module's edge it joins the neighbouring module. */
   const moveLesson = (i: number, dir: -1 | 1) => {
     const j = i + dir;
-    if (j < 0 || j >= lessons.length) return;
-    const next = [...lessons];
-    [next[i], next[j]] = [next[j], next[i]];
+    if (j < 0 || j >= ordered.length) return;
+    const next = [...ordered];
+    if (next[i].moduleId !== next[j].moduleId) next[i] = { ...next[i], moduleId: next[j].moduleId };
+    else [next[i], next[j]] = [next[j], next[i]];
     setLessons(next);
     touch();
   };
 
   const insertLesson = (created: OrientationLesson) => {
     // Right after the lesson being edited, so it lands where the admin is working.
-    setLessons((all) => [...all.slice(0, lessonIndex + 1), created, ...all.slice(lessonIndex + 1)]);
+    setLessons([...ordered.slice(0, lessonIndex + 1), created, ...ordered.slice(lessonIndex + 1)]);
     setActiveId(created.id);
     touch();
   };
 
+  /* modules */
+  const addModule = () => {
+    setModules((all) => [...all, { id: newModuleId(), title: { en: "New module", ar: "وحدة جديدة" } }]);
+    touch();
+  };
+
+  const renameModule = (id: string, lang: EditLang, value: string) => {
+    setModules((all) => all.map((m) => (m.id === id ? { ...m, title: { ...m.title, [lang]: value } } : m)));
+    touch();
+  };
+
+  const moveModule = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= modules.length) return;
+    const next = [...modules];
+    [next[i], next[j]] = [next[j], next[i]];
+    setModules(next);
+    touch();
+  };
+
+  const deleteModule = async (id: string) => {
+    if (modules.length <= 1) {
+      toast.error("The training needs at least one module.");
+      return;
+    }
+    const i = modules.findIndex((m) => m.id === id);
+    const target = modules[i === 0 ? 1 : i - 1];
+    const count = lessons.filter((l) => l.moduleId === id).length;
+    const ok = await confirm({
+      title: `Delete module “${modules[i].title.en}”?`,
+      description: count
+        ? `Its ${count} lesson${count === 1 ? "" : "s"} move to “${target.title.en}” — no lesson is deleted. Takes effect when you save.`
+        : "It has no lessons. Takes effect when you save.",
+      confirmText: "Delete module",
+      variant: "destructive",
+    });
+    if (!ok) return;
+    setModules((all) => all.filter((m) => m.id !== id));
+    setLessons((all) => all.map((l) => (l.moduleId === id ? { ...l, moduleId: target.id } : l)));
+    touch();
+  };
+
   const restoreBuiltIn = (id: string) => {
-    const def = DEFAULT_ORIENTATION_LESSONS.find((d) => d.id === id);
-    if (!def) return;
+    const found = DEFAULT_ORIENTATION_LESSONS.find((d) => d.id === id);
+    if (!found) return;
+    const home = LESSON_META[found.slug]?.moduleId;
+    // Its default module may have been deleted; then it joins the last one.
+    const def = modules.some((m) => m.id === home) ? found : { ...found, moduleId: modules[modules.length - 1].id };
     setLessons((all) => [...all, def]);
     setActiveId(id);
     touch();
@@ -218,6 +287,10 @@ export function OrientationEditor({
   const save = async () => {
     if (lessons.length === 0) {
       toast.error("The training needs at least one lesson.");
+      return;
+    }
+    if (modules.some((m) => !m.title.en.trim() || !m.title.ar.trim())) {
+      toast.error("Every module needs a title in English and Arabic.");
       return;
     }
     for (const l of lessons) {
@@ -272,6 +345,21 @@ export function OrientationEditor({
           return;
         }
       }
+      for (const [moduleId, check] of Object.entries(copy.moduleChecks ?? {})) {
+        const n = modules.findIndex((m) => m.id === moduleId) + 1;
+        if (n === 0) continue;
+        const bad = check.questions.findIndex((q) =>
+          q.kind === "safe"
+            ? !q.message.trim() || (q.correct !== 0 && q.correct !== 1)
+            : !q.prompt.trim() || q.options.filter((o) => o.trim()).length < 2 || q.correct < 0 || q.correct >= q.options.filter((o) => o.trim()).length,
+        );
+        if (bad >= 0) {
+          if (lang !== (label === "Arabic" ? "ar" : "en")) setLang(label === "Arabic" ? "ar" : "en");
+          setOpenCheck(moduleId);
+          toast.error(`Module ${n} check, question ${bad + 1} (${label}) is incomplete: it needs its question or message, answers, and a correct answer that exists.`);
+          return;
+        }
+      }
       if (lessons.some((l) => l.id === "quiz")) {
         const badQuestion = copy.quiz.questions.findIndex(
           (q) => q.options.length < 2 || !Number.isInteger(q.correct) || q.correct < 0 || q.correct >= q.options.length,
@@ -285,11 +373,12 @@ export function OrientationEditor({
     }
     setSaving(true);
     const res = await dal.orientation.saveSalesOrientation({
-      lessons,
+      lessons: ordered,
       // `knownLessons` records which built-in lessons existed at this save, so a
       // lesson added to the app later still appears, while one removed here stays removed.
       content: {
         ...content,
+        modules: modules.map((m) => ({ id: m.id, title: { en: m.title.en.trim(), ar: m.title.ar.trim() } })),
         en: contentEn,
         knownLessons: [...LESSON_IDS],
         journeyVersion: JOURNEY_VERSION,
@@ -321,7 +410,8 @@ export function OrientationEditor({
       return;
     }
     const def = resolveOrientation(null);
-    setLessons(def.lessons);
+    setLessons(def.lessons.filter((l) => l.kind !== "check"));
+    setModules(def.modules);
     setContent(def.content);
     setContentEn(def.contentEn);
     setActiveId(def.lessons[0].id);
@@ -332,8 +422,8 @@ export function OrientationEditor({
   };
 
   const moduleTitle = (id: ModuleId) => {
-    const i = MODULES.findIndex((m) => m.id === id);
-    return i >= 0 ? `${i + 1} · ${MODULES[i].title.en}` : id;
+    const i = modules.findIndex((m) => m.id === id);
+    return i >= 0 ? `${i + 1} · ${ar ? modules[i].title.ar : modules[i].title.en}` : id;
   };
 
   return (
@@ -400,9 +490,9 @@ export function OrientationEditor({
             Lessons ({lessons.length})
           </p>
           <ol className="space-y-0.5">
-            {lessons.map((l, i) => {
+            {ordered.map((l, i) => {
               const active = l.id === lesson?.id;
-              const showModule = i === 0 || lessons[i - 1].moduleId !== l.moduleId;
+              const showModule = i === 0 || ordered[i - 1].moduleId !== l.moduleId;
               return (
                 <li key={l.id} className="group">
                   {showModule && (
@@ -521,7 +611,7 @@ export function OrientationEditor({
                 <SelectField
                   label="Module"
                   value={lesson.moduleId}
-                  options={MODULES.map((m, i) => ({ value: m.id, label: `${i + 1} · ${m.title.en}` }))}
+                  options={modules.map((m, i) => ({ value: m.id, label: `${i + 1} · ${m.title.en}` }))}
                   onChange={(v) => updateLesson({ moduleId: v as ModuleId })}
                 />
                 <SelectField
@@ -536,6 +626,13 @@ export function OrientationEditor({
                   <Switch checked={lesson.isNew} onCheckedChange={(v) => updateLesson({ isNew: v })} />
                 </label>
               </div>
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2">
+                <span>
+                  <span className="block text-xs font-semibold">Locked until the earlier modules are done</span>
+                  <span className="block text-[11px] text-muted-foreground">Like the knowledge check: opens once every lesson in the modules before it is complete</span>
+                </span>
+                <Switch checked={lesson.lockedUntilEarlier} onCheckedChange={(v) => updateLesson({ lockedUntilEarlier: v })} />
+              </label>
               {lesson.kind === "custom" && (
                 <NumberField
                   label="Videos to watch before it completes"
@@ -665,8 +762,119 @@ export function OrientationEditor({
               </Card>
             )}
 
+            {/* Modules */}
+            <Card title={`Modules (${modules.length})`} hint="Titles in both languages · deleting a module moves its lessons, it never deletes them">
+              <ol className="space-y-2">
+                {modules.map((m, i) => {
+                  const count = lessons.filter((l) => l.moduleId === m.id).length;
+                  const check = editedContent.moduleChecks?.[m.id];
+                  const questions = check?.questions.length ?? 0;
+                  return (
+                    <li key={m.id} className="rounded-xl border border-border/70 p-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-bold">{i + 1}</span>
+                      <Input
+                        dir="ltr"
+                        value={m.title.en}
+                        placeholder="Title (English)"
+                        onChange={(e) => renameModule(m.id, "en", e.target.value)}
+                        className={cn("h-8 min-w-[10rem] flex-1", !m.title.en.trim() && "border-destructive")}
+                      />
+                      <Input
+                        dir="rtl"
+                        value={m.title.ar}
+                        placeholder="العنوان بالعربي"
+                        onChange={(e) => renameModule(m.id, "ar", e.target.value)}
+                        className={cn("h-8 min-w-[10rem] flex-1", !m.title.ar.trim() && "border-destructive")}
+                      />
+                      <span className="w-20 text-xs text-muted-foreground">
+                        {count} lesson{count === 1 ? "" : "s"}
+                      </span>
+                      <Button type="button" size="icon" variant="ghost" className="size-8" disabled={i === 0} onClick={() => moveModule(i, -1)} title="Move up">
+                        <ArrowUp className="size-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8"
+                        disabled={i === modules.length - 1}
+                        onClick={() => moveModule(i, 1)}
+                        title="Move down"
+                      >
+                        <ArrowDown className="size-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        disabled={modules.length <= 1}
+                        onClick={() => deleteModule(m.id)}
+                        title="Delete module"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border/60 pt-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={openCheck === m.id ? "secondary" : "outline"}
+                        className="h-8 gap-1.5"
+                        aria-expanded={openCheck === m.id}
+                        onClick={() => setOpenCheck(openCheck === m.id ? null : m.id)}
+                      >
+                        <ClipboardList className="size-3.5" />
+                        Module check · {questions} question{questions === 1 ? "" : "s"} ({ar ? "Arabic" : "English"})
+                      </Button>
+                      <span className="text-[11px] text-muted-foreground">
+                        {questions ? "Shown at the end of this module; passing it completes the module." : "No questions — no check for this module."}
+                      </span>
+                    </div>
+                    {openCheck === m.id && (
+                      <div className="mt-3 rounded-xl bg-muted/40 p-3">
+                        <FieldsEditor
+                          key={`${m.id}-${lang}`}
+                          fields={moduleCheckFields}
+                          value={(check ?? { passPercent: 70, questions: [] }) as unknown as Record<string, unknown>}
+                          onChange={(next) => {
+                            const update = (cur: SalesOrientationContent): SalesOrientationContent => ({
+                              ...cur,
+                              moduleChecks: { ...(cur.moduleChecks ?? {}), [m.id]: next as unknown as ModuleCheck },
+                            });
+                            if (ar) setContent(update);
+                            else setContentEn(update);
+                            touch();
+                          }}
+                        />
+                      </div>
+                    )}
+                    </li>
+                  );
+                })}
+              </ol>
+              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addModule}>
+                <Plus className="size-3.5" /> Add module
+              </Button>
+              <p className="text-[11px] text-muted-foreground">
+                Put lessons into a module with each lesson&apos;s <b>Module</b> setting, or move a lesson past the edge of its module in the list.
+              </p>
+            </Card>
+
             {/* Training-wide settings */}
-            <Card title="Training settings" hint="Shared by every lesson and both languages">
+            <Card title="Training settings" hint="Shared by every lesson">
+              <TextField
+                label={`Suggested pace · ${ar ? "Arabic" : "English"}`}
+                hint="Leave empty for the default wording — update it when the modules change"
+                value={editedContent.pace ?? ""}
+                dir={ar ? "rtl" : "ltr"}
+                onChange={(v) => {
+                  if (ar) setContent((cur) => ({ ...cur, pace: v }));
+                  else setContentEn((cur) => ({ ...cur, pace: v }));
+                  touch();
+                }}
+              />
               <FieldsEditor
                 fields={settingsFields}
                 value={content as unknown as Record<string, unknown>}

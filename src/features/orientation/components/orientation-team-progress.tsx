@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { cn, getInitials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { OrientationProgressStatus, OrientationTaskSummary, OrientationTeamProgress } from "@/lib/dal/orientation";
-import { MODULES } from "@/features/orientation/lib/course-map";
+import type { OrientationModule } from "@/features/orientation/lib/course-map";
 import type { OrientationLesson } from "@/features/orientation/lib/sales-orientation";
 import { OrientationSignOffButton } from "./orientation-signoff-button";
 
@@ -45,11 +45,16 @@ const daysSince = (iso: string | null) => (iso ? Math.max(0, Math.floor((Date.no
 export function OrientationTeamProgress({
   data,
   lessons,
+  modules,
 }: {
   data: OrientationTeamProgress;
   lessons: OrientationLesson[];
+  modules: OrientationModule[];
 }) {
   const byId = new Map(lessons.map((l) => [l.id, l]));
+  const checks = lessons
+    .filter((l) => l.kind === "check")
+    .map((l) => ({ moduleId: l.moduleId, n: modules.findIndex((m) => m.id === l.moduleId) + 1 }));
   const total = lessons.length;
   const { summary } = data;
   const signedOff = data.rows.filter((r) => r.assigned && r.signedOffAt).length;
@@ -106,7 +111,7 @@ export function OrientationTeamProgress({
 
       {data.rows.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-border/70 bg-card">
-          <table className="w-full min-w-[1180px] text-sm">
+          <table className="w-full min-w-[1320px] text-sm">
             <thead className="border-b border-border/60 bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-start font-semibold">Rep</th>
@@ -114,6 +119,7 @@ export function OrientationTeamProgress({
                 <th className="px-4 py-3 text-start font-semibold">Current module</th>
                 <th className="px-4 py-3 text-start font-semibold">Started</th>
                 <th className="px-4 py-3 text-start font-semibold">Days</th>
+                <th className="px-4 py-3 text-start font-semibold">Module checks</th>
                 <th className="px-4 py-3 text-start font-semibold">Quiz</th>
                 <th className="px-4 py-3 text-start font-semibold">Field task</th>
                 <th className="px-4 py-3 text-start font-semibold">Sign-off</th>
@@ -125,7 +131,7 @@ export function OrientationTeamProgress({
                 const denominator = r.total || total;
                 const percent = r.total ? r.percent : 0;
                 const last = r.lastLessonId ? byId.get(r.lastLessonId) : undefined;
-                const modIndex = last ? MODULES.findIndex((m) => m.id === last.moduleId) : -1;
+                const modIndex = last ? modules.findIndex((m) => m.id === last.moduleId) : -1;
                 const days = daysSince(r.startedAt);
                 const task = TASK[r.taskStatus ?? "not_sent"];
                 return (
@@ -136,7 +142,12 @@ export function OrientationTeamProgress({
                           {getInitials(r.name || r.email || "?")}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate font-semibold">{r.name || "—"}</p>
+                          <Link
+                            href={`/admin/orientation/progress/${r.userId}`}
+                            className="block truncate font-semibold hover:text-primary hover:underline"
+                          >
+                            {r.name || r.email || "—"}
+                          </Link>
                           <p className="truncate text-xs text-muted-foreground">
                             {r.role}
                             {r.email ? ` · ${r.email}` : ""}
@@ -170,7 +181,7 @@ export function OrientationTeamProgress({
                       {modIndex >= 0 ? (
                         <>
                           <span className="block font-semibold">
-                            Module {modIndex + 1} · {MODULES[modIndex].title.en}
+                            Module {modIndex + 1} · {modules[modIndex].title.en}
                           </span>
                           <span className="block text-muted-foreground">{last?.titleEn}</span>
                         </>
@@ -180,6 +191,25 @@ export function OrientationTeamProgress({
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{fmt(r.startedAt)}</td>
                     <td className="px-4 py-3 text-xs tabular-nums">{days === null ? "—" : days}</td>
+                    <td className="px-4 py-3 text-xs">
+                      {checks.length ? (
+                        <>
+                          <span className="block font-semibold tabular-nums text-amber-700 dark:text-amber-400">{(r.xp ?? 0).toLocaleString("en-US")} XP</span>
+                          <span className="block whitespace-nowrap text-muted-foreground">
+                            {checks.map((c) => {
+                              const rec = r.moduleChecks?.[c.moduleId];
+                              return (
+                                <span key={c.moduleId} className="me-1.5" title={`Module ${c.n}`}>
+                                  M{c.n} {rec ? "★".repeat(rec.stars) + "☆".repeat(3 - rec.stars) : "—"}
+                                </span>
+                              );
+                            })}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-xs tabular-nums">
                       {r.quizScore !== null && r.quizScore !== undefined && r.quizTotal ? (
                         <span className={r.quizPassedAt ? "font-semibold text-emerald-700 dark:text-emerald-400" : ""}>
@@ -204,6 +234,9 @@ export function OrientationTeamProgress({
                           signedOff={!!r.signedOffAt}
                           canSignOff={!!r.startedAt}
                         />
+                        <Button asChild size="sm" variant="ghost" className="h-8 text-primary">
+                          <Link href={`/admin/orientation/progress/${r.userId}`}>Report</Link>
+                        </Button>
                       </div>
                     </td>
                   </tr>

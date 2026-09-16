@@ -17,12 +17,12 @@ export default async function OrientationTeamProgressPage({ params }: { params: 
     dal.orientation.fetchTeamOrientationProgress(),
     dal.orientation.fetchSalesOrientation(),
   ]);
-  const { lessons } = resolveOrientation(saved.ok ? saved.data : null);
+  const { lessons, modules } = resolveOrientation(saved.ok ? saved.data : null);
 
   return (
     <div className="mx-auto max-w-[1400px]">
       {team.ok ? (
-        <OrientationTeamProgress data={team.data} lessons={lessons} />
+        <OrientationTeamProgress data={team.data} lessons={lessons} modules={modules} />
       ) : (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
           Couldn&apos;t load team progress: {team.error}

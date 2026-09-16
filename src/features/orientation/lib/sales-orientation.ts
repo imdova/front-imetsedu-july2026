@@ -7,10 +7,12 @@ import {
   JOURNEY_VERSION,
   LESSON_META,
   LESSON_TYPES,
-  isModuleId,
+  MODULES,
+  isModuleIdShape,
   slugForLesson,
   type LessonType,
   type ModuleId,
+  type OrientationModule,
 } from "./course-map";
 import type { OrientationLocale } from "./i18n";
 
@@ -200,6 +202,31 @@ export interface QuizContent {
   questions: QuizQuestion[];
 }
 
+/**
+ * One question in a module check. `choice`: pick the best answer (optionally
+ * replying to a client message). `safe`: decide whether a rep's message is
+ * safe to send — `correct` 0 = safe, 1 = don't send.
+ */
+export interface ModuleCheckQuestion {
+  kind: "choice" | "safe";
+  /** Client message the question reacts to (optional). */
+  client: string;
+  prompt: string;
+  /** The rep's message to judge (`safe` questions). */
+  message: string;
+  options: string[];
+  correct: number;
+  /** Coach tip shown after answering. */
+  explain: string;
+}
+
+/** The gamified check at the end of a module. */
+export interface ModuleCheck {
+  /** Percent of correct answers needed to pass. */
+  passPercent: number;
+  questions: ModuleCheckQuestion[];
+}
+
 export interface SalesOrientation {
   threads: { bad: Thread; good: Thread };
   steps: PathStep[];
@@ -225,12 +252,18 @@ export interface SalesOrientation {
   knownLessons?: string[];
   /** Set by the journey-aware editor; older saves are re-ordered into the journey. */
   journeyVersion?: number;
+  /** The modules, in order (Arabic copy only — shared by both languages). */
+  modules?: OrientationModule[];
+  /** "Suggested pace" line in this language. Empty ⇒ the default wording. */
+  pace: string;
+  /** Module checks by module id. A module with questions gets a check at its end. */
+  moduleChecks: Record<string, ModuleCheck>;
 }
 
 /** The bundled default content, Arabic. */
-export const DEFAULT_SALES_ORIENTATION = { ...content, programDetails } as SalesOrientation;
+export const DEFAULT_SALES_ORIENTATION = { ...content, programDetails, pace: "" } as unknown as SalesOrientation;
 /** The bundled default content, English. */
-export const DEFAULT_SALES_ORIENTATION_EN = { ...contentEn, programDetails: programDetailsEn } as SalesOrientation;
+export const DEFAULT_SALES_ORIENTATION_EN = { ...contentEn, programDetails: programDetailsEn, pace: "" } as unknown as SalesOrientation;
 
 /* ── lessons ─────────────────────────────────────────────────────────────── */
 
@@ -266,9 +299,13 @@ export const isModuleLesson = (id: string): id is LessonId => (LESSON_IDS as rea
 /**
  * `module` = a built-in interactive lesson; `custom` = an admin-written lesson
  * (text + videos); `task` = an assignment staff fill in per programme (e.g. a
- * competitor analysis), reviewed by admins.
+ * competitor analysis), reviewed by admins. `check` = the module check the
+ * resolver adds at the end of a module (never saved as a lesson).
  */
-export type LessonKind = "module" | "custom" | "task";
+export type LessonKind = "module" | "custom" | "task" | "check";
+
+/** The id of a module's check lesson. */
+export const checkLessonId = (moduleId: string) => `check-${moduleId}`.slice(0, 40);
 
 export type TaskFieldType = "text" | "textarea" | "number" | "yesno" | "select" | "url";
 
@@ -439,6 +476,8 @@ export interface OrientationLesson {
   gateRequired: number;
   takeawaysAr: string[];
   takeawaysEn: string[];
+  /** Locked until every lesson in the earlier modules is complete (the knowledge check). */
+  lockedUntilEarlier: boolean;
 }
 
 /** Videos a video lesson asks for by default. */
@@ -499,6 +538,7 @@ function builtIn(id: LessonId, copy: BuiltInCopy): OrientationLesson {
     gateRequired: 0,
     takeawaysAr: [],
     takeawaysEn: [],
+    lockedUntilEarlier: !!m.lockedUntilEarlierModules,
   };
 }
 
@@ -618,7 +658,9 @@ export const DEFAULT_ORIENTATION_LESSONS: OrientationLesson[] = [...BUILT_IN_LES
 /* ── saved content over the default ──────────────────────────────────────── */
 
 export interface ResolvedOrientation {
+  /** In journey order: grouped by module, modules in order. */
   lessons: OrientationLesson[];
+  modules: OrientationModule[];
   /** Arabic content. */
   content: SalesOrientation;
   /** English content. */
@@ -743,7 +785,8 @@ function lessonFromSaved(s: Record<string, unknown>): OrientationLesson | null {
     body: isBuiltIn ? "" : str(s.body, ""),
     videos,
     ...(task ? { task } : {}),
-    moduleId: isModuleId(s.moduleId) ? s.moduleId : (meta?.moduleId ?? "m1"),
+    moduleId: isModuleIdShape(s.moduleId) ? s.moduleId : (meta?.moduleId ?? "m1"),
+    lockedUntilEarlier: typeof s.lockedUntilEarlier === "boolean" ? s.lockedUntilEarlier : !!meta?.lockedUntilEarlierModules,
     type: LESSON_TYPES.includes(s.type as LessonType)
       ? (s.type as LessonType)
       : (meta?.type ?? (kind === "task" ? "task" : videos.length ? "video" : "read")),
@@ -797,7 +840,107 @@ function resolveContent(c: Record<string, unknown>, D: SalesOrientation): SalesO
       ? { ...quiz!, passMark: Math.max(1, Math.min(quiz!.questions.length, Math.round(Number(quiz!.passMark)) || 1)) }
       : D.quiz,
     teamLeadLink: str(c.teamLeadLink, D.teamLeadLink ?? ""),
+    pace: str(c.pace, D.pace ?? ""),
+    moduleChecks: resolveChecks(c.moduleChecks, D.moduleChecks ?? {}),
   };
+}
+
+/** Saved module checks, cleaned. A saved map replaces the defaults (so questions an admin removed stay removed). */
+function resolveChecks(raw: unknown, fallback: Record<string, ModuleCheck>): Record<string, ModuleCheck> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return fallback;
+  const out: Record<string, ModuleCheck> = {};
+  for (const [moduleId, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!isModuleIdShape(moduleId)) continue;
+    const v = value as Partial<ModuleCheck> | null;
+    const questions = (Array.isArray(v?.questions) ? v.questions : []).flatMap((q): ModuleCheckQuestion[] => {
+      const x = q as Partial<ModuleCheckQuestion> | null;
+      if (!x) return [];
+      const kind = x.kind === "safe" ? "safe" : "choice";
+      const options = Array.isArray(x.options) ? x.options.filter((o): o is string => typeof o === "string" && o.trim().length > 0) : [];
+      const correct = Math.round(Number(x.correct));
+      if (kind === "choice" && (options.length < 2 || !(correct >= 0 && correct < options.length))) return [];
+      if (kind === "safe" && (!str(x.message, "").trim() || (correct !== 0 && correct !== 1))) return [];
+      if (kind === "choice" && !str(x.prompt, "").trim()) return [];
+      return [
+        {
+          kind,
+          client: str(x.client, ""),
+          prompt: str(x.prompt, ""),
+          message: str(x.message, ""),
+          options: kind === "choice" ? options : [],
+          correct,
+          explain: str(x.explain, ""),
+        },
+      ];
+    });
+    out[moduleId] = { passPercent: Math.max(1, Math.min(100, Math.round(Number(v?.passPercent)) || 70)), questions };
+  }
+  return out;
+}
+
+/** A check lesson at the end of every module that has questions. */
+function withModuleChecks(lessons: OrientationLesson[], modules: OrientationModule[], checks: Record<string, ModuleCheck>) {
+  const out: OrientationLesson[] = [];
+  for (const m of modules) {
+    const inModule = lessons.filter((l) => l.moduleId === m.id);
+    out.push(...inModule);
+    const check = checks[m.id];
+    if (!inModule.length || !check?.questions.length) continue;
+    const id = checkLessonId(m.id);
+    out.push({
+      id,
+      kind: "check",
+      slug: id,
+      short: `اختبار الوحدة: ${m.title.ar}`,
+      en: `Module check: ${m.title.en}`,
+      heading: `اختبار الوحدة: ${m.title.ar}`,
+      intro: "",
+      introEn: "",
+      body: "",
+      bodyEn: "",
+      videos: [],
+      moduleId: m.id,
+      type: "quiz",
+      minutes: Math.max(2, Math.ceil(check.questions.length * 0.5)),
+      isNew: true,
+      titleAr: `اختبار الوحدة: ${m.title.ar}`,
+      titleEn: `Module check: ${m.title.en}`,
+      outcomeAr: "تثبت إنك فاهم أساسيات الوحدة دي، وتجمع نقاط ونجوم.",
+      outcomeEn: "prove you've got this module's essentials, and collect XP and stars.",
+      gateAr: `تجيب ${check.passPercent}% أو أكتر`,
+      gateEn: `score ${check.passPercent}% or more`,
+      gateRequired: 1,
+      takeawaysAr: [],
+      takeawaysEn: [],
+      lockedUntilEarlier: false,
+    });
+  }
+  // Lessons in a module not listed (shouldn't happen after resolving) stay at the end.
+  return [...out, ...lessons.filter((l) => !modules.some((m) => m.id === l.moduleId))];
+}
+
+/** Saved modules, cleaned — or the shipped five when none are saved. */
+function resolveModules(raw: unknown): OrientationModule[] {
+  if (!Array.isArray(raw)) return MODULES;
+  const seen = new Set<string>();
+  const out: OrientationModule[] = [];
+  for (const m of raw) {
+    const x = m as { id?: unknown; title?: { en?: unknown; ar?: unknown } } | null;
+    const id = x?.id;
+    if (!isModuleIdShape(id) || seen.has(id)) continue;
+    const en = str(x?.title?.en, "").trim();
+    const ar = str(x?.title?.ar, "").trim();
+    if (!en && !ar) continue;
+    seen.add(id);
+    out.push({ id, title: { en: en || ar, ar: ar || en } });
+  }
+  return out.length ? out : MODULES;
+}
+
+/** Lessons grouped by module order, keeping their order within each module. */
+export function sortLessonsByModule<T extends { moduleId: string }>(lessons: T[], modules: OrientationModule[]): T[] {
+  const rank = new Map(modules.map((m, i) => [m.id, i]));
+  return [...lessons].sort((a, b) => (rank.get(a.moduleId) ?? modules.length) - (rank.get(b.moduleId) ?? modules.length));
 }
 
 /**
@@ -867,6 +1010,19 @@ export function resolveOrientation(
     }
   }
 
+  // A lesson in a module that no longer exists goes to its default module, or the last one.
+  const modules = resolveModules(c.modules);
+  const moduleIds = new Set(modules.map((m) => m.id));
+  const fallbackModule = modules[modules.length - 1].id;
+  lessons = sortLessonsByModule(
+    lessons.map((l) => {
+      if (moduleIds.has(l.moduleId)) return l;
+      const home = LESSON_META[l.slug]?.moduleId;
+      return { ...l, moduleId: home && moduleIds.has(home) ? home : fallbackModule };
+    }),
+    modules,
+  );
+
   const ar = resolveContent(c, DEFAULT_SALES_ORIENTATION);
   const enSaved = c.en && typeof c.en === "object" && !Array.isArray(c.en) ? (c.en as Record<string, unknown>) : {};
   const enResolved = resolveContent(enSaved, DEFAULT_SALES_ORIENTATION_EN);
@@ -881,7 +1037,16 @@ export function resolveOrientation(
     teamLeadLink: ar.teamLeadLink,
   };
 
-  return { lessons, content: ar, contentEn: en };
+  // English checks follow the Arabic ones question for question; a module whose English copy doesn't match uses the Arabic.
+  en.moduleChecks = Object.fromEntries(
+    Object.entries(ar.moduleChecks).map(([id, check]) => {
+      const t = en.moduleChecks[id];
+      return [id, t && t.questions.length === check.questions.length ? { ...t, passPercent: check.passPercent } : check];
+    }),
+  );
+  lessons = withModuleChecks(lessons, modules, ar.moduleChecks);
+
+  return { lessons, modules, content: { ...ar, modules }, contentEn: en };
 }
 
 /* ── one language at a time ──────────────────────────────────────────────── */
@@ -913,7 +1078,7 @@ export interface LessonView {
   videos: { id: string; url: string; title: string; duration: string }[];
   takeaways: string[];
   task?: LocalTask;
-  lockedUntil?: ModuleId[];
+  lockedUntilEarlier: boolean;
 }
 
 const inLang = (locale: OrientationLocale, ar: string, en: string) => (locale === "ar" ? ar || en : en || ar);
@@ -955,8 +1120,46 @@ export function localizeLesson(l: OrientationLesson, locale: OrientationLocale):
     })),
     takeaways: locale === "ar" ? (l.takeawaysAr.length ? l.takeawaysAr : l.takeawaysEn) : l.takeawaysEn.length ? l.takeawaysEn : l.takeawaysAr,
     ...(task ? { task } : {}),
-    lockedUntil: LESSON_META[l.slug]?.lockedUntilModulesComplete,
+    lockedUntilEarlier: l.lockedUntilEarlier,
   };
+}
+
+/**
+ * How many gate steps finish a lesson, from the content it renders.
+ * `programmeCount` is the number of programmes with live fees.
+ */
+export function gateRequirementFor(v: LessonView, c: SalesOrientation, programmeCount: number): number {
+  if (v.kind === "check") return 1;
+  if (v.kind === "task") return Math.max(1, v.task?.programs.length ?? 1);
+  if (v.kind === "custom") return v.videos.length === 0 || v.gateRequired === 0 ? 1 : Math.min(v.gateRequired, v.videos.length);
+  switch (v.slug) {
+    case "week":
+      return Math.max(1, c.week.checklist.length);
+    case "programs":
+      return Math.max(1, Math.min(3, programmeCount));
+    case "details":
+      return Math.max(1, c.programDetails.programmes.length + (c.programDetails.audiences.length ? 1 : 0));
+    case "path":
+      return Math.max(1, c.steps.length);
+    case "rules":
+      return Math.max(1, c.rules.length);
+    case "contrast":
+      return 2;
+    case "phrases":
+      return Math.max(1, c.phraseBank.length);
+    case "closing":
+      return Math.max(1, Math.min(3, c.closings.length));
+    case "practice":
+      return Math.max(1, c.scenarios.length);
+    case "objections":
+      return Math.max(1, new Set(c.objections.map((o) => o.category)).size);
+    case "drill":
+      return 3;
+    case "send":
+      return Math.max(1, c.checklist.length);
+    default:
+      return 1;
+  }
 }
 
 /** Find a lesson by its id, slug, or an old anchor. */
