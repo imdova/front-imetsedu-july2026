@@ -1,0 +1,523 @@
+import { useLocale } from "next-intl";
+
+/**
+ * Interface strings for Sales Orientation, English and Egyptian Arabic.
+ *
+ * The page follows the console language (the header EN/ع switch): one
+ * language at a time, with the layout mirrored by `<html dir>`. Programme names
+ * and codes (CPHQ, CIC, NAHQ, R1–R4, Zoom) stay in Latin script in both. UI
+ * counters use Western digits in both languages; lesson copy keeps its own.
+ *
+ * Kept with the feature rather than in the app-wide message catalogues: every
+ * string here belongs to this one page, and the training content it wraps is
+ * bilingual data of its own.
+ */
+
+const EN = {
+  "page.title": "Sales Orientation",
+  "page.subtitle":
+    "Your self-paced first week: learn our programs, run a consultative conversation, handle objections, then prove you're ready.",
+  "mode.label": "View",
+  "mode.learn": "Learn",
+  "mode.reference": "Quick reference",
+
+  "journey.label": "Your orientation progress",
+  "journey.helloBack": "Welcome back, {name}",
+  "journey.helloBackNoName": "Welcome back",
+  "journey.hello": "Welcome, {name}",
+  "journey.helloNoName": "Welcome",
+  "journey.summary": "{done} of {total} lessons · about {time} left",
+  "journey.summaryDone": "{done} of {total} lessons · all done",
+  "journey.continue": "Continue: {lesson}",
+  "journey.start": "Start orientation",
+  "journey.signoff": "Team-lead sign-off",
+  "journey.signedOff": "Signed off",
+  "journey.pace": "Suggested pace",
+  "journey.paceText": "Day 1 → Modules 1–2 · Day 2 → Module 3 · Day 3 → Modules 4–5",
+  "journey.stuck": "Stuck on a case?",
+  "journey.ask": "Message your team lead",
+  "journey.moduleAria": "Module {n}: {module}, {done} of {total} lessons done",
+
+  "outline.button": "Course outline",
+  "outline.meta": "{done}/{total} · {time}",
+  "outline.reset": "Reset my progress",
+  "outline.resetTitle": "Start the orientation over?",
+  "outline.resetBody": "Your completed lessons, gate progress and quiz score are cleared. Task answers you sent are kept.",
+  "outline.resetConfirm": "Start over",
+  "outline.locked": "Locked",
+
+  "lesson.module": "Module {n} · {module}",
+  "lesson.position": "Lesson {i} of {total}",
+  "lesson.minutes": "{m} min",
+  "lesson.byEnd": "By the end you can:",
+  "lesson.toFinish": "To finish: {gate}",
+  "lesson.complete": "Lesson complete",
+  "lesson.completeToast": "Lesson complete: {lesson}",
+  "lesson.locked": "Unlocks after Modules 1–4",
+  "lesson.finishFirst": "Finish these first:",
+  "lesson.readToEnd": "read to the end",
+  "lesson.watchVideos": "watch {n} videos",
+  "lesson.watchVideo": "watch the video",
+
+  "nav.prev": "Previous",
+  "nav.next": "Next lesson",
+  "nav.upNext": "Up next",
+  "nav.finish": "View sign-off",
+
+  "type.video": "Video",
+  "type.read": "Read",
+  "type.interactive": "Interactive",
+  "type.practice": "Practice",
+  "type.quiz": "Quiz",
+  "type.task": "Task",
+  "type.checklist": "Checklist",
+  "badge.new": "New",
+
+  "common.copy": "Copy",
+  "common.copied": "Copied to clipboard",
+  "common.copyFailed": "Couldn't copy — select the text instead",
+  "common.all": "All",
+  "common.open": "Open",
+
+  "chat.client": "Client",
+  "chat.you": "You",
+  "chat.whatsapp": "Incoming WhatsApp enquiry",
+
+  "rules.mistake": "Common mistake",
+  "rules.fix": "Do this instead",
+
+  "ref.search": "Search objections, phrases, closing lines…",
+  "ref.intro": "Keep this open during your shift. Everything here comes from the lessons.",
+  "ref.empty": "Nothing matches. Try a shorter word.",
+  "ref.objections": "Objections",
+  "ref.phrases": "Safer phrasing",
+  "ref.closings": "Closing lines",
+  "ref.checklist": "Before you send",
+
+  "footer.help":
+    "Internal guide for the IMETS sales team. If a case isn't clear, check with your team lead before promising the client anything.",
+
+  "time.hm": "{h} h {m} min",
+  "time.m": "{m} min",
+
+  "video.list": "Videos ({n})",
+  "video.watched": "Watched",
+  "video.fallbackTitle": "Video {n}",
+  "video.markWatched": "I watched this",
+  "video.remember": "Remember",
+  "video.untracked": "This player can't report progress here — mark the video once you've watched it.",
+
+  "week.noAccess": "Your team lead gives you access",
+
+  "path.step": "Step {n}",
+
+  "contrast.bad": "Interrogation",
+  "contrast.good": "Consultation",
+
+  "phrases.never": "Never say",
+  "phrases.instead": "Say instead",
+  "phrases.tap": "Tap to flip",
+
+  "closing.pick": "Choose a situation above.",
+  "closing.suggested": "Suggested closing",
+
+  "practice.situation": "Situation {i} of {n}",
+  "practice.correctCount": "Correct: {x}/{y}",
+  "practice.correct": "Correct",
+  "practice.notQuite": "Not quite: see the green reply",
+  "practice.nextSituation": "Next situation",
+  "practice.retry": "Try again",
+
+  "objections.behind": "What's behind it",
+  "objections.weak": "Weak reply",
+  "objections.model": "Model reply",
+  "objections.facts": "Facts you can state safely",
+  "objections.next": "Next step",
+  "objections.search": "Search objections…",
+  "objections.none": "No objection matches your search.",
+
+  "drill.rounds": "Rounds",
+  "drill.applied": "Applied all 4 steps",
+  "drill.start": "Press “New objection” to start.",
+  "drill.new": "New objection",
+  "drill.reveal": "Show model reply",
+  "drill.question": "Did you listen, acknowledge, clarify with a fact, and move to a step?",
+  "drill.yes": "Yes, all 4",
+  "drill.notYet": "Not yet",
+
+  "programs.loadFailed":
+    "Program fees couldn't be loaded right now. Refresh the page, and if it keeps happening check with your team lead before discussing price.",
+  "programs.pick": "Choose a program above.",
+  "programs.fee": "Current fee",
+  "programs.egp": "EGP {n}",
+  "programs.discount": "{n}% off the list price",
+  "programs.lectures": "Lectures",
+  "programs.lecturesSub": "live on Zoom",
+  "programs.payment": "Payment plan",
+  "programs.paymentValue": "2 instalments",
+  "programs.first": "First payment (50%)",
+  "programs.firstSub": "confirms the seat",
+  "programs.rest": "The rest",
+  "programs.restSub": "within a month of the start",
+  "programs.ready": "Ready-made message",
+  "programs.pitch":
+    "{name} is {lectures} live lectures on Zoom, one a week, with recordings available for 12 months, applied tasks and a certificate. The fee is EGP {fee}, and you can confirm your seat with a first payment of EGP {first}; the rest is due within a month of the start. Shall I send you the module plan and the next cohort dates?",
+  "programs.students": "{n} learners have joined this program so far.",
+  "programs.videoOne": "Program video",
+  "programs.videoMany": "Program videos",
+
+  "details.liveFee": "Current fee",
+  "details.liveLectures": "Lectures",
+  "details.liveLearners": "Learners (published on the site)",
+  "details.say": "Say it like this",
+  "details.never": "Never say",
+  "details.full": "Full course content",
+  "details.whatItIs": "What is this certification?",
+  "details.whyStudy": "Why healthcare professionals study it",
+  "details.whoFor": "Who it suits",
+  "details.eligibility": "Exam eligibility",
+  "details.courseFacts": "Our course",
+  "details.curriculum": "Course content",
+  "details.outcomes": "What they'll learn",
+  "details.careers": "Career paths it opens",
+  "details.whoTab": "Who studies this, and why",
+  "details.openWith": "Open with",
+  "details.motivations": "Why they consider management programs",
+  "details.worries": "What usually worries them",
+  "details.bestFit": "Best fit",
+  "details.more": "Why they consider it",
+
+  "quiz.submit": "Submit answers",
+  "quiz.answerAll": "Answer all {n} questions to submit.",
+  "quiz.passed": "Passed. Your team lead has been notified.",
+  "quiz.passedBefore": "Passed. You can retake it any time.",
+  "quiz.failed": "Review the red answers and try again.",
+  "quiz.retry": "Try again",
+  "quiz.best": "Best score so far: {x}/{y}",
+  "quiz.saveFailed": "Your score couldn't be saved: {error}",
+
+  "task.send": "Send to team lead",
+  "task.update": "Send the update",
+  "task.saveDraft": "Save draft",
+  "task.sentStatus": "Sent. Waiting for review.",
+  "task.reviewedStatus": "Reviewed by your team lead",
+  "task.draftStatus": "Draft",
+  "task.sentCount": "{x} of {y} sent",
+  "task.lastSent": "Last sent: {date}",
+  "task.reviewNote": "Review note:",
+  "task.add": "Add {entry}",
+  "task.remove": "Remove",
+  "task.choose": "Choose…",
+  "task.yes": "Yes",
+  "task.no": "No",
+  "task.minEntries": "Add at least {n} {entry} before sending.",
+  "task.required": "{entry} {i}: “{field}” is required.",
+  "task.sentToast": "{program} sent to your team lead",
+  "task.draftToast": "Saved as a draft",
+  "task.loadFailed": "Couldn't load your answers: {error}",
+  "task.rules": "Rules",
+  "task.program": "Program",
+
+  "final.title": "You finished the orientation",
+  "final.waiting": "Your team lead reviews your quiz and field task, then signs you off.",
+  "final.signed": "Signed off on {date}. You're ready for live enquiries.",
+
+  "progress.saveFailed": "Your progress couldn't be saved: {error}",
+  "progress.resetFailed": "Couldn't reset your progress: {error}",
+
+  "attach.title": "Attachments",
+  "attach.upload": "Upload a file",
+  "attach.record": "Record voice",
+  "attach.stopSend": "Stop and send",
+  "attach.cancel": "Cancel recording",
+  "attach.remove": "Remove attachment",
+  "attach.hintFiles": "PDF, Word or images up to 10 MB",
+  "attach.hintVoice": "or record a voice note and it's attached straight away",
+  "attach.tooBig": "The file is larger than 10 MB.",
+  "attach.uploadingVoice": "Uploading the recording…",
+  "attach.uploadingFile": "Uploading {name}…",
+  "attach.failed": "Upload failed: {error}",
+  "attach.voiceSent": "Voice note attached",
+  "attach.fileSent": "File uploaded",
+  "attach.badType": "Allowed files: PDF, Word or images.",
+  "attach.voiceName": "Voice note {date}",
+  "attach.noRecorder": "This browser doesn't support voice recording.",
+  "attach.micDenied": "Allow the browser to use the microphone to record.",
+  "attach.tooShort": "The recording is too short.",
+  "attach.voiceNote": "Voice note",
+  "attach.file": "File",
+
+  "admin.teamProgress": "Team progress",
+  "admin.tasks": "Task submissions",
+  "admin.edit": "Edit training content & videos",
+} as const;
+
+export type OrientationKey = keyof typeof EN;
+
+const AR: Record<OrientationKey, string> = {
+  "page.title": "تدريب فريق المبيعات",
+  "page.subtitle": "أسبوعك الأول بالتعلّم الذاتي: اعرف برامجنا، أدِر محادثة استشارية، اتعامل مع الاعتراضات، وبعدين اثبت إنك جاهز.",
+  "mode.label": "طريقة العرض",
+  "mode.learn": "تعلّم",
+  "mode.reference": "مرجع سريع",
+
+  "journey.label": "تقدّمك في التدريب",
+  "journey.helloBack": "أهلًا يا {name}، كمّل من مكانك",
+  "journey.helloBackNoName": "أهلًا بيك، كمّل من مكانك",
+  "journey.hello": "أهلًا يا {name}",
+  "journey.helloNoName": "أهلًا بيك",
+  "journey.summary": "خلّصت {done} من {total} درس · فاضل حوالي {time}",
+  "journey.summaryDone": "خلّصت {done} من {total} درس · خلّصت الكل",
+  "journey.continue": "كمّل: {lesson}",
+  "journey.start": "ابدأ التدريب",
+  "journey.signoff": "اعتماد المشرف",
+  "journey.signedOff": "اتعمد",
+  "journey.pace": "الإيقاع المقترح",
+  "journey.paceText": "يوم 1 ← الوحدة 1–2 · يوم 2 ← الوحدة 3 · يوم 3 ← الوحدة 4–5",
+  "journey.stuck": "واقف في حالة؟",
+  "journey.ask": "كلّم مشرف الفريق",
+  "journey.moduleAria": "الوحدة {n}: {module}، خلّصت {done} من {total} درس",
+
+  "outline.button": "محتوى التدريب",
+  "outline.meta": "{done}/{total} · {time}",
+  "outline.reset": "ابدأ التدريب من الأول",
+  "outline.resetTitle": "تبدأ التدريب من الأول؟",
+  "outline.resetBody": "الدروس اللي خلّصتها وتقدّمك جوه الدروس ونتيجة الاختبار هيتمسحوا. إجابات المهمة اللي بعتها هتفضل موجودة.",
+  "outline.resetConfirm": "ابدأ من الأول",
+  "outline.locked": "مقفول",
+
+  "lesson.module": "الوحدة {n} · {module}",
+  "lesson.position": "الدرس {i} من {total}",
+  "lesson.minutes": "{m} د",
+  "lesson.byEnd": "في آخر الدرس هتقدر:",
+  "lesson.toFinish": "عشان تخلّص الدرس: {gate}",
+  "lesson.complete": "خلّصت الدرس",
+  "lesson.completeToast": "خلّصت درس: {lesson}",
+  "lesson.locked": "بيتفتح بعد الوحدات 1–4",
+  "lesson.finishFirst": "خلّص دول الأول:",
+  "lesson.readToEnd": "اقرأ الدرس لآخره",
+  "lesson.watchVideos": "اتفرّج على {n} فيديوهات",
+  "lesson.watchVideo": "اتفرّج على الفيديو",
+
+  "nav.prev": "السابق",
+  "nav.next": "الدرس التالي",
+  "nav.upNext": "اللي بعده",
+  "nav.finish": "شوف الاعتماد",
+
+  "type.video": "فيديو",
+  "type.read": "قراءة",
+  "type.interactive": "تفاعلي",
+  "type.practice": "تدريب",
+  "type.quiz": "اختبار",
+  "type.task": "مهمة",
+  "type.checklist": "قائمة مراجعة",
+  "badge.new": "جديد",
+
+  "common.copy": "انسخ",
+  "common.copied": "اتنسخ",
+  "common.copyFailed": "ما قدرناش ننسخ — حدّد النص وانسخه",
+  "common.all": "الكل",
+  "common.open": "افتح",
+
+  "chat.client": "العميل",
+  "chat.you": "إنت",
+  "chat.whatsapp": "محادثة واردة على واتساب",
+
+  "rules.mistake": "الغلط الشائع",
+  "rules.fix": "الصح",
+
+  "ref.search": "دوّر في الاعتراضات والجمل وصيغ الإقفال…",
+  "ref.intro": "خلّي الصفحة دي مفتوحة وإنت شغال. كل اللي هنا من الدروس.",
+  "ref.empty": "مفيش نتايج. جرّب كلمة أقصر.",
+  "ref.objections": "الاعتراضات",
+  "ref.phrases": "جمل بديلة",
+  "ref.closings": "صيغ الإقفال",
+  "ref.checklist": "قبل ما تبعت",
+
+  "footer.help": "دليل داخلي لفريق مبيعات IMETS. لأي حالة مش واضحة، ارجع لمشرف الفريق قبل ما توعد العميل بأي حاجة.",
+
+  "time.hm": "{h} س {m} د",
+  "time.m": "{m} د",
+
+  "video.list": "الفيديوهات ({n})",
+  "video.watched": "اتشاف",
+  "video.fallbackTitle": "فيديو {n}",
+  "video.markWatched": "اتفرجت عليه",
+  "video.remember": "افتكر",
+  "video.untracked": "المشغّل ده مش بيبلّغ بالتقدّم هنا — علّم على الفيديو بعد ما تتفرّج عليه.",
+
+  "week.noAccess": "مشرفك هيديك صلاحية الدخول",
+
+  "path.step": "الخطوة {n}",
+
+  "contrast.bad": "أسلوب الاستجواب",
+  "contrast.good": "أسلوب الاستشارة",
+
+  "phrases.never": "جملة ممنوعة",
+  "phrases.instead": "قول بدالها",
+  "phrases.tap": "اضغط للقلب",
+
+  "closing.pick": "اختار حالة من فوق.",
+  "closing.suggested": "اقتراح الإقفال",
+
+  "practice.situation": "موقف {i} من {n}",
+  "practice.correctCount": "صح: {x}/{y}",
+  "practice.correct": "إجابة صح",
+  "practice.notQuite": "مش بالظبط: شوف الرد الأخضر",
+  "practice.nextSituation": "الموقف اللي بعده",
+  "practice.retry": "جرّب تاني",
+
+  "objections.behind": "اللي وراه",
+  "objections.weak": "الرد الضعيف",
+  "objections.model": "الرد النموذجي",
+  "objections.facts": "حقائق تقدر تقولها من غير خوف",
+  "objections.next": "الخطوة التالية",
+  "objections.search": "دوّر على اعتراض…",
+  "objections.none": "ما فيش اعتراض مطابق للبحث.",
+
+  "drill.rounds": "جولات",
+  "drill.applied": "طبّقت الأربع خطوات",
+  "drill.start": "اضغط «اعتراض جديد» عشان تبدأ.",
+  "drill.new": "اعتراض جديد",
+  "drill.reveal": "اعرض الرد النموذجي",
+  "drill.question": "أنصتّ، واعترفت، ووضّحت بحقيقة، وحوّلت لخطوة؟",
+  "drill.yes": "أيوه، الأربعة",
+  "drill.notYet": "لسه",
+
+  "programs.loadFailed": "تعذّر تحميل أسعار البرامج دلوقتي. حدّث الصفحة، ولو فضلت المشكلة ارجع لمشرف الفريق قبل ما تتكلم في السعر.",
+  "programs.pick": "اختار برنامج من فوق.",
+  "programs.fee": "الرسوم الحالية",
+  "programs.egp": "{n} ج.م",
+  "programs.discount": "خصم {n}% من السعر الأصلي",
+  "programs.lectures": "عدد المحاضرات",
+  "programs.lecturesSub": "لايف على Zoom",
+  "programs.payment": "الدفع",
+  "programs.paymentValue": "دفعتين",
+  "programs.first": "الدفعة الأولى (50%)",
+  "programs.firstSub": "بتأكد المقعد",
+  "programs.rest": "الباقي",
+  "programs.restSub": "خلال شهر من البداية",
+  "programs.ready": "صيغة جاهزة",
+  "programs.pitch":
+    "{name} عبارة عن {lectures} محاضرة لايف على Zoom، محاضرة أسبوعيًا، مع تسجيلات متاحة ١٢ شهر ومهام تطبيقية وشهادة. الرسوم {fee} جنيه، وتقدر تأكد مقعدك بدفعة أولى {first} جنيه، والباقي خلال شهر من بداية البرنامج. تحب أبعتلك خطة الموديولات ومواعيد الدفعة الجاية؟",
+  "programs.students": "انضم للبرنامج ده {n} متدرب حتى الآن.",
+  "programs.videoOne": "فيديو البرنامج",
+  "programs.videoMany": "فيديوهات البرنامج",
+
+  "details.liveFee": "الرسوم الحالية",
+  "details.liveLectures": "عدد المحاضرات",
+  "details.liveLearners": "متدرب (منشور على الموقع)",
+  "details.say": "قولها كده",
+  "details.never": "ما تقولش",
+  "details.full": "محتوى الكورس كامل",
+  "details.whatItIs": "يعني إيه الشهادة دي؟",
+  "details.whyStudy": "ليه الكوادر الصحية بتدرسها؟",
+  "details.whoFor": "مناسبة لمين",
+  "details.eligibility": "شروط دخول الامتحان",
+  "details.courseFacts": "تفاصيل الكورس عندنا",
+  "details.curriculum": "محتوى الكورس",
+  "details.outcomes": "هيتعلّم إيه",
+  "details.careers": "مسارات وظيفية بتفتحها",
+  "details.whoTab": "مين بيدرس البرامج دي وليه",
+  "details.openWith": "ابدأ بـ",
+  "details.motivations": "ليه بيفكر يدرس برامج إدارية؟",
+  "details.worries": "اللي غالبًا مقلقه",
+  "details.bestFit": "الأنسب له",
+  "details.more": "ليه بيفكر فيها",
+
+  "quiz.submit": "سلّم الإجابات",
+  "quiz.answerAll": "جاوب على الـ {n} أسئلة عشان تسلّم.",
+  "quiz.passed": "نجحت. مشرفك وصله إشعار.",
+  "quiz.passedBefore": "نجحت. تقدر تعيد الاختبار في أي وقت.",
+  "quiz.failed": "راجع الإجابات الحمرا وجرّب تاني.",
+  "quiz.retry": "جرّب تاني",
+  "quiz.best": "أعلى نتيجة ليك: {x}/{y}",
+  "quiz.saveFailed": "ما قدرناش نحفظ نتيجتك: {error}",
+
+  "task.send": "ابعت لمشرفك",
+  "task.update": "ابعت التعديل",
+  "task.saveDraft": "احفظ مسودة",
+  "task.sentStatus": "اتبعت لمشرفك. مستني المراجعة.",
+  "task.reviewedStatus": "مشرفك راجعها",
+  "task.draftStatus": "مسودة",
+  "task.sentCount": "اتبعت {x} من {y}",
+  "task.lastSent": "آخر إرسال: {date}",
+  "task.reviewNote": "ملاحظة المراجعة:",
+  "task.add": "أضف {entry}",
+  "task.remove": "امسح",
+  "task.choose": "اختار…",
+  "task.yes": "أيوه",
+  "task.no": "لأ",
+  "task.minEntries": "لازم تضيف {n} {entry} على الأقل قبل الإرسال.",
+  "task.required": "{entry} {i}: «{field}» مطلوب.",
+  "task.sentToast": "اتبعت تحليل {program} لمشرفك",
+  "task.draftToast": "اتحفظت كمسودة",
+  "task.loadFailed": "ما قدرناش نحمّل إجاباتك: {error}",
+  "task.rules": "القواعد",
+  "task.program": "البرنامج",
+
+  "final.title": "خلّصت التدريب",
+  "final.waiting": "مشرفك هيراجع الاختبار والمهمة، وبعدين يعتمدك.",
+  "final.signed": "اتعمدت في {date}. إنت جاهز تستقبل استفسارات حقيقية.",
+
+  "progress.saveFailed": "ما قدرناش نحفظ تقدّمك: {error}",
+  "progress.resetFailed": "ما قدرناش نبدأ التدريب من الأول: {error}",
+
+  "attach.title": "مرفقات",
+  "attach.upload": "ارفع ملف",
+  "attach.record": "سجّل صوت",
+  "attach.stopSend": "وقّف وابعت",
+  "attach.cancel": "إلغاء التسجيل",
+  "attach.remove": "امسح المرفق",
+  "attach.hintFiles": "PDF أو Word أو صور لحد ١٠ ميجا",
+  "attach.hintVoice": "أو سجّل ملاحظة صوتية وهتتبعت على طول",
+  "attach.tooBig": "الملف أكبر من ١٠ ميجا.",
+  "attach.uploadingVoice": "بيترفع التسجيل…",
+  "attach.uploadingFile": "بيترفع {name}…",
+  "attach.failed": "الرفع ما نجحش: {error}",
+  "attach.voiceSent": "اتبعت التسجيل الصوتي",
+  "attach.fileSent": "اترفع الملف",
+  "attach.badType": "الملفات المسموحة: PDF أو Word أو صور.",
+  "attach.voiceName": "تسجيل صوتي {date}",
+  "attach.noRecorder": "المتصفح ده ما بيدعمش التسجيل الصوتي.",
+  "attach.micDenied": "لازم تسمح للمتصفح يستخدم المايك عشان تسجّل.",
+  "attach.tooShort": "التسجيل قصير جدًا.",
+  "attach.voiceNote": "تسجيل صوتي",
+  "attach.file": "ملف",
+
+  "admin.teamProgress": "تقدّم الفريق",
+  "admin.tasks": "إجابات المهام",
+  "admin.edit": "تعديل محتوى التدريب والفيديوهات",
+};
+
+export type OrientationLocale = "en" | "ar";
+
+export const toOrientationLocale = (locale: string): OrientationLocale => (locale === "ar" ? "ar" : "en");
+
+export type Translate = (key: OrientationKey, params?: Record<string, string | number>) => string;
+
+export function orientationT(locale: OrientationLocale): Translate {
+  const dict = locale === "ar" ? AR : EN;
+  return (key, params) => {
+    const s: string = dict[key] ?? EN[key];
+    return params ? s.replace(/\{(\w+)\}/g, (m, k: string) => (k in params ? String(params[k]) : m)) : s;
+  };
+}
+
+/** Western digits in both languages for UI counters. */
+export const num = (n: number) => n.toLocaleString("en-US");
+
+export function formatMinutes(minutes: number, t: Translate) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? t("time.hm", { h, m }) : t("time.m", { m });
+}
+
+/** Pick the current language's text, falling back to the other when a translation is missing. */
+export const pick = (b: { en: string; ar: string }, locale: OrientationLocale) =>
+  (locale === "ar" ? b.ar || b.en : b.en || b.ar) ?? "";
+
+export function useOrientationT() {
+  const locale = toOrientationLocale(useLocale());
+  return { t: orientationT(locale), locale };
+}

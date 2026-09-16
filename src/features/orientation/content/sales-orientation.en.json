@@ -1,0 +1,602 @@
+{
+  "threads": {
+    "bad": {
+      "messages": [
+        { "from": "client", "who": "Client", "text": "I'd like to know about the Healthcare Quality diploma." },
+        { "from": "rep", "who": "You", "text": "Are you a doctor or a nurse?" },
+        { "from": "rep", "who": "You", "text": "How many years of experience do you have?" },
+        { "from": "rep", "who": "You", "text": "Where do you work?" },
+        { "from": "rep", "who": "You", "text": "Which country are you in?" },
+        { "from": "rep", "who": "You", "text": "When do you want to start?" },
+        { "from": "client", "who": "Client", "text": "…" }
+      ],
+      "verdict": {
+        "tone": "bad",
+        "lead": "The client felt interrogated.",
+        "rest": "Five questions in a row without getting anything useful. They'll probably leave the chat without replying, and you still don't know their goal."
+      }
+    },
+    "good": {
+      "messages": [
+        { "from": "client", "who": "Client", "text": "I'd like to know about the Healthcare Quality diploma." },
+        {
+          "from": "rep",
+          "who": "You",
+          "text": "Of course. The diploma helps you build practical knowledge and skills in Healthcare Quality and grow your career in the field."
+        },
+        {
+          "from": "rep",
+          "who": "You",
+          "text": "May I ask your main goal in studying quality: growing in your current job, or preparing for new job opportunities?"
+        },
+        { "from": "client", "who": "Client", "text": "I work in nursing and want to move into quality." },
+        {
+          "from": "rep",
+          "who": "You",
+          "text": "Great. In that case what matters is building a strong foundation in quality concepts and understanding the tools and applications you'll need, not just getting a certificate. That's why the diploma combines theory, hands-on practice and workshops."
+        },
+        {
+          "from": "rep",
+          "who": "You",
+          "text": "Shall I send you the diploma plan and the registration details, so you can see whether it fits your schedule?"
+        }
+      ],
+      "verdict": {
+        "tone": "good",
+        "lead": "One question, with value before and after it.",
+        "rest": "You learned their goal, tied the program to their own need, and closed with a clear step. The conversation is now in your hands, not theirs."
+      }
+    }
+  },
+  "steps": [
+    { "n": "1", "title": "Understand", "body": "Read their message carefully: where they came from and exactly what they asked." },
+    { "n": "2", "title": "Give value", "body": "Start with a short, useful piece of information before any question, so they feel they gained something." },
+    { "n": "3", "title": "Find the need", "body": "One question that clarifies their goal: growing in their current job, or moving into a new field." },
+    { "n": "4", "title": "Recommend", "body": "Tie the program to their goal, not to the feature list you have ready." },
+    { "n": "5", "title": "Ask for a step", "body": "Close with a clear question that moves the conversation forward, not a pleasantry." }
+  ],
+  "rules": [
+    {
+      "id": "R1",
+      "title": "Don't interrogate the client",
+      "en": "Do not interrogate",
+      "intro": "Don't open with four or five questions in a row before giving any value. Questions matter; their order is what makes the difference.",
+      "bad": [
+        { "side": "client", "text": "I'd like to know about the Healthcare Quality diploma." },
+        { "side": "rep", "text": "Are you a doctor or a nurse?" },
+        { "side": "rep", "text": "How many years of experience do you have?" },
+        { "side": "rep", "text": "Where do you work?" },
+        { "side": "rep", "text": "Which country are you in?" },
+        { "side": "rep", "text": "When do you want to start?" }
+      ],
+      "good": [
+        { "side": "client", "text": "I'd like to know about the Healthcare Quality diploma." },
+        { "side": "rep", "text": "Of course. The diploma helps you build practical knowledge and skills in healthcare quality and grow your career." },
+        { "side": "rep", "text": "May I ask your main goal: growing in your current job, or preparing for new opportunities?" }
+      ],
+      "formula": "Question → value → question",
+      "note": "After they answer, give information that fits their answer, then ask the next question. That way the questions come in a natural context, and the client feels helped, not examined.",
+      "chips": []
+    },
+    {
+      "id": "R2",
+      "title": "Don't sell features before you know the need",
+      "en": "Do not sell features before needs",
+      "intro": "Features like the number of lectures, the duration and the workshops are great information, but the client doesn't care about them until they know why they matter to them.",
+      "bad": [
+        { "side": "client", "text": "I want to study healthcare quality." },
+        {
+          "side": "rep",
+          "text": "The program lasts 4 months, with 24 lectures and 6 modules, online lectures, workshops, a graduation project and an accredited certificate."
+        },
+        { "side": "client", "text": "OK… and then?" }
+      ],
+      "good": [
+        { "side": "client", "text": "I want to study healthcare quality." },
+        { "side": "rep", "text": "Great. May I ask the main goal? Are you already working in quality, or do you want to move into the field?" },
+        { "side": "client", "text": "I work in nursing and want to change my career path." },
+        {
+          "side": "rep",
+          "text": "In that case what matters is building a strong foundation in the concepts and tools, not just a certificate. That's why the diploma includes workshops and hands-on practice alongside the theory."
+        }
+      ],
+      "formula": "Need → benefit → feature",
+      "note": "A feature on its own is information. A feature tied to a benefit for their situation becomes a reason to buy. Mention the feature last, after you've explained the benefit.",
+      "chips": ["24 lectures", "6 modules", "4 months", "Workshops", "Certificate", "Online"]
+    },
+    {
+      "id": "R3",
+      "title": "Don't promise what you can't guarantee",
+      "en": "Do not promise what you cannot guarantee",
+      "intro": "This is the most important rule in education and professional development. A job depends on the person's experience, qualifications, the interview, the job market and the competition, and passing an exam depends on their own study.",
+      "bad": [
+        { "side": "client", "text": "So after the diploma I'll find a quality job?" },
+        { "side": "rep", "text": "Yes of course, the diploma will get you a job." }
+      ],
+      "good": [
+        { "side": "client", "text": "So after the diploma I'll find a quality job?" },
+        {
+          "side": "rep",
+          "text": "The diploma doesn't guarantee a job, but it aims to grow your knowledge and skills and build a stronger professional profile, so you're more ready when you apply for the right opportunities."
+        }
+      ],
+      "formula": "Real value instead of an empty promise",
+      "note": "Honesty here doesn't reduce sales; quite the opposite. A client who was sold a promise that isn't kept comes back to complain and ask for a refund, while a client who understands what they're signing up for completes the program and recommends others.",
+      "chips": []
+    },
+    {
+      "id": "R4",
+      "title": "Every conversation ends with a next step",
+      "en": "Every conversation ends with a next step",
+      "intro": "Don't leave the conversation open without a clear ask. When you close with a pleasantry, the ball is in the client's court, and they usually won't come back.",
+      "bad": [
+        { "side": "rep", "text": "If you have any questions, I'm here." },
+        { "side": "rep", "text": "Any enquiry, I'm at your service." }
+      ],
+      "good": [
+        { "side": "rep", "text": "Based on your goal, the program fits your path. Shall I send you the registration details and fees?" },
+        { "side": "rep", "text": "We have an upcoming cohort. Shall I reserve a provisional seat for you and send you the registration steps?" },
+        {
+          "side": "rep",
+          "text": "Before you decide, shall I explain the difference between the diploma and CPHQ Preparation, so we choose what fits your goal?"
+        }
+      ],
+      "formula": "Don't end with a pleasantry; end with a step",
+      "note": "Even if the client is hesitant, there's a suitable next step: a comparison between two programs, a short call, or a provisional booking with no commitment.",
+      "chips": []
+    }
+  ],
+  "scenarios": [
+    {
+      "tag": "R1",
+      "message": "I'd like to know about the Healthcare Quality diploma.",
+      "options": [
+        {
+          "text": "Are you a doctor or a nurse? How many years of experience do you have? Where do you work? When do you want to start?",
+          "correct": false,
+          "feedback": "That's an interrogation. Five questions before any value make the client close the chat. Apply: question → value → question."
+        },
+        {
+          "text": "The diploma helps you build practical knowledge and skills in quality and grow your career. May I ask your main goal: growing in your current job, or new opportunities?",
+          "correct": true,
+          "feedback": "Correct. A short piece of value first, then just one question about their goal."
+        },
+        {
+          "text": "The diploma is 4 months, 24 lectures, 6 modules, workshops and a graduation project, and the price is…",
+          "correct": false,
+          "feedback": "Features before you know their need. The client still doesn't know why this matters to them."
+        }
+      ]
+    },
+    {
+      "tag": "R2",
+      "message": "I work in nursing and want to move into quality.",
+      "options": [
+        {
+          "text": "OK, the program has 6 modules, workshops, a weekly online lecture and an accredited certificate.",
+          "correct": false,
+          "feedback": "Features thrown out with no link to them. Turn them into a benefit for their career change first."
+        },
+        {
+          "text": "Since you're new to the field, what matters is building a strong foundation in the concepts and tools, not just a certificate. That's why the diploma combines theory, workshops and hands-on practice.",
+          "correct": true,
+          "feedback": "Correct. You followed need → benefit → feature. The workshops now mean something in the context of their situation."
+        },
+        {
+          "text": "Excellent, best decision. Quality has a big future and you'll find work fast.",
+          "correct": false,
+          "feedback": "A promise you can't guarantee. The job market isn't under our control."
+        }
+      ]
+    },
+    {
+      "tag": "R3",
+      "message": "So if I take the diploma, will I find a quality job in Saudi Arabia?",
+      "options": [
+        {
+          "text": "Yes of course, all our graduates get hired and the diploma will get you a job.",
+          "correct": false,
+          "feedback": "A promise you can't guarantee, and it exposes us to complaints and refund requests later."
+        },
+        {
+          "text": "The diploma doesn't guarantee a job, but it aims to grow your knowledge and skills and build a stronger professional profile, so you're more ready when you apply for the right opportunities.",
+          "correct": true,
+          "feedback": "Correct. You made the limits clear and offered the real value in the same sentence."
+        },
+        {
+          "text": "Honestly I don't know, it depends on many things.",
+          "correct": false,
+          "feedback": "Honest but not helpful. Make the limits clear, then say what the program actually offers."
+        }
+      ]
+    },
+    {
+      "tag": "R3",
+      "message": "Does the CPHQ program guarantee I pass the exam?",
+      "options": [
+        {
+          "text": "The program is designed to strengthen your grasp of the required content and organise your preparation, but the final result also depends on your commitment to studying and practice.",
+          "correct": true,
+          "feedback": "Correct. You set expectations in the right place without downplaying the program's value."
+        },
+        {
+          "text": "Of course, our pass rate is 100%.",
+          "correct": false,
+          "feedback": "Figures like this must be documented and approved. Without an official source, don't mention them."
+        },
+        {
+          "text": "If you study well you'll pass, guaranteed inshallah.",
+          "correct": false,
+          "feedback": "“Guaranteed” is a banned word. Passing isn't under our control, however strong the content is."
+        }
+      ]
+    },
+    {
+      "tag": "R4",
+      "message": "OK, thanks for the information.",
+      "options": [
+        {
+          "text": "You're welcome, if you have any questions I'm here.",
+          "correct": false,
+          "feedback": "A weak close. The ball is now in their court and they probably won't come back."
+        },
+        {
+          "text": "You're welcome. Based on your goal the program fits your path, and we have a cohort starting soon. Shall I reserve a provisional seat and send you the registration steps?",
+          "correct": true,
+          "feedback": "Correct. You summarised what fits them and asked for a specific step they can answer yes or no."
+        },
+        {
+          "text": "You're welcome, the prices are in the link; message me if you'd like to register.",
+          "correct": false,
+          "feedback": "No clear step, and you left the client to decide alone without helping."
+        }
+      ]
+    },
+    {
+      "tag": "R1 + R4",
+      "message": "I can't decide between the diploma and the CPHQ program.",
+      "options": [
+        {
+          "text": "Both are good, see what you want and let me know.",
+          "correct": false,
+          "feedback": "You left the hesitation as it was. Your role is to help them compare."
+        },
+        {
+          "text": "Where do you work? How many years of experience do you have? When do you plan to sit the exam? What's your budget?",
+          "correct": false,
+          "feedback": "An interrogation at a moment of hesitation. Just one question; the rest later."
+        },
+        {
+          "text": "The main difference is that the diploma builds a broad foundation in quality, while the CPHQ program is aimed at exam preparation. Shall I walk you through the comparison in detail, so we pick what fits your goal?",
+          "correct": true,
+          "feedback": "Correct. You gave a clear, short difference and closed with a next step instead of leaving them undecided."
+        }
+      ]
+    }
+  ],
+  "phraseBank": [
+    {
+      "risky": "You're guaranteed a job after the diploma.",
+      "safe": "The diploma helps you build knowledge and skills that make you more ready when you apply for the right opportunities."
+    },
+    {
+      "risky": "Your salary will definitely go up.",
+      "safe": "Specialising in quality opens different career paths, and pay varies with the market, your experience and the employer."
+    },
+    {
+      "risky": "You'll get promoted after the program.",
+      "safe": "The program strengthens your professional profile and knowledge; promotion depends on your employer's policy and your performance there."
+    },
+    {
+      "risky": "You'll pass the exam, guaranteed.",
+      "safe": "The program helps you understand the required content and organise your preparation; the result also depends on your commitment to studying."
+    },
+    {
+      "risky": "The certificate is accepted everywhere.",
+      "safe": "Let me explain the accrediting body and what it covers, so you can judge whether it fits your goal and the employer you're applying to."
+    },
+    {
+      "risky": "This is the cheapest program on the market.",
+      "safe": "Let me show you exactly what's included in the program, so you can compare on content, not on price alone."
+    }
+  ],
+  "closings": [
+    {
+      "situation": "Clear goal, program fits",
+      "text": "Based on your goal, the program fits your path. Shall I send you the registration details and fees now?"
+    },
+    {
+      "situation": "Torn between two programs",
+      "text": "Before you decide, shall I explain the difference between the diploma and CPHQ Preparation, so we choose what fits your goal?"
+    },
+    {
+      "situation": "Only asked the price",
+      "text": "I can send you the fee plan and the instalment options available. Shall I send them, and we look at the next cohort dates together?"
+    },
+    {
+      "situation": "Said “I'll think about it”",
+      "text": "Sure, take your time. We have an upcoming cohort and seats are limited. Shall I reserve a provisional seat for you, with no commitment, until you decide?"
+    },
+    {
+      "situation": "Lives outside Egypt",
+      "text": "Shall I explain how online study works across time zones, and send you the registration and payment steps from outside Egypt?"
+    },
+    {
+      "situation": "No reply for days",
+      "text": "Good evening. I'm following up on your enquiry about the diploma. There are still seats in the next cohort. Shall I send you the program plan to review in your own time?"
+    },
+    {
+      "situation": "Wants to see the content first",
+      "text": "Shall I send you the module plan and a sample lecture, so you can judge the content before you decide?"
+    },
+    {
+      "situation": "A team or group from the same hospital",
+      "text": "Since you're a group from the same organisation, there are group registration arrangements. Shall I send you the details and set up a short call with your training lead?"
+    }
+  ],
+  "checklist": [
+    { "question": "Did I ask only one question in this message?", "hint": "If there's more than one, keep the rest for the next message." },
+    { "question": "Did I give value before asking?", "hint": "One short, useful line so the client gains something from the reply." },
+    { "question": "Do I know their goal before giving program details?", "hint": "Without the goal, any detail is generic talk." },
+    { "question": "Is every feature tied to a benefit for their situation?", "hint": "If a feature stands alone, explain why it matters to them." },
+    { "question": "Is the message free of any promise I can't guarantee?", "hint": "Look for words like: guaranteed, definitely, for sure, 100%." },
+    { "question": "Does it end with a clear next step?", "hint": "A question they can answer yes or no, not a pleasantry." }
+  ],
+  "objectionMethod": {
+    "intro": "An objection isn't a rejection. It means the client is still interested, but something is unclear or worrying them. Four steps, in the same order, every time.",
+    "steps": [
+      { "n": "1", "title": "Listen", "body": "Let them finish the whole objection without interrupting or starting to defend from the first word." },
+      { "n": "2", "title": "Acknowledge", "body": "“I appreciate that point” or “Fair question.” No apology and no argument." },
+      { "n": "3", "title": "Clarify with a fact", "body": "A number or a policy item, not a personal opinion or a promise. If you're unsure, ask registration." },
+      { "n": "4", "title": "Move to a step", "body": "Bring the conversation back to a question that moves the decision, not to a pleasantry." }
+    ],
+    "isolate": "Before you reply, isolate the objection. Ask: “Other than this point, is anything else holding back your decision?” If they say no, you know it's the only objection and resolving it closes the sale. If they say yes, you've saved yourself from solving a false objection only to discover another one after it."
+  },
+  "objections": [
+    {
+      "category": "Price & value",
+      "objection": "It's too expensive for me.",
+      "behind": "Usually not a rejection of the amount itself: the value isn't clear to them yet, or the timing is financially hard right now.",
+      "wrong": "This is the cheapest price on the market, and I can give you a special discount.",
+      "right": "I appreciate that, and it isn't a small amount. Let me explain what's included: live lectures with practitioners working in hospitals, recordings available for 12 months, applied tasks and assessment, and the fee covers the materials, the platform and the IMETS certificate. If we work it out per lecture, the cost of a single lecture is much clearer than the total figure. Registration is also confirmed with a first payment of just 50%, and the rest within a month of the program start.",
+      "facts": [
+        "First payment: at least 50% of the total fee; registration isn't confirmed without it.",
+        "Second payment: the remaining amount within a month of the program start date.",
+        "The fee covers: learning materials, platform access, assessments and the IMETS graduation certificate.",
+        "Certificates from affiliated bodies have separate fees and aren't included in the price."
+      ],
+      "next": "Shall I work out the cost per lecture and the two-payment split for this exact program?"
+    },
+    {
+      "category": "Price & value",
+      "objection": "I found the same course for half the price elsewhere.",
+      "behind": "They compare on price because the difference in content and quality isn't visible to them. Price comparison happens when price is the only information available.",
+      "wrong": "They're not good; their certificate is worthless.",
+      "right": "It's completely normal to compare, and I won't say anything about any other provider. But let me give you 3 points to compare yourself: who teaches, and from which hospital? What standard is the content built on? And what do you get besides the certificate? With us, teaching is by practitioners from hospitals such as King Faisal and Cleveland Clinic Abu Dhabi, the content is built on NAHQ and JCI standards, and the program includes live sessions + 12 months of recordings + applied tasks + follow-up. If those differences don't matter for your goal, the cheaper option may genuinely be a sensible choice.",
+      "facts": [
+        "Faculty: 38+ members, practitioners in regional hospitals.",
+        "18,000+ trainees from 15+ countries and 50+ nationalities, and 120+ institutional partners.",
+        "Never attack a competitor by name. Compare on criteria, not by putting others down."
+      ],
+      "next": "Shall I send you the module plan and the trainers' names, so you can compare yourself?"
+    },
+    {
+      "category": "Price & value",
+      "objection": "I can study on my own from the internet and YouTube for free.",
+      "behind": "They see the product as “information”, and the information really is available. What they don't see is that the real product is structure and follow-up.",
+      "wrong": "Everything online is wrong and won't help you.",
+      "right": "You're right: there are many free resources, and some people really have studied alone and passed. The difference isn't the information; it's 4 things: a fixed weekly plan that stops you postponing, someone to ask at the right time, applied tasks on real cases instead of just watching, and assessment that measures your understanding before you sit the exam. If you have the discipline, the time and reliable sources, self-study is a reasonable choice. If your challenge is keeping going, that's exactly what the program solves.",
+      "facts": ["Don't downplay free resources. What we sell is structure, follow-up and assessment."],
+      "next": "May I ask: when you tried studying on your own before, what stopped you?"
+    },
+    {
+      "category": "Trust & accreditation",
+      "objection": "Is this certificate accredited? Will it work for me in Saudi Arabia or the UAE?",
+      "behind": "Worried about paying for a certificate that won't be accepted for professional registration. This is the most important objection in the Gulf market and must be answered precisely.",
+      "wrong": "Yes, it's accredited by SCFHS and DHA and accepted everywhere.",
+      "right": "An important question, so let me be precise and give you a clear picture: our programs are built on and aligned with standards from bodies such as NAHQ and JCI and the requirements of authorities such as SCFHS, DHA, DOH and QCHP; the IMETS certificate is recognised by employers; and we have more than 18,000 trainees in more than 15 countries. But whether any certificate is accepted for professional registration is decided by the authority itself, based on your specialty and path, and that isn't under any academy's control. If you tell me exactly what you're applying for, I can explain which of those requirements the program covers.",
+      "facts": [
+        "“Aligned with standards” ≠ “accredited by”. Never say SCFHS, DHA or DOH have accredited the program.",
+        "Bodies listed on the website as references: NAHQ, SCFHS, DHA, DOH, QCHP, Prometric, PMI, JCI.",
+        "Accreditation bodies displayed: AIHCM and AGEPAA.",
+        "If you're unsure about a specific case, refer it to registration before replying."
+      ],
+      "next": "Would you send me the requirements of the body you're applying to? I'll review them with registration and reply in writing."
+    },
+    {
+      "category": "Trust & accreditation",
+      "objection": "So after the program I'll get the CPHQ certificate?",
+      "behind": "A very common confusion between the preparation program and the professional certification itself. If you don't clarify it now, it becomes a complaint later.",
+      "wrong": "Yes, you'll get the CPHQ certificate from us.",
+      "right": "No, and that's an important difference to be clear on before you register. Our CPHQ Preparation program prepares you for the CPHQ exam. The CPHQ certification itself is issued by NAHQ after you pass their exam and meet their eligibility requirements. What you get from us: a completion certificate from IMETS Medical School, plus structured exam preparation with practising trainers.",
+      "facts": [
+        "CPHQ is issued by NAHQ / HQCB after passing the exam, not by IMETS.",
+        "The same applies to CIC: the program is preparation, and the certificate comes from the awarding body.",
+        "The pass rate published on the website is 92% — mention it as a published figure, not a guarantee."
+      ],
+      "next": "Shall I explain the eligibility requirements for the CPHQ exam and what we cover of its content in the ten lectures?"
+    },
+    {
+      "category": "Trust & accreditation",
+      "objection": "I want a certificate from an international body, not just an academic one.",
+      "behind": "They feel an academy certificate alone won't make a difference to their profile, and they want an external name.",
+      "wrong": "Our certificate is international, stamped and accredited worldwide.",
+      "right": "That's available. Besides the IMETS certificate, you can obtain a certificate from affiliated bodies such as the Sadat Academy for Management Sciences, the American Institute of Healthcare and Hospital Management, and the International Accreditation Organization. But there are two important conditions: it requires an application form and additional fees separate from the program fee, and you must apply and pay at least 3 months before you need the certificate. The academy acts as an intermediary, and issue dates are set by the body itself.",
+      "facts": [
+        "Affiliated bodies' fees are additional and non-refundable once you apply to the body.",
+        "The application must be submitted at least 3 months before the certificate is needed.",
+        "Applications after that deadline aren't processed in the current cycle."
+      ],
+      "next": "Shall I send you the bodies available for your program and each one's fees, so you can decide now?"
+    },
+    {
+      "category": "Time & commitment",
+      "objection": "Online isn't like attending in person; I won't benefit.",
+      "behind": "A bad past experience with recorded videos, and they think online means watching alone.",
+      "wrong": "Online is far better than attending in person.",
+      "right": "I understand the concern, and many people felt the same because of experiences with recorded videos. Our lectures are live on Zoom, not recordings, so you ask and discuss with the trainer in real time with the rest of the cohort. Every session is recorded and stays available for 12 months if you want to go back to it before the exam. There are also applied tasks and follow-up from the trainer. And the practical advantage is that you save commuting time and can attend from any country.",
+      "facts": [
+        "Lectures are live on Zoom, one lecture a week.",
+        "Recordings are available for 12 months after each session.",
+        "Teaching is bilingual: English content with the concepts explained in Arabic."
+      ],
+      "next": "Shall I arrange for you to attend a first introductory session with the cohort before you decide?"
+    },
+    {
+      "category": "Time & commitment",
+      "objection": "I work shifts; I won't make the lectures.",
+      "behind": "A very real objection in nursing and critical care. If you promise them the recordings are enough, they'll fail the attendance requirement and ask for their money back.",
+      "wrong": "Don't worry, attend what you can and the recordings will make up for it.",
+      "right": "That's a realistic objection, and thanks for raising it now. There's only one lecture a week, and every lecture is recorded and stays available for 12 months. But I have to be honest with you about an important point: there's a minimum attendance of 75% of all lectures to graduate and receive the certificate, and watching a recording on its own doesn't count as attendance. So the recordings are for review, not a substitute for attending. Let's look at the next cohort's schedule and see how much it clashes with your shifts.",
+      "facts": [
+        "Minimum attendance is 75% of lectures, a core graduation requirement whatever the assessment grades.",
+        "Watching a recording doesn't count as attendance unless the program states otherwise.",
+        "Absence for medical reasons or documented exceptional circumstances can be submitted in a written request and is considered case by case.",
+        "Transfer to a later cohort is possible at the academy's discretion and may incur fees, and there's no refund for failing attendance."
+      ],
+      "next": "Shall I send you the next cohort's schedule now, and if it doesn't suit you we look at the one after?"
+    },
+    {
+      "category": "Hesitation & timing",
+      "objection": "If I pay and something comes up, can I get my money back?",
+      "behind": "They're measuring the risk. A precise answer here builds trust; a vague, reassuring answer creates a legal problem.",
+      "wrong": "Don't worry, just tell me any time and I'll refund you.",
+      "right": "A sensible question, and there's a written, published policy, not my own judgement. If you cancel 21 days or more before the program start date, the refund is a full 100%. From 14 to 20 days before the start, the refund is 50%. Less than 14 days before, or after the program starts, there's no refund. And a very important point: cancellation must be a written request to registration@imetsedu.com — cancelling by phone or WhatsApp isn't accepted. There's also the option to defer your seat to another cohort if you request it 21 days before the start.",
+      "facts": [
+        "21 days or more before the start: 100% refund. 14 to 20 days: 50%. Less than 14 days or after the start: no refund.",
+        "Cancellation counts from the date the written request is received at the registration email, not the date it was sent.",
+        "Not attending without a written cancellation isn't a cancellation and isn't eligible for a refund.",
+        "Refunds go back to the original payment method, taking up to 30 days for cards.",
+        "Never promise a client a refund outside this schedule, whatever the circumstances."
+      ],
+      "next": "Shall I send you the link to the full cancellation and refund policy, with the next cohort's details?"
+    },
+    {
+      "category": "Hesitation & timing",
+      "objection": "I'll think about it and get back to you.",
+      "behind": "In 90% of these cases it isn't thinking; it's one unclear point they don't want to discuss. Your job is to find it.",
+      "wrong": "OK, I'm here any time.",
+      "right": "Of course, take your time. But so I can really help: is there a particular point that's still unclear — the content, the schedule, or the financial part? Because if I know what's holding you back, I can clarify it in a minute instead of you looking for it on your own.",
+      "facts": [
+        "Isolate the objection before you close: “Other than this point, is anything else holding you back?”",
+        "An enquiry alone doesn't reserve a seat. Seats are allocated in order of registration confirmed with payment.",
+        "Don't use false pressure (“only two seats left”) if it isn't true."
+      ],
+      "next": "And if you'd like to review it in your own time, shall I send you the module plan and next cohort dates and follow up with you in two days?"
+    },
+    {
+      "category": "Hesitation & timing",
+      "objection": "Not now, next month inshallah.",
+      "behind": "Either financial timing or a politely postponed commitment. Ask to find out which, because the solution is different.",
+      "wrong": "OK, call me next month.",
+      "right": "Totally fine. But let me ask one question so I can help: is the delay because of financial timing, or your schedule during this period? Because if it's financial, a first payment of 50% confirms your seat and the rest is due a month after the start, so you can begin without paying everything at once. And if it's your schedule, we look at the dates of the cohort after and book you into it now.",
+      "facts": [
+        "The official split: at least 50% at registration, and the rest within a month of the start date.",
+        "Any different instalment arrangement must be agreed in writing with registration, not verbally with you.",
+        "If the second payment is late, the academy may suspend platform access and withhold results and the certificate until it's paid."
+      ],
+      "next": "Which suits you better: confirming your seat in this cohort with the first payment, or booking you into the next one?"
+    },
+    {
+      "category": "Eligibility & logistics",
+      "objection": "My English is weak; will I be able to follow?",
+      "behind": "Afraid of paying and then sitting in a lecture without understanding anything. A very common objection, resolved with honesty, not general reassurance.",
+      "wrong": "Don't worry, we explain everything in Arabic.",
+      "right": "Let me be precise so you're not surprised: the content and assessment are in English, because that's the language of the field, the terminology you'll actually work with in any hospital, and the language of professional exams. But teaching is bilingual, meaning the trainer explains difficult concepts in Arabic so you grasp them faster. There's also a short language assessment from the academy if you're unsure of your level, which is more accurate than me reassuring you and you being surprised in the first lecture.",
+      "facts": [
+        "Programs are taught and assessed in English, with explanation supported in Arabic.",
+        "Proof of language level can be a recognised test result, a degree studied in English, or a short assessment from the academy."
+      ],
+      "next": "Shall I arrange the short language assessment first, before you decide?"
+    },
+    {
+      "category": "Eligibility & logistics",
+      "objection": "I'm a nurse / pharmacist. Is this program only for doctors?",
+      "behind": "They don't know the admission requirements and are afraid of paying and being rejected. A precise answer here opens up a large part of the market.",
+      "wrong": "Anyone can register, no problem.",
+      "right": "Not at all, and the programs are open to many specialties. The basic admission requirement is a bachelor's degree in medicine, pharmacy, dentistry or nursing, or in science or business administration, or any qualification the academy considers equivalent. Some programs have additional requirements, such as years of management or clinical experience, and these are stated on the program's own page. Send me your qualification and years of experience and I'll confirm with registration before you pay anything.",
+      "facts": [
+        "Accepted specialties: medicine, pharmacy, dentistry, nursing, science, business administration, or what the academy considers equivalent.",
+        "Some programs have additional requirements published on the program page, which take precedence over the general requirements.",
+        "The academy doesn't discriminate on the basis of gender, nationality, religion or disability.",
+        "Required documents: bachelor's certificate, valid ID or passport, a personal photo, and proof of language if required."
+      ],
+      "next": "Would you send me a photo of your qualification now? I'll come back to you with an eligibility confirmation from registration."
+    },
+    {
+      "category": "Eligibility & logistics",
+      "objection": "I live outside Egypt. How do I attend, and how do I pay?",
+      "behind": "A purely logistical objection, and solving it quickly closes a sale. Most Gulf clients ask it.",
+      "wrong": "Easy, transfer to any account and send me a photo.",
+      "right": "All study is live online on Zoom, so you can attend from any country, and we have trainees from more than 15 countries. For paying from outside Egypt, the options are Visa or Mastercard, or Western Union for transfers from abroad. One important point: transfer charges and currency differences are paid by the payer, and the academy must receive the full net amount due. Registration sends you a proforma invoice and the official payment details.",
+      "facts": [
+        "Payment methods: cheque, Visa/Mastercard, Vodafone Cash, and Western Union for payments from outside Egypt.",
+        "Bank charges, transfer fees and currency differences are paid by the applicant.",
+        "Never send payment details yourself. The invoice and payment details are issued by registration.",
+        "Registration: registration@imetsedu.com — WhatsApp: +20 100 881 5007"
+      ],
+      "next": "Shall I put you in touch with registration to send you the proforma invoice and payment details now?"
+    }
+  ],
+  "programmes": [
+    { "slug": "cphq-preparation", "name": "CPHQ Preparation", "subtitle": "Preparation program for the CPHQ exam" },
+    { "slug": "healthcare-quality-management-diploma", "name": "Healthcare Quality Management Diploma", "subtitle": "Professional diploma" },
+    { "slug": "cic-preparation", "name": "CIC Preparation", "subtitle": "Preparation program for the infection control (CIC) exam" },
+    { "slug": "infection-control-diploma", "name": "Infection Control Diploma", "subtitle": "Professional diploma" },
+    { "slug": "hospital-management-diploma", "name": "Hospital Management Diploma", "subtitle": "Professional diploma" },
+    { "slug": "healthcare-marketing-diploma", "name": "Healthcare Marketing Diploma", "subtitle": "Professional diploma" },
+    { "slug": "healthcare-hr-management-diploma", "name": "Healthcare HR Management Diploma", "subtitle": "Professional diploma" },
+    { "slug": "healthcare-strategic-management-diploma", "name": "Healthcare Strategic Management Diploma", "subtitle": "Professional diploma" }
+  ],
+  "week": {
+    "intro": "Every conversation you have ends up in these tools. Open them now, so your first real enquiry isn't your first time seeing them.",
+    "tools": [
+      { "key": "leads", "title": "Leads (CRM)", "body": "Every enquiry lives here. Update the status after each conversation, the same day." },
+      { "key": "pipelines", "title": "All Pipelines", "body": "Shows where each lead stands, from first message to paid." },
+      { "key": "payment-links", "title": "Payment links", "body": "Create one only after the client confirms the program and cohort." }
+    ],
+    "setupTitle": "Set up before your first shift",
+    "checklist": [
+      { "title": "Open Leads (CRM) and find where new enquiries land", "detail": "", "link": "leads" },
+      { "title": "Open All Pipelines and read the stage names", "detail": "", "link": "pipelines" },
+      { "title": "Read Rules and Regulations", "detail": "", "link": "rules" },
+      { "title": "Save your team lead's WhatsApp number", "detail": "They review your field task and sign you off at the end.", "link": "" }
+    ]
+  },
+  "quiz": {
+    "intro": "Five questions from the lessons. Score 4 or more and your team lead gets notified to sign you off.",
+    "passMark": 4,
+    "questions": [
+      {
+        "question": "Who issues the CPHQ certification?",
+        "options": ["IMETS Medical School", "NAHQ, after the candidate passes the exam", "The Ministry of Health"],
+        "correct": 1
+      },
+      {
+        "question": "A client asks about the diploma. Your first reply should…",
+        "options": ["Ask their job, experience and country", "Give one useful line, then ask about their goal", "Send the price and the outline"],
+        "correct": 1
+      },
+      {
+        "question": "Which message is safe to send?",
+        "options": [
+          "“You'll pass, guaranteed.”",
+          "“The course organises your preparation; the result also depends on your study.”",
+          "“Our certificate is accepted everywhere.”"
+        ],
+        "correct": 1
+      },
+      {
+        "question": "Before answering an objection, you isolate it by asking…",
+        "options": ["“Why do you think that?”", "“Other than this, is anything else holding your decision?”", "“Shall I give you a discount?”"],
+        "correct": 1
+      },
+      {
+        "question": "Is the CPHQ exam fee included in our course fee?",
+        "options": ["Yes", "No, it's paid to NAHQ separately", "Only for NAHQ members"],
+        "correct": 1
+      }
+    ]
+  },
+  "teamLeadLink": ""
+}

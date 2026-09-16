@@ -2,6 +2,9 @@ import { FileClock } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
+import { redirect } from "@/i18n/navigation";
+import { getSessionUser } from "@/lib/permission-guard";
+import { staffLandingPath } from "@/lib/staff-landing";
 import { Button } from "@/components/ui/button";
 import { PlatformStatsCards } from "@/features/dashboard/components/platform-stats-cards";
 import { FinanceRevenueChart } from "@/features/dashboard/components/finance-revenue-chart";
@@ -28,6 +31,11 @@ export default async function DashboardPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+
+  // The platform dashboard is admin-only; staff go to the first page their role grants.
+  const user = await getSessionUser();
+  if (user?.staffRole) redirect({ href: staffLandingPath(user.staffRole.permissions), locale });
+
   const t = await getTranslations("Platform");
 
   const [

@@ -1,0 +1,288 @@
+{
+  "intro": "Before you recommend any program, you need to understand the certification itself: who issues it, who can sit its exam, and exactly what our course offers. The figures (fees and lecture counts) come from the current course page, so they're always up to date.",
+  "programmes": [
+    {
+      "slug": "cphq-preparation",
+      "name": "CPHQ",
+      "fullName": "Certified Professional in Healthcare Quality",
+      "awardedBy": "Awarded by NAHQ — the National Association for Healthcare Quality (USA), through the HQCC",
+      "tagline": "The international professional certification in healthcare quality and patient safety. Our course prepares candidates for its exam: 10 weeks, live online.",
+      "facts": [
+        { "label": "Issued by", "value": "NAHQ (USA), through the HQCC" },
+        { "label": "Eligibility", "value": "No formal requirement; NAHQ recommends about 2 years in healthcare quality" },
+        { "label": "Exam", "value": "125 scored + 15 unscored pretest questions, up to 3 hours, through PSI" },
+        { "label": "Exam fee", "value": "Paid to NAHQ in USD, not included in our course fee" },
+        { "label": "Our course", "value": "10 weeks, live on Zoom, recordings available for 12 months" },
+        { "label": "Practice", "value": "500+ exam-style questions and one full mock exam" }
+      ],
+      "whatItIs": "CPHQ means “Certified Professional in Healthcare Quality”. It is issued by NAHQ through the HQCC and covers quality leadership, patient safety, performance and process improvement, health data analytics, and accreditation and regulatory requirements. NAHQ describes it as the only accredited certification in healthcare quality (accredited by NCCA) and says holders are in more than 60 countries. The certification itself is issued by NAHQ after passing the exam — not by IMETS.",
+      "whyStudy": [
+        "Jobs titled “quality”, “patient safety” or “accreditation” in Egypt and the Gulf name it explicitly, so it opens the door to a role, not just an extra line on a CV.",
+        "Egypt is rolling out Universal Health Insurance, and joining the system goes through GAHAR accreditation. Thousands of facilities need people who know self-assessment, evidence collection, auditing and leading improvement projects — a lasting demand, not a passing wave.",
+        "An international certification that travels with its holder: anyone thinking of working in Saudi Arabia or the UAE finds it known to recruiters.",
+        "It opens a management and leadership path inside the hospital — quality coordinator, supervisor, quality manager — without leaving healthcare.",
+        "It formally documents experience that people already working in quality or accreditation have built up.",
+        "It gives a way of working: measuring indicators, improvement tools such as Lean, Six Sigma and PDSA, and patient safety — things anyone running a department needs."
+      ],
+      "whoFor": [
+        "Quality and patient-safety specialists",
+        "Doctors, pharmacists, dentists and nurses who want to move into quality",
+        "Medical directors and nursing directors",
+        "Healthcare administrators and managers",
+        "New graduates aiming for their first job in quality"
+      ],
+      "eligibility": [
+        "According to NAHQ there is no formal eligibility requirement to sit the exam — it recommends about two years of experience in healthcare quality, but this isn't required.",
+        "A single computer-based exam: 125 scored questions + 15 unscored pretest questions, in a maximum of 3 hours.",
+        "Taken online with a remote proctor or in person at a test centre, through the testing partner PSI — booking and payment are directly with NAHQ.",
+        "The exam fee is separate, paid to NAHQ in USD, and not included in the course price. Published on our site for 2026: about $559 for members and $799 for non-members in the international category — confirm the current figure on nahq.org."
+      ],
+      "courseFacts": [
+        "Duration: 10 weeks.",
+        "Live lectures on Zoom, one lecture a week.",
+        "Every session is recorded, and recordings are available for 12 months.",
+        "8 units covering the CPHQ exam content.",
+        "A bank of 500+ exam-style practice questions + one full mock exam.",
+        "English content with concepts explained in Arabic, and Arabic support on WhatsApp.",
+        "At the end they receive a completion certificate from IMETS Medical School — this is not the CPHQ certification.",
+        "Cohort dates from the course page or registration."
+      ],
+      "curriculum": [
+        "Introduction to Healthcare Quality",
+        "Quality Leadership and Integration",
+        "Patient Safety",
+        "Performance and Process Improvement",
+        "Quality Review and Accountability",
+        "Population Health and Care Transitions",
+        "Regulatory and Accreditation",
+        "Health Data Analytics"
+      ],
+      "outcomes": [
+        "Master NAHQ's seven domains according to the official CPHQ exam blueprint",
+        "Lead an organisational quality culture and strategic alignment",
+        "Turn EMR data and clinical indicators into operational and financial decisions",
+        "Apply Lean, Six Sigma and PDSA in real improvement projects",
+        "Strengthen patient safety with HRO and Just Culture principles",
+        "Prepare for JCI, CBAHI and DOH accreditation standards",
+        "A comprehensive mock exam with a personal readiness report"
+      ],
+      "careerPaths": [
+        "Healthcare Quality Specialist",
+        "Senior Quality Specialist",
+        "Quality Supervisor",
+        "Healthcare Quality Manager",
+        "Hospital Accreditation Officer"
+      ],
+      "sayThis": [
+        "The program prepares you for the CPHQ exam, and the certification itself is issued by NAHQ after you pass the exam.",
+        "There's no formal requirement to sit the exam, but NAHQ recommends about two years of experience in quality — is your current experience close to that?",
+        "The exam fee is separate and you pay it directly to NAHQ, so let's work out both together before you decide.",
+        "If your goal is running a whole quality department rather than just the exam, the Healthcare Quality Management Diploma may suit you better — shall I explain the difference?"
+      ],
+      "avoid": [
+        "“You'll get the CPHQ certificate from us” — the certificate comes from NAHQ after the exam; we prepare you for it.",
+        "“You're guaranteed to pass” — the published pass rate is a published figure, not a guarantee.",
+        "“The price includes the exam fee” — NAHQ's fee is separate.",
+        "“IMETS is accredited by NAHQ”, or that NAHQ has accredited the program.",
+        "“The certificate will get you a job”, or any specific salary figure."
+      ]
+    },
+    {
+      "slug": "cic-preparation",
+      "name": "CIC",
+      "fullName": "Certified in Infection Control",
+      "awardedBy": "Awarded by CBIC — the Certification Board of Infection Control and Epidemiology (USA)",
+      "tagline": "A professional certification in one deep specialty: infection prevention and control. Our course prepares candidates for its exam: 3 months, live online.",
+      "facts": [
+        { "label": "Issued by", "value": "CBIC — Certification Board of Infection Control and Epidemiology (USA)" },
+        { "label": "Eligibility", "value": "Direct responsibility for infection prevention and control in the current job + a university degree in a health field" },
+        { "label": "Experience needed", "value": "1 year full-time, 2 years part-time, or 3,000 hours within the last 3 years" },
+        { "label": "Exam fee", "value": "Paid to CBIC, separate from the course fee" },
+        { "label": "Our course", "value": "3 months, one live online lecture a week, every session recorded" },
+        { "label": "Practice", "value": "8 units across the CIC exam content areas, with study materials and practice tests" }
+      ],
+      "whatItIs": "CIC is a professional certification in infection prevention and control, issued by CBIC — the independent board that certifies infection control professionals. It covers infectious disease processes, surveillance and epidemiologic investigation, preventing transmission, cleaning, disinfection and sterilisation, the environment of care, employee health, education and research, and management and communication. CBIC's published requirements set no restriction on nationality or country, and the certification is widely recognised in hospital accreditation programs. The certification is issued by CBIC after the exam — not by IMETS.",
+      "whyStudy": [
+        "If their actual job — or the job they're heading for — is infection control, this is the certification infection control departments name explicitly.",
+        "It turns practical infection control experience they already have into a formal, recognised certification.",
+        "Roles such as infection control nurse, infection control coordinator and infection control manager ask for a clear specialty in the field.",
+        "The certification is known in hospital accreditation programs, and infection control is a core part of any assessment.",
+        "The content — microbiology, epidemiology, sterilisation, surveillance — is very close to the daily work of clinical backgrounds such as nursing, medicine and laboratories."
+      ],
+      "whoFor": [
+        "Infection control practitioners and those responsible for its activities in the hospital",
+        "Doctors, pharmacists and nursing specialists",
+        "Medical directors and nursing directors",
+        "Risk managers and laboratory technicians",
+        "Healthcare administrators and managers"
+      ],
+      "eligibility": [
+        "Directly responsible for infection prevention and control activities in their current job.",
+        "Has completed a university education in a health field (medicine, nursing, laboratories, public health, biology… and others).",
+        "Work experience: 1 year full-time, 2 years part-time, or 3,000 hours within the last 3 years.",
+        "All three requirements must be met together, and eligibility is decided by CBIC alone — not IMETS. Check cbic.org before applying.",
+        "The exam fee is paid to CBIC and is separate from the course price."
+      ],
+      "courseFacts": [
+        "Duration: 3 months.",
+        "12 live online lectures, one lecture a week.",
+        "Every session is recorded and uploaded to the trainee's account, so a missed lecture is available within hours.",
+        "8 units covering the CIC exam content areas, with study materials and practice tests.",
+        "Joining the course needs no previous infection control experience — the program starts from the basics.",
+        "IMETS is an independent training provider, not affiliated with CBIC; we don't issue the certification or guarantee passing."
+      ],
+      "curriculum": [
+        "Identification of Infectious Disease Processes",
+        "Preventing/Controlling the Transmission of Infectious Agents",
+        "Cleaning, Disinfection, Sterilization of Medical Devices and Equipment",
+        "Surveillance and Epidemiologic Investigation",
+        "Environment of Care",
+        "Employee/Occupational Health",
+        "Education and Research",
+        "Management and Communication"
+      ],
+      "outcomes": [
+        "Understand the core concepts of infection prevention and control",
+        "Identify, prevent and manage healthcare-associated infections (HAIs)",
+        "Apply the latest guidelines, best practices and regulations",
+        "Build skills in epidemiology, microbiology, sterilisation and disinfection",
+        "Master every domain of the CIC certification exam"
+      ],
+      "careerPaths": [
+        "Infection Control Nurse",
+        "Senior Infection Prevention Specialist",
+        "Infection Control Coordinator",
+        "Infection Control Manager",
+        "Regional Infection Prevention Consultant"
+      ],
+      "sayThis": [
+        "The program prepares you for the CIC exam, but eligibility to sit the exam is decided by CBIC — are you currently responsible for infection control activities in your job?",
+        "The course itself needs no experience, but the exam requires documented practical experience — so let's check that first.",
+        "If you don't yet have enough infection control experience, the Infection Control Diploma builds the foundation while you gather the experience the exam requires."
+      ],
+      "avoid": [
+        "“The course will make you eligible for the exam” — eligibility comes from CBIC, with experience requirements.",
+        "“You'll get the CIC certificate from us” — the certificate comes from CBIC after the exam.",
+        "“IMETS is affiliated with CBIC” or accredited by it.",
+        "“You're guaranteed to pass.”",
+        "Registering someone who doesn't meet the exam eligibility requirements without telling them so honestly."
+      ]
+    }
+  ],
+  "audiencesIntro": "Not everyone who asks about CPHQ or CIC wants the same thing. A doctor isn't a nurse, and a nurse isn't a pharmacist — each group has common reasons for considering management programs, and different worries. These are common patterns, not rules, so always ask about the client's goal first, then recommend.",
+  "audiences": [
+    {
+      "title": "Doctors",
+      "motivations": [
+        "Wants to move into a management or leadership role such as medical director or quality manager.",
+        "The hospital is preparing for accreditation (GAHAR, CBAHI or JCI) and they've been asked to join quality or patient-safety committees.",
+        "Looking for a path alongside clinic work and on-call shifts, within the same field.",
+        "Thinking about working in the Gulf and wants a well-known international certification."
+      ],
+      "worries": [
+        "Time, alongside work and on-call shifts.",
+        "Whether it will take them away from their medical specialty.",
+        "Whether the certificate has real value or is just a piece of paper."
+      ],
+      "bestFit": "CPHQ if the goal is quality, patient safety and accreditation. The Hospital Management Diploma if the goal is medical management and operations.",
+      "openingQuestion": "Where do you see yourself in two years — in the clinic, or running a department or quality?"
+    },
+    {
+      "title": "Nurses",
+      "motivations": [
+        "Wants to move from shifts to a role such as quality coordinator, infection control nurse or supervisor.",
+        "Often already involved in infection control or audits in the unit and wants to prove it formally.",
+        "Promotion to supervisor or head nurse needs management skills.",
+        "Gulf jobs ask for a clear specialty such as infection control."
+      ],
+      "worries": [
+        "The price compared with their salary — we have an official two-payment plan.",
+        "The exam and content being in English — our teaching is bilingual.",
+        "Time alongside shifts — every lecture is recorded."
+      ],
+      "bestFit": "CIC if they work in infection control and meet CBIC's experience requirements. The Infection Control Diploma if they're still building experience. CPHQ if they lean towards quality and patient safety.",
+      "openingQuestion": "Are you already involved in infection control or quality in your unit, or is it a direction you want to start?"
+    },
+    {
+      "title": "Pharmacists",
+      "motivations": [
+        "Wants to move from community pharmacy to a hospital role in quality or medication safety.",
+        "Medication safety and tracking medication errors are a core part of quality and patient safety, so the background is close to the field.",
+        "Looking for a management path different from private pharmacies and pharmaceutical marketing."
+      ],
+      "worries": [
+        "Whether pharmacists are accepted in quality roles — CPHQ is one of the certifications that lists pharmacists among its suitable groups.",
+        "Whether they can apply it without previous quality experience."
+      ],
+      "bestFit": "CPHQ or the Healthcare Quality Management Diploma. The Infection Control Diploma if they sit on the infection control committee.",
+      "openingQuestion": "Do you currently work in a hospital pharmacy or a community pharmacy? And what would you like to change in your work?"
+    },
+    {
+      "title": "Dentists",
+      "motivations": [
+        "Looking for a path alongside or instead of the clinic within the health system.",
+        "Dental centres and hospitals need quality and infection control standards — instrument sterilisation is a core part of their work.",
+        "Wants to run their own clinic or centre professionally, with clear indicators and policies."
+      ],
+      "worries": [
+        "Whether a dental background is accepted in quality programs.",
+        "Whether they'll benefit if they don't plan to leave the clinic."
+      ],
+      "bestFit": "CPHQ for quality. The Hospital Management Diploma for running a centre. Infection control if they're responsible for sterilisation and infection control in the centre.",
+      "openingQuestion": "Do you want the program to serve your work in your current clinic, or are you thinking about a new management path?"
+    },
+    {
+      "title": "Allied health professions (laboratory, radiology, physiotherapy…)",
+      "motivations": [
+        "After years of technical work, looking to move up to a supervisory or management role.",
+        "Laboratories are a core part of quality, accreditation and infection control, and this background is among the health fields CBIC's education requirements mention."
+      ],
+      "worries": [
+        "Whether these programs are “for doctors only”.",
+        "Whether they'll find a management job with a technical background."
+      ],
+      "bestFit": "CPHQ or the Healthcare Quality Management Diploma. CIC for laboratory technicians who are actually responsible for infection control.",
+      "openingQuestion": "What's your current role, and what's the next step you want to reach where you work?"
+    },
+    {
+      "title": "Current department heads and supervisors",
+      "motivations": [
+        "Promoted to run a department without structured management training.",
+        "Expected to deliver performance indicators, reports, accreditation preparation and team management.",
+        "Wants to secure their position and prepare for the next step."
+      ],
+      "worries": [
+        "Time, alongside department responsibilities.",
+        "That the program will be theoretical and they won't apply it."
+      ],
+      "bestFit": "The Hospital Management Diploma or Healthcare Strategic Management. CPHQ if their main portfolio is quality and accreditation.",
+      "openingQuestion": "What takes up most of your time in running the department right now?"
+    },
+    {
+      "title": "Administrative staff in healthcare facilities",
+      "motivations": [
+        "Works in a hospital without a medical background and wants to understand the language of quality and accreditation to get promoted.",
+        "Responsible for areas such as accreditation, patient services, human resources or marketing."
+      ],
+      "worries": [
+        "Whether they'll understand the content without a medical background.",
+        "Whether the programs accept business administration graduates — business administration is among the specialties we accept."
+      ],
+      "bestFit": "The Hospital Management, Healthcare HR or Healthcare Marketing Diploma, and CPHQ if they work in quality. CIC doesn't suit non-clinical administrative roles.",
+      "openingQuestion": "Which department do you work in, and what's expected of you on quality or accreditation?"
+    },
+    {
+      "title": "New graduates",
+      "motivations": [
+        "Wants to stand out for a first job.",
+        "Aiming for a first role in quality instead of traditional clinical work."
+      ],
+      "worries": [
+        "Lack of experience — never promise them a job.",
+        "The price at the start of their career — explain the official instalment plan."
+      ],
+      "bestFit": "CPHQ is possible (no formal eligibility requirement, though NAHQ recommends experience), or the Healthcare Quality Management Diploma as a foundation. CIC usually isn't the first step, because its exam requires documented practical experience.",
+      "openingQuestion": "When did you graduate, and what kind of jobs are you applying for now?"
+    }
+  ]
+}

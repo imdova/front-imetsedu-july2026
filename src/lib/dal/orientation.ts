@@ -14,6 +14,7 @@ import type {
   OrientationTaskAttachment,
   OrientationTaskStatus,
   OrientationTaskSubmissionDto,
+  OrientationTaskSummary,
   OrientationTeamProgress,
   OrientationTeamRow,
   SavedOrientationDto,
@@ -26,6 +27,7 @@ export type {
   OrientationTaskAttachment,
   OrientationTaskStatus,
   OrientationTaskSubmissionDto,
+  OrientationTaskSummary,
   OrientationTeamProgress,
   OrientationTeamRow,
   SavedOrientationDto,
@@ -56,7 +58,16 @@ export const saveMyOrientationProgress = (input: {
   completed: string[];
   lastLessonId?: string;
   total: number;
+  gates?: Record<string, string[]>;
 }): Promise<Result<OrientationProgressDto>> => svc.saveMyProgress(SALES, input);
+
+/** LIVE: record a knowledge-check attempt; the first pass notifies admins for sign-off. */
+export const submitOrientationQuiz = (input: { score: number; total: number; passMark: number }) =>
+  svc.submitQuiz(SALES, input);
+
+/** LIVE: admin — sign a learner off (or withdraw the sign-off). */
+export const signOffOrientation = (userId: string, signedOff: boolean): Promise<Result<OrientationProgressDto>> =>
+  svc.signOff(SALES, userId, signedOff);
 
 /** LIVE: start the training over. */
 export const resetMyOrientationProgress = (): Promise<Result<OrientationProgressDto>> => svc.resetMyProgress(SALES);

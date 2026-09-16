@@ -42,6 +42,9 @@ export const ADMIN_NAV: NavSection[] = [
         titleKey: "dashboard",
         href: "/admin/dashboard",
         icon: "LayoutDashboard",
+        // Platform dashboard data is admin-only on the backend; staff land on
+        // their first permitted page instead (see `staffLandingPath`).
+        adminOnly: true,
       },
     ],
   },

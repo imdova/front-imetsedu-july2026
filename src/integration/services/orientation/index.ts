@@ -17,7 +17,17 @@ export interface OrientationProgressDto {
   startedAt: string | null;
   completedAt: string | null;
   updatedAt: string | null;
+  /** Gate keys reached inside each lesson, e.g. `{ rules: ["R1"] }`. */
+  gates?: Record<string, string[]>;
+  quizScore?: number | null;
+  quizTotal?: number | null;
+  quizAttempts?: number;
+  quizPassedAt?: string | null;
+  signedOffAt?: string | null;
 }
+
+/** Field-task status across a learner's submissions. */
+export type OrientationTaskSummary = "not_sent" | "waiting_review" | "approved";
 
 export type OrientationProgressStatus = "not_started" | "in_progress" | "completed";
 
@@ -36,6 +46,12 @@ export interface OrientationTeamRow {
   updatedAt: string | null;
   completedAt: string | null;
   status: OrientationProgressStatus;
+  completed?: string[];
+  quizScore?: number | null;
+  quizTotal?: number | null;
+  quizPassedAt?: string | null;
+  signedOffAt?: string | null;
+  taskStatus?: OrientationTaskSummary;
 }
 
 export interface OrientationTeamProgress {
@@ -91,8 +107,16 @@ export const myProgress = (key: string): Promise<Result<OrientationProgressDto>>
 
 export const saveMyProgress = (
   key: string,
-  input: { completed: string[]; lastLessonId?: string; total: number },
+  input: { completed: string[]; lastLessonId?: string; total: number; gates?: Record<string, string[]> },
 ): Promise<Result<OrientationProgressDto>> => api.put(`${BASE}/${key}/progress/me`, input);
+
+export const submitQuiz = (
+  key: string,
+  input: { score: number; total: number; passMark: number },
+): Promise<Result<OrientationProgressDto & { passed: boolean }>> => api.put(`${BASE}/${key}/quiz/me`, input);
+
+export const signOff = (key: string, userId: string, signedOff: boolean): Promise<Result<OrientationProgressDto>> =>
+  api.patch(`${BASE}/${key}/progress/${encodeURIComponent(userId)}/signoff`, { signedOff });
 
 export const resetMyProgress = (key: string): Promise<Result<OrientationProgressDto>> =>
   api.delete(`${BASE}/${key}/progress/me`);

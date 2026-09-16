@@ -1,69 +1,40 @@
 "use client";
 
 import * as React from "react";
-import { Check, Copy, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { youTubeId, type ProgrammeNumbers } from "@/features/orientation/lib/sales-orientation";
+import { num, useOrientationT } from "@/features/orientation/lib/i18n";
+import { CopyButton, type GateProps } from "./lesson-parts";
 import { LessonVideos } from "./lesson-videos";
 
 /**
- * Programme numbers — the figures to have ready before price comes up, plus
- * any YouTube videos the admin attached to the programme.
+ * Our programs in numbers — the figures to have ready before price comes up,
+ * plus any YouTube videos the admin attached to the programme.
  *
- * Every number here is read from the live course record rather than a copy kept
- * alongside the training text. A rep quoting a stale fee from a training page is
- * the exact failure this avoids: change a price in Admin → Courses and this
- * lesson changes with it.
+ * Every number is read from the live course record rather than a copy kept
+ * alongside the training text: change a price in Admin → Courses and this
+ * lesson changes with it. The payment split is the published policy (50% to
+ * confirm the seat, the rest within a month of the start).
  */
-
-const eg = (n: number) => n.toLocaleString("en-US");
-
-export function ProgramsModule({
-  programmes,
-  onComplete,
-}: {
-  programmes: ProgrammeNumbers[];
-  onComplete: () => void;
-}) {
+export function ProgramsModule({ programmes, seen, mark }: { programmes: ProgrammeNumbers[] } & GateProps) {
+  const { t } = useOrientationT();
   const [active, setActive] = React.useState<number | null>(null);
-  const [seen, setSeen] = React.useState<Set<number>>(new Set());
-  const [copied, setCopied] = React.useState(false);
-
-  /** Half the catalogue is enough to learn the shape of the numbers. */
-  const target = Math.min(3, programmes.length);
-
-  React.useEffect(() => {
-    if (seen.size >= target) onComplete();
-  }, [seen, target, onComplete]);
 
   if (programmes.length === 0) {
-    return (
-      <p className="rounded-xl bg-muted/60 p-4 text-center text-sm text-muted-foreground">
-        تعذّر تحميل أسعار البرامج دلوقتي. حدّث الصفحة، ولو فضلت المشكلة ارجع
-        لمشرف الفريق قبل ما تتكلم في السعر.
-      </p>
-    );
+    return <p className="rounded-xl bg-muted/60 p-4 text-center text-sm text-muted-foreground">{t("programs.loadFailed")}</p>;
   }
 
   const p = active === null ? null : programmes[active];
   const first = p ? Math.round(p.sale * 0.5) : 0;
-  const off = p && p.price > 0 ? Math.round((1 - p.sale / p.price) * 100) : 0;
-  const videos = (p?.videos ?? []).filter((v) => v && typeof v.url === "string" && youTubeId(v.url));
-
+  const off = p && p.price > p.sale ? Math.round((1 - p.sale / p.price) * 100) : 0;
+  const videos = (p?.videos ?? [])
+    .filter((v) => v && typeof v.url === "string" && youTubeId(v.url))
+    .map((v) => ({ id: v.id, url: v.url, title: v.title, duration: v.duration ?? "" }));
   const pitch = p
-    ? `${p.name} عبارة عن ${p.lectures} محاضرة لايف على Zoom، محاضرة أسبوعيًا، مع تسجيلات متاحة ١٢ شهر ومهام تطبيقية وشهادة. الرسوم ${eg(p.sale)} جنيه، وتقدر تأكد مقعدك بدفعة أولى ${eg(first)} جنيه، والباقي خلال شهر من بداية البرنامج. تحب أبعتلك خطة الموديولات ومواعيد الدفعة الجاية؟`
+    ? t("programs.pitch", { name: p.name, lectures: num(p.lectures), fee: num(p.sale), first: num(first) })
     : "";
-
-  const stats = p
-    ? [
-        { v: eg(p.sale), k: `الرسوم بالجنيه (بدل ${eg(p.price)})`, hi: true },
-        { v: String(p.lectures), k: "محاضرة لايف على Zoom", hi: false },
-        { v: `${off}%`, k: "نسبة الخصم الحالية", hi: false },
-        { v: eg(first), k: "الدفعة الأولى (٥٠٪)", hi: false },
-        { v: eg(p.sale - first), k: "الباقي خلال شهر من البداية", hi: false },
-      ]
-    : [];
 
   return (
     <div className="space-y-4">
@@ -75,99 +46,83 @@ export function ProgramsModule({
             aria-pressed={active === i}
             onClick={() => {
               setActive(i);
-              setSeen((s) => new Set(s).add(i));
-              setCopied(false);
+              mark(prog.slug);
             }}
             className={cn(
-              "rounded-full border px-3.5 py-1.5 text-sm transition-colors",
-              active === i
-                ? "border-primary bg-primary text-primary-foreground"
-                : seen.has(i)
-                  ? "border-emerald-500/40 bg-emerald-500/[0.05]"
-                  : "border-border/70 hover:border-primary/40 hover:text-primary",
+              "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-start text-sm transition-colors",
+              active === i ? "border-primary bg-primary/[0.07] font-semibold text-primary" : "border-border/70 hover:border-primary/40",
             )}
           >
+            {seen.has(prog.slug) && <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />}
             {prog.name}
           </button>
         ))}
       </div>
 
-      {seen.size < target && (
-        <p className="text-xs text-muted-foreground">
-          افتح {target} برامج على الأقل عشان تكمّل الدرس ({seen.size} من {target})
-        </p>
-      )}
-
       {!p ? (
-        <p className="rounded-xl bg-muted/60 p-4 text-center text-sm text-muted-foreground">
-          اختار برنامجًا من فوق.
-        </p>
+        <p className="rounded-2xl border border-border/70 p-4 text-sm text-muted-foreground">{t("programs.pick")}</p>
       ) : (
-        <>
-          <p className="text-sm text-muted-foreground">{p.subtitle}</p>
-
-          <LessonVideos
-            key={p.slug}
-            videos={videos}
-            label={{ one: "فيديو البرنامج", many: "فيديوهات البرنامج" }}
-          />
-
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {stats.map((s) => (
-              <div
-                key={s.k}
-                className={cn(
-                  "rounded-2xl border p-3.5",
-                  s.hi
-                    ? "border-primary/40 bg-primary/[0.06]"
-                    : "border-border/70 bg-card",
-                )}
-              >
-                <span
-                  className={cn(
-                    "block font-heading text-2xl font-bold tabular-nums",
-                    s.hi && "text-primary",
-                  )}
-                >
-                  {s.v}
-                </span>
-                <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                  {s.k}
-                </span>
-              </div>
-            ))}
+        <div className="space-y-4 rounded-2xl border border-border/70 p-4" aria-live="polite">
+          <div>
+            <h3 className="font-heading text-base font-bold">{p.name}</h3>
+            {p.subtitle && <p className="text-sm text-muted-foreground">{p.subtitle}</p>}
           </div>
 
-          <div className="rounded-2xl border border-border/70 bg-card p-4">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
-                صيغة جاهزة
-              </p>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(pitch);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 1800);
-                  } catch {
-                    // Clipboard blocked — the text is on screen and selectable.
-                  }
-                }}
-                className="ms-auto inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-                {copied ? "اتنسخت" : "نسخ الصيغة"}
-              </button>
+          <dl className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            <Stat label={t("programs.fee")} hint={off > 0 ? t("programs.discount", { n: off }) : undefined} highlight>
+              {t("programs.egp", { n: num(p.sale) })}
+              {p.price > p.sale && (
+                <s className="ms-1.5 text-[13px] font-normal text-muted-foreground">{num(p.price)}</s>
+              )}
+            </Stat>
+            <Stat label={t("programs.lectures")} hint={t("programs.lecturesSub")}>
+              {num(p.lectures)}
+            </Stat>
+            <Stat label={t("programs.first")} hint={t("programs.firstSub")}>
+              {t("programs.egp", { n: num(first) })}
+            </Stat>
+            <Stat label={t("programs.rest")} hint={t("programs.restSub")}>
+              {t("programs.egp", { n: num(p.sale - first) })}
+            </Stat>
+          </dl>
+
+          <LessonVideos key={p.slug} videos={videos} label={{ one: t("programs.videoOne"), many: t("programs.videoMany") }} />
+
+          <div className="space-y-2.5 rounded-xl bg-primary/[0.06] p-3.5">
+            <p className="text-xs font-bold text-muted-foreground">{t("programs.ready")}</p>
+            <p className="text-sm leading-relaxed">«{pitch}»</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <CopyButton text={pitch} />
+              {p.students > 0 && (
+                <span className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                  <Info className="mt-0.5 size-3.5 shrink-0" />
+                  {t("programs.students", { n: num(p.students) })}
+                </span>
+              )}
             </div>
-            <p className="mt-1.5 text-sm leading-relaxed">«{pitch}»</p>
-            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-              <Info className="mt-0.5 size-3.5 shrink-0" />
-              انضم للبرنامج ده {eg(p.students)} متدرب حتى الآن.
-            </p>
           </div>
-        </>
+        </div>
       )}
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  hint,
+  highlight,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  highlight?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn("rounded-xl p-3", highlight ? "bg-primary/[0.08]" : "bg-muted/60")}>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className={cn("mt-0.5 font-heading text-lg font-bold tabular-nums", highlight && "text-primary")}>{children}</dd>
+      {hint && <dd className="text-[11px] text-muted-foreground">{hint}</dd>}
     </div>
   );
 }

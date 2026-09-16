@@ -8,6 +8,7 @@ import { dal } from "@/lib/dal";
 import type { OrientationTaskAttachment } from "@/lib/dal/orientation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { num, useOrientationT } from "@/features/orientation/lib/i18n";
 
 /** Matches the platform upload endpoint's limit. */
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -17,8 +18,6 @@ const MAX_VOICE_SECONDS = 5 * 60;
 const FILE_EXTENSIONS = ["pdf", "doc", "docx", "jpg", "jpeg", "png", "webp", "gif", "heic"];
 const FILE_ACCEPT =
   ".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.gif,.heic,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*";
-
-const nf = new Intl.NumberFormat("ar-EG");
 
 export function formatBytes(bytes: number) {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -62,19 +61,20 @@ export function TaskAttachments({
   disabled?: boolean;
   onChange: (next: OrientationTaskAttachment[]) => Promise<boolean>;
 }) {
+  const { t, locale } = useOrientationT();
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState<string | null>(null);
 
   const add = async (file: File, extra: Partial<OrientationTaskAttachment> & { kind: "file" | "voice" }) => {
     if (file.size > MAX_BYTES) {
-      toast.error("الملف أكبر من ١٠ ميجا.");
+      toast.error(t("attach.tooBig"));
       return;
     }
-    setUploading(extra.kind === "voice" ? "بيترفع التسجيل…" : `بيترفع ${file.name}…`);
+    setUploading(extra.kind === "voice" ? t("attach.uploadingVoice") : t("attach.uploadingFile", { name: file.name }));
     const res = await dal.upload.uploadFile(file);
     if (!res.ok) {
       setUploading(null);
-      toast.error(`الرفع ما نجحش: ${res.error}`);
+      toast.error(t("attach.failed", { error: res.error }));
       return;
     }
     const attachment: OrientationTaskAttachment = {
@@ -86,7 +86,7 @@ export function TaskAttachments({
     };
     const saved = await onChange([...items, attachment]);
     setUploading(null);
-    if (saved) toast.success(extra.kind === "voice" ? "اتبعت التسجيل الصوتي" : "اترفع الملف");
+    if (saved) toast.success(extra.kind === "voice" ? t("attach.voiceSent") : t("attach.fileSent"));
   };
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +95,7 @@ export function TaskAttachments({
     if (!file) return;
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (!FILE_EXTENSIONS.includes(ext)) {
-      toast.error("الملفات المسموحة: PDF أو Word أو صور.");
+      toast.error(t("attach.badType"));
       return;
     }
     await add(file, { kind: "file" });
@@ -112,7 +112,7 @@ export function TaskAttachments({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="flex items-center gap-1.5 text-sm font-bold">
           <Paperclip className="size-4 text-primary" />
-          مرفقات {items.length > 0 && <span className="font-normal text-muted-foreground">({nf.format(items.length)})</span>}
+          {t("attach.title")} {items.length > 0 && <span className="font-normal text-muted-foreground">({num(items.length)})</span>}
         </h4>
         <div className="flex flex-wrap gap-2">
           {allowFiles && (
@@ -126,7 +126,7 @@ export function TaskAttachments({
                 onClick={() => fileRef.current?.click()}
               >
                 <Paperclip className="size-3.5" />
-                ارفع ملف
+                {t("attach.upload")}
               </Button>
               <input ref={fileRef} type="file" accept={FILE_ACCEPT} className="hidden" onChange={onFile} />
             </>
@@ -137,7 +137,14 @@ export function TaskAttachments({
               onRecorded={(file, durationSec) =>
                 add(file, {
                   kind: "voice",
-                  name: `تسجيل صوتي ${new Date().toLocaleString("ar-EG", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`,
+                  name: t("attach.voiceName", {
+                    date: new Date().toLocaleString(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }),
+                  }),
                   durationSec,
                 })
               }
@@ -147,11 +154,11 @@ export function TaskAttachments({
       </div>
 
       <p className="mt-1 text-[11px] text-muted-foreground">
-        {[allowFiles && "PDF أو Word أو صور لحد ١٠ ميجا", allowVoice && "أو سجّل ملاحظة صوتية وهتتبعت على طول"].filter(Boolean).join(" · ")}
+        {[allowFiles && t("attach.hintFiles"), allowVoice && t("attach.hintVoice")].filter(Boolean).join(" · ")}
       </p>
 
       {uploading && (
-        <p className="mt-3 flex items-center gap-2 rounded-lg bg-primary/[0.06] p-2.5 text-xs text-primary">
+        <p className="mt-3 flex items-center gap-2 rounded-lg bg-primary/[0.06] p-2.5 text-xs text-primary" role="status">
           <Loader2 className="size-3.5 animate-spin" />
           {uploading}
         </p>
@@ -169,7 +176,8 @@ export function TaskAttachments({
                 className="ms-auto size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 disabled={disabled || !!uploading}
                 onClick={() => remove(a.url)}
-                title="امسح المرفق"
+                title={t("attach.remove")}
+                aria-label={t("attach.remove")}
               >
                 <Trash2 className="size-4" />
               </Button>
@@ -183,6 +191,7 @@ export function TaskAttachments({
 
 /** One attachment: an audio player for voice notes, an icon + link for files. Shared with the admin review page. */
 export function AttachmentView({ attachment: a }: { attachment: OrientationTaskAttachment }) {
+  const { t } = useOrientationT();
   if (a.kind === "voice") {
     return (
       <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -190,7 +199,9 @@ export function AttachmentView({ attachment: a }: { attachment: OrientationTaskA
           <Mic className="size-4" />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-xs font-medium">{a.name || "Voice note"}</span>
+          <span className="block truncate text-xs font-medium" dir="auto">
+            {a.name || t("attach.voiceNote")}
+          </span>
           {!!a.durationSec && <span className="block text-[11px] text-muted-foreground" dir="ltr">{formatDuration(a.durationSec)}</span>}
         </span>
         <audio controls preload="none" src={a.url} className="h-9 min-w-[220px] flex-1" />
@@ -216,7 +227,7 @@ export function AttachmentView({ attachment: a }: { attachment: OrientationTaskA
       )}
       <span className="min-w-0">
         <span className="block truncate text-xs font-medium" dir="auto">
-          {a.name || "File"}
+          {a.name || t("attach.file")}
         </span>
         {a.size > 0 && <span className="block text-[11px] text-muted-foreground" dir="ltr">{formatBytes(a.size)}</span>}
       </span>
@@ -231,6 +242,7 @@ function VoiceRecorder({
   disabled?: boolean;
   onRecorded: (file: File, durationSec: number) => void;
 }) {
+  const { t } = useOrientationT();
   const [recording, setRecording] = React.useState(false);
   const [seconds, setSeconds] = React.useState(0);
   const recorderRef = React.useRef<MediaRecorder | null>(null);
@@ -243,7 +255,7 @@ function VoiceRecorder({
   const cleanup = React.useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     recorderRef.current = null;
   }, []);
@@ -265,14 +277,14 @@ function VoiceRecorder({
 
   const start = async () => {
     if (typeof window === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      toast.error("المتصفح ده ما بيدعمش التسجيل الصوتي.");
+      toast.error(t("attach.noRecorder"));
       return;
     }
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      toast.error("لازم تسمح للمتصفح يستخدم المايك عشان تسجّل.");
+      toast.error(t("attach.micDenied"));
       return;
     }
     const { mime, ext } = pickAudioType();
@@ -295,7 +307,7 @@ function VoiceRecorder({
       setSeconds(0);
       if (cancelledRef.current || blob.size === 0) return;
       if (durationSec < 1) {
-        toast.error("التسجيل قصير جدًا.");
+        toast.error(t("attach.tooShort"));
         return;
       }
       onRecorded(new File([blob], `voice-note-${Date.now()}.${ext}`, { type: type.split(";")[0] }), durationSec);
@@ -315,22 +327,30 @@ function VoiceRecorder({
     return (
       <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={disabled} onClick={start}>
         <Mic className="size-3.5" />
-        سجّل صوت
+        {t("attach.record")}
       </Button>
     );
   }
 
   return (
     <span className="inline-flex items-center gap-1.5 rounded-lg bg-destructive/10 px-2 py-1 ring-1 ring-destructive/30">
-      <span className="size-2 animate-pulse rounded-full bg-destructive" aria-hidden="true" />
+      <span className="size-2 animate-pulse rounded-full bg-destructive motion-reduce:animate-none" aria-hidden="true" />
       <span className={cn("text-xs font-semibold tabular-nums text-destructive")} dir="ltr">
         {formatDuration(seconds)}
       </span>
       <Button type="button" size="sm" className="h-7 gap-1 bg-destructive px-2 text-white hover:bg-destructive/90" onClick={() => stop(false)}>
         <Square className="size-3" />
-        وقّف وابعت
+        {t("attach.stopSend")}
       </Button>
-      <Button type="button" size="icon" variant="ghost" className="size-7" onClick={() => stop(true)} title="إلغاء التسجيل">
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="size-7"
+        onClick={() => stop(true)}
+        title={t("attach.cancel")}
+        aria-label={t("attach.cancel")}
+      >
         <X className="size-3.5" />
       </Button>
     </span>

@@ -1,597 +1,589 @@
 "use client";
 
 import * as React from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  GraduationCap,
-  ListChecks,
-  MessageSquare,
-  PartyPopper,
-  PlayCircle,
-  RotateCcw,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, Check, Flag, Lock, MessageCircle, PartyPopper } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import type {
-  OrientationLesson,
-  PathStep,
-  ProgrammeNumbers,
-  SalesOrientation as SalesOrientationContent,
-  Thread,
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useConfirm } from "@/hooks/use-confirm";
+import type { OrientationProgressDto } from "@/lib/dal/orientation";
+import { MODULES } from "@/features/orientation/lib/course-map";
+import { formatMinutes, pick, useOrientationT, type OrientationKey } from "@/features/orientation/lib/i18n";
+import {
+  findLessonIndex,
+  localizeLesson,
+  type LessonView,
+  type OrientationLesson,
+  type ProgrammeNumbers,
+  type SalesOrientation as SalesOrientationContent,
 } from "@/features/orientation/lib/sales-orientation";
+import { track } from "@/features/orientation/lib/track";
 import { useOrientationProgress } from "@/features/orientation/hooks/use-orientation-progress";
 import { useLessonHash } from "@/features/orientation/hooks/use-lesson-hash";
-import type { OrientationProgressDto } from "@/lib/dal/orientation";
-import {
-  ChecklistModule,
-  ClosingModule,
-  PhraseBankModule,
-  PracticeModule,
-  RulesModule,
-} from "./orientation-modules";
-import { ObjectionsModule } from "./objections-module";
+import { ContrastLesson, PathLesson } from "./conversation-modules";
+import { ChecklistModule, ClosingModule, PhraseBankModule, PracticeModule, RulesModule } from "./orientation-modules";
+import { ObjectionsModule, objectionCategories } from "./objections-module";
 import { DrillModule } from "./drill-module";
 import { ProgramsModule } from "./programs-module";
 import { ProgramDetailsModule } from "./program-details-module";
 import { TaskLesson } from "./task-lesson";
-import { LessonVideos } from "./lesson-videos";
-import { isModuleLesson, type LessonId } from "@/features/orientation/lib/sales-orientation";
+import { VideoLesson } from "./video-lesson";
+import { WeekLesson } from "./week-lesson";
+import { QuizLesson } from "./quiz-lesson";
+import { JourneyHeader } from "./journey-header";
+import { CourseOutline, type OutlineModule } from "./course-outline";
+import { QuickReference } from "./quick-reference";
+import { Lead, TypeIcon } from "./lesson-parts";
 
 /**
- * Sales orientation, as a course rather than a document.
+ * Sales Orientation — a self-paced first week, then a shift companion.
  *
- * One lesson on screen at a time, a curriculum rail that shows where you are
- * and what is left, and an explicit next step at the bottom of every lesson.
- * The earlier single-scroll version put all seven modules on one page, which
- * read as something to skim rather than something to work through — a new joiner
- * could not tell how much was left, and finishing a module produced no moment.
- *
- * Content and lesson metadata arrive as props — an admin-edited copy when one
- * is saved, otherwise the bundled default (see `resolveOrientation`).
- *
- * Everything is RTL regardless of the console language: the content is Egyptian
- * Arabic dialogue, and mirroring it would put the speaker bubbles on the wrong
- * side.
+ * One language at a time (the console's EN/ع switch; the layout mirrors with
+ * `<html dir>`). Five modules lead to a team-lead sign-off: the journey header
+ * shows where the rep is and what's left, the outline groups lessons by module,
+ * and every lesson states its outcome and its gate up front and completes by
+ * itself when the gate is met. "Quick reference" turns the same content into
+ * a searchable, copyable reference.
  */
 
-/* ── lesson 1: the contrast ──────────────────────────────────────────────── */
+/* ── Learn / Quick reference, remembered per browser ─────────────────────── */
 
-function ThreadView({ thread, tone }: { thread: Thread; tone: "bad" | "good" }) {
-  /*
-   * Messages land one after another. The lesson is that the bad thread *feels*
-   * like an interrogation — five questions arriving in a row does that, the
-   * same five in a static block does not.
-   */
-  const [shown, setShown] = React.useState(0);
+type Mode = "learn" | "reference";
+const MODE_KEY = "imets_orientation_mode";
+const modeListeners = new Set<() => void>();
 
-  React.useEffect(() => {
-    const timers = thread.messages.map((_, i) =>
-      setTimeout(() => setShown(i + 1), 260 * i),
-    );
-    return () => timers.forEach(clearTimeout);
-  }, [thread]);
-
-  return (
-    <div>
-      <div className="space-y-2">
-        {thread.messages.map((m, i) => {
-          const visible = i < shown;
-          const isClient = m.from === "client";
-          return (
-            <div
-              key={i}
-              className={cn(
-                "flex transition-all duration-300",
-                isClient ? "justify-start" : "justify-end",
-                visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
-              )}
-            >
-              <div
-                className={cn(
-                  "max-w-[80%] rounded-2xl px-3.5 py-2",
-                  isClient
-                    ? "bg-muted text-foreground/90"
-                    : tone === "bad"
-                      ? "bg-destructive/10 ring-1 ring-destructive/25"
-                      : "bg-emerald-500/10 ring-1 ring-emerald-500/25",
-                )}
-              >
-                <span className="mb-0.5 block text-[11px] font-semibold text-muted-foreground">
-                  {m.who}
-                </span>
-                <span className="text-sm leading-relaxed">{m.text}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div
-        className={cn(
-          "mt-4 flex items-start gap-2.5 rounded-2xl p-3.5 text-sm leading-relaxed transition-opacity duration-500",
-          shown >= thread.messages.length ? "opacity-100" : "opacity-0",
-          thread.verdict.tone === "good"
-            ? "bg-emerald-500/[0.08] ring-1 ring-emerald-500/20"
-            : "bg-destructive/[0.06] ring-1 ring-destructive/20",
-        )}
-      >
-        <span
-          className={cn(
-            "mt-1.5 size-2 shrink-0 rounded-full",
-            thread.verdict.tone === "good" ? "bg-emerald-500" : "bg-destructive",
-          )}
-        />
-        <span>
-          <b className="font-bold">{thread.verdict.lead}</b> {thread.verdict.rest}
-        </span>
-      </div>
-    </div>
-  );
+function readMode(): Mode {
+  try {
+    return localStorage.getItem(MODE_KEY) === "reference" ? "reference" : "learn";
+  } catch {
+    return "learn";
+  }
 }
 
-function ContrastLesson({
-  threads,
-  onComplete,
-}: {
-  threads: SalesOrientationContent["threads"];
-  onComplete: () => void;
-}) {
-  const [tab, setTab] = React.useState<"bad" | "good">("bad");
-  const [seen, setSeen] = React.useState<Set<string>>(new Set(["bad"]));
-
-  React.useEffect(() => {
-    // Completing means having compared both — one tab is half the lesson.
-    if (seen.size >= 2) onComplete();
-  }, [seen, onComplete]);
-
-  return (
-    <div>
-      <p className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <MessageSquare className="size-3.5" />
-        محادثة واردة على واتساب — استفسار عن دبلومة الجودة الصحية
-      </p>
-
-      <div className="mb-4 inline-flex rounded-xl bg-muted p-1" role="tablist">
-        {(
-          [
-            ["bad", "أسلوب الاستجواب"],
-            ["good", "أسلوب الاستشارة"],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={tab === key}
-            onClick={() => {
-              setTab(key);
-              setSeen((p) => new Set(p).add(key));
-            }}
-            className={cn(
-              "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors",
-              tab === key
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Remounts on tab change so the reveal replays from the top. */}
-      <ThreadView key={tab} thread={threads[tab]} tone={tab} />
-
-      {seen.size < 2 && (
-        <p className="mt-4 rounded-xl bg-primary/[0.06] p-3 text-center text-sm text-primary">
-          شوف الأسلوبين الاتنين عشان تكمّل الدرس.
-        </p>
-      )}
-    </div>
-  );
+function writeMode(mode: Mode) {
+  try {
+    localStorage.setItem(MODE_KEY, mode);
+  } catch {
+    // Storage blocked — the switch still works for this visit.
+  }
+  modeListeners.forEach((l) => l());
 }
 
-/* ── lesson 2: the path ──────────────────────────────────────────────────── */
-
-function PathLesson({ steps, onComplete }: { steps: PathStep[]; onComplete: () => void }) {
-  const [active, setActive] = React.useState(0);
-  const [seen, setSeen] = React.useState<Set<number>>(new Set([0]));
-
-  React.useEffect(() => {
-    if (seen.size >= steps.length) onComplete();
-  }, [seen, steps.length, onComplete]);
-
-  return (
-    <div>
-      <ol className="grid gap-2 sm:grid-cols-5">
-        {steps.map((s, i) => {
-          const isActive = active === i;
-          return (
-            <li key={`${i}-${s.title}`}>
-              <button
-                type="button"
-                onClick={() => {
-                  setActive(i);
-                  setSeen((p) => new Set(p).add(i));
-                }}
-                className={cn(
-                  "w-full rounded-2xl border p-3 text-start transition-all",
-                  isActive
-                    ? "border-primary/50 bg-primary/[0.06] shadow-sm"
-                    : seen.has(i)
-                      ? "border-emerald-500/30 bg-emerald-500/[0.04]"
-                      : "border-border/70 hover:border-primary/30",
-                )}
-              >
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-primary">
-                  الخطوة {s.n}
-                  {seen.has(i) && !isActive && <Check className="size-3 text-emerald-600" />}
-                </span>
-                <span className="mt-1 block text-sm font-bold leading-snug">{s.title}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-      <p className="mt-3 rounded-xl bg-muted/60 p-4 text-sm leading-relaxed">
-        {steps[active]?.body}
-      </p>
-      {seen.size < steps.length && (
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          افتح الخطوات كلها عشان تكمّل الدرس ({seen.size} من {steps.length})
-        </p>
-      )}
-    </div>
-  );
+function subscribeMode(listener: () => void) {
+  modeListeners.add(listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    modeListeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
 }
 
-/* ── admin-added lessons ─────────────────────────────────────────────────── */
+/* ── gates ───────────────────────────────────────────────────────────────── */
 
-/**
- * A lesson an admin wrote: its text (videos render above it, like any lesson)
- * and an explicit "done" — there is no exercise to finish it by.
- */
-function CustomLesson({ body, done, onComplete }: { body: string; done: boolean; onComplete: () => void }) {
-  const blocks = body
-    .split(/\n\s*\n/)
-    .map((b) => b.trim())
-    .filter(Boolean);
-
-  return (
-    <div className="space-y-4">
-      {blocks.map((block, i) => {
-        const lines = block.split("\n").map((l) => l.trim());
-        const bullets = lines.every((l) => /^[-•]\s+/.test(l));
-        return bullets ? (
-          <ul key={i} className="space-y-1.5 ps-5 text-sm leading-relaxed [list-style:disc]">
-            {lines.map((l, j) => (
-              <li key={j}>{l.replace(/^[-•]\s+/, "")}</li>
-            ))}
-          </ul>
-        ) : (
-          <p key={i} className="whitespace-pre-line text-sm leading-relaxed">
-            {block}
-          </p>
-        );
-      })}
-
-      <div className="flex justify-center pt-2">
-        {done ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-600">
-            <Check className="size-4" />
-            خلصت الدرس ده
-          </span>
-        ) : (
-          <Button className="gap-1.5" onClick={onComplete}>
-            <Check className="size-4" />
-            علّم الدرس كمكتمل
-          </Button>
-        )}
-      </div>
-    </div>
-  );
+/** How many gate steps finish a lesson, from the content it actually renders. */
+function gateRequirement(v: LessonView, c: SalesOrientationContent, programmes: ProgrammeNumbers[]): number {
+  if (v.kind === "task") return Math.max(1, v.task?.programs.length ?? 1);
+  if (v.kind === "custom") return v.videos.length === 0 || v.gateRequired === 0 ? 1 : Math.min(v.gateRequired, v.videos.length);
+  switch (v.slug) {
+    case "week":
+      return Math.max(1, c.week.checklist.length);
+    case "programs":
+      return Math.max(1, Math.min(3, programmes.length));
+    case "details":
+      return Math.max(1, c.programDetails.programmes.length + (c.programDetails.audiences.length ? 1 : 0));
+    case "path":
+      return Math.max(1, c.steps.length);
+    case "rules":
+      return Math.max(1, c.rules.length);
+    case "contrast":
+      return 2;
+    case "phrases":
+      return Math.max(1, c.phraseBank.length);
+    case "closing":
+      return Math.max(1, Math.min(3, c.closings.length));
+    case "practice":
+      return Math.max(1, c.scenarios.length);
+    case "objections":
+      return Math.max(1, objectionCategories(c.objections).length);
+    case "drill":
+      return 3;
+    case "send":
+      return Math.max(1, c.checklist.length);
+    default:
+      return 1;
+  }
 }
-
-/* ── course shell ────────────────────────────────────────────────────────── */
-
-/**
- * The curriculum menu reads in English: a title an admin already wrote in
- * English is kept as written; an Arabic title shows its English label instead
- * (falling back to the Arabic when no English label exists yet).
- */
-const menuLabel = (l: OrientationLesson) => (/[؀-ۿ]/.test(l.short) ? l.en.trim() || l.short : l.short);
-
-const formatDay = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : null;
 
 export function SalesOrientation({
   lessons,
   content,
+  contentEn,
   programmes,
   initialProgress,
+  userName,
+  toolAccess,
+  actions,
 }: {
-  /** Lesson titles, intros and videos — an admin-edited copy or the bundled default. */
+  /** An admin-edited copy or the bundled default. */
   lessons: OrientationLesson[];
   content: SalesOrientationContent;
+  contentEn: SalesOrientationContent;
   /** Resolved from the live course records by the page — see programs-module. */
   programmes: ProgrammeNumbers[];
   /** The viewer's saved progress, loaded by the page. Null if it couldn't be read. */
   initialProgress: OrientationProgressDto | null;
+  /** First name for the greeting; empty greets without one. */
+  userName: string;
+  /** Console pages the first-week lesson may link to, for this viewer. */
+  toolAccess: Record<string, boolean>;
+  /** Admin buttons for the page header. */
+  actions?: React.ReactNode;
 }) {
-  const lessonIds = React.useMemo(() => lessons.map((l) => l.id), [lessons]);
-  const progress = useOrientationProgress({ total: lessons.length, lessonIds, initial: initialProgress });
-  const { hash, go, pin } = useLessonHash();
-  const { complete, done, visit } = progress;
+  const { t, locale } = useOrientationT();
+  const { confirm, Confirmation } = useConfirm();
+  const c = locale === "ar" ? content : contentEn;
 
-  /*
-   * No fragment ⇒ resume on the lesson the learner was last on (if it isn't
-   * finished), otherwise the first unfinished one. Progress is loaded on the
-   * server, so the first render already lands on the right lesson.
-   */
-  const firstUnfinished = Math.max(
-    0,
-    lessons.findIndex((l) => !done.has(l.id)),
+  const views = React.useMemo(() => lessons.map((l) => localizeLesson(l, locale)), [lessons, locale]);
+  const localProgrammes = React.useMemo(
+    () =>
+      programmes.map((p) => {
+        const ref = c.programmes.find((x) => x.slug === p.slug);
+        return ref ? { ...p, name: ref.name, subtitle: ref.subtitle } : p;
+      }),
+    [programmes, c],
   );
-  const resumeIndex = lessons.findIndex((l) => l.id === progress.lastLessonId && !done.has(l.id));
-  const continueIndex = progress.allDone ? 0 : resumeIndex >= 0 ? resumeIndex : firstUnfinished;
-  const hashIndex = lessons.findIndex((l) => l.id === hash);
+  const lessonIds = React.useMemo(() => lessons.map((l) => l.id), [lessons]);
+  const required = React.useMemo(
+    () => Object.fromEntries(views.map((v) => [v.id, gateRequirement(v, c, localProgrammes)])) as Record<string, number>,
+    [views, c, localProgrammes],
+  );
+
+  const progress = useOrientationProgress({
+    lessonIds,
+    initial: initialProgress,
+    t,
+    onLessonComplete: (id) => {
+      const v = views.find((x) => x.id === id);
+      if (v) toast.success(t("lesson.completeToast", { lesson: v.title }));
+    },
+  });
+  const { done, mark: markGate, visit } = progress;
+
+  const mode = React.useSyncExternalStore(subscribeMode, readMode, () => "learn" as Mode);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+  const { hash, go, pin } = useLessonHash();
+
+  /* where the learner is */
+  const moduleDone = (moduleIds: string[], exceptId: string) =>
+    views.filter((x) => moduleIds.includes(x.moduleId) && x.id !== exceptId).every((x) => done.has(x.id));
+  const isLocked = (v: LessonView) => !!v.lockedUntil?.length && !done.has(v.id) && !moduleDone(v.lockedUntil, v.id);
+
+  const firstUnfinished = views.findIndex((v) => !done.has(v.id));
+  const resumeIndex = views.findIndex((v) => v.id === progress.lastLessonId && !done.has(v.id));
+  const continueIndex = progress.allDone ? 0 : resumeIndex >= 0 ? resumeIndex : Math.max(0, firstUnfinished);
+  const hashIndex = findLessonIndex(views, hash);
   const index = hashIndex >= 0 ? hashIndex : continueIndex;
-  const lesson = lessons[index];
-  const isDone = done.has(lesson.id);
+  const lesson = views[index];
 
-  // "Where I am" is saved (debounced) so Continue resumes here on any device.
   React.useEffect(() => {
+    if (!lesson) return;
     visit(lesson.id);
-  }, [lesson.id, visit]);
+    track("orientation_lesson_started", { lessonId: lesson.id });
+  }, [lesson, visit]);
 
-  const startedOn = formatDay(progress.startedAt);
-  const completedOn = formatDay(progress.completedAt);
+  const lessonId = lesson?.id ?? "";
+  const lessonSlug = lesson?.slug ?? "";
+  const need = required[lessonId] ?? 1;
+  const markCurrent = React.useCallback(
+    (key: string) => {
+      // Freeze the view on this lesson: with no fragment, the lesson shown is derived from
+      // progress, so completing it would otherwise slide the learner onto the next one.
+      pin(lessonSlug);
+      markGate(lessonId, key, need);
+    },
+    [pin, lessonSlug, markGate, lessonId, need],
+  );
+  const seen = React.useMemo(() => new Set(progress.gates[lessonId] ?? []), [progress.gates, lessonId]);
 
-  const completeCurrent = React.useCallback(() => {
-    complete(lesson.id);
-    // Freeze the view here; see `pin` for why finishing a lesson would
-    // otherwise advance it under the learner.
-    pin(lesson.id);
-  }, [complete, lesson.id, pin]);
+  if (!lesson) return null;
 
   const goTo = (i: number) => {
-    go(lessons[i].id);
-    // A new lesson always starts at its own top, not wherever the last one ended.
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const target = views[i];
+    if (!target) return;
+    go(target.slug);
+    writeMode("learn");
+    setSheetOpen(false);
+    requestAnimationFrame(() => {
+      const el = document.getElementById("orientation-lesson");
+      if (el && el.getBoundingClientRect().top < 72) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
-  const moduleBodies: Record<LessonId, React.ReactNode> = {
-    contrast: <ContrastLesson threads={content.threads} onComplete={completeCurrent} />,
-    path: <PathLesson steps={content.steps} onComplete={completeCurrent} />,
-    rules: <RulesModule rules={content.rules} onComplete={completeCurrent} />,
-    practice: <PracticeModule scenarios={content.scenarios} onComplete={completeCurrent} />,
-    objections: (
-      <ObjectionsModule
-        method={content.objectionMethod}
-        objections={content.objections}
-        onComplete={completeCurrent}
-      />
-    ),
-    drill: <DrillModule objections={content.objections} onComplete={completeCurrent} />,
-    programs: <ProgramsModule programmes={programmes} onComplete={completeCurrent} />,
-    phrases: <PhraseBankModule phrases={content.phraseBank} onComplete={completeCurrent} />,
-    closing: <ClosingModule closings={content.closings} onComplete={completeCurrent} />,
-    checklist: <ChecklistModule items={content.checklist} onComplete={completeCurrent} />,
-    "program-details": (
-      <ProgramDetailsModule details={content.programDetails} programmes={programmes} onComplete={completeCurrent} />
-    ),
+  /* journey */
+  const leftMinutes = views.filter((v) => !done.has(v.id)).reduce((sum, v) => sum + v.minutes, 0);
+  const name = userName.trim();
+  const started = progress.count > 0 || Object.keys(progress.gates).length > 0;
+  const greeting = started
+    ? name
+      ? t("journey.helloBack", { name })
+      : t("journey.helloBackNoName")
+    : name
+      ? t("journey.hello", { name })
+      : t("journey.helloNoName");
+  const summary = progress.allDone
+    ? t("journey.summaryDone", { done: progress.count, total: progress.total })
+    : t("journey.summary", { done: progress.count, total: progress.total, time: formatMinutes(leftMinutes, t) });
+  const continueTarget = done.has(lesson.id) ? Math.max(0, firstUnfinished) : index;
+  const continueLabel = progress.allDone
+    ? null
+    : !started
+      ? t("journey.start")
+      : t("journey.continue", { lesson: views[continueTarget]?.title ?? "" });
+
+  const moduleGroups: OutlineModule[] = MODULES.map((m, mi) => ({
+    id: m.id,
+    n: mi + 1,
+    title: pick(m.title, locale),
+    lessons: views
+      .map((v, i) => ({ view: v, index: i, done: done.has(v.id), current: i === index, locked: isLocked(v) }))
+      .filter((x) => x.view.moduleId === m.id),
+  })).filter((m) => m.lessons.length > 0);
+
+  const journeyModules = moduleGroups.map((m) => ({
+    id: m.id,
+    n: m.n,
+    title: m.title,
+    done: m.lessons.filter((l) => l.done).length,
+    total: m.lessons.length,
+    current: m.id === lesson.moduleId,
+    onClick: () => goTo((m.lessons.find((l) => !l.done) ?? m.lessons[0]).index),
+  }));
+
+  const resetProgress = async () => {
+    const ok = await confirm({
+      title: t("outline.resetTitle"),
+      description: t("outline.resetBody"),
+      confirmText: t("outline.resetConfirm"),
+      variant: "destructive",
+    });
+    if (ok) await progress.reset();
   };
-  const body =
-    lesson.kind === "task" && lesson.task ? (
-      <TaskLesson key={lesson.id} lessonId={lesson.id} body={lesson.body} task={lesson.task} onComplete={completeCurrent} />
-    ) : lesson.kind === "custom" ? (
-      <CustomLesson key={lesson.id} body={lesson.body} done={isDone} onComplete={completeCurrent} />
-    ) : isModuleLesson(lesson.id) ? (
-      moduleBodies[lesson.id]
-    ) : null;
+
+  const outline = (
+    <CourseOutline
+      modules={moduleGroups}
+      activeModuleId={lesson.moduleId}
+      onSelect={goTo}
+      onReset={started ? resetProgress : undefined}
+    />
+  );
+
+  /* the lesson */
+  const moduleIndex = MODULES.findIndex((m) => m.id === lesson.moduleId);
+  const moduleMeta = MODULES[moduleIndex];
+  const isDone = done.has(lesson.id);
+  const locked = isLocked(lesson);
+  const count = Math.min(seen.size, need);
+  const gateLabel =
+    lesson.gate ||
+    (lesson.kind === "custom"
+      ? lesson.videos.length && lesson.gateRequired
+        ? need === 1
+          ? t("lesson.watchVideo")
+          : t("lesson.watchVideos", { n: need })
+        : t("lesson.readToEnd")
+      : "");
+  const next = views[index + 1];
+  const gate = { seen, mark: markCurrent };
+
+  let body: React.ReactNode = null;
+  if (locked) {
+    const remaining = views.filter((v) => lesson.lockedUntil!.includes(v.moduleId) && !done.has(v.id));
+    body = (
+      <div className="grid justify-items-start gap-3 rounded-2xl border border-dashed border-border p-5">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold">
+          <Lock className="size-3.5" />
+          {t("lesson.locked")}
+        </span>
+        <p className="text-sm">{t("lesson.finishFirst")}</p>
+        <div className="flex flex-wrap gap-2">
+          {remaining.map((v) => (
+            <Button key={v.id} variant="outline" size="sm" onClick={() => goTo(views.indexOf(v))}>
+              {v.title}
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  } else if (lesson.kind === "task" && lesson.task) {
+    body = <TaskLesson key={lesson.id} lessonId={lesson.id} body={lesson.body} task={lesson.task} {...gate} />;
+  } else if (lesson.kind === "custom") {
+    body = <VideoLesson key={lesson.id} lesson={lesson} {...gate} />;
+  } else {
+    switch (lesson.slug) {
+      case "week":
+        body = <WeekLesson week={c.week} access={toolAccess} {...gate} />;
+        break;
+      case "programs":
+        body = <ProgramsModule programmes={localProgrammes} {...gate} />;
+        break;
+      case "details":
+        body = <ProgramDetailsModule details={c.programDetails} programmes={localProgrammes} {...gate} />;
+        break;
+      case "path":
+        body = <PathLesson steps={c.steps} {...gate} />;
+        break;
+      case "rules":
+        body = <RulesModule rules={c.rules} {...gate} />;
+        break;
+      case "contrast":
+        body = <ContrastLesson threads={c.threads} {...gate} />;
+        break;
+      case "phrases":
+        body = <PhraseBankModule phrases={c.phraseBank} {...gate} />;
+        break;
+      case "closing":
+        body = <ClosingModule closings={c.closings} {...gate} />;
+        break;
+      case "practice":
+        body = <PracticeModule scenarios={c.scenarios} {...gate} />;
+        break;
+      case "objections":
+        body = <ObjectionsModule method={c.objectionMethod} objections={c.objections} {...gate} />;
+        break;
+      case "drill":
+        body = <DrillModule objections={c.objections} {...gate} />;
+        break;
+      case "send":
+        body = <ChecklistModule items={c.checklist} {...gate} />;
+        break;
+      case "quiz":
+        body = (
+          <QuizLesson
+            quiz={c.quiz}
+            best={{ score: progress.quiz.score, total: progress.quiz.total }}
+            passedBefore={!!progress.quiz.passedAt}
+            onSubmit={async (score, outOf, passMark) => {
+              const res = await progress.recordQuiz(score, outOf, passMark);
+              if (res.passed) markCurrent("pass");
+              return res;
+            }}
+          />
+        );
+        break;
+    }
+  }
+
+  const viewSignOff = () => {
+    document.getElementById("orientation-journey")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const signedOffOn = progress.signedOffAt
+    ? new Date(progress.signedOffAt).toLocaleDateString(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
 
   return (
-    <div dir="rtl" className="space-y-6">
-      {/* Progress — the same shape as a course's: lessons done, percent, a bar, and a way back in. */}
-      <section className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card p-4 sm:flex-row sm:items-center sm:p-5">
-        <span
+    <div className="space-y-5">
+      {Confirmation}
+
+      {/* Page header */}
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="min-w-0 flex-1 basis-72">
+          <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-[28px]">{t("page.title")}</h1>
+          <p className="mt-1 max-w-[62ch] text-sm text-muted-foreground">{t("page.subtitle")}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-full border border-border/70 bg-muted p-1" role="group" aria-label={t("mode.label")}>
+            {(["learn", "reference"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={mode === m}
+                onClick={() => writeMode(m)}
+                className={cn(
+                  "rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
+                  mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {t(m === "learn" ? "mode.learn" : "mode.reference")}
+              </button>
+            ))}
+          </div>
+          {actions}
+        </div>
+      </div>
+
+      <JourneyHeader
+        percent={progress.percent}
+        greeting={greeting}
+        summary={summary}
+        continueLabel={continueLabel}
+        onContinue={() => goTo(continueTarget)}
+        modules={journeyModules}
+        allDone={progress.allDone}
+        signedOff={!!progress.signedOffAt}
+        teamLeadLink={c.teamLeadLink}
+        onOpenOutline={() => setSheetOpen(true)}
+      />
+
+      {progress.allDone && (
+        <div
           className={cn(
-            "grid size-12 shrink-0 place-items-center rounded-2xl",
-            progress.allDone ? "bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary",
+            "flex items-start gap-3 rounded-2xl p-4",
+            signedOffOn ? "bg-[#D89B32]/10 ring-1 ring-[#D89B32]/40" : "bg-emerald-500/[0.08] ring-1 ring-emerald-500/25",
           )}
         >
-          {progress.allDone ? <PartyPopper className="size-6" /> : <GraduationCap className="size-6" />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-heading text-base font-bold">تقدّمك في التدريب</h2>
-            <span
-              className={cn(
-                "text-sm font-bold tabular-nums",
-                progress.allDone ? "text-emerald-600" : "text-primary",
-              )}
-            >
-              {progress.percent}%
-            </span>
-          </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {progress.allDone
-              ? `خلصت التدريب${completedOn ? ` في ${completedOn}` : ""} · ${progress.total} من ${progress.total} دروس`
-              : progress.count === 0
-                ? `لسه ما بدأتش — ${progress.total} دروس في انتظارك`
-                : `${progress.count} من ${progress.total} دروس${startedOn ? ` · بدأت في ${startedOn}` : ""}`}
-          </p>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className={cn(
-                "h-full rounded-full transition-[width] duration-500",
-                progress.allDone ? "bg-emerald-500" : "bg-primary",
-              )}
-              style={{ width: `${progress.percent}%` }}
-            />
+          {signedOffOn ? <Award className="size-6 shrink-0 text-[#D89B32]" /> : <PartyPopper className="size-6 shrink-0 text-emerald-600" />}
+          <div>
+            <p className="font-heading font-bold">{t("final.title")}</p>
+            <p className="text-sm text-muted-foreground">{signedOffOn ? t("final.signed", { date: signedOffOn }) : t("final.waiting")}</p>
           </div>
         </div>
-        {(progress.allDone || index !== continueIndex) && (
-          <Button
-            variant={progress.allDone ? "outline" : "default"}
-            className="gap-1.5 sm:self-center"
-            onClick={() => goTo(continueIndex)}
-          >
-            <PlayCircle className="size-4" />
-            {progress.allDone ? "راجع الدروس" : progress.count === 0 ? "ابدأ التدريب" : "كمّل من حيث توقفت"}
-          </Button>
-        )}
-      </section>
+      )}
 
-    {/*
-      The grid is LTR so the curriculum sits on the left of the lesson; the
-      curriculum itself reads in English, the lesson stays Arabic (RTL).
-    */}
-    <div dir="ltr" className="grid gap-6 lg:grid-cols-[17rem_1fr] lg:gap-8">
-      {/* Curriculum */}
-      <aside dir="ltr" className="lg:sticky lg:top-20 lg:self-start">
-        <div className="rounded-2xl border border-border/70 bg-card p-4">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-sm font-semibold">
-              <ListChecks className="size-4 text-primary" />
-              Training content
-            </span>
-            <span className="text-sm font-bold text-primary">
-              {progress.count}/{progress.total}
-            </span>
-          </div>
-          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-500"
-              style={{ width: `${progress.percent}%` }}
-            />
-          </div>
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[80vh] gap-0 overflow-y-auto rounded-t-2xl p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <SheetHeader className="p-2">
+            <SheetTitle>{t("outline.button")}</SheetTitle>
+          </SheetHeader>
+          {outline}
+        </SheetContent>
+      </Sheet>
 
-          <ol className="mt-4 space-y-0.5">
-            {lessons.map((l, i) => {
-              const finished = done.has(l.id);
-              const current = i === index;
-              return (
-                <li key={l.id}>
-                  <button
-                    type="button"
-                    aria-current={current ? "step" : undefined}
-                    onClick={() => goTo(i)}
-                    className={cn(
-                      "flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-start text-sm transition-colors",
-                      current ? "bg-primary/10 font-medium text-primary" : "hover:bg-muted",
+      {mode === "reference" ? (
+        <QuickReference content={c} />
+      ) : (
+        <div className="grid items-start gap-5 min-[1080px]:grid-cols-[20rem_minmax(0,1fr)]">
+          <aside className="hidden rounded-[18px] border border-border/70 bg-card p-2.5 shadow-sm min-[1080px]:sticky min-[1080px]:top-20 min-[1080px]:block min-[1080px]:max-h-[calc(100vh-6rem)] min-[1080px]:overflow-y-auto">
+            {outline}
+          </aside>
+
+          <div className="min-w-0">
+            <article
+              id="orientation-lesson"
+              aria-labelledby="orientation-lesson-title"
+              className="scroll-mt-20 overflow-hidden rounded-[18px] border border-border/70 bg-card shadow-sm"
+            >
+              <header className="grid gap-3 border-b border-border/70 p-4 sm:p-6">
+                <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-muted-foreground">
+                  {moduleMeta && (
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                      {t("lesson.module", { n: moduleIndex + 1, module: pick(moduleMeta.title, locale) })}
+                    </span>
+                  )}
+                  <span>{t("lesson.position", { i: index + 1, total: views.length })}</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground/80">
+                    <TypeIcon type={lesson.type} />
+                    {t(`type.${lesson.type}` as OrientationKey)}
+                  </span>
+                  <span>{t("lesson.minutes", { m: lesson.minutes })}</span>
+                  {lesson.isNew && (
+                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">
+                      {t("badge.new")}
+                    </span>
+                  )}
+                </div>
+
+                <h2 id="orientation-lesson-title" className="font-heading text-xl font-extrabold leading-snug sm:text-2xl">
+                  {lesson.title}
+                </h2>
+
+                {lesson.outcome && (
+                  <p className="max-w-[70ch] text-sm leading-relaxed text-foreground/80">
+                    <b className="font-semibold text-foreground">{t("lesson.byEnd")}</b> {lesson.outcome}
+                  </p>
+                )}
+
+                <div
+                  role="status"
+                  className={cn(
+                    "flex flex-wrap items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13.5px]",
+                    isDone ? "bg-emerald-500/[0.1]" : "bg-amber-500/[0.1]",
+                  )}
+                >
+                  {isDone ? (
+                    <Check className="size-4 text-emerald-600" />
+                  ) : (
+                    <Flag className="size-4 text-amber-700 dark:text-amber-400" />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    {isDone ? (
+                      <b className="font-semibold">{t("lesson.complete")}</b>
+                    ) : (
+                      <>
+                        {t("lesson.toFinish", { gate: gateLabel })}
+                        {need > 1 && (
+                          <>
+                            {" · "}
+                            <b className="tabular-nums">
+                              {count}/{need}
+                            </b>
+                          </>
+                        )}
+                      </>
                     )}
-                  >
-                    <span
-                      className={cn(
-                        "grid size-5 shrink-0 place-items-center rounded-md text-[10px] font-bold",
-                        finished
-                          ? "bg-emerald-500 text-white"
-                          : current
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {finished ? <Check className="size-3" /> : i + 1}
+                  </span>
+                  {need > 1 && (
+                    <span className="hidden gap-1 min-[761px]:flex" aria-hidden="true">
+                      {Array.from({ length: need }, (_, j) => (
+                        <i
+                          key={j}
+                          className={cn(
+                            "h-1.5 w-4 rounded-full",
+                            isDone ? "bg-emerald-500" : j < count ? "bg-amber-600" : "bg-amber-600/25",
+                          )}
+                        />
+                      ))}
                     </span>
-                    <span dir="auto" title={menuLabel(l)} className="min-w-0 flex-1 truncate">
-                      {menuLabel(l)}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
+                  )}
+                </div>
+              </header>
 
-          {progress.count > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-3 w-full gap-1.5 text-muted-foreground"
-              onClick={progress.reset}
-            >
-              <RotateCcw className="size-3.5" />
-              Reset progress
-            </Button>
-          )}
-        </div>
-      </aside>
+              <div className="grid gap-5 p-4 sm:p-6">
+                {lesson.intro && !locked && <Lead>{lesson.intro}</Lead>}
+                {body}
+              </div>
 
-      {/* Lesson */}
-      <div dir="rtl" className="min-w-0">
-        <article className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-              الدرس {index + 1} من {lessons.length}
-            </span>
-            {isDone && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 font-semibold text-emerald-600">
-                <Check className="size-3" />
-                مكتمل
-              </span>
-            )}
-            {lesson.en && <span className="ms-auto text-muted-foreground">{lesson.en}</span>}
-          </div>
+              <footer className="flex flex-wrap items-center gap-3 border-t border-border/70 bg-muted/40 px-4 py-3.5 sm:px-6">
+                <Button variant="outline" className="gap-1.5" disabled={index === 0} onClick={() => goTo(index - 1)}>
+                  <ArrowLeft className="size-4 rtl:-scale-x-100" />
+                  {t("nav.prev")}
+                </Button>
+                <div className="ms-auto flex items-center gap-3">
+                  {next ? (
+                    <>
+                      <span className="hidden max-w-56 text-end text-xs leading-tight text-muted-foreground min-[761px]:block">
+                        {t("nav.upNext")}
+                        <b className="block truncate text-[13px] font-semibold text-foreground">{next.title}</b>
+                      </span>
+                      <Button variant={isDone ? "default" : "outline"} className="gap-1.5" onClick={() => goTo(index + 1)}>
+                        {t("nav.next")}
+                        <ArrowRight className="size-4 rtl:-scale-x-100" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant={isDone ? "default" : "outline"} className="gap-1.5" onClick={viewSignOff}>
+                      <Award className="size-4" />
+                      {t("nav.finish")}
+                    </Button>
+                  )}
+                </div>
+              </footer>
+            </article>
 
-          <h2 className="mt-3 font-heading text-xl font-bold leading-snug tracking-tight sm:text-2xl">
-            {lesson.heading}
-          </h2>
-          {lesson.intro && (
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{lesson.intro}</p>
-          )}
-
-          <LessonVideos key={lesson.id} videos={lesson.videos} />
-
-          <div className="mt-6">{body}</div>
-        </article>
-
-        {/* Lesson navigation */}
-        <div className="mt-4 flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="gap-1.5"
-            disabled={index === 0}
-            onClick={() => goTo(index - 1)}
-          >
-            {/* RTL: "previous" points right. */}
-            <ArrowRight className="size-4" />
-            السابق
-          </Button>
-
-          {index < lessons.length - 1 ? (
-            <Button className="ms-auto gap-1.5" onClick={() => goTo(index + 1)}>
-              الدرس التالي
-              <ArrowLeft className="size-4" />
-            </Button>
-          ) : (
-            progress.allDone && (
-              <span className="ms-auto text-sm font-medium text-emerald-600">
-                خلصت كل الدروس
-              </span>
-            )
-          )}
-        </div>
-
-        {progress.allDone && index === lessons.length - 1 && (
-          <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.07] p-6 text-center">
-            <PartyPopper className="mx-auto size-8 text-emerald-600" />
-            <h2 className="mt-3 font-heading text-xl font-bold">خلصت التدريب</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              دلوقتي عندك المسار، والقواعد الأربع، والصياغات الآمنة. ارجع لأي درس
-              أي وقت قبل ما تبعت رد طويل.
+            <p className="mt-3.5 flex items-center justify-center gap-2 text-center text-[12.5px] text-muted-foreground">
+              <MessageCircle className="size-4 shrink-0" />
+              {t("footer.help")}
             </p>
           </div>
-        )}
-
-        <p className="mt-6 rounded-xl bg-muted/50 p-3.5 text-center text-xs leading-relaxed text-muted-foreground">
-          دليل داخلي لفريق مبيعات IMETS. لأي حالة مش واضحة، ارجع لمشرف الفريق قبل
-          ما توعد العميل بأي حاجة.
-        </p>
-      </div>
-    </div>
+        </div>
+      )}
     </div>
   );
 }
