@@ -32,7 +32,8 @@ export function CurriculumBuilder({
 }) {
   const t = useTranslations("Admin");
   const [modules, setModules] = React.useState<CurriculumModule[]>(() => cloneModules(initial));
-  const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set());
+  // Modules start collapsed so the whole curriculum is scannable; a module is opened on demand.
+  const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
   const [availableQuizzes, setAvailableQuizzes] = React.useState<QuizRow[]>([]);
   const [quizCategories, setQuizCategories] = React.useState<QuizCategoryOption[]>([]);
   const { confirm, Confirmation } = useConfirm();
@@ -76,6 +77,8 @@ export function CurriculumBuilder({
     const title = t("cbModuleN", { n: modules.length + 1 });
     const tempId = createId("temp_mod");
     setModules((p) => [...p, { id: tempId, title, items: [] }]);
+    // A module just added opens, so its lessons can be added straight away.
+    setExpanded((p) => new Set(p).add(tempId));
     mark();
   };
 
@@ -110,7 +113,7 @@ export function CurriculumBuilder({
               ...m,
               items: [
                 ...m.items,
-                { id: tempId, type: "lesson", title, videoSource: "youtube", videoUrl: "" },
+                { id: tempId, type: "lesson", title, videoSource: "vdocipher", videoUrl: "" },
               ],
             }
           : m
@@ -219,7 +222,7 @@ export function CurriculumBuilder({
   };
 
   const toggleCollapse = (id: string) =>
-    setCollapsed((p) => {
+    setExpanded((p) => {
       const n = new Set(p);
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
@@ -309,16 +312,23 @@ export function CurriculumBuilder({
           </Button>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
           {modules.map((mod, mi) => {
-            const isCollapsed = collapsed.has(mod.id);
+            const isCollapsed = !expanded.has(mod.id);
             return (
               <div
                 key={mod.id}
-                className="rounded-xl border bg-muted/20"
+                className="min-w-0 rounded-xl border bg-muted/20"
                 onDragOver={(e) => e.preventDefault()}
               >
-                <div className="flex items-center gap-2 p-3">
+                <div
+                  className="flex cursor-pointer items-center gap-2 rounded-xl p-3 hover:bg-muted/40"
+                  onClick={(e) => {
+                    // The title field, drag handle and buttons keep their own behaviour.
+                    if ((e.target as HTMLElement).closest("input, button, [draggable='true']")) return;
+                    toggleCollapse(mod.id);
+                  }}
+                >
                   <div
                     className="text-muted-foreground cursor-grab shrink-0"
                     draggable
@@ -341,6 +351,7 @@ export function CurriculumBuilder({
                     variant="ghost"
                     size="icon"
                     className="size-8"
+                    aria-expanded={!isCollapsed}
                     onClick={() => toggleCollapse(mod.id)}
                   >
                     {isCollapsed ? (
@@ -418,7 +429,7 @@ export function CurriculumBuilder({
                                     <input
                                       type="radio"
                                       name={`src_${item.id}`}
-                                      checked={item.videoSource === src}
+                                      checked={(item.videoSource ?? "vdocipher") === src}
                                       onChange={() =>
                                         updateItem(mi, ii, { videoSource: src })
                                       }
@@ -431,7 +442,7 @@ export function CurriculumBuilder({
                                 ))}
                               </div>
                               <div className="relative">
-                                {item.videoSource === "youtube" ? (
+                                {(item.videoSource ?? "vdocipher") === "youtube" ? (
                                   <Video className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-destructive" />
                                 ) : (
                                   <ExternalLink className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
@@ -443,7 +454,7 @@ export function CurriculumBuilder({
                                     updateItem(mi, ii, { videoUrl: e.target.value })
                                   }
                                   placeholder={
-                                    item.videoSource === "youtube"
+                                    (item.videoSource ?? "vdocipher") === "youtube"
                                       ? t("cbYoutubePh")
                                       : t("cbVdoPh")
                                   }
