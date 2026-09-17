@@ -38,6 +38,7 @@ import { JourneyHeader } from "./journey-header";
 import { CourseOutline, type OutlineModule } from "./course-outline";
 import { QuickReference } from "./quick-reference";
 import { Lead, TypeIcon } from "./lesson-parts";
+import { LessonVideos } from "./lesson-videos";
 
 /**
  * Sales Orientation — a self-paced first week, then a shift companion.
@@ -541,6 +542,14 @@ export function SalesOrientation({
 
               <div className="grid gap-5 p-4 sm:p-6">
                 {lesson.intro && !locked && <Lead>{lesson.intro}</Lead>}
+                {/* Video lessons show theirs with watch tracking; any other lesson shows its videos above the exercise. */}
+                {!locked && lesson.kind !== "custom" && lesson.videos.length > 0 && (
+                  <LessonVideos
+                    key={`videos-${lesson.id}`}
+                    videos={lesson.videos}
+                    label={{ one: t("video.lessonOne"), many: t("video.lessonMany") }}
+                  />
+                )}
                 {body}
               </div>
 

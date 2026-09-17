@@ -102,6 +102,8 @@ const EN = {
   "time.m": "{m} min",
 
   "video.list": "Videos ({n})",
+  "video.lessonOne": "Lesson video",
+  "video.lessonMany": "Lesson videos",
   "video.watched": "Watched",
   "video.fallbackTitle": "Video {n}",
   "video.markWatched": "I watched this",
@@ -390,6 +392,8 @@ const AR: Record<OrientationKey, string> = {
   "time.m": "{m} د",
 
   "video.list": "الفيديوهات ({n})",
+  "video.lessonOne": "فيديو الدرس",
+  "video.lessonMany": "فيديوهات الدرس",
   "video.watched": "اتشاف",
   "video.fallbackTitle": "فيديو {n}",
   "video.markWatched": "اتفرجت عليه",
