@@ -333,7 +333,13 @@ export function UserDirectory({
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="size-9 border"><AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">{u.initials}</AvatarFallback></Avatar>
-                        <span className="font-medium">{u.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => view(u)}
+                          className="rounded-md text-start font-medium hover:text-primary hover:underline"
+                        >
+                          {u.name}
+                        </button>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{u.email}</td>

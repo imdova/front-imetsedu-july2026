@@ -47,7 +47,8 @@ import * as commission from "./commission";
 import * as studentReviews from "./student-reviews";
 import * as invoiceTemplate from "./invoice-template";
 import * as transactionalEmail from "./transactional-email";
+import * as staffInsights from "./staff-insights";
 
-export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, graduates, profiles, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog, messageTemplates, pricing, paymentMethods, importantLinks, instructorApplications, authorApplications, careerHub, orientation, crmRules, paymentLinks, shipments, freeCourses, whatsapp, registrationSheets, commission, studentReviews, invoiceTemplate, transactionalEmail };
+export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, graduates, profiles, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog, messageTemplates, pricing, paymentMethods, importantLinks, instructorApplications, authorApplications, careerHub, orientation, crmRules, paymentLinks, shipments, freeCourses, whatsapp, registrationSheets, commission, studentReviews, invoiceTemplate, transactionalEmail, staffInsights };
 
 export type { Result } from "@integration/lib/api-client";

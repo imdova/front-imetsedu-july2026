@@ -17,7 +17,13 @@ export default async function AdminUserDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations("Admin");
 
-  const res = await dal.userManagement.fetchUmUser(id);
+  // Performance and activity are admin-only on the backend; a failure just
+  // leaves those tabs empty rather than hiding the user.
+  const [res, performance, activity] = await Promise.all([
+    dal.userManagement.fetchUmUser(id),
+    dal.staffInsights.fetchStaffPerformance(id, 90),
+    dal.staffInsights.fetchStaffActivity(id, { page: 1, limit: 50 }),
+  ]);
   if (!res.ok || !res.data) notFound();
 
   return (
@@ -29,7 +35,11 @@ export default async function AdminUserDetailPage({
         </Link>
       </Button>
       <PageHeader title={res.data.name} description={t("userDetailSubtitle")} />
-      <UserDetail user={res.data} />
+      <UserDetail
+        user={res.data}
+        performance={performance.ok ? performance.data : null}
+        activity={activity.ok ? activity.data : null}
+      />
     </div>
   );
 }
