@@ -73,6 +73,7 @@ import {
   seoAlternates,
   socialMeta,
   metaDescription,
+  schemaDescription,
   courseLd,
   courseVideoLd,
   breadcrumbLd,
@@ -190,6 +191,36 @@ export default async function CourseDetailPage({
     course.salePriceEGP > 0 && course.salePriceEGP < course.priceEGP;
   const price = onSale ? course.salePriceEGP : course.priceEGP;
   const previewVideoId = extractYouTubeVideoId(course.previewVideoUrl);
+
+  /*
+   * "Updated … · Next cohort …" under the H1. Both halves come from the course
+   * record — the stored `updatedAt` and the first cohort that hasn't started —
+   * so the line can never claim a freshness the data doesn't have. Either half
+   * is dropped when its date is missing.
+   */
+  const monthFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", {
+    month: "long",
+    year: "numeric",
+  });
+  const dayFmt = new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const nextIntake = (course.intakes ?? [])
+    .filter((i) => i.startDate && i.startDate >= todayIso)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
+  const freshness = [
+    course.updatedAt
+      ? `${locale === "ar" ? "آخر تحديث" : "Updated"}: ${monthFmt.format(new Date(course.updatedAt))}`
+      : null,
+    nextIntake
+      ? `${locale === "ar" ? "الدفعة القادمة" : "Next cohort"}: ${dayFmt.format(new Date(nextIntake.startDate))}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   // Real reviews typed into the course form (Media & Reviews) are the source of
   // truth for the wall, the rating and the review count. `mapCourse` already
   // averages them into `course.rating`, so a real rating implies real reviews.
@@ -816,7 +847,9 @@ export default async function CourseDetailPage({
           courseLd({
             slug: course.slug,
             name: courseTitle,
-            description: metaDescription(description, courseTitle),
+            // The full description, cut at a sentence — not the 160-character
+            // meta snippet, which reached Google ending in an ellipsis.
+            description: schemaDescription(description, courseTitle),
             url: courseUrl,
             image: course.thumbnailUrl,
             locale,
@@ -936,6 +969,9 @@ export default async function CourseDetailPage({
                     {heroSubheadline}
                   </p>
                 )}
+                {freshness && (
+                  <p className="text-xs font-medium text-blue-50/80 sm:text-sm">{freshness}</p>
+                )}
                 <CourseHeroMeta course={course} locale={locale} />
               </div>
             </section>
@@ -980,7 +1016,9 @@ export default async function CourseDetailPage({
                     about={aboutBlock}
                     heading={aboutHeading}
                     imageUrl={course.thumbnailUrl}
-                    imageAlt={courseTitle}
+                    // Same resolution as the enroll-card cover: admin-authored
+                    // alt text first, the title only as a fallback.
+                    imageAlt={imageAlt}
                   />
                 ) : description ? (
                   <section id="overview" className="scroll-mt-32">

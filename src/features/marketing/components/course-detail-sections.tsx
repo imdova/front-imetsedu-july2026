@@ -27,6 +27,7 @@ import {
   BookOpen,
 } from "lucide-react";
 
+import { Link } from "@/i18n/navigation";
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { CourseRow } from "@/types";
@@ -875,9 +876,20 @@ export function CourseSeoContent({
           {/* h2, not a styled <p>: these are the page's long-form answers to
               "what is X / why X", which is the whole reason they exist. */}
           <h2 className="font-heading text-xl font-semibold">{s.heading}</h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
             {s.body}
           </p>
+
+          {/* Contextual links, with anchors written for the target page. */}
+          {s.links?.length ? (
+            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {s.links.map((l) => (
+                <Link key={l.href} href={l.href} className="font-medium text-primary hover:underline">
+                  {l.label}
+                </Link>
+              ))}
+            </p>
+          ) : null}
 
           {/* Facts table — server-rendered and always open, so it can win a
               featured snippet. Google will not pull one from behind a click. */}

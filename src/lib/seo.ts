@@ -43,6 +43,25 @@ export function metaDescription(input?: string, fallback = ""): string {
 }
 
 /**
+ * A description for structured data, not for a SERP snippet.
+ *
+ * `metaDescription` caps at 160 characters and ends in an ellipsis, which is
+ * right for a `<meta>` tag and wrong inside JSON-LD: the Course description was
+ * being published to Google as a sentence cut mid-word. This keeps whole
+ * sentences up to ~500 characters instead.
+ */
+export function schemaDescription(input?: string, fallback = "", limit = 500): string {
+  const text = (input || fallback).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (text.length <= limit) return text;
+  const window = text.slice(0, limit + 1);
+  const lastStop = Math.max(window.lastIndexOf(". "), window.lastIndexOf("! "), window.lastIndexOf("? "), window.lastIndexOf("۔ "));
+  // Cut at the last sentence that fits; if there isn't one, at the last whole word.
+  if (lastStop > limit * 0.5) return window.slice(0, lastStop + 1).trim();
+  const lastSpace = window.lastIndexOf(" ");
+  return (lastSpace > 0 ? window.slice(0, lastSpace) : window.slice(0, limit)).trim();
+}
+
+/**
  * The site-wide OG card, absolute. Social crawlers do not resolve relative
  * paths, and a page that ships no `og:image` renders as a bare text link.
  */
@@ -418,6 +437,13 @@ export function courseLd(opts: {
     url: opts.url,
     ...(opts.image ? { image: opts.image } : {}),
     inLanguage: opts.locale,
+    /*
+     * Google reads `courseMode` off the CourseInstance, but schema.org allows it
+     * on the Course too and every programme here is delivered online — stating
+     * it at the entity level means a consumer that never reaches the instance
+     * (or a course with no scheduled cohort yet) still knows the delivery mode.
+     */
+    courseMode: opts.courseMode ?? "online",
     ...(opts.alternateName ? { alternateName: opts.alternateName } : {}),
     ...(opts.courseCode ? { courseCode: opts.courseCode } : {}),
     ...(opts.educationalLevel ? { educationalLevel: opts.educationalLevel } : {}),

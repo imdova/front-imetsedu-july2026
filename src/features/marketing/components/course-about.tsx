@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import type { CourseAboutData } from "@/features/marketing/lib/course-about";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,8 @@ export function CourseAbout({
   locale: string;
   about: CourseAboutData;
   imageUrl?: string;
-  imageAlt?: string;
+  /** Required: a decorative-only course image would still need alt="" passed explicitly. */
+  imageAlt: string;
   /** Override the section title (the page picks "Diploma" vs "Program"). */
   heading?: string;
 }) {
@@ -51,7 +53,7 @@ export function CourseAbout({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
-              alt={imageAlt ?? ""}
+              alt={imageAlt}
               loading="lazy"
               decoding="async"
               className="size-full object-cover"
@@ -70,6 +72,18 @@ export function CourseAbout({
           <p className="mt-5 text-base leading-relaxed text-muted-foreground sm:text-lg sm:leading-relaxed">
             {about.summary}
           </p>
+
+          {/* Contextual links to related course pages, anchored for the target. */}
+          {about.links?.length ? (
+            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <span>{tr(locale, "See also:", "شوف كمان:")}</span>
+              {about.links.map((l) => (
+                <Link key={l.href} href={l.href} className="font-medium text-primary hover:underline">
+                  {l.label}
+                </Link>
+              ))}
+            </p>
+          ) : null}
 
           {about.more.length > 0 && (
             <Dialog>

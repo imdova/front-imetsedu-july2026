@@ -8,7 +8,12 @@
  * Both the server page and the client component import from here.
  */
 
-export type CourseAboutData = { summary: string; more: string[] };
+export type CourseAboutData = {
+  summary: string;
+  more: string[];
+  /** Contextual "see also" links rendered under the summary. */
+  links?: { label: string; href: string }[];
+};
 
 /** Flatten course description HTML (or plain text) into readable paragraphs. */
 export function plainTextFromHtml(input: string): string {
@@ -37,11 +42,12 @@ export function buildCourseAbout(
   description: string,
   bespoke?: CourseAboutData | null,
 ): CourseAboutData | null {
+  // Bundled links attach whether or not the bundled copy also overrides the
+  // summary — a page can contribute a "see also" link and nothing else.
+  const links = bespoke?.links?.length ? { links: bespoke.links } : {};
+
   if (bespoke?.summary) {
-    return {
-      summary: bespoke.summary,
-      more: bespoke.more ?? [],
-    };
+    return { summary: bespoke.summary, more: bespoke.more ?? [], ...links };
   }
 
   const plain = plainTextFromHtml(description);
@@ -79,5 +85,5 @@ export function buildCourseAbout(
     if (leftover) more.push(leftover.replace(/^…/, "").trim());
   }
 
-  return { summary, more };
+  return { summary, more, ...links };
 }

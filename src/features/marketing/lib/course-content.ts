@@ -44,6 +44,12 @@ export type SeoSection = {
   heading: string;
   body: string;
   /**
+   * Contextual links rendered under the body — the one place bundled copy can
+   * point at another course page with an anchor chosen for the target, rather
+   * than another "Related courses" card row.
+   */
+  links?: { label: string; href: string }[];
+  /**
    * Optional facts table rendered open beneath the body. Facts in a clean table
    * under a question-shaped H2 is the standard featured-snippet pattern — which
    * is why these blocks are never collapsed.
@@ -75,7 +81,7 @@ export type CourseContent = {
    * Short "About this diploma" — one paragraph only. `null` ⇒ fall back to
    * the course DB description.
    */
-  about: { summary: string; more: string[] } | null;
+  about: { summary: string; more: string[]; links?: { label: string; href: string }[] } | null;
   /**
    * Grouped FAQ (Before Enrollment / During Learning / Certification).
    * When set, replaces the flat default list on the detail page.
@@ -663,6 +669,14 @@ function cphqKnowledgeCenter(ar: boolean): FaqItem[] {
 function cphqSalesFaq(ar: boolean): FaqItem[] {
   return [
     {
+      q: ar
+        ? "هل كورس تحضير CPHQ أونلاين بالكامل؟"
+        : "Is the CPHQ preparation course fully online?",
+      a: ar
+        ? "نعم. كورس CPHQ أونلاين بالكامل: جلسات مباشرة أسبوعية تحضرها من أي مكان في مصر أو الخليج، مع التسجيلات وبنك أكثر من 500 سؤال والامتحان التجريبي في نفس المكان. لا يوجد حضور شخصي في أي مرحلة."
+        : "Yes. This CPHQ online course is delivered entirely online: weekly live sessions you join from anywhere in Egypt or the GCC, plus the recordings, the 500+ question practice bank and the mock exam in the same place. Nothing has to be attended in person at any stage.",
+    },
+    {
       q: ar ? "لمن هذا البرنامج؟" : "Who should join this program?",
       a: ar
         ? "البرنامج مثالي لمتخصصي الرعاية الصحية العاملين في — أو المنتقلين إلى — جودة الرعاية الصحية وسلامة المرضى والاعتماد: الأطباء والممرضون والصيادلة وأطباء الأسنان وإداريو المستشفيات ومحللو البيانات الذين يستعدّون لامتحان CPHQ. وإذا كان دورك يمسّ مؤشرات الجودة أو الجاهزية للاعتماد فالبرنامج مصمّم لك، ونرحّب أيضًا بحديثي التخرج الذين يستهدفون مسارًا في الجودة."
@@ -930,11 +944,19 @@ function cphqContent(locale: string): CourseContent {
     ],
     careerOpportunities: [],
     seoSections: [
+      /*
+       * "What Is CPHQ Certification?" used to sit here as a three-line summary,
+       * duplicating the Knowledge Center answer of the same name further down —
+       * two half-answers to one question, competing with each other. The longer
+       * Knowledge Center version is the one kept.
+       */
       {
-        heading: ar ? "ما هي شهادة CPHQ؟" : "What Is CPHQ Certification?",
+        heading: ar
+          ? "كيف يعمل كورس CPHQ أونلاين: جلسات مباشرة وتسجيلات وامتحان تجريبي"
+          : "How Our CPHQ Online Course Works: Live Sessions, Recordings & Mock Exam",
         body: ar
-          ? "CPHQ (Certified Professional in Healthcare Quality) هي الشهادة الأكثر اعترافًا عالميًا في مجال جودة الرعاية الصحية، وتصدرها NAHQ. تُثبت الشهادة إتقانك لإدارة الجودة، وسلامة المرضى، وإدارة البيانات، والاعتماد — وهي مطلوبة بشدة في مستشفيات الخليج والشرق الأوسط."
-          : "CPHQ (Certified Professional in Healthcare Quality) is the most globally recognized credential in healthcare quality, awarded by NAHQ. It proves your mastery of quality management, patient safety, data management, and accreditation — and it's in high demand across hospitals in the GCC and the wider Middle East.",
+          ? "كل جلسة في كورس تحضير CPHQ تُعقد مباشرة أونلاين، فتسأل وتناقش أثناء الشرح بدل أن تشاهد تسجيلًا بمفردك. الكورس مدته 10 أسابيع، بجلسة مباشرة واحدة كل أسبوع، وكل جلسة تُسجَّل. تحتفظ بالوصول إلى التسجيلات ومواد الدورة، فتراجع حتى موعد امتحانك — وهو ما يهم فعلًا لو منعتك وردية أو نوبتجية من حضور جلسة مباشرة.\n\nيمشي الشرح في دومينز NAHQ السبعة بالترتيب، وتحلّ مع كل دومين من بنك أكثر من 500 سؤال بأسلوب الامتحان. وقرب النهاية تدخل امتحانًا تجريبيًا كاملًا يحاكي الامتحان الحقيقي، فتتدرّب على ظروفه وتكتشف دوميناتك الضعيفة وما زال أمامك وقت لعلاجها. المحتوى والامتحان بالإنجليزية، مع دعم بالعربية للمفاهيم والأسئلة طوال الكورس."
+          : "Every session in this CPHQ preparation course runs live online, so you can ask questions as you go instead of watching a recording alone. The CPHQ online course runs for 10 weeks with one live session a week, and every session is recorded. You keep access to the recordings and the course materials, so you can revise right up to your exam date — which matters when a shift or an on-call night costs you a live class.\n\nTeaching moves through all seven NAHQ domains in order, and you work through a bank of more than 500 exam-style practice questions as you cover each one. Near the end of the CPHQ course you sit one full mock exam that mirrors the real test, so you rehearse exam conditions and find your weak domains while there is still time to fix them. Content and the exam are in English, with Arabic support for concepts and questions throughout.",
       },
       {
         heading: ar
@@ -1564,6 +1586,14 @@ function cicContent(locale: string): CourseContent {
         : [
             "The IMETS CIC Preparation Program helps you build practical infection prevention and control knowledge, and prepare with confidence for the CIC examination awarded by CBIC.",
           ],
+      // Infection prevention sits inside the wider quality remit, so the
+      // quality certification is the question CIC candidates ask next.
+      links: [
+        {
+          label: ar ? "كورس CPHQ أونلاين" : "CPHQ online course",
+          href: "/courses/cphq-preparation",
+        },
+      ],
     },
     audience: null,
     faqs: [
@@ -2514,6 +2544,20 @@ const COURSE_EXTRAS: Record<
     ],
   }),
   "healthcare-quality-management-diploma": (ar) => ({
+    // The diploma builds the foundation; the certification is the credential
+    // people move on to, so the pages point at each other.
+    about: {
+      // Empty summary ⇒ the About text still comes from the course record; only
+      // the link below is added.
+      summary: "",
+      more: [],
+      links: [
+        {
+          label: ar ? "كورس CPHQ" : "CPHQ course",
+          href: "/courses/cphq-preparation",
+        },
+      ],
+    },
     knowledgeCenter: healthcareQualityKnowledgeCenter(ar),
     knowledgeGroups: healthcareQualityKnowledgeGroups(ar),
     knowledgeTitle: ar

@@ -176,7 +176,7 @@ export function CourseCard({
             {faculty.image ? (
               <span className="relative size-9 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={faculty.image} alt="" className="size-full object-cover" />
+                <img src={faculty.image} alt={faculty.name} loading="lazy" decoding="async" className="size-full object-cover" />
               </span>
             ) : (
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
