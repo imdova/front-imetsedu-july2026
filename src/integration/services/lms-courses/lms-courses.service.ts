@@ -158,6 +158,18 @@ export function assignStudentToLmsCourse(
   return api.post<void>(`${apiLmsCourseById(courseId)}/students`, { studentId });
 }
 
+/** Turn one student's access to a course on or off without unenrolling them. */
+export function setLmsStudentAccess(
+  courseId: string,
+  studentId: string,
+  isActive: boolean
+): Promise<Result<void>> {
+  return api.patch<void>(
+    `${apiLmsCourseById(courseId)}/students/${studentId}/access`,
+    { isActive }
+  );
+}
+
 export function unassignStudentFromLmsCourse(
   courseId: string,
   studentId: string

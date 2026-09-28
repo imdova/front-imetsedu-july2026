@@ -115,11 +115,39 @@ export const fetchStudent = async (id: string): Promise<Result<db.AdminStudentDe
         status: inst.paid || inst.status === "paid" ? "completed" : "pending",
       })),
     );
+    const num = (v: unknown) => Number(v ?? 0) || 0;
+    const lmsCourses: db.AdminStudentLmsCourse[] = list(raw.lmsCourses).map((c) => {
+      const cat = c.category as Raw | undefined;
+      return {
+        id: str(c._id || c.id),
+        title: str(c.title) || "—",
+        category: str(cat?.name),
+        progress: num(c.progress),
+        enrolledAt: str(c.enrolledAt).slice(0, 10),
+        isActive: c.isActive !== false,
+        direct: c.isDirect === true,
+        viaGroups: list(c.viaGroups).map((g) => ({
+          id: str(g._id || g.id),
+          title: str(g.title),
+        })),
+        moduleCount: num(c.moduleCount),
+        lessonCount: num(c.lessonCount),
+        courseIsActive: c.courseIsActive !== false,
+      };
+    });
+
     return ok({
       ...base,
       enrolled: groups.length || base.enrolled,
       courses,
       payments,
+      leadId: str(raw.leadId),
+      groups: groups.map((g) => ({
+        id: str(g._id || g.id),
+        title: str(g.title || g.name) || "—",
+        status: str(g.status),
+      })),
+      lmsCourses,
       certificates: certs.map((c) => {
         const grp = c.groupId as Raw | undefined;
         const lms = c.lmsId as Raw | undefined;

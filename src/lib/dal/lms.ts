@@ -224,3 +224,6 @@ export const assignLmsStudent = (courseId: string, studentId: string) =>
   lmsCoursesSvc.assignStudentToLmsCourse(courseId, studentId);
 export const unassignLmsStudent = (courseId: string, studentId: string) =>
   lmsCoursesSvc.unassignStudentFromLmsCourse(courseId, studentId);
+/** On/off switch for one student on one course; keeps their progress. */
+export const setLmsStudentAccess = (courseId: string, studentId: string, isActive: boolean) =>
+  lmsCoursesSvc.setLmsStudentAccess(courseId, studentId, isActive);

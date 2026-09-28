@@ -300,10 +300,46 @@ export interface AdminStudent {
 }
 export interface AdminStudentCourse { title: string; progress: number; status: "inprogress" | "completed" | "dropped" }
 export interface AdminStudentPayment { id: string; amount: number; date: string; status: "completed" | "pending" | "failed" }
+/**
+ * One LMS course a student can reach, for the Assigned LMS tab.
+ *
+ * `direct` is an entry in the course's own student list (what "assign"
+ * creates); `viaGroups` are the student's groups the course is assigned to,
+ * which grant access on their own. A course can be both.
+ */
+export interface AdminStudentLmsCourse {
+  id: string;
+  title: string;
+  category: string;
+  progress: number;
+  enrolledAt: string;
+  /** The admin's access switch. Only meaningful when `direct` is true. */
+  isActive: boolean;
+  direct: boolean;
+  viaGroups: { id: string; title: string }[];
+  moduleCount: number;
+  lessonCount: number;
+  /** Whether the course itself is published; a draft reaches nobody. */
+  courseIsActive: boolean;
+}
+
+export interface AdminStudentGroup {
+  id: string;
+  title: string;
+  status: string;
+}
+
 export interface AdminStudentDetail extends AdminStudent {
   courses: AdminStudentCourse[];
   payments: AdminStudentPayment[];
   certificates: { code: string; course: string; issuedAt: string }[];
+  /**
+   * The CRM lead behind this student. LMS enrolment is keyed by lead, not by
+   * user, so the Assigned LMS tab cannot assign anything without it.
+   */
+  leadId: string;
+  groups: AdminStudentGroup[];
+  lmsCourses: AdminStudentLmsCourse[];
 }
 
 const students: AdminStudent[] = [
@@ -334,6 +370,10 @@ export async function getStudentById(id: string): Promise<AdminStudentDetail | n
       { id: "pay_c", amount: 4800, date: "2026-06-12", status: "pending" },
     ],
     certificates: [{ code: "IMETS-2026-CF0231", course: "Corporate Finance Foundations", issuedAt: "2026-03-01" }],
+    // The mock store has no LMS or lead data; the live DAL fills these.
+    leadId: "",
+    groups: [],
+    lmsCourses: [],
   };
   return clone(detail);
 }

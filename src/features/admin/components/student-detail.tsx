@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Mail, Phone, Award, CalendarDays, Wallet, Receipt } from "lucide-react";
+import { Mail, Phone, Award, CalendarDays, Wallet, Receipt, GraduationCap, UserRound } from "lucide-react";
 
 import type { AdminStudentDetail } from "@/lib/db/admin";
 import type { PaymentPlanSummary, PlanInstallmentStatus } from "@/lib/db/crm";
@@ -11,7 +11,9 @@ import { cn, formatCurrency, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminStatusBadge } from "./admin-status-badge";
+import { StudentLmsAccess } from "./student-lms-access";
 
 const INSTALLMENT_STYLE: Record<PlanInstallmentStatus, string> = {
   PAID: "bg-success/15 text-success",
@@ -58,7 +60,22 @@ export function StudentDetail({ student }: { student: AdminStudentDetail }) {
         </CardContent>
       </Card>
 
-      <div className="space-y-6">
+      <Tabs defaultValue="overview" className="min-w-0">
+        <TabsList className="h-auto flex-wrap gap-1 rounded-2xl bg-muted/60 p-1.5">
+          <TabsTrigger value="overview" className="gap-1.5">
+            <UserRound className="size-4" /> {t("stTabOverview")}
+          </TabsTrigger>
+          <TabsTrigger value="lms" className="gap-1.5">
+            <GraduationCap className="size-4" /> {t("stTabLms")}
+            {student.lmsCourses.length > 0 && (
+              <span className="ms-1 rounded-full bg-primary/10 px-1.5 text-[0.65rem] font-semibold text-primary tabular-nums">
+                {student.lmsCourses.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-4 space-y-6">
         <Card>
           <CardHeader><CardTitle className="text-base">{t("sectionEnrolment")}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -139,7 +156,12 @@ export function StudentDetail({ student }: { student: AdminStudentDetail }) {
             ))}
           </CardContent>
         </Card>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="lms" className="mt-4">
+          <StudentLmsAccess student={student} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
