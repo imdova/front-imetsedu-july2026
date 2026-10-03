@@ -7,7 +7,10 @@ export const QUIZZES_API = {
   ADD_QUESTION: (id: string) => `/quizzes/${id}/questions`,
   UPDATE_QUESTION: (quizId: string, questionId: string) => `/quizzes/${quizId}/questions/${questionId}`,
   DELETE_QUESTION: (quizId: string, questionId: string) => `/quizzes/${quizId}/questions/${questionId}`,
+  /** The quiz as JSON (whole record, including settings). */
   DOWNLOAD: (id: string) => `/quizzes/${id}/download`,
+  /** The questions as .xlsx, in the layout UPLOAD_QUESTIONS reads back. */
+  DOWNLOAD_EXCEL: (id: string) => `/quizzes/${id}/download-excel`,
   UPLOAD_QUESTIONS: (id: string) => `/quizzes/${id}/questions/upload-excel`,
   ATTEMPTS: {
     START: (id: string) => `/quizzes/${id}/attempts`,

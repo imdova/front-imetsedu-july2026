@@ -113,8 +113,17 @@ export const deleteQuestion = (quizId: string, questionId: string) =>
 export const uploadQuestionsExcel = (quizId: string, file: File) =>
   quizSvc.uploadQuizQuestions(quizId, file);
 
-/** Browser-only: stream the quiz's questions as an Excel download (auth-aware). */
+/**
+ * Browser-only: stream the quiz's questions as an Excel download (auth-aware).
+ *
+ * `DOWNLOAD` serves the whole quiz as JSON; this is the `.xlsx` the question
+ * upload can read back, so an export drops into another quiz unchanged.
+ */
 export const downloadQuestions = (quizId: string, filename = "quiz-questions.xlsx") =>
+  api.download(QUIZZES_API.DOWNLOAD_EXCEL(quizId), filename);
+
+/** The whole quiz record as JSON — settings included, not re-importable. */
+export const downloadQuizJson = (quizId: string, filename = "quiz.json") =>
   api.download(QUIZZES_API.DOWNLOAD(quizId), filename);
 
 /* ───────────────────────── Categories ───────────────────────── */
