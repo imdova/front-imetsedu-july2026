@@ -9,6 +9,8 @@ function categoryOf(entityType?: string, type?: string): NotifCategory {
   if (e === "invoice" || t.includes("invoice")) return "invoices";
   if (e === "payment" || t.includes("payment")) return "payments";
   if (e === "refund" || t.includes("refund")) return "refunds";
+  // Instructor applications are recruiting, not a transaction — "system" is
+  // where the inbox files everything that is not money or a lead.
   return "system";
 }
 
@@ -22,12 +24,17 @@ export function mapNotification(raw: any): AdminNotif {
   const entityType = raw?.entityType ?? "";
   const category = categoryOf(entityType, raw?.type);
   const e = String(entityType).toLowerCase();
-  const icon: AdminNotif["icon"] = e === "lead" ? "lead" : e === "group" ? "group" : "bell";
+  // "lead" is the person icon; an applicant is the closest thing to one.
+  const icon: AdminNotif["icon"] =
+    e === "lead" || e === "instructorapplication" ? "lead" : e === "group" ? "group" : "bell";
 
   let actionLabel: string | undefined;
   let actionHref: string | undefined;
   if (e === "lead") { actionLabel = "View Lead"; actionHref = "/admin/crm/leads"; }
   else if (e === "group" && raw?.entityId) { actionLabel = "View Group"; actionHref = `/admin/groups/${raw.entityId}`; }
+  // The "Teach at IMETS" form posts straight into this list, so the
+  // notification it raises has to be able to open it.
+  else if (e === "instructorapplication") { actionLabel = "View application"; actionHref = "/admin/instructor-applications"; }
 
   return {
     id: raw?._id ?? raw?.id,
