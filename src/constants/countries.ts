@@ -3,7 +3,47 @@ export interface Country {
   name: string;
   dial: string;
   flag: string;
+  /**
+   * Arabic name, for the places this school's applicants actually come from.
+   * Absent elsewhere, in which case the English name is shown — better than a
+   * machine-transliterated list nobody has checked.
+   */
+  nameAr?: string;
 }
+
+/** Arabic names for the Arab world, keyed by ISO code. */
+const AR_NAMES: Record<string, string> = {
+  EG: "مصر",
+  SA: "السعودية",
+  AE: "الإمارات",
+  QA: "قطر",
+  KW: "الكويت",
+  OM: "عُمان",
+  BH: "البحرين",
+  JO: "الأردن",
+  LB: "لبنان",
+  IQ: "العراق",
+  SY: "سوريا",
+  PS: "فلسطين",
+  YE: "اليمن",
+  SD: "السودان",
+  LY: "ليبيا",
+  TN: "تونس",
+  DZ: "الجزائر",
+  MA: "المغرب",
+  MR: "موريتانيا",
+  SO: "الصومال",
+  DJ: "جيبوتي",
+  KM: "جزر القمر",
+  TR: "تركيا",
+  GB: "المملكة المتحدة",
+  US: "الولايات المتحدة",
+  CA: "كندا",
+  DE: "ألمانيا",
+  FR: "فرنسا",
+  IN: "الهند",
+  PK: "باكستان",
+};
 
 const flagFromCode = (code: string): string => {
   const A = 0x1f1e6;
@@ -249,4 +289,9 @@ export const countries: Country[] = RAW.map(([code, name, dial]) => ({
   name,
   dial,
   flag: flagFromCode(code),
+  ...(AR_NAMES[code] ? { nameAr: AR_NAMES[code] } : {}),
 }));
+
+/** The country's name in `locale`, falling back to English. */
+export const countryName = (c: Country, locale: string) =>
+  locale === "ar" ? c.nameAr || c.name : c.name;

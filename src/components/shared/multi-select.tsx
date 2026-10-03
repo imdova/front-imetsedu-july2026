@@ -125,21 +125,19 @@ export function MultiSelect({
           <CommandInput placeholder={searchPlaceholder} value={query} onValueChange={setQuery} />
           <CommandList>
             {filtered.length === 0 && !showCreate && <CommandEmpty>{emptyText}</CommandEmpty>}
-            {showCreate && (
-              <CommandGroup>
-                <CommandItem value={`__create__${q}`} onSelect={create}>
-                  <span className="flex items-center gap-1 text-primary">
-                    <span className="text-lg leading-none">+</span> Create “{q}”
-                  </span>
-                </CommandItem>
-              </CommandGroup>
-            )}
             <CommandGroup>
               {filtered.map((o) => (
                 <CommandItem
                   key={o.value}
                   value={o.value}
-                  onSelect={() => toggle(o.value)}
+                  /* Clearing the search after a pick is what makes picking a
+                     second item work: the query used to survive the selection,
+                     so the next thing typed appended to it and Enter created
+                     that run-on string instead of matching an option. */
+                  onSelect={() => {
+                    toggle(o.value);
+                    setQuery("");
+                  }}
                 >
                   <Check
                     className={cn(
@@ -158,6 +156,19 @@ export function MultiSelect({
                 </CommandItem>
               ))}
             </CommandGroup>
+            {/* After the matches, not before them: cmdk highlights the first
+                item, so a create row on top meant Enter saved the half-typed
+                search text ("supply") instead of the option it matched
+                ("Supply Chain"). */}
+            {showCreate && (
+              <CommandGroup>
+                <CommandItem value={`__create__${q}`} onSelect={create}>
+                  <span className="flex items-center gap-1 text-primary">
+                    <span className="text-lg leading-none">+</span> Create “{q}”
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

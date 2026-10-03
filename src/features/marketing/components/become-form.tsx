@@ -1,15 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { CheckCircle2, FileText, Loader2, Send, Upload, X } from "lucide-react";
 
 import { dal } from "@/lib/dal";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { CountrySelect } from "@/components/shared/country-select";
+import { MultiSelect } from "@/components/shared/multi-select";
 
 /**
  * "Teach at IMETS" application form.
@@ -19,8 +22,15 @@ import { Label } from "@/components/ui/label";
  * and it was silently dropped. It now POSTs to `/instructor-applications`, and
  * only reports success when the server actually accepts it.
  *
- * `fields` are the school's real course categories, passed in from the server —
- * not a hand-written list that would drift from what IMETS actually teaches.
+ * `fields` are the school's real course categories plus the extra recruiting
+ * areas, passed in from the server — not a hand-written list that would drift
+ * from what IMETS actually teaches.
+ *
+ * Specialty and fields of interest used to be two questions — one free text,
+ * one chips — over the same subject matter, which left an applicant naming
+ * "Supply Chain" in a box and then finding no such chip. They are one
+ * multi-select now: it fills `topics` with the picks and `expertise` with the
+ * same list as text, which is the field the admin list and emails read.
  */
 /** Max CV size. Mirrors the server's limit so the user is told before the upload
  *  rather than after it fails. The server is still the one enforcing it. */
@@ -29,15 +39,14 @@ const MAX_CV_BYTES = 5 * 1024 * 1024;
 export function BecomeForm({ fields = [] }: { fields?: { value: string; label: string }[] }) {
   const t = useTranslations("Marketing");
   const tc = useTranslations("Common");
+  const locale = useLocale();
   const [submitting, setSubmitting] = React.useState(false);
   const [done, setDone] = React.useState(false);
   const [picked, setPicked] = React.useState<string[]>([]);
+  const [country, setCountry] = React.useState("");
   const [cv, setCv] = React.useState<{ url: string; name: string } | null>(null);
   const [cvBusy, setCvBusy] = React.useState(false);
   const cvInput = React.useRef<HTMLInputElement>(null);
-
-  const toggleField = (v: string) =>
-    setPicked((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]));
 
   async function onCvChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -73,24 +82,26 @@ export function BecomeForm({ fields = [] }: { fields?: { value: string; label: s
     const data = new FormData(form);
     const str = (k: string) => String(data.get(k) ?? "").trim();
 
+    // The form cannot be submitted without a profession, so say which control
+    // is missing rather than letting the server answer with a 400.
+    if (!picked.length) {
+      toast.error(t("becomeProfessionRequired"));
+      return;
+    }
+
     setSubmitting(true);
     const res = await dal.instructorApplications.submitApplication({
       fullName: str("fullName"),
       email: str("email"),
       phone: str("phone") || undefined,
-      country: str("country") || undefined,
-      expertise: str("expertise"),
+      country: country || undefined,
+      // `expertise` is a 160-char string server-side; the full set always goes
+      // out in `topics`, so trimming the text at a comma loses nothing.
+      expertise: joinWithin(picked, 160),
       yearsExperience: str("yearsExperience") ? Number(str("yearsExperience")) : undefined,
       currentRole: str("currentRole") || undefined,
       linkedIn: str("linkedIn") || undefined,
-      // Normally the chips; free text only when the catalogue failed to load.
-      topics: fields.length
-        ? picked.length
-          ? picked
-          : undefined
-        : str("topics")
-          ? str("topics").split(",").map((x) => x.trim()).filter(Boolean)
-          : undefined,
+      topics: picked,
       bio: str("bio"),
       cvUrl: cv?.url || undefined,
     });
@@ -105,8 +116,14 @@ export function BecomeForm({ fields = [] }: { fields?: { value: string; label: s
     toast.success(t("becomeApplied"));
     form.reset();
     setPicked([]);
+    setCountry("");
     setCv(null);
   }
+
+  const fieldOptions = React.useMemo(
+    () => fields.map((f) => ({ value: f.value, label: f.label })),
+    [fields],
+  );
 
   if (done) {
     return (
@@ -145,11 +162,38 @@ export function BecomeForm({ fields = [] }: { fields?: { value: string; label: s
         <Field id="fullName" label={tc("fullName")} required />
         <Field id="email" label={tc("email")} type="email" required />
         <Field id="phone" label={t("becomePhone")} type="tel" />
-        <Field id="country" label={t("becomeCountry")} placeholder={t("becomeCountryPh")} />
+        <div className="space-y-1.5">
+          <Label htmlFor="country">{t("becomeCountry")}</Label>
+          <CountrySelect
+            value={country}
+            onChange={setCountry}
+            locale={locale}
+            placeholder={t("becomeCountryPh")}
+            searchPlaceholder={t("becomeCountrySearch")}
+            emptyText={t("becomeCountryEmpty")}
+          />
+          {/* The value is read from state, not the form; this keeps the field
+              in the DOM for autofill and for anything reading the form data. */}
+          <input type="hidden" name="country" value={country} />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
-        <Field id="expertise" label={t("becomeExpertise")} placeholder={t("becomeExpertisePh")} required />
+        <div className="space-y-1.5">
+          <Label>
+            {t("becomeExpertise")} <span className="text-destructive">*</span>
+          </Label>
+          <MultiSelect
+            options={fieldOptions}
+            value={picked}
+            onChange={setPicked}
+            placeholder={t("becomeExpertisePh")}
+            searchPlaceholder={t("becomeExpertiseSearch")}
+            emptyText={t("becomeExpertiseEmpty")}
+            creatable
+          />
+          <p className="text-xs text-muted-foreground">{t("becomeFieldsHint")}</p>
+        </div>
         <Field id="yearsExperience" label={t("becomeYears")} type="number" min={0} placeholder="8" />
       </div>
 
@@ -157,39 +201,6 @@ export function BecomeForm({ fields = [] }: { fields?: { value: string; label: s
         <Field id="currentRole" label={t("becomeCurrentRole")} placeholder={t("becomeCurrentRolePh")} />
         <Field id="linkedIn" label={t("becomeLinkedIn")} type="url" placeholder="https://linkedin.com/in/…" />
       </div>
-
-      {/* No chips means the category fetch failed — ask in free text rather than
-          silently dropping the question. */}
-      {fields.length === 0 ? (
-        <Field id="topics" label={t("becomeTopics")} placeholder={t("becomeTopicsPh")} />
-      ) : (
-        <div className="space-y-1.5">
-          <span className="text-sm font-medium">{t("becomeFields")}</span>
-          <p className="text-xs text-muted-foreground">{t("becomeFieldsHint")}</p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {fields.map((f) => {
-              const on = picked.includes(f.value);
-              return (
-                <button
-                  key={f.value}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => toggleField(f.value)}
-                  className={
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition-colors " +
-                    (on
-                      ? "bg-primary text-primary-foreground ring-primary"
-                      : "bg-card text-muted-foreground ring-border hover:text-foreground")
-                  }
-                >
-                  {on && <CheckCircle2 className="size-3.5" />}
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* CV — optional. The hero says no CV is needed to start the conversation,
           so requiring one here would contradict the page. */}
@@ -246,6 +257,17 @@ export function BecomeForm({ fields = [] }: { fields?: { value: string; label: s
       <p className="text-center text-[11px] text-muted-foreground">{t("becomePrivacy")}</p>
     </form>
   );
+}
+
+/** Join with ", " but stop before `max` characters, never mid-item. */
+function joinWithin(items: string[], max: number): string {
+  let out = "";
+  for (const item of items) {
+    const next = out ? `${out}, ${item}` : item;
+    if (next.length > max) break;
+    out = next;
+  }
+  return out || items[0]?.slice(0, max) || "";
 }
 
 function Field({

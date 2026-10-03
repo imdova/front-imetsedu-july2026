@@ -11,6 +11,7 @@ import {
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
+import { EXTRA_TEACHING_AREAS } from "@/constants/teaching-areas";
 import { BecomeForm } from "@/features/marketing/components/become-form";
 import { Button } from "@/components/ui/button";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -42,22 +43,31 @@ export default async function BecomeInstructorPage({
   const tr = (en: string, ar: string) => (locale === "ar" ? ar : en);
   const url = localeUrl("/become-instructor", locale);
 
-  // The fields an applicant can pick are the school's real categories, straight
-  // from the catalogue — a hand-written list here would drift from what IMETS
-  // actually teaches. The English name is what gets stored, matching how
-  // `course.category` is keyed elsewhere.
+  // What an applicant can pick: the school's real course categories, straight
+  // from the catalogue, plus the recruiting-only areas in EXTRA_TEACHING_AREAS.
+  // A hand-written list for the first part would drift from what IMETS actually
+  // teaches; the catalogue alone cannot name a subject the school wants to
+  // start teaching, which is half the point of a recruiting page. The English
+  // name is what gets stored, matching how `course.category` is keyed.
   //
-  // If this fetch fails the form falls back to a free-text field (see
-  // BecomeForm): this page is statically generated, so a failed fetch at build
-  // time would otherwise bake in a form that never asks what the applicant
-  // wants to teach.
+  // This page is statically generated, so a failed fetch at build time would
+  // otherwise bake in a form offering nothing; the extras keep it usable, and
+  // the field is `creatable` besides.
   const catsRes = await dal.lookups.fetchCategories();
-  const fields = (catsRes.ok ? catsRes.data : [])
+  const catalogue = (catsRes.ok ? catsRes.data : [])
     .filter((c) => c.label && c.label !== "—")
     .map((c) => ({
       value: c.label,
       label: locale === "ar" ? c.labelAr || c.label : c.label,
     }));
+  const seen = new Set(catalogue.map((f) => f.value.toLowerCase()));
+  const fields = [
+    ...catalogue,
+    ...EXTRA_TEACHING_AREAS.filter((a) => !seen.has(a.value.toLowerCase())).map((a) => ({
+      value: a.value,
+      label: locale === "ar" ? a.ar : a.en,
+    })),
+  ];
 
   // Reasons to teach here. Deliberately about the work — reach, format, support —
   // not earnings: no compensation figure has been shared with me, and inventing
