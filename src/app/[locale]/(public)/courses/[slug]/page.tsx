@@ -82,7 +82,14 @@ import {
 } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 
-export const revalidate = 86400;
+/*
+ * Fallback only. The backend calls `/api/revalidate` after every course edit,
+ * so a price change is live on the next request; this window is what catches
+ * an edit made while the site was unreachable. It used to be a day, which is
+ * how a changed price could sit behind the old one long enough for an admin to
+ * conclude the save had failed.
+ */
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
