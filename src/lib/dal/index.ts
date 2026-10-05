@@ -39,6 +39,7 @@ import * as careerHub from "./career-hub";
 import * as orientation from "./orientation";
 import * as crmRules from "./crm-rules";
 import * as paymentLinks from "./payment-links";
+import * as stripe from "./stripe";
 import * as shipments from "./shipments";
 import * as freeCourses from "./free-courses";
 import * as whatsapp from "./whatsapp";
@@ -49,6 +50,6 @@ import * as invoiceTemplate from "./invoice-template";
 import * as transactionalEmail from "./transactional-email";
 import * as staffInsights from "./staff-insights";
 
-export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, graduates, profiles, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog, messageTemplates, pricing, paymentMethods, importantLinks, instructorApplications, authorApplications, careerHub, orientation, crmRules, paymentLinks, shipments, freeCourses, whatsapp, registrationSheets, commission, studentReviews, invoiceTemplate, transactionalEmail, staffInsights };
+export const dal = { courses, lookups, dashboard, platform, crm, finance, student, admin, instructor, courseTaxonomy, lms, groups, graduates, profiles, userManagement, studentsMgmt, notificationsAdmin, siteSettings, auth, upload, quizzes, marketing, landing, emailMarketing, seo, blog, messageTemplates, pricing, paymentMethods, importantLinks, instructorApplications, authorApplications, careerHub, orientation, crmRules, paymentLinks, stripe, shipments, freeCourses, whatsapp, registrationSheets, commission, studentReviews, invoiceTemplate, transactionalEmail, staffInsights };
 
 export type { Result } from "@integration/lib/api-client";

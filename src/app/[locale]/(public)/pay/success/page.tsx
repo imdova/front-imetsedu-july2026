@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import { CheckCircle2, BadgeCheck } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
+import { dal } from "@/lib/dal";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
@@ -13,15 +14,33 @@ export default async function PaySuccessPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ course?: string; txn?: string; amount?: string; currency?: string; token?: string }>;
+  searchParams: Promise<{
+    course?: string;
+    txn?: string;
+    amount?: string;
+    currency?: string;
+    token?: string;
+    session_id?: string;
+  }>;
 }) {
   const { locale } = await params;
-  const { course, txn, amount, currency, token } = await searchParams;
+  const { course, txn, amount, currency, token, session_id: sessionId } = await searchParams;
   setRequestLocale(locale);
   const ar = locale === "ar";
   const t = (en: string, arText: string) => (ar ? arText : en);
 
-  const amountNum = amount ? Number(amount) : 0;
+  /*
+   * PayPal hands the details over in the query string; Stripe redirects back
+   * with only a session id, so the figures are read from Stripe itself. The
+   * payment is recorded by the webhook either way — this page only reports.
+   */
+  const stripeRes = sessionId ? await dal.stripe.fetchStripeSession(sessionId) : null;
+  const stripe = stripeRes?.ok ? stripeRes.data : null;
+
+  const courseName = course || stripe?.courseTitle || "";
+  const txnId = txn || stripe?.transactionId || "";
+  const paidCurrency = currency || stripe?.currency || "USD";
+  const amountNum = amount ? Number(amount) : (stripe?.amount ?? 0);
 
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-14 text-center sm:py-20">
@@ -30,10 +49,10 @@ export default async function PaySuccessPage({
       </div>
       <h1 className="font-heading text-2xl font-bold sm:text-3xl">{t("Payment successful", "تم الدفع بنجاح")}</h1>
       <p className="mt-3 text-muted-foreground">
-        {course ? (
+        {courseName ? (
           <>
             {t("Thank you! Your payment for ", "شكرًا لك! تم استلام دفعتك لـ ")}
-            <span className="font-medium text-foreground">{course}</span>
+            <span className="font-medium text-foreground">{courseName}</span>
             {t(" has been received.", " بنجاح.")}
           </>
         ) : (
@@ -41,19 +60,19 @@ export default async function PaySuccessPage({
         )}
       </p>
 
-      {(amountNum > 0 || txn) && (
+      {(amountNum > 0 || txnId) && (
         <div className="mx-auto mt-6 max-w-xs space-y-2 rounded-2xl border border-border/70 bg-card p-4 text-sm shadow-sm">
           {amountNum > 0 && (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">{t("Amount paid", "المبلغ المدفوع")}</span>
-              <span className="font-semibold tabular-nums">{formatCurrency(amountNum, currency || "USD")}</span>
+              <span className="font-semibold tabular-nums">{formatCurrency(amountNum, paidCurrency)}</span>
             </div>
           )}
-          {txn && (
+          {txnId && (
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground">{t("Transaction", "رقم العملية")}</span>
               <span className="inline-flex items-center gap-1 truncate font-mono text-xs">
-                <BadgeCheck className="size-3.5 shrink-0 text-success" />{txn}
+                <BadgeCheck className="size-3.5 shrink-0 text-success" />{txnId}
               </span>
             </div>
           )}

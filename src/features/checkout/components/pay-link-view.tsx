@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { ShieldCheck, Lock, GraduationCap, Receipt, Loader2 } from "lucide-react";
+import { ShieldCheck, Lock, GraduationCap, Receipt, Loader2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
 import { dal } from "@/lib/dal";
@@ -11,6 +11,7 @@ import { useRouter } from "@/i18n/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { PAYPAL_CLIENT_ID, PAYPAL_CURRENCY } from "@/lib/paypal";
+import { Button } from "@/components/ui/button";
 import { PaypalButton, type PayPalCapture } from "./paypal-button";
 
 const TYPE_LABELS: Record<PaymentType, [string, string]> = {
@@ -24,6 +25,37 @@ export function PayLinkView({ link, locale }: { link: PublicPaymentLink; locale:
   const t = (en: string, ar: string) => (locale === "ar" ? ar : en);
   const router = useRouter();
   const [redirecting, setRedirecting] = React.useState(false);
+  const [stripeReady, setStripeReady] = React.useState(false);
+  const [stripeBusy, setStripeBusy] = React.useState(false);
+
+  // The card button only appears where the server actually has Stripe keys, so
+  // a half-configured environment shows PayPal alone instead of a button that
+  // fails on click.
+  React.useEffect(() => {
+    let alive = true;
+    dal.stripe.fetchStripeStatus().then((res) => {
+      if (alive && res.ok) setStripeReady(res.data.configured);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  /**
+   * Stripe is a redirect, not an in-page capture: the session is created and
+   * priced server-side, and the payment is recorded by the webhook. Nothing
+   * about the money passes through this component.
+   */
+  const payWithCard = async () => {
+    setStripeBusy(true);
+    const res = await dal.stripe.createStripeCheckout(link.token);
+    if (!res.ok) {
+      setStripeBusy(false);
+      toast.error(res.error || t("Could not start the card payment.", "تعذّر بدء الدفع بالبطاقة."));
+      return;
+    }
+    window.location.href = res.data.url;
+  };
 
   const typeLabel = (TYPE_LABELS[link.paymentType] ?? TYPE_LABELS.cash)[locale === "ar" ? 1 : 0];
 
@@ -67,7 +99,7 @@ export function PayLinkView({ link, locale }: { link: PublicPaymentLink; locale:
     <div className="space-y-6">
       <div className="text-center">
         <h1 className="font-heading text-2xl font-bold sm:text-3xl">{t("Complete your payment", "أكمل عملية الدفع")}</h1>
-        <p className="text-sm text-muted-foreground">{t("Secure payment powered by PayPal.", "دفع آمن عبر PayPal.")}</p>
+        <p className="text-sm text-muted-foreground">{t("Secure payment by card or PayPal.", "دفع آمن بالبطاقة أو عبر PayPal.")}</p>
       </div>
 
       <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm sm:p-6">
@@ -100,19 +132,40 @@ export function PayLinkView({ link, locale }: { link: PublicPaymentLink; locale:
         </div>
 
         {link.total > 0 ? (
-          <PaypalButton
-            clientId={PAYPAL_CLIENT_ID}
-            currency={PAYPAL_CURRENCY}
-            amount={link.total}
-            description={link.courseTitle}
-            label="buynow"
-            labels={{
-              loading: t("Loading PayPal…", "جارٍ تحميل PayPal…"),
-              failed: t("Couldn’t load PayPal. Check your connection and try again.", "تعذّر تحميل PayPal. تحقق من اتصالك وحاول مجددًا."),
-            }}
-            onPaid={onPaid}
-            onError={onError}
-          />
+          <div className="space-y-3">
+            {stripeReady && (
+              <>
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full gap-2"
+                  disabled={stripeBusy}
+                  onClick={payWithCard}
+                >
+                  {stripeBusy ? <Loader2 className="size-4 animate-spin" /> : <CreditCard className="size-4" />}
+                  {t("Pay by card", "ادفع بالبطاقة")}
+                </Button>
+                <div className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  {t("or", "أو")}
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              </>
+            )}
+            <PaypalButton
+              clientId={PAYPAL_CLIENT_ID}
+              currency={PAYPAL_CURRENCY}
+              amount={link.total}
+              description={link.courseTitle}
+              label="buynow"
+              labels={{
+                loading: t("Loading PayPal…", "جارٍ تحميل PayPal…"),
+                failed: t("Couldn’t load PayPal. Check your connection and try again.", "تعذّر تحميل PayPal. تحقق من اتصالك وحاول مجددًا."),
+              }}
+              onPaid={onPaid}
+              onError={onError}
+            />
+          </div>
         ) : (
           <p className="rounded-xl border border-dashed border-border/70 p-4 text-center text-sm text-muted-foreground">
             {t("This link has no payable amount.", "لا يوجد مبلغ مستحق لهذا الرابط.")}
