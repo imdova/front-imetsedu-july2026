@@ -71,31 +71,32 @@ export function UserDetail({
           </CardContent>
         </Card>
 
-        {performance && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">At a glance</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2.5 text-sm">
-              <Stat icon={Target} label="Leads assigned">{num(performance.leads.total)}</Stat>
-              <Stat icon={GraduationCap} label="Enrolled">
-                {num(performance.leads.enrolled)} · {performance.leads.conversionRate}%
-              </Stat>
-              <Stat icon={BarChart3} label="Collected">{egp(performance.revenue.collected)}</Stat>
-              <Stat icon={ActivityIcon} label="Actions logged">{num(performance.activity.total)}</Stat>
-              {performance.orientation && (
-                <Stat icon={UserRound} label="Orientation">
-                  {performance.orientation.percent}%
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">At a glance</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2.5 text-sm">
+            {performance && (
+              <>
+                <Stat icon={Target} label="Leads assigned">{num(performance.leads.total)}</Stat>
+                <Stat icon={GraduationCap} label="Enrolled">
+                  {num(performance.leads.enrolled)} · {performance.leads.conversionRate}%
                 </Stat>
-              )}
-              {performance.orientation && (
-                <Button asChild variant="outline" size="sm" className="mt-2 w-full">
-                  <Link href={`/admin/orientation/progress/${user.id}`}>Orientation report</Link>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                <Stat icon={BarChart3} label="Collected">{egp(performance.revenue.collected)}</Stat>
+                <Stat icon={ActivityIcon} label="Actions logged">{num(performance.activity.total)}</Stat>
+              </>
+            )}
+            {/* Orientation shows for everyone, not only people who have opened
+                it: "no progress" is the thing an admin is usually looking for,
+                and it reads as a blank row rather than a missing one. */}
+            <Stat icon={UserRound} label="Orientation">
+              {performance?.orientation ? `${performance.orientation.percent}%` : "Not started"}
+            </Stat>
+            <Button asChild variant="outline" size="sm" className="mt-2 w-full">
+              <Link href={`/admin/orientation/progress/${user.id}`}>Orientation report</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="overview" className="min-w-0">
