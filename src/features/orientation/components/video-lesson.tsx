@@ -35,7 +35,10 @@ function TrackedVideo({
 }) {
   const { t } = useOrientationT();
   const ref = React.useRef<HTMLIFrameElement>(null);
-  const [untracked, setUntracked] = React.useState(false);
+  // VdoCipher's player speaks its own API, not YouTube's postMessage protocol,
+  // so there is nothing to wait for: offer the explicit "I watched this" from
+  // the start rather than after the silence timeout.
+  const [untracked, setUntracked] = React.useState(video.provider === "vdocipher");
   const onWatchedRef = React.useRef(onWatched);
 
   React.useEffect(() => {
@@ -43,6 +46,7 @@ function TrackedVideo({
   });
 
   React.useEffect(() => {
+    if (video.provider === "vdocipher") return;
     let heard = false;
     let fired = false;
     let duration = 0;
@@ -83,7 +87,7 @@ function TrackedVideo({
       clearTimeout(silent);
       if (playTimer) clearTimeout(playTimer);
     };
-  }, [video.id]);
+  }, [video.id, video.provider]);
 
   const listen = () => {
     ref.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: video.id, channel: "widget" }), "*");

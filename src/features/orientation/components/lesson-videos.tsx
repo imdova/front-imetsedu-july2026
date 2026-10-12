@@ -4,6 +4,7 @@ import * as React from "react";
 import { PlayCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { VdoCipherPlayer } from "@/components/shared/vdocipher-player";
 import { youTubeId } from "@/features/orientation/lib/sales-orientation";
 import { num, useOrientationT } from "@/features/orientation/lib/i18n";
 
@@ -11,9 +12,14 @@ interface FrameVideo {
   id: string;
   url: string;
   title: string;
+  /** Absent on older callers, which only ever passed YouTube. */
+  provider?: "youtube" | "vdocipher";
 }
 
-/** One YouTube video in a responsive frame (privacy-enhanced embed, no related-video wall). */
+/**
+ * One video in a responsive frame: a privacy-enhanced YouTube embed (no
+ * related-video wall), or the VdoCipher player for a private upload.
+ */
 export function VideoFrame({
   video,
   className,
@@ -28,10 +34,20 @@ export function VideoFrame({
   /** Ask the player to report progress (see `video-lesson`). */
   trackable?: boolean;
 }) {
+  const frame = cn("aspect-video w-full max-w-full overflow-hidden rounded-xl bg-black ring-1 ring-border", className);
+
+  if (video.provider === "vdocipher") {
+    return (
+      <div className={frame}>
+        <VdoCipherPlayer videoId={video.url} title={video.title || "Training video"} />
+      </div>
+    );
+  }
+
   const id = youTubeId(video.url);
   if (!id) return null;
   return (
-    <div className={cn("aspect-video w-full max-w-full overflow-hidden rounded-xl bg-black ring-1 ring-border", className)}>
+    <div className={frame}>
       <iframe
         ref={iframeRef}
         src={`https://www.youtube-nocookie.com/embed/${id}?rel=0${trackable ? "&enablejsapi=1" : ""}`}

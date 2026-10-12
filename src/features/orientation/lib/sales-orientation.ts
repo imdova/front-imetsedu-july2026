@@ -416,7 +416,7 @@ export const COMPETITOR_ANALYSIS_LESSON = {
 export const newCustomLessonId = () => `c-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 /** YouTube only — upload to YouTube (Unlisted works) and paste the link. */
-export type VideoProvider = "youtube";
+export type VideoProvider = "youtube" | "vdocipher";
 
 export interface OrientationVideo {
   id: string;
@@ -424,13 +424,30 @@ export interface OrientationVideo {
   title: string;
   titleAr?: string;
   provider: VideoProvider;
-  /** A YouTube watch, share (youtu.be), shorts, live or embed link. */
+  /**
+   * A YouTube link (watch, youtu.be, shorts, live or embed) — or, for a
+   * VdoCipher video, its 32-character id, which is all the player needs.
+   */
   url: string;
   /** Optional running time as shown, e.g. "5:12". */
   duration?: string;
 }
 
 const YOUTUBE_ID = /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|v\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
+
+const VDOCIPHER_ID = /^[a-f0-9]{32}$/i;
+
+/**
+ * The 32-character VdoCipher id, from the bare id or a player/dashboard link.
+ * VdoCipher videos are private, so an id is the only thing worth storing: the
+ * player trades it for a short-lived OTP server-side.
+ */
+export function vdoCipherId(value: string): string | null {
+  const raw = (value || "").trim();
+  if (VDOCIPHER_ID.test(raw)) return raw.toLowerCase();
+  const inUrl = raw.match(/(?:videos?|v2)\/?.*?([a-f0-9]{32})/i);
+  return inUrl ? inUrl[1].toLowerCase() : null;
+}
 
 /** The 11-character video id from any YouTube link, or null. */
 export function youTubeId(url: string): string | null {
@@ -676,13 +693,20 @@ const intIn = (v: unknown, min: number, max: number): number | null =>
 
 function toVideo(v: unknown): OrientationVideo | null {
   const x = v as Partial<OrientationVideo> | null;
-  if (!x || typeof x.id !== "string" || typeof x.url !== "string" || !youTubeId(x.url)) return null;
+  if (!x || typeof x.id !== "string" || typeof x.url !== "string") return null;
+
+  // The provider is decided by what the value actually is, not by what was
+  // saved: a stored provider that disagrees with its url would render an empty
+  // frame, and a bare 32-char id can only be VdoCipher.
+  const vdo = x.provider === "vdocipher" || !youTubeId(x.url) ? vdoCipherId(x.url) : null;
+  if (!vdo && !youTubeId(x.url)) return null;
+
   return {
     id: x.id,
     title: str(x.title, ""),
     titleAr: str(x.titleAr, ""),
-    provider: "youtube",
-    url: x.url,
+    provider: vdo ? "vdocipher" : "youtube",
+    url: vdo ?? x.url,
     duration: str(x.duration, ""),
   };
 }
@@ -1075,7 +1099,7 @@ export interface LessonView {
   outcome: string;
   gate: string;
   gateRequired: number;
-  videos: { id: string; url: string; title: string; duration: string }[];
+  videos: { id: string; url: string; provider: VideoProvider; title: string; duration: string }[];
   takeaways: string[];
   task?: LocalTask;
   lockedUntilEarlier: boolean;
@@ -1115,6 +1139,7 @@ export function localizeLesson(l: OrientationLesson, locale: OrientationLocale):
     videos: l.videos.map((v) => ({
       id: v.id,
       url: v.url,
+      provider: v.provider,
       title: inLang(locale, v.titleAr ?? "", v.title),
       duration: v.duration ?? "",
     })),

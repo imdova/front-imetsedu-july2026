@@ -12,7 +12,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { dal } from "@/lib/dal";
 import { ROUTES } from "@integration/constants";
-import { useResetOnChange } from "@/hooks/use-reset-on-change";
+import { VdoCipherPlayer } from "@/components/shared/vdocipher-player";
 import {
   getStudentCourseRaw,
   buildLessonPageData,
@@ -74,65 +74,6 @@ function youtubeEmbedUrl(raw: string | undefined): string | null {
     return `https://www.youtube.com/embed/${value}?rel=0`;
   }
   return null;
-}
-
-function VdoCipherPlayer({ videoId, title }: { videoId: string; title: string }) {
-  const [creds, setCreds] = React.useState<{ otp: string; playbackInfo: string } | null>(null);
-  const [err, setErr] = React.useState<string | null>(null);
-
-  // Clearing the previous video's credentials is a reset — do it in render so a
-  // new videoId never paints against the old OTP.
-  useResetOnChange([videoId], () => {
-    setCreds(null);
-    setErr(null);
-  });
-
-  React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/vdocipher/otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ videoId }),
-        });
-        if (cancelled) return;
-        if (!res.ok) { setErr("Failed to load video"); return; }
-        const data = await res.json() as { otp?: string; playbackInfo?: string };
-        if (!data.otp || !data.playbackInfo) { setErr("Invalid video credentials"); return; }
-        setCreds({ otp: data.otp, playbackInfo: data.playbackInfo });
-      } catch {
-        if (!cancelled) setErr("Failed to load video");
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [videoId]);
-
-  if (err) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center text-white/80">
-        <p className="text-sm">{err}</p>
-      </div>
-    );
-  }
-  if (!creds) {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-white/60" />
-      </div>
-    );
-  }
-
-  const src = `https://player.vdocipher.com/v2/?otp=${encodeURIComponent(creds.otp)}&playbackInfo=${encodeURIComponent(creds.playbackInfo)}`;
-  return (
-    <iframe
-      title={title}
-      src={src}
-      className="h-full w-full border-0"
-      allow="encrypted-media"
-      allowFullScreen
-    />
-  );
 }
 
 function LessonVideo({ contentType, contentUrl, title }: { contentType?: string; contentUrl?: string; title: string }) {

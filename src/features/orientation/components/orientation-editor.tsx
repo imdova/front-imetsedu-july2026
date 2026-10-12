@@ -66,6 +66,7 @@ import {
   resolveOrientation,
   sortLessonsByModule,
   youTubeId,
+  vdoCipherId,
   type OrientationLesson,
   type OrientationVideo,
   type ResolvedOrientation,
@@ -327,10 +328,10 @@ export function OrientationEditor({
       toast.error(`A video for “${badProgrammeVideo.name}” isn't a valid YouTube link — fix it or delete it first.`);
       return;
     }
-    const badVideo = lessons.find((l) => l.videos.some((v) => !youTubeId(v.url)));
+    const badVideo = lessons.find((l) => l.videos.some((v) => !youTubeId(v.url) && !vdoCipherId(v.url)));
     if (badVideo) {
       setActiveId(badVideo.id);
-      toast.error("A video link isn't a valid YouTube link — fix it or delete that video first.");
+      toast.error("A video isn't a YouTube link or a VdoCipher id — fix it or delete that video first.");
       return;
     }
     for (const [copy, label] of [
@@ -1040,11 +1041,25 @@ function VideosCard({
 
   const add = () => {
     const clean = url.trim();
-    if (!youTubeId(clean) || !/^https:\/\//i.test(clean)) {
-      toast.error("Paste a YouTube link, e.g. https://youtu.be/… or https://www.youtube.com/watch?v=…");
+    // A VdoCipher video is private: its 32-character id is the whole address,
+    // which is why this accepts a bare id where YouTube needs a full link.
+    const vdo = vdoCipherId(clean);
+    const isYouTube = !!youTubeId(clean) && /^https:\/\//i.test(clean);
+    if (!vdo && !isYouTube) {
+      toast.error("Paste a YouTube link (https://youtu.be/…) or a 32-character VdoCipher video id.");
       return;
     }
-    onChange([...videos, { id: newId(), title: title.trim(), titleAr: "", provider: "youtube", url: clean, duration: "" }]);
+    onChange([
+      ...videos,
+      {
+        id: newId(),
+        title: title.trim(),
+        titleAr: "",
+        provider: vdo ? "vdocipher" : "youtube",
+        url: vdo ?? clean,
+        duration: "",
+      },
+    ]);
     setUrl("");
     setTitle("");
   };
@@ -1060,7 +1075,7 @@ function VideosCard({
   const patch = (id: string, p: Partial<OrientationVideo>) => onChange(videos.map((x) => (x.id === id ? { ...x, ...p } : x)));
 
   return (
-    <Card title={`YouTube videos (${videos.length})`} hint="Watched videos count towards video lessons, in this order">
+    <Card title={`Videos (${videos.length})`} hint="YouTube links or VdoCipher ids — watched videos count towards video lessons, in this order">
       {videos.length > 0 && (
         <ul className="space-y-2">
           {videos.map((v, i) => (
