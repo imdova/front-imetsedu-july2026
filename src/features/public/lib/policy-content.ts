@@ -228,7 +228,7 @@ const privacy: PolicyDoc = {
       bullets: [
         "Provide the programs you enroll in and issue certificates.",
         "Process payments and manage your account and support requests.",
-        "Communicate schedules, updates and (where you have opted in) offers.",
+        "Communicate schedules, updates and (where you have opted in) offers. Marketing messages are opt-in: you can turn them off in your account settings or through the unsubscribe link in any such message, without affecting the course emails you need.",
         "Improve our content, platform and student experience, and keep the Services secure.",
       ],
     },
@@ -239,6 +239,8 @@ const privacy: PolicyDoc = {
         `We process your information to perform our agreement with you (delivering the programs you enroll in), to comply ` +
           `with legal obligations, for our legitimate interests in operating and improving the academy, and — for optional ` +
           `communications — with your consent, which you may withdraw at any time.`,
+        `Where they apply to you, we handle your information in line with the EU/UK General Data Protection Regulation (GDPR) ` +
+          `and the Saudi Personal Data Protection Law (PDPL).`,
       ],
     },
     {
@@ -283,6 +285,7 @@ const privacy: PolicyDoc = {
         "Request correction of inaccurate information.",
         "Request deletion of your information, where we are not required to keep it.",
         "Object to or restrict certain processing, and withdraw consent for optional communications.",
+        `Receive an export of the information you gave us, in a portable format.`,
       ],
     },
     {

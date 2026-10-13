@@ -15,8 +15,8 @@ export const ROUTES = {
   SIGNUP: "/auth/signup",
   FORGOT_PASSWORD: "/auth/forgot-password",
   ACCEPT_INVITATION: "/auth/accept-invitation",
-  TERMS: "/terms",
-  PRIVACY: "/privacy",
+  TERMS: "/policy/terms",
+  PRIVACY: "/policy/privacy",
 
   ADMIN: {
     DASHBOARD: "/admin/dashboard",

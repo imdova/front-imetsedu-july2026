@@ -15,6 +15,16 @@ const nextConfig: NextConfig = {
     // <body suppressHydrationWarning> instead of Next's bare synthesized one.
     globalNotFound: true,
   },
+  async redirects() {
+    return [
+      // The legal pages live under /policy/* now; these two URLs are the ones
+      // that were linked and indexed before the move.
+      { source: "/privacy", destination: "/policy/privacy", statusCode: 301 },
+      { source: "/terms", destination: "/policy/terms", statusCode: 301 },
+      { source: "/ar/privacy", destination: "/ar/policy/privacy", statusCode: 301 },
+      { source: "/ar/terms", destination: "/ar/policy/terms", statusCode: 301 },
+    ];
+  },
   images: {
     remotePatterns: [
       // Demo course thumbnails (replace with the asset CDN when going live).
