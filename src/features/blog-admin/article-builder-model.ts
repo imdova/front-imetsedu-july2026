@@ -23,7 +23,18 @@ export const BLOCK_PALETTE: { label: string; type: BlockType }[] = [
   { label: "FAQ", type: "faq" },
   { label: "CTA banner", type: "cta" },
   { label: "Button", type: "button" },
+  { label: "Multi-buttons", type: "multiButtons" },
+  { label: "Icon box", type: "iconBox" },
+  { label: "Image banner", type: "imageBanner" },
+  { label: "Before / after", type: "imageCompare" },
+  { label: "Countdown", type: "countdown" },
   { label: "Divider", type: "divider" },
+  { label: "Spacer", type: "spacer" },
+  { label: "Typed text", type: "typedText" },
+  { label: "Image carousel", type: "carousel" },
+  { label: "Video", type: "video" },
+  { label: "Alert", type: "alert" },
+  { label: "Teaser box", type: "teaser" },
 ];
 
 export function newBlock(type: BlockType): ArticleBlock {
@@ -47,7 +58,18 @@ export function newBlock(type: BlockType): ArticleBlock {
     case "faq": return { ...base, faqs: [{ q: "A question?", a: "An answer." }] };
     case "cta": return { ...base, text: "Ready to start?", label: "Enroll now", url: "#" };
     case "button": return { ...base, label: "Click here", url: "#" };
+    case "multiButtons": return { ...base, buttons: [{ label: "Primary", url: "#", variant: "primary" }, { label: "Secondary", url: "#", variant: "outline" }] };
+    case "iconBox": return { ...base, icon: "Star", label: "Icon box title", text: "A short supporting description." };
+    case "imageBanner": return { ...base, url: "", text: "Banner headline", caption: "A supporting line.", label: "Learn more", href: "#" };
+    case "imageCompare": return { ...base, beforeUrl: "", afterUrl: "" };
+    case "countdown": return { ...base, label: "Enrollment closes in", date: "" };
     case "divider": return { ...base };
+    case "spacer": return { ...base, size: "md" };
+    case "typedText": return { ...base, text: "We help you master", items: ["Healthcare Quality", "Patient Safety", "Accreditation"] };
+    case "carousel": return { ...base, images: [] };
+    case "video": return { ...base, url: "", poster: "", caption: "" };
+    case "alert": return { ...base, variant: "info", label: "Heads up", text: "Something important readers should know." };
+    case "teaser": return { ...base, url: "", text: "Teaser title", caption: "A short supporting description.", label: "Learn more", href: "#" };
     default: return base;
   }
 }

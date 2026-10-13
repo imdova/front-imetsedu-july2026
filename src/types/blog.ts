@@ -10,7 +10,9 @@ export type SectionBg = "default" | "muted" | "soft" | "primary" | "dark" | "gra
 export type BlockType =
   | "heading" | "paragraph" | "list" | "checklist" | "quote" | "image" | "gallery"
   | "embed" | "table" | "code" | "hero" | "stats" | "feature" | "testimonial"
-  | "callout" | "faq" | "cta" | "button" | "divider";
+  | "callout" | "faq" | "cta" | "button" | "divider"
+  | "spacer" | "iconBox" | "multiButtons" | "imageBanner" | "countdown" | "imageCompare"
+  | "typedText" | "carousel" | "video" | "alert" | "teaser";
 
 export interface ArticleBlock {
   id: string;
@@ -32,6 +34,19 @@ export interface ArticleBlock {
   rows?: string[][];
   images?: { url: string; alt?: string }[];
   faqs?: { q: string; a: string }[];
+  /** iconBox: lucide icon name (see ICONS map in the renderer). */
+  icon?: string;
+  /** imageBanner: call-to-action link target (url is the background image). */
+  href?: string;
+  /** countdown: ISO target datetime. */
+  date?: string;
+  /** imageCompare: before/after image URLs. */
+  beforeUrl?: string;
+  afterUrl?: string;
+  /** video: optional poster image URL. */
+  poster?: string;
+  /** multiButtons: a row of buttons. */
+  buttons?: { label: string; url: string; variant?: "primary" | "outline" }[];
 }
 export interface ArticleColumn { id: string; blocks: ArticleBlock[] }
 export interface ArticleSection { id: string; columns: 1 | 2 | 3 | 4; bg: SectionBg; cols: ArticleColumn[] }

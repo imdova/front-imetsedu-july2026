@@ -32,7 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TagsInput } from "@/components/shared/tags-input";
 import { ImageUpload } from "@/components/shared/image-upload";
 import { RichTextEditor } from "@/components/shared/rich-text-editor/editor";
-import { ArticleSections } from "@/features/blog/components/article-sections";
+import { ArticleSections, ICON_NAMES } from "@/features/blog/components/article-sections";
 import { cn } from "@/lib/utils";
 import { BLOCK_PALETTE, newBlock, newSection, resizeColumns } from "@/features/blog-admin/article-builder-model";
 import { extractText, readability } from "@/features/blog-admin/article-scores";
@@ -51,9 +51,9 @@ const BG_DOT: Record<SectionBg, string> = {
   primary: "bg-primary", dark: "bg-foreground", gradient: "bg-gradient-to-br from-primary to-emerald-400",
 };
 const PALETTE_GROUPS: { title: string; types: BlockType[] }[] = [
-  { title: "Text", types: ["heading", "paragraph", "list", "checklist", "quote"] },
-  { title: "Media", types: ["image", "gallery", "embed", "table", "code"] },
-  { title: "Components", types: ["hero", "stats", "feature", "testimonial", "callout", "faq", "cta", "button", "divider"] },
+  { title: "Text", types: ["heading", "paragraph", "list", "checklist", "quote", "typedText"] },
+  { title: "Media", types: ["image", "gallery", "carousel", "video", "embed", "table", "code", "imageBanner", "imageCompare"] },
+  { title: "Components", types: ["hero", "stats", "feature", "teaser", "testimonial", "callout", "alert", "faq", "cta", "button", "multiButtons", "iconBox", "countdown", "divider", "spacer"] },
 ];
 const LABEL: Record<string, string> = Object.fromEntries(BLOCK_PALETTE.map((p) => [p.type, p.label]));
 const stripHtml = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -625,21 +625,21 @@ function BlockFields({ block: x, dir, onChange }: { block: ArticleBlock; dir: "l
             onChange={(html) => onChange({ html, text: stripHtml(html) })} />
         </F>
       )}
-      {["quote", "testimonial", "feature", "callout", "cta", "hero"].includes(x.type) && (
+      {["quote", "testimonial", "feature", "callout", "alert", "cta", "hero"].includes(x.type) && (
         <F label="Text"><Textarea rows={4} value={x.text ?? ""} onChange={(e) => onChange({ text: e.target.value })} /></F>
       )}
       {(x.type === "hero" || x.type === "image") && <F label="Caption / subtitle"><Input value={x.caption ?? ""} onChange={(e) => onChange({ caption: e.target.value })} /></F>}
-      {["feature", "callout", "cta", "hero", "button"].includes(x.type) && <F label="Label"><Input value={x.label ?? ""} onChange={(e) => onChange({ label: e.target.value })} /></F>}
+      {["feature", "callout", "alert", "cta", "hero", "button"].includes(x.type) && <F label="Label"><Input value={x.label ?? ""} onChange={(e) => onChange({ label: e.target.value })} /></F>}
       {["cta", "button", "hero", "embed"].includes(x.type) && <F label="URL"><Input value={x.url ?? ""} onChange={(e) => onChange({ url: e.target.value })} /></F>}
       {(x.type === "quote" || x.type === "testimonial") && <F label="Cite"><Input value={x.cite ?? ""} onChange={(e) => onChange({ cite: e.target.value })} /></F>}
-      {x.type === "callout" && <F label="Variant"><Select value={x.variant ?? "info"} onValueChange={(v) => onChange({ variant: v as ArticleBlock["variant"] })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["info", "tip", "warning", "success"].map((v) => <SelectItem key={v} value={v} className="capitalize">{v}</SelectItem>)}</SelectContent></Select></F>}
+      {["callout", "alert"].includes(x.type) && <F label="Variant"><Select value={x.variant ?? "info"} onValueChange={(v) => onChange({ variant: v as ArticleBlock["variant"] })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["info", "tip", "warning", "success"].map((v) => <SelectItem key={v} value={v} className="capitalize">{v}</SelectItem>)}</SelectContent></Select></F>}
       {x.type === "code" && <><F label="Language"><Input value={x.lang ?? ""} onChange={(e) => onChange({ lang: e.target.value })} /></F><F label="Code"><Textarea rows={6} className="font-mono text-xs" value={x.text ?? ""} onChange={(e) => onChange({ text: e.target.value })} /></F></>}
       {(x.type === "list" || x.type === "checklist") && <>
         {x.type === "list" && <label className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"><span className="text-sm">Ordered</span><Switch checked={!!x.ordered} onCheckedChange={(v) => onChange({ ordered: v })} /></label>}
         <F label="Items (one per line)"><Textarea rows={5} value={(x.items ?? []).join("\n")} onChange={(e) => onChange({ items: lines(e.target.value) })} /></F>
       </>}
       {x.type === "image" && <><F label="Image"><ImageUpload value={x.url} onChange={(url) => onChange({ url })} /></F><F label="Alt text"><Input value={x.alt ?? ""} onChange={(e) => onChange({ alt: e.target.value })} /></F></>}
-      {x.type === "gallery" && (
+      {["gallery", "carousel"].includes(x.type) && (
         <F label="Images">
           <div className="space-y-2">
             {(x.images ?? []).map((im, i) => (
@@ -689,6 +689,57 @@ function BlockFields({ block: x, dir, onChange }: { block: ArticleBlock; dir: "l
           </div>
         </F>
       )}
+      {x.type === "spacer" && (
+        <F label="Height"><Select value={x.size ?? "md"} onValueChange={(v) => onChange({ size: v as ArticleBlock["size"] })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="sm">Small</SelectItem><SelectItem value="md">Medium</SelectItem><SelectItem value="lg">Large</SelectItem></SelectContent></Select></F>
+      )}
+      {x.type === "iconBox" && <>
+        <F label="Icon"><Select value={x.icon ?? "Star"} onValueChange={(v) => onChange({ icon: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ICON_NAMES.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent></Select></F>
+        <F label="Title"><Input value={x.label ?? ""} onChange={(e) => onChange({ label: e.target.value })} /></F>
+        <F label="Description"><Textarea rows={3} value={x.text ?? ""} onChange={(e) => onChange({ text: e.target.value })} /></F>
+      </>}
+      {x.type === "multiButtons" && (
+        <F label="Buttons">
+          <div className="space-y-2">
+            {(x.buttons ?? []).map((btn, i) => (
+              <div key={i} className="space-y-1 rounded-lg border border-border/60 p-2">
+                <div className="flex gap-2">
+                  <Input value={btn.label} placeholder="Label" onChange={(e) => onChange({ buttons: (x.buttons ?? []).map((bb, j) => j === i ? { ...bb, label: e.target.value } : bb) })} />
+                  <Select value={btn.variant ?? "primary"} onValueChange={(v) => onChange({ buttons: (x.buttons ?? []).map((bb, j) => j === i ? { ...bb, variant: v as "primary" | "outline" } : bb) })}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="primary">Primary</SelectItem><SelectItem value="outline">Outline</SelectItem></SelectContent></Select>
+                </div>
+                <div className="flex gap-2">
+                  <Input value={btn.url} placeholder="https://…" onChange={(e) => onChange({ buttons: (x.buttons ?? []).map((bb, j) => j === i ? { ...bb, url: e.target.value } : bb) })} />
+                  <Button variant="ghost" size="sm" onClick={() => onChange({ buttons: (x.buttons ?? []).filter((_, j) => j !== i) })}><Trash2 className="size-3.5 text-destructive" /></Button>
+                </div>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" className="w-full gap-1" onClick={() => onChange({ buttons: [...(x.buttons ?? []), { label: "Button", url: "#", variant: "primary" }] })}><Plus className="size-3.5" /> Add button</Button>
+          </div>
+        </F>
+      )}
+      {["imageBanner", "teaser"].includes(x.type) && <>
+        <F label={x.type === "imageBanner" ? "Background image" : "Image"}><ImageUpload value={x.url} onChange={(url) => onChange({ url })} /></F>
+        <F label="Headline"><Input value={x.text ?? ""} onChange={(e) => onChange({ text: e.target.value })} /></F>
+        <F label="Subtitle"><Input value={x.caption ?? ""} onChange={(e) => onChange({ caption: e.target.value })} /></F>
+        <F label="Button label"><Input value={x.label ?? ""} onChange={(e) => onChange({ label: e.target.value })} /></F>
+        <F label="Button link"><Input value={x.href ?? ""} onChange={(e) => onChange({ href: e.target.value })} /></F>
+      </>}
+      {x.type === "countdown" && <>
+        <F label="Heading"><Input value={x.label ?? ""} onChange={(e) => onChange({ label: e.target.value })} /></F>
+        <F label="Target date & time"><Input type="datetime-local" value={x.date ?? ""} onChange={(e) => onChange({ date: e.target.value })} /></F>
+      </>}
+      {x.type === "imageCompare" && <>
+        <F label="Before image"><ImageUpload value={x.beforeUrl} onChange={(beforeUrl) => onChange({ beforeUrl })} /></F>
+        <F label="After image"><ImageUpload value={x.afterUrl} onChange={(afterUrl) => onChange({ afterUrl })} /></F>
+      </>}
+      {x.type === "typedText" && <>
+        <F label="Static prefix"><Input value={x.text ?? ""} onChange={(e) => onChange({ text: e.target.value })} /></F>
+        <F label="Rotating phrases (one per line)"><Textarea rows={4} value={(x.items ?? []).join("\n")} onChange={(e) => onChange({ items: lines(e.target.value) })} /></F>
+      </>}
+      {x.type === "video" && <>
+        <F label="Video URL (mp4 / webm)"><Input value={x.url ?? ""} onChange={(e) => onChange({ url: e.target.value })} placeholder="https://…/clip.mp4" /></F>
+        <F label="Poster image (optional)"><ImageUpload value={x.poster} onChange={(poster) => onChange({ poster })} /></F>
+        <F label="Caption"><Input value={x.caption ?? ""} onChange={(e) => onChange({ caption: e.target.value })} /></F>
+      </>}
     </>
   );
 }

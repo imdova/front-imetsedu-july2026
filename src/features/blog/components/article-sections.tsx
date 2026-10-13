@@ -1,15 +1,44 @@
 import * as React from "react";
 import {
   AlertTriangle,
+  Award,
+  BookOpen,
   CheckCircle2,
   ChevronDown,
+  Clock,
+  Globe,
+  GraduationCap,
+  Heart,
   Info,
   Lightbulb,
+  type LucideIcon,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Target,
+  TrendingUp,
+  Users,
+  Zap,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { ArticleBlock, ArticleSection, SectionBg } from "@/types/blog";
+import { CarouselBlock } from "./blocks/carousel-block";
+import { CountdownBlock } from "./blocks/countdown-block";
+import { ImageCompareBlock } from "./blocks/image-compare-block";
+import { TypedTextBlock } from "./blocks/typed-text-block";
+
+/** Curated icon set for the Icon Box block (kept small + serializable). */
+const ICONS: Record<string, LucideIcon> = {
+  Star, Award, BookOpen, GraduationCap, ShieldCheck, Heart, Rocket, Target,
+  Zap, Users, Clock, Globe, Lightbulb, TrendingUp, CheckCircle2, Sparkles,
+};
+export const ICON_NAMES = Object.keys(ICONS);
+
+/** Spacer heights by size token. */
+const SPACER_H: Record<string, string> = { sm: "h-4", md: "h-10", lg: "h-20" };
 
 /* Renders the block-builder layout. Shared by the public detail page and the
  * admin builder's live preview. CTA/button blocks render as real <a> links.
@@ -273,6 +302,130 @@ function Block({ block: b }: { block: ArticleBlock }) {
       ) : null;
     case "divider":
       return <hr className="border-border/60" />;
+    case "spacer":
+      return <div aria-hidden className={SPACER_H[b.size ?? "md"] ?? SPACER_H.md} />;
+    case "iconBox": {
+      const Icon = ICONS[b.icon ?? "Star"] ?? Star;
+      return (
+        <div className="rounded-2xl border border-border/60 bg-card/50 p-5 shadow-sm transition-colors hover:border-primary/30">
+          <span className="mb-3 inline-flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Icon className="size-5" />
+          </span>
+          {b.label && <h3 className="font-heading font-semibold text-foreground">{b.label}</h3>}
+          {b.text && <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{b.text}</p>}
+        </div>
+      );
+    }
+    case "multiButtons":
+      return (
+        <div className="flex flex-wrap gap-3">
+          {(b.buttons ?? []).map((btn, i) =>
+            btn.url ? (
+              <a
+                key={i}
+                href={btn.url}
+                className={cn(
+                  "inline-block rounded-xl px-5 py-2.5 font-medium shadow-sm transition-transform hover:-translate-y-0.5",
+                  btn.variant === "outline"
+                    ? "border border-primary/40 text-primary hover:bg-primary/5"
+                    : "bg-primary text-primary-foreground",
+                )}
+              >
+                {btn.label || "Button"}
+              </a>
+            ) : null,
+          )}
+        </div>
+      );
+    case "imageBanner":
+      return (
+        <div className="relative overflow-hidden rounded-3xl ring-1 ring-border/50">
+          {b.url ? (
+            <Img src={b.url} alt={b.alt} className="h-64 w-full object-cover sm:h-80" />
+          ) : (
+            <div className="h-64 w-full bg-gradient-to-br from-primary/20 to-primary/5 sm:h-80" />
+          )}
+          <div className="absolute inset-0 flex flex-col items-start justify-end bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent p-6 sm:p-8">
+            {b.text && (
+              <h3 className="font-heading text-2xl font-bold text-background sm:text-3xl">{b.text}</h3>
+            )}
+            {b.caption && <p className="mt-1.5 max-w-xl text-background/85">{b.caption}</p>}
+            {b.href && b.label && (
+              <a
+                href={b.href}
+                className="mt-4 inline-block rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground shadow-sm transition-transform hover:-translate-y-0.5"
+              >
+                {b.label}
+              </a>
+            )}
+          </div>
+        </div>
+      );
+    case "countdown":
+      return <CountdownBlock date={b.date} label={b.label} />;
+    case "imageCompare":
+      return <ImageCompareBlock beforeUrl={b.beforeUrl} afterUrl={b.afterUrl} />;
+    case "typedText":
+      return <TypedTextBlock text={b.text} items={b.items} />;
+    case "carousel":
+      return <CarouselBlock images={b.images} />;
+    case "video":
+      return b.url ? (
+        <figure className="space-y-2">
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video
+            src={b.url}
+            poster={b.poster || undefined}
+            controls
+            preload="metadata"
+            className="w-full rounded-2xl border border-border/60"
+          />
+          {b.caption && (
+            <figcaption className="text-center text-xs text-muted-foreground">{b.caption}</figcaption>
+          )}
+        </figure>
+      ) : null;
+    case "alert": {
+      const c = CALLOUT[b.variant ?? "info"] ?? CALLOUT.info;
+      const Icon = c.icon;
+      return (
+        <div role="alert" className={cn("flex items-center gap-3 rounded-xl border p-3.5", c.wrap)}>
+          <Icon className={cn("size-5 shrink-0", c.tone)} />
+          <p className="text-sm leading-relaxed text-foreground/90">
+            {b.label && <strong className="me-1.5 font-semibold text-foreground">{b.label}</strong>}
+            {b.text}
+          </p>
+        </div>
+      );
+    }
+    case "teaser":
+      return (
+        <div className="flex flex-col gap-5 rounded-2xl border border-border/60 bg-card/50 p-5 shadow-sm sm:flex-row sm:items-center">
+          {b.url && (
+            <Img
+              src={b.url}
+              alt={b.alt}
+              className="h-40 w-full shrink-0 rounded-xl object-cover sm:h-32 sm:w-48"
+            />
+          )}
+          <div className="min-w-0">
+            {b.text && (
+              <h3 className="font-heading text-lg font-semibold text-foreground">{b.text}</h3>
+            )}
+            {b.caption && (
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{b.caption}</p>
+            )}
+            {b.href && b.label && (
+              <a
+                href={b.href}
+                className="mt-3 inline-block text-sm font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
+              >
+                {b.label} →
+              </a>
+            )}
+          </div>
+        </div>
+      );
     default:
       return null;
   }
