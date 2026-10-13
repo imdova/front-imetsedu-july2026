@@ -22,7 +22,19 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   const res = await dal.courseTaxonomy.fetchPublicCategories();
   const cat = res.ok ? res.data.find((c) => (c.slug || c.id) === slug) : null;
-  if (!cat) return {};
+  /*
+   * Returning `{}` here let the page inherit the site-wide default title and
+   * description, so a page that failed to load its own data shipped generic
+   * copy under its own URL. Derive something from the slug instead.
+   */
+  if (!cat) {
+    const readable = slug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+    return {
+      title: `${readable} Programs`,
+      description: `${readable} programs at ${SITE_NAME}.`,
+      alternates: seoAlternates(`/category/${slug}`, locale),
+    };
+  }
   const name = locale === "ar" ? cat.nameAr : cat.nameEn;
   const desc = locale === "ar" ? cat.descriptionAr : cat.descriptionEn;
   const title = `${name} Programs`;
@@ -48,7 +60,19 @@ export default async function CategoryPage({
     dal.courseTaxonomy.fetchPublicCategories(),
     dal.courses.fetchPublishedCourses(),
   ]);
-  const cats = catRes.ok ? catRes.data : [];
+
+  /*
+   * An unreachable API is not a missing category.
+   *
+   * This used to read `catRes.ok ? catRes.data : []`, so a timed-out or cold
+   * backend produced an empty list, no slug matched, and the page answered 404
+   * — which Next then cached, leaving a live category dead until something
+   * revalidated it. Throwing instead surfaces a 500: retried by the crawler,
+   * never cached, and visible in the logs.
+   */
+  if (!catRes.ok) throw new Error(`Could not load categories: ${catRes.error}`);
+
+  const cats = catRes.data;
   const category = cats.find((c) => (c.slug || c.id) === slug);
   if (!category) {
     // Old id-based URL → send it to the clean slug.

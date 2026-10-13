@@ -75,14 +75,31 @@ interface RequestOptions extends RequestInit {
   requireAuth?: boolean;
   /** ISR revalidation in seconds for public GET endpoints. Pass `false` to opt-out. */
   revalidate?: number | false;
+  /** Per-request timeout in ms. Defaults to {@link DEFAULT_TIMEOUT_MS}. */
+  timeoutMs?: number;
 }
 
-async function request<T>(
+/**
+ * Long enough for a cold backend to answer, short enough that a page render
+ * does not hang on it. The API runs behind pm2 and is restarted on every
+ * deploy, so "slow first response" is a normal state, not an exception.
+ */
+const DEFAULT_TIMEOUT_MS = 10_000;
+/** Extra attempts for reads. Mutations are never retried — they are not safe to repeat. */
+const GET_RETRIES = 2;
+const RETRY_DELAY_MS = 400;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * One attempt. {@link request} decides whether a failure is worth repeating.
+ */
+async function attempt<T>(
   method: HttpMethod,
   endpoint: string,
   options: RequestOptions = {}
-): Promise<Result<T>> {
-  const { params, requireAuth = true, revalidate, ...init } = options;
+): Promise<Result<T> & { retryable?: boolean }> {
+  const { params, requireAuth = true, revalidate, timeoutMs, ...init } = options;
 
   try {
     const url = new URL(
@@ -117,9 +134,12 @@ async function request<T>(
         ? { revalidate: typeof revalidate === "number" ? revalidate : 300 }
         : undefined;
 
+    // Without a deadline a hung connection blocks the render until the
+    // platform's own timeout, which is far longer than any page should wait.
     const response = await fetch(url.toString(), {
       cache: isPublicGet ? undefined : "no-store",
       ...(fetchNext ? { next: fetchNext } : {}),
+      signal: init.signal ?? AbortSignal.timeout(timeoutMs ?? DEFAULT_TIMEOUT_MS),
       ...init,
       method,
       headers,
@@ -136,13 +156,30 @@ async function request<T>(
         payload?.message ||
         payload?.error ||
         `Request failed with status ${response.status}`;
-      return fail(errorMsg);
+      // A 5xx is the server having a bad moment; a 4xx is an answer.
+      return { ...fail(errorMsg), retryable: response.status >= 500 };
     }
 
     return ok(payload as T);
   } catch (err) {
-    return fail(toMessage(err, "Network or server error"));
+    // Timeouts and connection failures land here, and both are worth retrying.
+    return { ...fail(toMessage(err, "Network or server error")), retryable: true };
   }
+}
+
+async function request<T>(
+  method: HttpMethod,
+  endpoint: string,
+  options: RequestOptions = {}
+): Promise<Result<T>> {
+  const retries = method === "GET" ? GET_RETRIES : 0;
+  let last: Result<T> & { retryable?: boolean } = await attempt<T>(method, endpoint, options);
+  for (let i = 0; i < retries && !last.ok && last.retryable; i++) {
+    await sleep(RETRY_DELAY_MS * (i + 1));
+    last = await attempt<T>(method, endpoint, options);
+  }
+  if (last.ok) return { ok: true, data: last.data };
+  return { ok: false, error: last.error };
 }
 
 function encodeBody(body: unknown): BodyInit | undefined {

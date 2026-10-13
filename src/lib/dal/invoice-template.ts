@@ -19,8 +19,8 @@ export const DEFAULT_INVOICE_TEMPLATE: InvoiceTemplate = {
   company: {
     logoUrl: "",
     wordmark: "IMETS",
-    tagline: "SCHOOL OF BUSINESS",
-    name: "IMETS School of Business",
+    tagline: "MEDICAL SCHOOL",
+    name: "IMETS Medical School",
     email: "billing@imetsedu.com",
     address: "Cairo, Egypt",
   },
