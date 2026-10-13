@@ -32,7 +32,7 @@ export function FreeProgramCard({ locale, program }: { locale: string; program: 
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={program.thumbnailUrl}
-            alt=""
+            alt={title}
             loading="lazy"
             decoding="async"
             className="size-full object-cover transition-transform duration-500 group-hover:scale-105"

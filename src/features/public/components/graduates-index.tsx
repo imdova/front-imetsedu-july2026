@@ -109,7 +109,7 @@ export function GraduatesIndex({ cohorts }: { cohorts: GraduateCohort[] }) {
                   <div className="flex items-center">
                     {c.previewPhotos.slice(0, 4).map((src, j) => (
                       <span key={src + j} className="-ml-3 first:ml-0 size-14 overflow-hidden rounded-full p-[3px] shadow-lg" style={{ background: "linear-gradient(150deg,#F6E0B0,#D9A441 45%,#8F6516 78%,#F2D08A)", zIndex: 10 - j }}>
-                        <img src={src} alt="" className="size-full rounded-full border-2 border-[#0A1747] object-cover" loading="lazy" />
+                        <img src={src} alt="" aria-hidden="true" className="size-full rounded-full border-2 border-[#0A1747] object-cover" loading="lazy" />
                       </span>
                     ))}
                     {c.graduatesCount > 4 && (

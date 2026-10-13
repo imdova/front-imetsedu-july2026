@@ -25,7 +25,7 @@ export function CourseLectureCard({
       <div className="relative aspect-video overflow-hidden bg-muted">
         {course.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={course.thumbnailUrl} alt="" loading="lazy" decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <img src={course.thumbnailUrl} alt={title} loading="lazy" decoding="async" className="size-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
           <div className="grid size-full place-items-center bg-gradient-to-br from-primary/15 to-primary/5">
             <PlayCircle className="size-12 text-primary/40" />

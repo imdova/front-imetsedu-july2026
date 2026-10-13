@@ -48,6 +48,13 @@ const eslintConfig = defineConfig([
       "src/app/**/courses/**/*.{ts,tsx}",
     ],
     rules: {
+      /*
+       * Every image declares an alt, including `alt=""` for decoration. The
+       * rule cannot judge whether the text is good — that is review — but it
+       * does stop the case that has no defence: an image a screen reader
+       * announces by reading its file name aloud.
+       */
+      "jsx-a11y/alt-text": ["error", { elements: ["img", "object", "area", "input[type=\"image\"]"], img: ["Image"] }],
       "no-restricted-syntax": [
         "error",
         ...FABRICATED_REVIEWERS.map((name) => ({

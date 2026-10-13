@@ -611,6 +611,9 @@ export const PUBLIC_RESOURCES: NavItem[] = [
   { titleKey: "navHelp", href: "/help", icon: "CircleCheckBig" },
 ];
 
+/** The school's name in Arabic, for alt text on the Arabic pages. */
+export const BRAND_NAME_AR = "مدرسة IMETS الطبية";
+
 export const BRAND = {
   name: "IMETS",
   fullName: "IMETS Medical School",

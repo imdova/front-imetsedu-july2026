@@ -85,7 +85,7 @@ export function GraduatesGallery({ cohort }: { cohort: GraduateCohort }) {
               <div className="halo">
                 {g.photoUrl
                   ? <img src={g.photoUrl} alt={g.name} loading={i < 8 ? "eager" : "lazy"} />
-                  : <img src={SITE_LOGO} alt="" style={{ objectFit: "contain", padding: 18 }} />}
+                  : <img src={SITE_LOGO} alt="" aria-hidden="true" style={{ objectFit: "contain", padding: 18 }} />}
               </div>
               <p className="name">{g.name}</p>
               {(g.title || g.country) && <p className="sub">{[g.title, g.country].filter(Boolean).join(" · ")}</p>}

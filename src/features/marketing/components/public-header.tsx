@@ -5,7 +5,7 @@ import { GraduationCap, Menu } from "lucide-react";
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { BRAND, PUBLIC_NAV, PUBLIC_RESOURCES, RESOURCES_HREF } from "@/constants/navigation";
+import { BRAND, BRAND_NAME_AR, PUBLIC_NAV, PUBLIC_RESOURCES, RESOURCES_HREF } from "@/constants/navigation";
 import { Button } from "@/components/ui/button";
 import { CoursesMegaMenu, type MegaCategory, type MegaCourse } from "@/features/marketing/components/courses-mega-menu";
 import { ResourcesMenu } from "@/features/marketing/components/resources-menu";
@@ -32,6 +32,8 @@ export function PublicHeader({
   megaCourses?: MegaCourse[];
 }) {
   const pathname = usePathname();
+  // The logo is the school's name, so it reads in the page's language.
+  const brandAlt = locale === "ar" ? BRAND_NAME_AR : BRAND.fullName;
   const isHome = pathname === "/";
   const tn = useTranslations("Nav");
   const tm = useTranslations("Marketing");
@@ -75,19 +77,19 @@ export function PublicHeader({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={logoBlue || "/logo-white.svg"}
-              alt={BRAND.fullName}
+              alt={brandAlt}
               className="h-9 w-auto max-w-[190px] object-contain"
             />
           ) : (
             <BrandImage
               kind="navbar"
-              alt={BRAND.fullName}
+              alt={brandAlt}
               className="h-9 max-w-[160px] object-contain"
               fallback={
                 logoLight ? (
                   <img
                     src={logoLight}
-                    alt={BRAND.fullName}
+                    alt={brandAlt}
                     className="h-9 max-w-[160px] object-contain"
                   />
                 ) : (

@@ -1,11 +1,14 @@
 import { GraduationCap } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
-import { BRAND } from "@/constants/navigation";
+import { BRAND, BRAND_NAME_AR } from "@/constants/navigation";
 import { BrandImage } from "@/components/shared/brand-image";
 
 export async function PublicFooter({ logoLight }: { logoLight?: string }) {
+  const locale = await getLocale();
+  // The logo is the school name: it reads in the language of the page.
+  const brandAlt = locale === "ar" ? BRAND_NAME_AR : BRAND.fullName;
   const tm = await getTranslations("Marketing");
   const tn = await getTranslations("Nav");
 
@@ -45,11 +48,11 @@ export async function PublicFooter({ logoLight }: { logoLight?: string }) {
           <Link href="/" className="flex items-center gap-2.5">
             <BrandImage
               kind="footer"
-              alt={BRAND.fullName}
+              alt={brandAlt}
               className="h-9 max-w-40 object-contain"
               fallback={
                 logoLight ? (
-                  <img src={logoLight} alt={BRAND.fullName} loading="lazy" decoding="async" className="h-9 max-w-40 object-contain" />
+                  <img src={logoLight} alt={brandAlt} loading="lazy" decoding="async" className="h-9 max-w-40 object-contain" />
                 ) : (
                   <>
                     <span className="grid size-9 place-items-center rounded-xl bg-linear-to-br from-primary to-[oklch(0.62_0.19_286)] text-white">
