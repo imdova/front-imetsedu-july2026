@@ -47,9 +47,14 @@ function iconFor(category: string) {
 export function ArticleCard({ post, featured }: { post: BlogPost; featured?: boolean }) {
   const accent = accentFor(post.category || post.title);
   const Icon = iconFor(post.category || "");
+  // The card carries the article's own language, not the page's: an English
+  // headline inside the Arabic listing is still English.
+  const lang = post.language === "ar" ? "ar" : "en";
 
   return (
     <Link
+      lang={lang}
+      dir={lang === "ar" ? "rtl" : "ltr"}
       href={`/blog/${post.slug}`}
       className={cn(
         "group flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg",

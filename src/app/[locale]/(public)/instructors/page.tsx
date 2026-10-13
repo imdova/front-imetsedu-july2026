@@ -22,21 +22,12 @@ export async function generateMetadata({
   });
 
   /*
-   * With no faculty records stored, this page is ~160 words of boilerplate with
-   * no names, no profiles and nothing to link to. Asking Google to index that
-   * spends crawl budget to publish a page that can only disappoint — a thin
-   * page is a liability to the whole site, not just to itself.
-   *
-   * So it de-indexes itself while the roster is empty, and starts indexing
-   * again the moment a single instructor exists. `follow` stays on so the
-   * crawler still walks through to whatever it does link to.
-   *
-   * The sitemap makes the matching decision from the same condition — see
-   * `collectSitemapRows` in lib/sitemap-data.ts.
+   * Indexable regardless of how many faculty records exist. It used to
+   * de-index itself while the roster was empty — a defensible call for a thin
+   * page, reversed deliberately so the page can rank for the school's faculty
+   * while the profiles are filled in.
    */
-  const res = await dal.lookups.fetchInstructors().catch(() => null);
-  const isEmpty = !res?.ok || res.data.length === 0;
-  return isEmpty ? { ...meta, robots: { index: false, follow: true } } : meta;
+  return meta;
 }
 
 export default async function InstructorsPage({

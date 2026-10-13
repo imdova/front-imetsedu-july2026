@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
+import { seoAlternates } from "@/lib/seo";
 import { FreeExamForm } from "@/features/marketing/components/free-exam-form";
 
 export async function generateMetadata({
@@ -9,15 +10,17 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  await params;
+  const { locale } = await params;
   const admin = await resolveSeoMetadata("/free-exam").catch(() => ({} as Metadata));
-  // Admin SEO spread first so it contributes og/robots/canonical, but this
-  // page's own title/description win (admin reads fall back to site defaults
-  // when no "/free-exam" override exists).
+  // Admin SEO spread first so it contributes og/robots, but this page's own
+  // title, description and alternates win (admin reads fall back to site
+  // defaults when no "/free-exam" override exists, and a default canonical
+  // would point this page at the wrong URL).
   return {
     ...admin,
-    title: "Free Placement Exam — IMETS",
+    title: "Free Placement Exam",
     description: "Take a free placement exam and get a personalized course recommendation.",
+    alternates: seoAlternates("/free-exam", locale),
   };
 }
 

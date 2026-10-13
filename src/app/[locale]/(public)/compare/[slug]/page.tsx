@@ -33,6 +33,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
   const { locale, slug } = await params;
   const page = getComparisonPage(slug);
   if (!page) return {};
+  if (locale === "ar" && !page.ar) return {};
 
   const c = comparisonContent(page, locale);
   const path = comparisonPath(page);
@@ -56,6 +57,9 @@ export default async function ComparePageRoute({ params }: RouteParams) {
 
   const page = getComparisonPage(slug);
   if (!page) notFound();
+  // No Arabic copy for this comparison ⇒ /ar/compare/<slug> is a 404, not the
+  // English page wearing an Arabic URL.
+  if (locale === "ar" && !page.ar) notFound();
 
   const c = comparisonContent(page, locale);
   const ar = locale === "ar";

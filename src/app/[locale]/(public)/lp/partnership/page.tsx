@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
+import { seoAlternates } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -172,9 +173,14 @@ export async function generateMetadata({
   const admin = await resolveSeoMetadata(PATH).catch(() => ({}) as Metadata);
   return {
     ...admin,
-    title: ar
-      ? "شراكة مع IMETS Medical School — للمستشفيات والمؤسسات التعليمية | IMETS"
-      : "Partner with IMETS Medical School — Hospitals & Educational Institutions | IMETS",
+    alternates: seoAlternates(PATH, locale),
+    // Absolute: the title already names the school, and the layout template
+    // would otherwise append it a second time.
+    title: {
+      absolute: ar
+        ? "شراكة مع IMETS Medical School — للمستشفيات والمؤسسات التعليمية"
+        : "Partner with IMETS Medical School — Hospitals & Educational Institutions",
+    },
     description: ar
       ? "اشترك مع مدرسة IMETS الطبية: تدريب صحي معتمد، وبرامج مشتركة، وتطوير للكوادر للمستشفيات والجامعات ومعاهد التدريب حول العالم. ابدأ شراكة."
       : "Partner with IMETS Medical School: accredited healthcare training, co-branded programs and workforce development for hospitals, universities and training institutes worldwide. Start a partnership.",

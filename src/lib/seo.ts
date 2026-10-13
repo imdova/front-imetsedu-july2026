@@ -27,15 +27,34 @@ export function localeUrl(path: string, locale: string): string {
 }
 
 /** `alternates` block: self-canonical + hreflang (en / ar / x-default). */
-export function seoAlternates(path: string, locale: string): Metadata["alternates"] {
-  return {
-    canonical: localeUrl(path, locale),
-    languages: {
-      en: localeUrl(path, "en"),
-      ar: localeUrl(path, "ar"),
-      "x-default": localeUrl(path, "en"),
-    },
-  };
+/**
+ * Canonical + hreflang for a path.
+ *
+ * `locales` is the set the content actually exists in, not the set of routes
+ * that resolve. Every localised route resolves in both languages — that is what
+ * a `[locale]` segment does — so emitting both alternates unconditionally
+ * advertised Arabic translations that were never written, and Google followed
+ * them to the same English text.
+ */
+export type SeoLocale = "en" | "ar";
+
+export function seoAlternates(
+  path: string,
+  locale: string,
+  locales: readonly SeoLocale[] = ["en", "ar"],
+): Metadata["alternates"] {
+  const has = (l: SeoLocale) => locales.includes(l);
+  const languages: Record<string, string> = {};
+  if (has("en")) languages.en = localeUrl(path, "en");
+  if (has("ar")) languages.ar = localeUrl(path, "ar");
+  // x-default points at the version a visitor with no language match should
+  // get: English where it exists, otherwise the only version there is.
+  languages["x-default"] = localeUrl(path, has("en") ? "en" : locales[0] ?? "en");
+
+  // A page the current locale has no content for canonicalises to the locale
+  // that does, rather than competing with it as a duplicate.
+  const canonicalLocale = has(locale as SeoLocale) ? locale : has("en") ? "en" : locales[0] ?? "en";
+  return { canonical: localeUrl(path, canonicalLocale), languages };
 }
 
 /** Strip HTML + collapse whitespace + clamp to a meta-description length. */
@@ -103,11 +122,16 @@ export async function staticPageMeta(opts: {
   path: string;
   locale: string;
   image?: string;
+  /** The locales this page has content in. Defaults to both. */
+  locales?: readonly SeoLocale[];
+  /** Keep the page out of the index while it carries no content of its own. */
+  noindex?: boolean;
 }): Promise<Metadata> {
   const base: Metadata = {
     title: opts.title,
     description: opts.description,
-    alternates: seoAlternates(opts.path, opts.locale),
+    alternates: seoAlternates(opts.path, opts.locale, opts.locales),
+    ...(opts.noindex ? { robots: { index: false, follow: true } } : {}),
     ...socialMeta(opts),
   };
   return mergeSeo(opts.path, base);

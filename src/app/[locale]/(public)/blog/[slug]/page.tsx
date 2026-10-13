@@ -32,13 +32,12 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  // `locale` is deliberately unused: an article's metadata is the same on
-  // /blog/<slug> and /ar/blog/<slug>, because the canonical below points both
-  // at the locale the article is actually written in.
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const res = await getArticle(slug);
   if (!res.ok) return {};
   const post = res.data;
+  // Matches the page: no metadata for a locale the article does not exist in.
+  if (locale !== (post.language === "ar" ? "ar" : "en")) return {};
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || metaDescription(post.excerpt, title);
   const ogImage = post.coverImageUrl || `${SITE_URL}/blog/${post.slug}/og`;
@@ -89,6 +88,15 @@ export default async function ArticleDetailPage({
   const res = await getArticle(slug);
   if (!res.ok || !res.data) notFound();
   const post = res.data;
+
+  /*
+   * An article exists in one language. Serving the English text under /ar was
+   * not a translation, it was the same page at a second URL — a duplicate for
+   * a crawler and a broken promise to an Arabic reader. The Arabic URL is a
+   * real 404 until an Arabic article with this slug exists.
+   */
+  const postLanguage = post.language === "ar" ? "ar" : "en";
+  if (locale !== postLanguage) notFound();
 
   /*
    * Resolve the post's author to a real faculty member with a profile page.

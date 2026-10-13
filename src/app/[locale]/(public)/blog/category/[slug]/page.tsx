@@ -5,7 +5,7 @@ import { setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import { staticPageMeta, SITE_NAME } from "@/lib/seo";
+import { staticPageMeta, SITE_NAME, type SeoLocale } from "@/lib/seo";
 import { ArticleCard } from "@/features/blog/components/article-card";
 
 const COLOR_WASH: Record<string, string> = {
@@ -37,11 +37,17 @@ export async function generateMetadata({
     });
   }
   const c = res.data.category;
+  // Same rule as the blog index: a category listing only English articles is
+  // not an Arabic page, whatever the URL says.
+  const hasArabic = (res.data.data ?? []).some((p) => p.language === "ar");
+  const locales: SeoLocale[] = hasArabic ? ["en", "ar"] : ["en"];
   const meta = await staticPageMeta({
     title: c.seoTitle || `${c.name} articles`,
     description: c.seoDescription || c.description || `Articles in ${c.name}.`,
     path: `/blog/category/${slug}`,
     locale,
+    locales,
+    noindex: locale === "ar" && !hasArabic,
   });
 
   /*

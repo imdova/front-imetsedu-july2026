@@ -42,6 +42,10 @@ const STATIC_PATHS = [
   "/blog",
   "/careers",
   "/careers/post-a-job",
+  "/free-exam",
+  "/graduates",
+  "/instructors",
+  "/lp/partnership",
   "/policy/terms",
   "/policy/enrollment",
   "/policy/refund",
@@ -173,27 +177,29 @@ export async function collectSitemapRows(): Promise<{
     "/blog": freshestPost,
   };
 
+  /*
+   * The blog index and its categories are submitted only in the locales the
+   * articles are written in. Submitting /ar/blog while every article is English
+   * asks a crawler to index an Arabic URL that has no Arabic content behind it.
+   */
+  const blogLocales: SitemapLocale[] = blogRes?.ok
+    ? ([...new Set(blogRes.data.data.map((p) => (p.language === "ar" ? "ar" : "en")))] as SitemapLocale[])
+    : BOTH_LOCALES;
+
   const pages: SitemapRow[] = STATIC_PATHS.map((path) => ({
     path,
     lastModified: derived[path],
+    ...(path === "/blog" ? { locales: blogLocales } : {}),
   }));
 
   if (catsRes?.ok) for (const c of catsRes.data) pages.push({ path: `/category/${c.slug || c.id}` });
 
   /*
-   * `/instructors` is submitted only once there is a faculty roster to show.
-   *
-   * With zero instructor records — which is the state today — the page renders
-   * ~160 words of boilerplate with no names, no profiles and nothing to link
-   * to. Submitting that asks Google to index a thin page, and thin pages are
-   * judged against the site rather than in isolation. The page de-indexes
-   * itself under the same condition (see the instructors route's
-   * `generateMetadata`), so the two stay in step.
-   *
-   * Both reverse automatically the moment one instructor exists.
+   * `/instructors` is in STATIC_PATHS, so the index is always submitted. Only
+   * the profile pages depend on there being profiles: a faculty member's page
+   * cannot exist before the record does.
    */
-  if (instRes?.ok && instRes.data.length > 0) {
-    pages.push({ path: "/instructors" });
+  if (instRes?.ok) {
     for (const i of instRes.data) pages.push({ path: `/instructors/${i.slug || i.id}` });
   }
   /*
@@ -220,7 +226,7 @@ export async function collectSitemapRows(): Promise<{
       // all, fall back to submitting every category as before.
       const known = postsPerCategory.size > 0;
       if (known && (postsPerCategory.get((c.name ?? "").trim()) ?? 0) === 0) continue;
-      pages.push({ path: `/blog/category/${c.slug}` });
+      pages.push({ path: `/blog/category/${c.slug}`, locales: blogLocales });
     }
   }
 
@@ -233,8 +239,18 @@ export async function collectSitemapRows(): Promise<{
     const res = await dal.careerHub.fetchJobs({ page, limit: 50 }).catch(() => null);
     if (!res?.ok) break;
     for (const job of res.data.data) {
+      /*
+       * The public API already drops closed and expired listings, but a job
+       * that expires between two crawls would otherwise sit in the sitemap
+       * until the next build. Checking the dates here costs nothing and keeps
+       * the sitemap honest even if that API behaviour ever changes.
+       */
+      const expired = job.expiresAt ? new Date(job.expiresAt).getTime() < Date.now() : false;
+      if (expired || (job.status && job.status !== "published")) continue;
       pages.push({
         path: `/careers/${job.slug}`,
+        // The record's own timestamp, never the build time — a sitemap where
+        // everything changed today tells a crawler nothing.
         lastModified: realDate(job.updatedAt ?? job.postedAt),
         locales: [job.language === "ar" ? "ar" : "en"],
       });

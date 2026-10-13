@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
-import { staticPageMeta } from "@/lib/seo";
+import { staticPageMeta, type SeoLocale } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { BlogExplorerLive } from "@/features/blog/components/blog-explorer-live";
 
@@ -13,7 +13,29 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Marketing" });
-  return staticPageMeta({ title: t("blogTitle"), description: t("blogSubtitle"), path: "/blog", locale });
+
+  /*
+   * The listing's own chrome is translated, but the articles it lists are not:
+   * all of them are English today. So /ar/blog is a page of English headlines
+   * with an Arabic frame — worth keeping reachable, not worth indexing, and not
+   * an Arabic alternate of /blog.
+   *
+   * Both facts come from the posts themselves, so the day an Arabic article is
+   * published the page indexes itself and the alternate appears.
+   */
+  const postsRes = await dal.blog.fetchPublicArticles({ limit: 200 });
+  const posts = postsRes.ok ? postsRes.data.data : [];
+  const hasArabic = posts.some((p) => p.language === "ar");
+  const locales: SeoLocale[] = hasArabic ? ["en", "ar"] : ["en"];
+
+  return staticPageMeta({
+    title: t("blogTitle"),
+    description: t("blogSubtitle"),
+    path: "/blog",
+    locale,
+    locales,
+    noindex: locale === "ar" && !hasArabic,
+  });
 }
 
 export default async function BlogPage({
