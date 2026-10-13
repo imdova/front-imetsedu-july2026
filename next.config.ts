@@ -2,6 +2,31 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
+  // "X-Powered-By: Next.js" tells an attacker which framework to target and
+  // tells a visitor nothing.
+  poweredByHeader: false,
+
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          // A year, subdomains included: the site is HTTPS-only, and without
+          // this the first request of a session can still be downgraded.
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          // Stops a browser from guessing a type for an uploaded file and
+          // running it as something else.
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // Full URL to our own origin, origin only to others — analytics keeps
+          // working, student paths stop leaking to third parties.
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // Nothing on this site asks for a camera, a microphone or a location.
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
+
   // Allow the dev server's HMR / RSC resources to be requested from these LAN
   // hosts (e.g. opening the app from a phone or another machine on the network).
   allowedDevOrigins: ["192.168.1.3"],

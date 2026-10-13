@@ -142,6 +142,7 @@ function inspect(url, html) {
   const imgs = [...body(html).matchAll(/<img\b[^>]*>/gi)].map((m) => attrs(m[0]));
   let missingAlt = 0;
   let decorative = 0;
+  let emptyUndeclared = 0;
   let rawImg = 0;
   let priority = 0;
   const altSamples = [];
@@ -153,8 +154,12 @@ function inspect(url, html) {
     if (isPixel) continue;
 
     if (!("alt" in img)) missingAlt++;
-    else if (img.alt.trim() === "") decorative++;
-    else altSamples.push({ alt: img.alt, src });
+    else if (img.alt.trim() === "") {
+      // `aria-hidden` is the author saying "this carries no information".
+      // Without it an empty alt is indistinguishable from a forgotten one.
+      if (img["aria-hidden"] === "true") decorative++;
+      else emptyUndeclared++;
+    } else altSamples.push({ alt: img.alt, src });
 
     // next/image rewrites through the optimizer; anything else is a raw <img>.
     if (src && !src.startsWith("/_next/image") && !src.startsWith("data:")) rawImg++;
@@ -163,6 +168,12 @@ function inspect(url, html) {
 
   if (missingAlt > 0)
     issues.push({ level: "error", kind: "img-alt-missing", detail: `${missingAlt} image(s) with no alt attribute` });
+  if (emptyUndeclared > 0)
+    issues.push({
+      level: "error",
+      kind: "img-alt-empty",
+      detail: `${emptyUndeclared} image(s) with alt="" and no aria-hidden`,
+    });
   if (priority > 1)
     issues.push({ level: "warn", kind: "priority-multiple", detail: `${priority} eager/high-priority images` });
 
@@ -185,13 +196,99 @@ function inspect(url, html) {
     description,
     og,
     twitterCard,
-    images: { total: imgs.length, missingAlt, decorative, rawImg, priority },
+    images: { total: imgs.length, missingAlt, decorative, emptyUndeclared, rawImg, priority },
     altSamples,
     issues,
   };
 }
 
+/* ── sitemap checks ──────────────────────────────────────────────────────── */
+
+/**
+ * The sitemaps themselves, rather than the pages they list: what is missing,
+ * what is stale, and whether `lastmod` carries real information.
+ */
+async function auditSitemaps() {
+  const must = [
+    "/", "/courses", "/free-courses", "/blog", "/about", "/contact", "/help",
+    "/careers", "/free-exam", "/graduates", "/instructors", "/lp/partnership",
+    "/policy/terms", "/policy/privacy", "/policy/enrollment", "/policy/refund",
+    "/success-stories",
+  ];
+  const xml = await get(`${BASE}/sitemap.xml`);
+  // The index lists absolute production URLs; a local run must follow the
+  // base it was given rather than auditing production by accident.
+  const onBase = (u) => u.replace(/^https?:\/\/[^/]+/, BASE);
+  const children = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => onBase(decode(m[1])));
+  const entries = [];
+  for (const child of children) {
+    const body = await get(child);
+    for (const m of body.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
+      const loc = (m[1].match(/<loc>(.*?)<\/loc>/) ?? [])[1];
+      const lastmod = (m[1].match(/<lastmod>(.*?)<\/lastmod>/) ?? [])[1];
+      if (loc) entries.push({ sitemap: child, loc: onBase(decode(loc)), lastmod });
+    }
+  }
+
+  const paths = new Set(entries.map((e) => new URL(e.loc).pathname.replace(/\/$/, "") || "/"));
+  const missing = must.filter((p) => !paths.has(p));
+  const retired = [...paths].filter((p) => /^(\/ar)?\/(privacy|terms)$/.test(p));
+
+  // A lastmod that is the same everywhere carries no information; the point of
+  // the field is that a crawler can tell what changed.
+  const blog = entries.filter((e) => /\/blog\//.test(e.loc) && e.lastmod);
+  const distinctBlogDates = new Set(blog.map((e) => e.lastmod));
+  const today = new Date().toISOString().slice(0, 10);
+  const stampedToday = entries.filter((e) => (e.lastmod ?? "").startsWith(today)).length;
+
+  console.log("── Sitemaps ──");
+  console.log(`  sitemaps          ${children.length}`);
+  console.log(`  urls              ${entries.length}`);
+  console.log(`  with lastmod      ${entries.filter((e) => e.lastmod).length}`);
+  console.log(`  blog posts        ${blog.length} with ${distinctBlogDates.size} distinct lastmod value(s)`);
+  console.log(`  stamped today     ${stampedToday}`);
+  if (missing.length) console.log(`  MISSING           ${missing.join(", ")}`);
+  if (retired.length) console.log(`  RETIRED URLS      ${retired.join(", ")}`);
+
+  const problems = [];
+  if (missing.length) problems.push(`sitemap missing: ${missing.join(", ")}`);
+  if (retired.length) problems.push(`retired URLs still listed: ${retired.join(", ")}`);
+  if (blog.length > 1 && distinctBlogDates.size < 2) {
+    problems.push("every blog lastmod is identical — it is not coming from the record");
+  }
+  return problems;
+}
+
+/* ── header checks ───────────────────────────────────────────────────────── */
+
+const REQUIRED_HEADERS = {
+  "strict-transport-security": /max-age=\d{6,}/i,
+  "x-content-type-options": /nosniff/i,
+  "referrer-policy": /strict-origin-when-cross-origin/i,
+  "permissions-policy": /camera=\(\)/i,
+};
+
+async function auditHeaders() {
+  const res = await fetch(`${BASE}/`, { headers: { "user-agent": "imets-seo-audit" } });
+  const problems = [];
+  console.log("\n── Headers ──");
+  for (const [name, pattern] of Object.entries(REQUIRED_HEADERS)) {
+    const value = res.headers.get(name);
+    const ok = value && pattern.test(value);
+    console.log(`  ${ok ? "ok  " : "FAIL"} ${name}: ${value ?? "(absent)"}`);
+    if (!ok) problems.push(`header ${name}: ${value ?? "absent"}`);
+  }
+  const powered = res.headers.get("x-powered-by");
+  console.log(`  ${powered ? "FAIL" : "ok  "} x-powered-by: ${powered ?? "(absent, as it should be)"}`);
+  if (powered) problems.push(`x-powered-by present: ${powered}`);
+  return problems;
+}
+
 /* ── run ─────────────────────────────────────────────────────────────────── */
+
+const sitemapProblems = await auditSitemaps();
+const headerProblems = await auditHeaders();
+console.log("");
 
 const urls = (await sitemapUrls()).slice(0, LIMIT);
 console.log(`Auditing ${urls.length} URL(s) from ${BASE}/sitemap.xml\n`);
@@ -230,6 +327,8 @@ const byKind = (list) =>
   ).sort((a, b) => b[1].length - a[1].length);
 
 console.log("── Summary ──");
+console.log(`  sitemap problems ${sitemapProblems.length}`);
+console.log(`  header problems  ${headerProblems.length}`);
 console.log(`  pages            ${pages.length}`);
 console.log(`  errors           ${errors.length}`);
 console.log(`  warnings         ${warns.length}`);
@@ -237,7 +336,8 @@ console.log(`  duplicate titles ${dupTitles.length}`);
 console.log(`  duplicate descs  ${dupDescs.length}`);
 console.log(`  images           ${pages.reduce((n, p) => n + p.images.total, 0)}`);
 console.log(`  missing alt      ${pages.reduce((n, p) => n + p.images.missingAlt, 0)}`);
-console.log(`  alt="" (declared decorative — verify by hand) ${pages.reduce((n, p) => n + p.images.decorative, 0)}`);
+console.log(`  alt="" + aria-hidden (declared decorative) ${pages.reduce((n, p) => n + p.images.decorative, 0)}`);
+console.log(`  alt="" undeclared ${pages.reduce((n, p) => n + (p.images.emptyUndeclared ?? 0), 0)}`);
 console.log(`  raw <img> (not next/image) ${pages.reduce((n, p) => n + p.images.rawImg, 0)}`);
 
 for (const [label, list] of [["ERRORS", errors], ["WARNINGS", warns]]) {
@@ -272,4 +372,4 @@ if (JSON_OUT) {
   console.log(`\nWrote ${JSON_OUT}`);
 }
 
-process.exit(errors.length || dupTitles.length ? 1 : 0);
+process.exit(errors.length || dupTitles.length || sitemapProblems.length || headerProblems.length ? 1 : 0);
