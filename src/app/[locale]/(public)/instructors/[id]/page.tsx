@@ -13,6 +13,22 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_NAME, seoAlternates, socialMeta, localeUrl, personLd, breadcrumbLd } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 
+/** Faculty profile. Cleared early by the cache tags on its data. */
+export const revalidate = 3600;
+
+/** Prerender each faculty profile, in both locales. */
+export async function generateStaticParams() {
+  const res = await dal.lookups.fetchInstructors();
+  const people = res.ok ? res.data : [];
+  return people
+    .map((p) => p.slug || p.id)
+    .filter((id): id is string => !!id)
+    .flatMap((id) => [
+      { locale: "en", id },
+      { locale: "ar", id },
+    ]);
+}
+
 /**
  * Public faculty profile.
  *

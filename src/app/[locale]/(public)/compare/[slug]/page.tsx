@@ -17,6 +17,9 @@ import {
 } from "@/features/marketing/lib/comparison-pages";
 import { ComparisonLanding } from "@/features/marketing/components/comparison-landing";
 
+/** Comparison page; its copy is bundled. Cleared early by the cache tags on its data. */
+export const revalidate = 3600;
+
 /**
  * Decision-stage comparison pages (`/compare/cphq-vs-cic`).
  *

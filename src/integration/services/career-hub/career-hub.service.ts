@@ -31,10 +31,10 @@ const compact = (params: object) =>
  * of minutes, not the default five.
  */
 export const listJobs = (params: CareerJobListParams = {}): Promise<Result<CareerJobList>> =>
-  api.get(PUBLIC, { params: compact(params), requireAuth: false, revalidate: 120 });
+  api.get(PUBLIC, { params: compact(params), requireAuth: false, revalidate: 900, tags: ["jobs"] });
 
 export const getJob = (slug: string): Promise<Result<CareerJobDto>> =>
-  api.get(`${PUBLIC}/${encodeURIComponent(slug)}`, { requireAuth: false, revalidate: 120 });
+  api.get(`${PUBLIC}/${encodeURIComponent(slug)}`, { requireAuth: false, revalidate: 900, tags: ["jobs"] });
 
 /** Employer vacancy form — anonymous, so a logged-in admin's token isn't attached. */
 export const submitVacancy = (input: CareerVacancyInput): Promise<Result<{ ok: boolean }>> =>

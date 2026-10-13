@@ -56,13 +56,13 @@ export const deleteBroken = (id: string) => api.delete<{ success: boolean }>(api
 
 /* ── Public reads (site metadata + middleware; cached, no auth) ── */
 export const getPublicSettings = () =>
-  api.get<SeoSettingsDto>(API_PUBLIC_SEO_SETTINGS, { requireAuth: false, revalidate: 300 });
+  api.get<SeoSettingsDto>(API_PUBLIC_SEO_SETTINGS, { requireAuth: false, revalidate: 900, tags: ["seo"] });
 export const getPublicPage = (path: string) =>
-  api.get<SeoPageDto | null>(API_PUBLIC_SEO_PAGE, { requireAuth: false, params: { path }, revalidate: 300 });
+  api.get<SeoPageDto | null>(API_PUBLIC_SEO_PAGE, { requireAuth: false, params: { path }, revalidate: 900, tags: ["seo"] });
 export const getPublicRedirects = () =>
-  api.get<SeoRedirectDto[]>(API_PUBLIC_SEO_REDIRECTS, { requireAuth: false, revalidate: 300 });
+  api.get<SeoRedirectDto[]>(API_PUBLIC_SEO_REDIRECTS, { requireAuth: false, revalidate: 900, tags: ["seo"] });
 export const getPublicSchemas = () =>
-  api.get<SeoSchemaDto[]>(API_PUBLIC_SEO_SCHEMAS, { requireAuth: false, revalidate: 300 });
+  api.get<SeoSchemaDto[]>(API_PUBLIC_SEO_SCHEMAS, { requireAuth: false, revalidate: 900, tags: ["seo"] });
 
 /* Overview + settings */
 export const getOverview = () => api.get<SeoOverviewDto>(API_SEO_OVERVIEW);

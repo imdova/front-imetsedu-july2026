@@ -5,6 +5,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ContactForm } from "@/features/marketing/components/contact-form";
 import { staticPageMeta } from "@/lib/seo";
 
+/** Evergreen marketing copy. Cleared early by the cache tags on its data. */
+export const revalidate = 3600;
+
 export async function generateMetadata({
   params,
 }: {

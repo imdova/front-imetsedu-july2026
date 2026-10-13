@@ -1,6 +1,6 @@
 import { api, type Result } from "@integration/services/http/client";
 import {
-  API_BLOG, apiBlogBySlug, API_BLOG_CATEGORIES_PUBLIC, API_BLOG_TOPICS, API_BLOG_TAXONOMY, apiBlogCategoryLanding,
+  API_BLOG, apiBlogBySlug, apiBlogView, API_BLOG_CATEGORIES_PUBLIC, API_BLOG_TOPICS, API_BLOG_TAXONOMY, apiBlogCategoryLanding,
   API_ADMIN_BLOG, apiAdminBlog, apiAdminBlogAction, apiAdminBlogFeatured, API_ADMIN_BLOG_AI,
   API_ADMIN_BLOG_CATEGORIES, apiAdminBlogCategory,
   API_ADMIN_BLOG_SUBCATEGORIES, apiAdminBlogSubcategory,
@@ -26,18 +26,26 @@ const listParams = (p: BlogListParams = {}): Record<string, string | number | bo
 
 /* ── Public ── */
 export const listPublic = (p?: BlogListParams): Promise<Result<PaginatedDto<BlogPostDto>>> =>
-  api.get(API_BLOG, { requireAuth: false, params: listParams(p), revalidate: 120 });
+  api.get(API_BLOG, { requireAuth: false, params: listParams(p), revalidate: 600, tags: ["blog"] });
+/*
+ * Cached for a day, and cleared by the `blog` tag whenever an article is saved.
+ * This was `revalidate: false` because the GET also incremented `views`, so
+ * every visit had to reach the backend — which is what kept the whole article
+ * page dynamic. The counter now has its own POST ({@link recordView}).
+ */
 export const getPublicBySlug = (slug: string): Promise<Result<BlogPostDto>> =>
-  // no-store: the backend increments `views` on read, so each visit must hit it.
-  api.get(apiBlogBySlug(slug), { requireAuth: false, revalidate: false });
+  api.get(apiBlogBySlug(slug), { requireAuth: false, revalidate: 86400, tags: ["blog", `blog:${slug}`] });
+/** Fire-and-forget view counter, called from the browser once per article view. */
+export const recordView = (slug: string): Promise<Result<void>> =>
+  api.post(apiBlogView(slug), {}, { requireAuth: false });
 export const publicCategoryNames = (): Promise<Result<string[]>> =>
-  api.get(API_BLOG_CATEGORIES_PUBLIC, { requireAuth: false, revalidate: 300 });
+  api.get(API_BLOG_CATEGORIES_PUBLIC, { requireAuth: false, revalidate: 300, tags: ["blog"] });
 export const topics = (): Promise<Result<BlogCategoryDto[]>> =>
-  api.get(API_BLOG_TOPICS, { requireAuth: false, revalidate: 300 });
+  api.get(API_BLOG_TOPICS, { requireAuth: false, revalidate: 300, tags: ["blog"] });
 export const taxonomy = (): Promise<Result<BlogTaxonomyDto[]>> =>
-  api.get(API_BLOG_TAXONOMY, { requireAuth: false, revalidate: 300 });
+  api.get(API_BLOG_TAXONOMY, { requireAuth: false, revalidate: 300, tags: ["blog"] });
 export const categoryLanding = (slug: string, p?: BlogListParams): Promise<Result<BlogCategoryLandingDto>> =>
-  api.get(apiBlogCategoryLanding(slug), { requireAuth: false, params: listParams(p), revalidate: 120 });
+  api.get(apiBlogCategoryLanding(slug), { requireAuth: false, params: listParams(p), revalidate: 600, tags: ["blog"] });
 
 /* ── Admin articles ── */
 export const listAdmin = (p?: BlogListParams): Promise<Result<PaginatedDto<BlogPostDto>>> =>

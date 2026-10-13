@@ -34,6 +34,9 @@ import {
 import { brandedTitle, metaDescription, seoAlternates, socialMeta } from "@/lib/seo";
 import { resolveSeoMetadata } from "@/lib/public-seo";
 
+/** Home. Listing content, so a short window. Cleared early by the cache tags on its data. */
+export const revalidate = 600;
+
 export async function generateMetadata({
   params,
 }: {

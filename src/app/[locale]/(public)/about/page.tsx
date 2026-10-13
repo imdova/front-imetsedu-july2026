@@ -14,6 +14,9 @@ import { cn } from "@/lib/utils";
 import { CountUp } from "@/features/marketing/components/count-up";
 import { HealthcareFacultySection } from "@/features/marketing/components/healthcare-faculty-section";
 
+/** Evergreen marketing copy. Cleared early by the cache tags on its data. */
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "About" });

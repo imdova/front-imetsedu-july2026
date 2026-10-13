@@ -7,6 +7,9 @@ import { getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { staticPageMeta } from "@/lib/seo";
 
+/** Faculty directory. Cleared early by the cache tags on its data. */
+export const revalidate = 3600;
+
 export async function generateMetadata({
   params,
 }: {

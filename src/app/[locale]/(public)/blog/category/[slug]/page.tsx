@@ -8,6 +8,22 @@ import { dal } from "@/lib/dal";
 import { staticPageMeta, SITE_NAME, type SeoLocale } from "@/lib/seo";
 import { ArticleCard } from "@/features/blog/components/article-card";
 
+/** Article listing, filtered by category. Cleared early by the cache tags on its data. */
+export const revalidate = 600;
+
+/** Prerender every active blog category, in both locales. */
+export async function generateStaticParams() {
+  const res = await dal.blog.fetchTopics();
+  const topics = res.ok ? res.data : [];
+  return topics
+    .map((t) => t.slug)
+    .filter((slug): slug is string => !!slug)
+    .flatMap((slug) => [
+      { locale: "en", slug },
+      { locale: "ar", slug },
+    ]);
+}
+
 const COLOR_WASH: Record<string, string> = {
   primary: "from-primary/15", info: "from-info/15", success: "from-success/15",
   warning: "from-warning/15", destructive: "from-destructive/15", neutral: "from-muted",

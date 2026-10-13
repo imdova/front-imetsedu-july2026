@@ -8,6 +8,9 @@ import { seoAlternates, socialMeta, courseListLd, localeUrl, metaDescription } f
 import { mergeSeo } from "@/lib/public-seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
+/** Course listing. Cleared early by the cache tags on its data. */
+export const revalidate = 600;
+
 export async function generateMetadata({
   params,
 }: {

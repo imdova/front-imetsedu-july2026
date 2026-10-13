@@ -77,6 +77,11 @@ interface RequestOptions extends RequestInit {
   revalidate?: number | false;
   /** Per-request timeout in ms. Defaults to {@link DEFAULT_TIMEOUT_MS}. */
   timeoutMs?: number;
+  /**
+   * Cache tags for a public GET, so an admin save can clear exactly the pages
+   * built from this data instead of waiting out the TTL.
+   */
+  tags?: string[];
 }
 
 /**
@@ -99,7 +104,7 @@ async function attempt<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<Result<T> & { retryable?: boolean }> {
-  const { params, requireAuth = true, revalidate, timeoutMs, ...init } = options;
+  const { params, requireAuth = true, revalidate, timeoutMs, tags, ...init } = options;
 
   try {
     const url = new URL(
@@ -131,7 +136,10 @@ async function attempt<T>(
     const isPublicGet = method === "GET" && !requireAuth;
     const fetchNext =
       isPublicGet && revalidate !== false
-        ? { revalidate: typeof revalidate === "number" ? revalidate : 300 }
+        ? {
+            revalidate: typeof revalidate === "number" ? revalidate : 300,
+            ...(tags?.length ? { tags } : {}),
+          }
         : undefined;
 
     // Without a deadline a hung connection blocks the render until the

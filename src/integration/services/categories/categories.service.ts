@@ -26,7 +26,7 @@ export function createCategory(
 }
 
 export function listCategories(): Promise<Result<Category[]>> {
-  return api.get<Category[]>(API_CATEGORIES, { requireAuth: false, revalidate: 300 });
+  return api.get<Category[]>(API_CATEGORIES, { requireAuth: false, revalidate: 300, tags: ["categories"] });
 }
 
 export function getCategoryById(id: string): Promise<Result<Category>> {

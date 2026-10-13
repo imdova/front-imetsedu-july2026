@@ -5,6 +5,7 @@ export const API_BLOG_CATEGORIES_PUBLIC = "/blog/categories";
 export const API_BLOG_TOPICS = "/blog/topics";
 export const API_BLOG_TAXONOMY = "/blog/taxonomy";
 export const apiBlogCategoryLanding = (slug: string) => `/blog/category/${slug}`;
+export const apiBlogView = (slug: string) => `/blog/${slug}/view`;
 
 // Admin — articles
 export const API_ADMIN_BLOG = "/admin/blog";

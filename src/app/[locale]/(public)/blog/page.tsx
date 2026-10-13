@@ -6,6 +6,9 @@ import { staticPageMeta, type SeoLocale } from "@/lib/seo";
 import { Link } from "@/i18n/navigation";
 import { BlogExplorerLive } from "@/features/blog/components/blog-explorer-live";
 
+/** Article listing. Cleared early by the cache tags on its data. */
+export const revalidate = 600;
+
 export async function generateMetadata({
   params,
 }: {

@@ -8,6 +8,9 @@ import { CategoryLanding } from "@/features/marketing/components/category-landin
 import { SITE_NAME, seoAlternates, socialMeta, metaDescription } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 
+/** Course listing, filtered by category. Cleared early by the cache tags on its data. */
+export const revalidate = 600;
+
 export async function generateStaticParams() {
   const res = await dal.courseTaxonomy.fetchPublicCategories();
   const cats = res.ok ? res.data : [];

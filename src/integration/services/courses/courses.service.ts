@@ -4,7 +4,8 @@ import type { CourseStats, CourseRegistrationsResponse } from "./types";
 import type { Course } from "@integration/types/course";
 
 export function listCourses(query?: any): Promise<Result<Course[]>> {
-  return api.get<Course[]>(COURSES_API.LIST, { params: query, requireAuth: false, revalidate: 300 });
+  // Tagged so an admin save clears it at once; the TTL is only the fallback.
+  return api.get<Course[]>(COURSES_API.LIST, { params: query, requireAuth: false, revalidate: 600, tags: ["courses"] });
 }
 
 export function getCourseById(id: string): Promise<Result<any>> {

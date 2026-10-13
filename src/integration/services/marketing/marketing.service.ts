@@ -14,14 +14,16 @@ export function listActiveBanners(placement?: string): Promise<Result<BannerDto[
   return api.get<BannerDto[]>(API_PUBLIC_BANNERS, {
     requireAuth: false,
     params: placement ? { placement } : undefined,
-    revalidate: 60,
+    revalidate: 900,
+    tags: ["marketing"],
   });
 }
 export function listActivePromoted(slot?: string): Promise<Result<PromotedDto[]>> {
   return api.get<PromotedDto[]>(API_PUBLIC_PROMOTED, {
     requireAuth: false,
     params: slot ? { slot } : undefined,
-    revalidate: 60,
+    revalidate: 900,
+    tags: ["marketing"],
   });
 }
 

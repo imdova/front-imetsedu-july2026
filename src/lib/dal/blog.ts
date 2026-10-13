@@ -28,6 +28,8 @@ export async function fetchArticleBySlug(slug: string): Promise<Result<BlogPost>
   const res = await svc.getPublicBySlug(slug);
   return res.ok ? ok(mapId<BlogPost>(res.data)) : res;
 }
+/** Counts one view. Called from the browser so the article page stays cacheable. */
+export const recordArticleView = (slug: string) => svc.recordView(slug);
 export const fetchPublicCategoryNames = () => svc.publicCategoryNames();
 export async function fetchTopics(): Promise<Result<BlogCategory[]>> {
   const res = await svc.topics();

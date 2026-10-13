@@ -10,4 +10,4 @@ type SettingsDoc = SiteSettings & { _id?: string };
 export const getAdminSettings = (): Promise<Result<SettingsDoc>> => api.get<SettingsDoc>(API_ADMIN);
 export const updateSettings = (patch: SiteSettingsPatch): Promise<Result<SettingsDoc>> => api.patch<SettingsDoc>(API_ADMIN, patch);
 export const getPublicSettings = (): Promise<Result<SettingsDoc>> =>
-  api.get<SettingsDoc>(API_PUBLIC, { requireAuth: false, revalidate: 120 });
+  api.get<SettingsDoc>(API_PUBLIC, { requireAuth: false, revalidate: 900, tags: ["settings"] });

@@ -10,10 +10,10 @@ const ADMIN = "/admin/free-courses";
  * (api-client only honours `revalidate` when method === GET && !requireAuth).
  */
 export const listPublic = (): Promise<Result<FreeProgramDto[]>> =>
-  api.get(PUBLIC, { requireAuth: false, revalidate: 300 });
+  api.get(PUBLIC, { requireAuth: false, revalidate: 300, tags: ["courses"] });
 
 export const getPublicBySlug = (slug: string): Promise<Result<FreeProgramDto>> =>
-  api.get(`${PUBLIC}/${slug}`, { requireAuth: false, revalidate: 120 });
+  api.get(`${PUBLIC}/${slug}`, { requireAuth: false, revalidate: 300, tags: ["courses"] });
 
 /* ── Admin ── */
 export const listAll = (): Promise<Result<FreeProgramDto[]>> =>

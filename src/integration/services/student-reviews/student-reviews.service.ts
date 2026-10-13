@@ -9,7 +9,7 @@ import type { StudentReviewDto, StudentReviewBody } from "./types";
 const kindParams = (kind?: string) => (kind ? { params: { kind } } : undefined);
 
 export const listPublicReviews = (kind?: string): Promise<Result<StudentReviewDto[]>> =>
-  api.get<StudentReviewDto[]>(API_STUDENT_REVIEWS, { requireAuth: false, revalidate: 120, ...kindParams(kind) });
+  api.get<StudentReviewDto[]>(API_STUDENT_REVIEWS, { requireAuth: false, revalidate: 300, tags: ["reviews"], ...kindParams(kind) });
 
 export const listAdminReviews = (kind?: string): Promise<Result<StudentReviewDto[]>> =>
   api.get<StudentReviewDto[]>(API_ADMIN_STUDENT_REVIEWS, kindParams(kind));

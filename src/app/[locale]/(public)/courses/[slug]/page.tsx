@@ -91,6 +91,25 @@ import { mergeSeo } from "@/lib/public-seo";
  */
 export const revalidate = 3600;
 
+/**
+ * Prerender every published course in both locales.
+ *
+ * Nothing on this page needs the request — the price is swapped client-side
+ * from `/api/geo`, so one cached document serves every country. Without this
+ * list, though, Next builds the route on demand and the pages were served with
+ * `no-store`: dynamic for want of a slug list, not for want of a request.
+ */
+export async function generateStaticParams() {
+  const res = await dal.courses.fetchPublishedCourses();
+  const courses = res.ok ? res.data : [];
+  return courses
+    .filter((c) => !!c.slug)
+    .flatMap((c) => [
+      { locale: "en", slug: c.slug },
+      { locale: "ar", slug: c.slug },
+    ]);
+}
+
 export async function generateMetadata({
   params,
 }: {

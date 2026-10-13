@@ -35,6 +35,25 @@ import {
   trackOf,
 } from "@/features/career-hub/lib/career-taxonomy";
 
+/** Job posting. Cleared early by the cache tags on its data. */
+export const revalidate = 900;
+
+/**
+ * Prerender the open postings. A job published after this build is still
+ * served — it just renders on first request and is cached from then on.
+ */
+export async function generateStaticParams() {
+  const res = await dal.careerHub.fetchJobs({ limit: 200 });
+  const jobs = res.ok ? res.data.data : [];
+  return jobs
+    .map((j) => j.slug)
+    .filter((slug): slug is string => !!slug)
+    .flatMap((slug) => [
+      { locale: "en", slug },
+      { locale: "ar", slug },
+    ]);
+}
+
 type Params = Promise<{ locale: string; slug: string }>;
 
 const plain = (s: string, max: number) => {

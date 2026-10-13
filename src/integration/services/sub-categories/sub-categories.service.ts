@@ -22,7 +22,7 @@ export function createSubCategory(
 }
 
 export function listSubCategories(): Promise<Result<SubCategory[]>> {
-  return api.get<SubCategory[]>(API_SUB_CATEGORIES, { requireAuth: false, revalidate: 300 });
+  return api.get<SubCategory[]>(API_SUB_CATEGORIES, { requireAuth: false, revalidate: 300, tags: ["categories"] });
 }
 
 export function getSubCategoryById(id: string): Promise<Result<SubCategory>> {

@@ -30,6 +30,9 @@ import {
   trackOf,
 } from "@/features/career-hub/lib/career-taxonomy";
 
+/** Job listing; postings open and close often. Cleared early by the cache tags on its data. */
+export const revalidate = 900;
+
 const PATH = "/careers";
 const PAGE_SIZE = 20;
 
@@ -65,7 +68,7 @@ export async function generateMetadata({
     title: ar ? "وظائف الرعاية الصحية في مصر والخليج" : "Healthcare Jobs in Egypt & the Gulf",
     description: ar
       ? "مركز وظائف IMETS: وظائف موثّقة للأطباء والتمريض والصيادلة وأخصائيي الجودة ومكافحة العدوى في مصر والسعودية والإمارات ودول الخليج."
-      : "IMETS Career Hub: verified openings for doctors, nurses, pharmacists, quality and infection control professionals in Egypt, Saudi Arabia, the UAE and the Gulf.",
+      : "IMETS Career Hub: verified openings for doctors, nurses, pharmacists and quality and infection control professionals across Egypt and the Gulf.",
     path: PATH,
     locale,
   });

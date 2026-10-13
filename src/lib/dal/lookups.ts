@@ -44,9 +44,15 @@ export async function fetchCategories(): Promise<Result<CategoryLookup[]>> {
   }
 }
 
-/** LIVE: instructors from GET /instructors, mapped to the course-form lookup. */
+/**
+ * LIVE: instructors from GET /instructors, mapped to the course-form lookup.
+ *
+ * Fetched without a token. The endpoint is public, and asking for it with one
+ * meant reading the session cookie on every public page that shows the faculty
+ * strip — which is what kept the home page and /about dynamic.
+ */
 export async function fetchInstructors(): Promise<Result<InstructorLookup[]>> {
-  const res = await instructorService.getAll({ limit: 200 } as never);
+  const res = await instructorService.getAll({ limit: 200 } as never, { public: true });
   if (!res.ok) return res;
   try {
     return ok(

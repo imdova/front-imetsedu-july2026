@@ -15,7 +15,16 @@ class InstructorService {
     );
   }
 
-  async getAll(query?: GetInstructorsQuery): Promise<Result<GetInstructorsResponse>> {
+  /**
+   * The backend marks this endpoint `@Public()`, so `opts.public` drops the
+   * bearer token and lets the response be cached. The public site must pass it:
+   * sending a token means reading the session cookie, and that makes every page
+   * showing the faculty strip render on demand.
+   */
+  async getAll(
+    query?: GetInstructorsQuery,
+    opts: { public?: boolean } = {},
+  ): Promise<Result<GetInstructorsResponse>> {
     const params: Record<string, string | number | boolean> = {};
     if (query) {
       Object.entries(query).forEach(([key, value]) => {
@@ -24,12 +33,16 @@ class InstructorService {
         }
       });
     }
-    return api.get<GetInstructorsResponse>(INSTRUCTORS_API.LIST, { params });
+    return api.get<GetInstructorsResponse>(INSTRUCTORS_API.LIST, {
+      params,
+      ...(opts.public ? { requireAuth: false, revalidate: 3600, tags: ["instructors"] } : {}),
+    });
   }
 
-  async getById(id: string): Promise<Result<InstructorResponse>> {
+  async getById(id: string, opts: { public?: boolean } = {}): Promise<Result<InstructorResponse>> {
     const res = await api.get<InstructorResponse | { data: InstructorResponse }>(
       INSTRUCTORS_API.GET_BY_ID(id),
+      opts.public ? { requireAuth: false, revalidate: 3600, tags: ["instructors"] } : undefined,
     );
     if (!res.ok) return res;
     const payload = res.data as InstructorResponse & { data?: InstructorResponse };

@@ -1,5 +1,8 @@
 import { geoMarketRoute } from "@/features/marketing/lib/geo-route";
 
+/** Country page; quotes the course price. Cleared early by the cache tags on its data. */
+export const revalidate = 3600;
+
 /**
  * Country landing pages for the CPHQ course (`/cphq-course/egypt`).
  *

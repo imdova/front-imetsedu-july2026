@@ -14,6 +14,7 @@ import {
 } from "@/lib/seo";
 import { ArticleSections, ArticleContent, headingId } from "@/features/blog/components/article-sections";
 import { ReadingProgress, ArticleToc } from "@/features/blog/components/article-reader-ui";
+import { ArticleViewCounter } from "@/features/blog/components/article-view-counter";
 import { CourseCallout } from "@/features/blog/components/course-callout";
 import { ArticleByline, type ArticleAuthor } from "@/features/blog/components/article-byline";
 import { courseAnchorText } from "@/features/blog/lib/course-anchors";
@@ -23,9 +24,31 @@ import { relatedPosts } from "@/features/blog/lib/related-posts";
 import { geoPagesCiting } from "@/features/marketing/lib/geo-course-pages";
 import { RelatedArticles } from "@/features/blog/components/related-articles";
 
-// Memoize per request so generateMetadata + the page share one fetch
-// (the backend increments `views` on read — we want exactly one increment).
+// Memoize per request so generateMetadata + the page share one fetch.
 const getArticle = cache((slug: string) => dal.blog.fetchArticleBySlug(slug));
+
+/*
+ * Articles change rarely, so they are prerendered and then held for a day. An
+ * edit does not wait that long: the `blog` cache tag is cleared on save, and
+ * this window only covers an edit made while the site was unreachable.
+ */
+export const revalidate = 86400;
+
+/**
+ * Prerender every published article.
+ *
+ * Without this the route is built on demand, which is why these pages were
+ * served dynamically — not because anything on them needs a request. Each post
+ * exists in exactly one language, so the locale comes from the post itself
+ * rather than the cross-product of locales and slugs.
+ */
+export async function generateStaticParams() {
+  const res = await dal.blog.fetchPublicArticles({ limit: 500 });
+  const posts = res.ok ? res.data.data : [];
+  return posts
+    .filter((p) => !!p.slug)
+    .map((p) => ({ locale: p.language === "ar" ? "ar" : "en", slug: p.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -241,6 +264,7 @@ export default async function ArticleDetailPage({
   return (
     <article className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <ReadingProgress targetId="article-body" />
+      <ArticleViewCounter slug={slug} />
       <JsonLd data={[articleLd, ...(faqLd ? [faqLd] : []), crumb]} />
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
         <Link href="/" className="hover:text-foreground">{locale === "ar" ? "الرئيسية" : "Home"}</Link>
