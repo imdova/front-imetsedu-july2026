@@ -4,7 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 
 import { PolicyDoc } from "@/features/public/components/policy-doc";
 import { POLICIES, POLICY_ORDER } from "@/features/public/lib/policy-content";
-import { staticPageMeta } from "@/lib/seo";
+import { metaDescription, staticPageMeta } from "@/lib/seo";
 
 export function generateStaticParams() {
   return POLICY_ORDER.map((slug) => ({ slug }));
@@ -20,7 +20,7 @@ export async function generateMetadata({
   if (!doc) return {};
   return staticPageMeta({
     title: `${doc.title} — IMETS Medical School`,
-    description: doc.intro.slice(0, 160),
+    description: metaDescription(doc.intro),
     path: `/policy/${slug}`,
     locale,
   });

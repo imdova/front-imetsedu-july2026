@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
-import { seoAlternates } from "@/lib/seo";
+import { seoAlternates, socialMeta } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -171,6 +171,9 @@ export async function generateMetadata({
   const { locale } = await params;
   const ar = locale === "ar";
   const admin = await resolveSeoMetadata(PATH).catch(() => ({}) as Metadata);
+  const description = ar
+    ? "اشترك مع مدرسة IMETS الطبية: تدريب صحي معتمد وبرامج مشتركة وتطوير للكوادر للمستشفيات والجامعات ومعاهد التدريب."
+    : "Partner with IMETS Medical School: accredited healthcare training, co-branded programs and workforce development for hospitals and universities.";
   return {
     ...admin,
     alternates: seoAlternates(PATH, locale),
@@ -181,9 +184,10 @@ export async function generateMetadata({
         ? "شراكة مع IMETS Medical School — للمستشفيات والمؤسسات التعليمية"
         : "Partner with IMETS Medical School — Hospitals & Educational Institutions",
     },
-    description: ar
-      ? "اشترك مع مدرسة IMETS الطبية: تدريب صحي معتمد، وبرامج مشتركة، وتطوير للكوادر للمستشفيات والجامعات ومعاهد التدريب حول العالم. ابدأ شراكة."
-      : "Partner with IMETS Medical School: accredited healthcare training, co-branded programs and workforce development for hospitals, universities and training institutes worldwide. Start a partnership.",
+    description,
+    // The page built its metadata by hand and so never emitted an OG image,
+    // which is what a shared link shows.
+    ...socialMeta({ title: ar ? "شراكة مع IMETS Medical School" : "Partner with IMETS Medical School", description, path: PATH, locale }),
   };
 }
 

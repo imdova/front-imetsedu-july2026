@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: ar ? "انشر وظيفة صحية" : "Post a Healthcare Job",
     description: ar
       ? "لجهات العمل في مصر والخليج: أرسل وظيفتك الشاغرة مجانًا، ونطابقها مع خريجي IMETS المؤهلين في الجودة ومكافحة العدوى والإدارة الصحية."
-      : "Employers in Egypt and the Gulf: share a vacancy for free and we match it to trained IMETS graduates in quality, infection control and healthcare management.",
+      : "Employers in Egypt and the Gulf: post a vacancy free and we match it to IMETS graduates in quality, infection control and healthcare management.",
     path: PATH,
     locale,
   });

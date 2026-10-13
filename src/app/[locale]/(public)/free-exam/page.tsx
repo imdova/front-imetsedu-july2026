@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 
 import { resolveSeoMetadata } from "@/lib/public-seo";
-import { seoAlternates } from "@/lib/seo";
+import { seoAlternates, socialMeta } from "@/lib/seo";
 import { FreeExamForm } from "@/features/marketing/components/free-exam-form";
+
+const EXAM_DESCRIPTION = "Take a free placement exam and get a personalized course recommendation.";
 
 export async function generateMetadata({
   params,
@@ -19,8 +21,9 @@ export async function generateMetadata({
   return {
     ...admin,
     title: "Free Placement Exam",
-    description: "Take a free placement exam and get a personalized course recommendation.",
+    description: EXAM_DESCRIPTION,
     alternates: seoAlternates("/free-exam", locale),
+    ...socialMeta({ title: "Free Placement Exam", description: EXAM_DESCRIPTION, path: "/free-exam", locale }),
   };
 }
 

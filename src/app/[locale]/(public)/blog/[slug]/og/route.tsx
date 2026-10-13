@@ -28,7 +28,7 @@ export async function GET(
           color: "white", fontFamily: "sans-serif",
         }}
       >
-        <div style={{ fontSize: 30, fontWeight: 600, opacity: 0.9 }}>{SITE_NAME} · Blog</div>
+        <div style={{ fontSize: 30, fontWeight: 600, opacity: 0.9 }}>{`${SITE_NAME} · Blog`}</div>
         <div style={{ fontSize: 64, fontWeight: 800, lineHeight: 1.1, maxWidth: 1000 }}>{title}</div>
         <div style={{ fontSize: 26, opacity: 0.85 }}>imetsedu.com/blog</div>
       </div>

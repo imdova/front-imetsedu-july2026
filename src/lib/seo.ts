@@ -57,10 +57,24 @@ export function seoAlternates(
   return { canonical: localeUrl(path, canonicalLocale), languages };
 }
 
+/**
+ * The longest description Google will render before truncating. Everything
+ * past this is written for nobody.
+ */
+export const DESC_MAX = 155;
+
 /** Strip HTML + collapse whitespace + clamp to a meta-description length. */
-export function metaDescription(input?: string, fallback = ""): string {
+export function metaDescription(input?: string, fallback = "", limit = DESC_MAX): string {
   const text = (input || fallback).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-  return text.length > 160 ? `${text.slice(0, 157).trimEnd()}…` : text;
+  if (text.length <= limit) return text;
+  /*
+   * Cut on a space, not on a character. The old clamp sliced at 157 and added
+   * an ellipsis, which produced endings like "live sessions, recordi…" — and
+   * at 158 characters it was over the limit anyway.
+   */
+  const window = text.slice(0, limit - 1);
+  const cut = window.lastIndexOf(" ");
+  return `${(cut > limit * 0.6 ? window.slice(0, cut) : window).trimEnd()}…`;
 }
 
 /**
