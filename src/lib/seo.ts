@@ -14,7 +14,9 @@ export { brandedTitle } from "@/lib/public-seo";
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://imetsedu.com").replace(/\/$/, "");
 export const SITE_NAME = "IMETS Medical School";
-export const SITE_LOGO = `${SITE_URL}/icon`;
+/** The organisation logo for structured data: the full lockup, square, on white. */
+export const SITE_LOGO = `${SITE_URL}/logo-512.png`;
+export const SITE_LOGO_SIZE = 512;
 
 /** Absolute URL for a locale-agnostic public path (leading slash, no locale). */
 export function localeUrl(path: string, locale: string): string {
@@ -155,7 +157,17 @@ export function organizationLd(opts?: {
     "@id": ORGANIZATION_ID,
     name: SITE_NAME,
     url: SITE_URL,
-    logo: SITE_LOGO,
+    /*
+     * An ImageObject rather than a bare URL: Google wants the logo's
+     * dimensions (and at least 112x112) to show it beside the site name,
+     * and a URL alone leaves it to guess.
+     */
+    logo: {
+      "@type": "ImageObject",
+      url: SITE_LOGO,
+      width: SITE_LOGO_SIZE,
+      height: SITE_LOGO_SIZE,
+    },
     ...(opts?.description ? { description: opts.description } : {}),
     areaServed: AREA_SERVED.map((name) => ({ "@type": "Country", name })),
     ...(opts?.address

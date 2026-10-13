@@ -44,9 +44,8 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const [{ settings }, theme, ss] = await Promise.all([
+  const [{ settings }, ss] = await Promise.all([
     getSiteSettings().catch(() => ({ settings: null })),
-    getTheme().catch(() => null),
     dal.siteSettings.fetchPublicSettings().then((r) => (r.ok ? r.data : null)).catch(() => null),
   ]);
   // Prefer the typed site-settings branding/general; fall back to the legacy store.
@@ -55,16 +54,14 @@ export async function generateMetadata({
   const description = settings?.metaDescription || ss?.general?.tagline ||
     "IMETS Medical School — a modern online courses platform for professional healthcare education.";
   const keywords = settings?.keywords || undefined;
-  const faviconUrl = ss?.branding?.faviconUrl || theme?.favicon;
   const ogImage = ss?.branding?.ogImage || undefined;
 
   return {
     title: { default: seoTitle, template: `%s · ${siteName}` },
     description,
-    ...(keywords ? { keywords } : {}),
-    // When a branding favicon is set it is authoritative (icon + apple + shortcut).
-    // When absent, the file-based app/icon.tsx + apple-icon.tsx defaults apply.
-    ...(faviconUrl ? { icons: { icon: faviconUrl, shortcut: faviconUrl, apple: faviconUrl } } : {}),
+    ...(keywords ? { keywords } : {}),    // Icons come from the files in app/ (icon.png, apple-icon.png, favicon.ico)
+    // — the real logo. A branding favicon from site settings used to override
+    // them with an S3 JPG, which browsers treat poorly as a favicon.
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://imetsedu.com"),
     // Google Search Console site verification (rendered site-wide in <head>).
     verification: {
