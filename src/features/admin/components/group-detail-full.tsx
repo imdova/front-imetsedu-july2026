@@ -28,6 +28,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AddStudentDialog } from "./add-student-dialog";
 import { AssignmentsTab } from "./lms-extra-tabs";
 
+type RosterLms = { id: string; title: string; isActive: boolean; direct: boolean; courseIsActive: boolean };
+
+/** The first few words of a name, so a long full name does not stretch the row. */
+function shortName(name: string, words = 3): string {
+  return name.trim().split(/\s+/).slice(0, words).join(" ");
+}
+
+/** Courses shown in the cell before the rest fold into "+N". */
+const LMS_SHOWN = 2;
+
 type Tab = "students" | "lms" | "assignments";
 const VALID_TABS: Tab[] = ["students", "lms", "assignments"];
 
@@ -164,8 +174,18 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
   const [search, setSearch] = React.useState("");
 
   /* ── Certificates: leadId + existing certificate per student (keyed by user id) ── */
-  type CertInfo = { leadId: string | null; certificate: { id: string; code: string; link: string } | null };
+  type CertInfo = {
+    leadId: string | null;
+    certificate: { id: string; code: string; link: string } | null;
+    /** Contact details from the roster call, which falls back to the CRM lead. */
+    email: string;
+    phone: string;
+    lms: RosterLms[];
+  };
   const [certs, setCerts] = React.useState<Record<string, CertInfo>>({});
+  // The LMS column has nothing to show until the roster call returns; "none
+  // assigned" before then would be a claim the page cannot yet back up.
+  const [rosterLoaded, setRosterLoaded] = React.useState(false);
   const [uploadingFor, setUploadingFor] = React.useState<string | null>(null);
   const certFileRef = React.useRef<HTMLInputElement>(null);
   const certTarget = React.useRef<RosterStudent | null>(null);
@@ -174,8 +194,17 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
     const res = await dal.groups.fetchGroupStudents(groupId);
     if (!res.ok) return;
     const map: Record<string, CertInfo> = {};
-    for (const r of res.data) map[r.userId] = { leadId: r.leadId, certificate: r.certificate ? { id: r.certificate.id, code: r.certificate.code, link: r.certificate.link } : null };
+    for (const r of res.data) {
+      map[r.userId] = {
+        leadId: r.leadId,
+        certificate: r.certificate ? { id: r.certificate.id, code: r.certificate.code, link: r.certificate.link } : null,
+        email: r.email,
+        phone: r.phone,
+        lms: r.lmsCourses,
+      };
+    }
     setCerts(map);
+    setRosterLoaded(true);
   }, [groupId]);
   React.useEffect(() => {
     const id = setTimeout(() => { void loadCerts(); }, 0);
@@ -256,6 +285,7 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
             <th className="px-3 py-3 text-start font-semibold">{t("gdColEnrolled")}</th>
             <th className="px-3 py-3 text-start font-semibold">{t("gdColCountry")}</th>
             <th className="px-3 py-3 text-start font-semibold">{t("gdColSource")}</th>
+            <th className="px-3 py-3 text-start font-semibold">{t("gdColLms")}</th>
             <th className="px-3 py-3 text-start font-semibold">{t("gdColProgress")}</th>
             <th className="px-3 py-3 text-start font-semibold">{t("gdColStatus")}</th>
             <th className="px-3 py-3 text-start font-semibold">{t("gdColPayment")}</th>
@@ -264,13 +294,14 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
           </tr></thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={9} className="py-12 text-center text-muted-foreground">{t("gdNoRoster")}</td></tr>
+              <tr><td colSpan={10} className="py-12 text-center text-muted-foreground">{t("gdNoRoster")}</td></tr>
             ) : filtered.map((s) => (
               <tr key={s.id} className="border-b last:border-0">
-                <td className="px-5 py-4"><div className="flex items-center gap-3"><Link href={`/admin/students/${s.id}`} className="grid size-9 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{getInitials(s.name)}</Link><div><Link href={`/admin/students/${s.id}`} className="font-medium hover:text-primary hover:underline">{s.name}</Link><p className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Mail className="size-3" />{s.email}</p><p className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Phone className="size-3" />{s.phone}</p></div></div></td>
+                <td className="px-5 py-4"><div className="flex items-center gap-3"><Link href={`/admin/students/${s.id}`} className="grid size-9 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{getInitials(s.name)}</Link><div><Link href={`/admin/students/${s.id}`} title={s.name} className="block font-medium hover:text-primary hover:underline">{shortName(s.name)}</Link><p className="flex items-center gap-1 text-xs text-muted-foreground"><Mail className="size-3 shrink-0" /><span dir="ltr">{s.email || certs[s.id]?.email || "—"}</span></p><p className="flex items-center gap-1 text-xs text-muted-foreground"><Phone className="size-3 shrink-0" /><span dir="ltr">{s.phone || certs[s.id]?.phone || "—"}</span></p></div></div></td>
                 <td className="px-3 py-4 text-muted-foreground tabular-nums">{s.enrolledDate}</td>
                 <td className="px-3 py-4 text-muted-foreground">{s.country}</td>
                 <td className="px-3 py-4"><Badge variant="secondary" className="text-chart-3">{s.leadSource}</Badge></td>
+                <td className="px-3 py-4"><LmsCell courses={certs[s.id]?.lms} loaded={rosterLoaded} t={t} /></td>
                 <td className="px-3 py-4"><div className="flex items-center gap-2"><div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary" style={{ width: `${s.progress}%` }} /></div><span className="rounded-full bg-warning/15 px-1.5 text-xs text-warning tabular-nums">{s.progress}%</span></div></td>
                 <td className="px-3 py-4"><div className="flex items-center gap-2"><Switch checked={s.status === "approved"} disabled={isStaff} onCheckedChange={() => !isStaff && toggleStatus(s)} /><span className={cn("inline-flex items-center gap-1 text-xs", s.status === "approved" ? "text-success" : "text-muted-foreground")}><span className={cn("size-1.5 rounded-full", s.status === "approved" ? "bg-success" : "bg-muted-foreground")} />{t("gdApproved")}</span></div></td>
                 <td className="px-3 py-4"><Badge className="border-transparent bg-warning/15 text-warning">{t("gdPaymentPending")}</Badge></td>
@@ -285,6 +316,39 @@ function StudentsList({ groupId, roster, t, isStaff = false }: { groupId: string
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A student's LMS courses in a roster cell.
+ *
+ * A course the admin switched off for this student stays listed, struck through
+ * and tinted — hiding it would suggest the student never had it, which is not
+ * the same thing as access being off. The first {@link LMS_SHOWN} are named and
+ * the rest fold into "+N", with every title in the tooltip.
+ */
+function LmsCell({ courses, loaded, t }: { courses: RosterLms[] | undefined; loaded: boolean; t: (k: string) => string }) {
+  if (!loaded) return <span className="text-muted-foreground">…</span>;
+  if (!courses?.length) return <span className="text-xs text-muted-foreground">{t("gdLmsNone")}</span>;
+  const shown = courses.slice(0, LMS_SHOWN);
+  const rest = courses.slice(LMS_SHOWN);
+  const describe = (c: RosterLms) => `${c.title}${c.isActive ? "" : ` (${t("gdLmsOff")})`}${c.direct ? "" : ` · ${t("gdLmsViaGroup")}`}`;
+  return (
+    <div className="flex max-w-[240px] flex-wrap items-center gap-1">
+      {shown.map((c) => (
+        <Badge
+          key={c.id}
+          variant="outline"
+          title={describe(c)}
+          className={cn("max-w-[170px] truncate font-normal", !c.isActive && "border-destructive/40 text-destructive line-through", c.isActive && !c.courseIsActive && "opacity-60")}
+        >
+          <span className="truncate">{c.title}</span>
+        </Badge>
+      ))}
+      {rest.length > 0 && (
+        <Badge variant="secondary" title={courses.map(describe).join("\n")} className="font-normal tabular-nums">+{rest.length}</Badge>
+      )}
     </div>
   );
 }

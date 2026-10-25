@@ -21,6 +21,7 @@ export interface GroupRosterStudent {
   isApproved: boolean;
   progress: number;
   certificate: { id: string; code: string; link: string; status: string } | null;
+  lmsCourses: groupsSvc.RosterLmsCourseDto[];
 }
 
 /** LIVE: GET /groups/:id/students — roster joined to leads + certificates. */
@@ -38,6 +39,7 @@ export async function fetchGroupStudents(groupId: string): Promise<Result<GroupR
       image: r.image || "",
       isApproved: r.isApproved !== false,
       progress: r.progress ?? 0,
+      lmsCourses: r.lmsCourses ?? [],
       certificate: r.certificate
         ? {
             id: r.certificate.id,

@@ -42,6 +42,18 @@ export interface GroupRosterStudentDto {
   isApproved: boolean;
   progress: number;
   certificate: { id: string; code: string; link: string; status: string } | null;
+  /** LMS courses this student can open, directly or through any of their groups. */
+  lmsCourses?: RosterLmsCourseDto[];
+}
+
+export interface RosterLmsCourseDto {
+  id: string;
+  title: string;
+  /** The per-student access switch; false means switched off for this student. */
+  isActive: boolean;
+  /** An entry in the course's student list, as opposed to access via a group only. */
+  direct: boolean;
+  courseIsActive: boolean;
 }
 
 export function listGroupStudents(id: string): Promise<Result<GroupRosterStudentDto[]>> {
