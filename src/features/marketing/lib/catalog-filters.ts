@@ -1,5 +1,45 @@
 import type { CourseRow } from "@/types";
 
+/**
+ * What the facet functions read. Deliberately a pick of the course record: the
+ * description is only ever consulted here, on the server, to derive facets.
+ */
+export type FacetSource = Pick<
+  CourseRow,
+  | "titleEn"
+  | "titleAr"
+  | "slug"
+  | "category"
+  | "duration"
+  | "languages"
+  | "deliveryModes"
+  | "tagLabels"
+  | "headlineEn"
+  | "descriptionEn"
+>;
+
+/** Facet values for one course, computed once on the server. */
+export interface CourseFacets {
+  specialties: string[];
+  certifications: string[];
+  deliveries: string[];
+  durations: string[];
+  languages: string[];
+}
+
+/**
+ * The slice of a course the client-side filters need. `facets` carries the
+ * answers the description-reading functions below used to compute in the browser.
+ */
+export interface FilterableCourse {
+  category: string;
+  categoryAr?: string;
+  difficulty: string;
+  priceEGP: number;
+  salePriceEGP: number;
+  facets: CourseFacets;
+}
+
 export const SPECIALTY_OPTIONS = [
   { value: "healthcare_quality", labelKey: "filterSpecialtyQuality" },
   { value: "infection_control", labelKey: "filterSpecialtyInfection" },
@@ -41,7 +81,7 @@ export const LEVEL_FILTER_OPTIONS = [
   { value: "Advanced", labelKey: "filterLevelAdvanced" },
 ] as const;
 
-function blob(c: CourseRow): string {
+function blob(c: FacetSource): string {
   return [
     c.titleEn,
     c.titleAr,
@@ -59,12 +99,12 @@ function blob(c: CourseRow): string {
     .toLowerCase();
 }
 
-export function effectivePrice(c: CourseRow): number {
+export function effectivePrice(c: Pick<CourseRow, "priceEGP" | "salePriceEGP">): number {
   if (c.salePriceEGP > 0 && c.salePriceEGP < c.priceEGP) return c.salePriceEGP;
   return c.priceEGP;
 }
 
-export function courseSpecialties(c: CourseRow): string[] {
+export function courseSpecialties(c: FacetSource): string[] {
   const b = blob(c);
   const out: string[] = [];
   if (/quality|cphq|naqh|nahq|accreditation|clinical governance/.test(b))
@@ -76,7 +116,7 @@ export function courseSpecialties(c: CourseRow): string[] {
   return out;
 }
 
-export function courseCertifications(c: CourseRow): string[] {
+export function courseCertifications(c: FacetSource): string[] {
   const b = blob(c);
   const out: string[] = [];
   if (/\bcphq\b/.test(b)) out.push("cphq");
@@ -87,7 +127,7 @@ export function courseCertifications(c: CourseRow): string[] {
   return out;
 }
 
-export function courseDeliveries(c: CourseRow): string[] {
+export function courseDeliveries(c: FacetSource): string[] {
   const explicit = (c.deliveryModes ?? []).map((d) => d.toLowerCase());
   const b = blob(c);
   const out = new Set<string>();
@@ -112,7 +152,7 @@ export function courseDeliveries(c: CourseRow): string[] {
 }
 
 /** Normalize duration strings into filter buckets. */
-export function courseDurationBuckets(c: CourseRow): string[] {
+export function courseDurationBuckets(c: FacetSource): string[] {
   const raw = (c.duration ?? "").toLowerCase().trim();
   const b = blob(c);
   const text = `${raw} ${b}`;
@@ -145,7 +185,7 @@ export function courseDurationBuckets(c: CourseRow): string[] {
   return [...out];
 }
 
-export function courseLanguages(c: CourseRow): string[] {
+export function courseLanguages(c: FacetSource): string[] {
   const langs = (c.languages ?? []).map((l) => l.toLowerCase());
   const out = new Set<string>();
   for (const l of langs) {
@@ -160,6 +200,17 @@ export function courseLanguages(c: CourseRow): string[] {
   // Catalog cards advertise bilingual delivery by default
   if (out.size === 0) out.add("bilingual");
   return [...out];
+}
+
+/** Run the facet functions once. Server-side only — it reads the description. */
+export function computeFacets(c: FacetSource): CourseFacets {
+  return {
+    specialties: courseSpecialties(c),
+    certifications: courseCertifications(c),
+    deliveries: courseDeliveries(c),
+    durations: courseDurationBuckets(c),
+    languages: courseLanguages(c),
+  };
 }
 
 function anyMatch(selected: string[], actual: string[]): boolean {
@@ -201,7 +252,7 @@ export function emptyCatalogFilters(priceCeiling: number): CatalogFilterState {
  * `nameAr` carries the Arabic label for display.
  */
 export function catalogCategories(
-  courses: CourseRow[],
+  courses: Pick<FilterableCourse, "category" | "categoryAr">[],
 ): { value: string; nameAr?: string; count: number }[] {
   const counts = new Map<string, { count: number; nameAr?: string }>();
   for (const c of courses) {
@@ -245,18 +296,18 @@ export type FacetKey =
   | "levels";
 
 /** The values a course exposes for a given facet. */
-export function courseFacetValues(c: CourseRow, key: FacetKey): string[] {
+export function courseFacetValues(c: FilterableCourse, key: FacetKey): string[] {
   switch (key) {
     case "specialties":
-      return courseSpecialties(c);
+      return c.facets.specialties;
     case "certifications":
-      return courseCertifications(c);
+      return c.facets.certifications;
     case "deliveries":
-      return courseDeliveries(c);
+      return c.facets.deliveries;
     case "durations":
-      return courseDurationBuckets(c);
+      return c.facets.durations;
     case "languages":
-      return courseLanguages(c);
+      return c.facets.languages;
     case "levels":
       return [c.difficulty];
   }
@@ -272,7 +323,7 @@ export function courseFacetValues(c: CourseRow, key: FacetKey): string[] {
  * their way into an empty result set.
  */
 export function facetCounts(
-  courses: CourseRow[],
+  courses: FilterableCourse[],
   filters: CatalogFilterState,
   key: FacetKey,
 ): Record<string, number> {
@@ -286,15 +337,15 @@ export function facetCounts(
 }
 
 export function courseMatchesCatalogFilters(
-  c: CourseRow,
+  c: FilterableCourse,
   f: CatalogFilterState,
 ): boolean {
   if (f.category && (c.category ?? "").trim() !== f.category) return false;
-  if (!anyMatch(f.specialties, courseSpecialties(c))) return false;
-  if (!anyMatch(f.certifications, courseCertifications(c))) return false;
-  if (!anyMatch(f.deliveries, courseDeliveries(c))) return false;
-  if (!anyMatch(f.durations, courseDurationBuckets(c))) return false;
-  if (!anyMatch(f.languages, courseLanguages(c))) return false;
+  if (!anyMatch(f.specialties, c.facets.specialties)) return false;
+  if (!anyMatch(f.certifications, c.facets.certifications)) return false;
+  if (!anyMatch(f.deliveries, c.facets.deliveries)) return false;
+  if (!anyMatch(f.durations, c.facets.durations)) return false;
+  if (!anyMatch(f.languages, c.facets.languages)) return false;
   if (f.levels.length && !f.levels.includes(c.difficulty)) return false;
   const price = effectivePrice(c);
   if (price < f.priceMin || price > f.priceMax) return false;

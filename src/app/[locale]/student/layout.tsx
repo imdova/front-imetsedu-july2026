@@ -5,6 +5,8 @@ import { STUDENT_NAV } from "@/constants/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { AdminBootstrap } from "@/components/layout/admin-bootstrap";
+import { IntlScope } from "@/i18n/intl-scope";
+import { FULL_CATALOGUE } from "@/i18n/scopes";
 
 /** Private workspace — never index. */
 export const metadata = { robots: { index: false, follow: false } };
@@ -21,17 +23,19 @@ export default async function StudentLayout({
   setRequestLocale(locale);
 
   return (
-    <div className="flex min-h-svh bg-muted/30">
-      <AdminBootstrap />
-      <AppSidebar
-        nav={STUDENT_NAV}
-        homeHref="/student/dashboard"
-        taglineKey="studentPortal"
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader nav={STUDENT_NAV} showCreate={false} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+    <IntlScope namespaces={FULL_CATALOGUE}>
+      <div className="flex min-h-svh bg-muted/30">
+        <AdminBootstrap />
+        <AppSidebar
+          nav={STUDENT_NAV}
+          homeHref="/student/dashboard"
+          taglineKey="studentPortal"
+        />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <AppHeader nav={STUDENT_NAV} showCreate={false} />
+          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        </div>
       </div>
-    </div>
+    </IntlScope>
   );
 }

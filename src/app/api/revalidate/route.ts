@@ -35,7 +35,7 @@ const SCOPE_TAGS: Record<string, string[]> = {
 
 const SCOPES: Record<string, string[]> = {
   course: ["/[locale]/courses/[slug]", "/[locale]/courses", "/[locale]"],
-  blog: ["/[locale]/blog/[slug]", "/[locale]/blog", "/[locale]"],
+  blog: ["/[locale]/blog/[slug]", "/[locale]/blog", "/[locale]/blog/page/[page]", "/[locale]"],
   category: ["/[locale]/category/[slug]", "/[locale]/courses", "/[locale]"],
   instructor: ["/[locale]/instructors/[id]", "/[locale]/instructors"],
   /* Settings and SEO touch the shell, so the layout goes with them. */

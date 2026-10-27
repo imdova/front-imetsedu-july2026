@@ -81,6 +81,7 @@ import {
   offerPriceValidUntil,
 } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
+import { toCourseCardData } from "@/features/marketing/lib/course-card-data";
 
 /*
  * Fallback only. The backend calls `/api/revalidate` after every course edit,
@@ -1336,7 +1337,7 @@ export default async function CourseDetailPage({
             </p>
             <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {related.map((c) => (
-                <CourseCard key={c.id} course={c} />
+                <CourseCard key={c.id} course={toCourseCardData(c)} />
               ))}
             </div>
           </div>

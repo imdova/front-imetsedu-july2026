@@ -33,6 +33,7 @@ import {
 } from "@/features/marketing/components/home-marketing-sections";
 import { brandedTitle, metaDescription, seoAlternates, socialMeta } from "@/lib/seo";
 import { resolveSeoMetadata } from "@/lib/public-seo";
+import { toCourseCardData } from "@/features/marketing/lib/course-card-data";
 
 /** Home. Listing content, so a short window. Cleared early by the cache tags on its data. */
 export const revalidate = 600;
@@ -104,7 +105,7 @@ export default async function HomePage({
         action={<Button asChild variant="ghost" className="gap-1.5"><Link href="/courses">{t("viewAllCourses")}<ArrowRight className="size-4 rtl:rotate-180" /></Link></Button>}>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {courses.map((c) => (
-            <CourseCard key={c.id} course={c} />
+            <CourseCard key={c.id} course={toCourseCardData(c)} />
           ))}
         </div>
       </Section>

@@ -12,6 +12,7 @@
  *   node scripts/audit-seo.mjs --base http://localhost:3000
  *   node scripts/audit-seo.mjs --limit 20            # quick pass
  *   node scripts/audit-seo.mjs --json report.json    # machine-readable
+ *   node scripts/audit-seo.mjs --max-html-kb 250     # HTML weight limit (default 250)
  *
  * Exit code is 1 when any hard failure is found, so it can gate a deploy.
  */
@@ -27,6 +28,16 @@ const BASE = argOf("--base", "https://imetsedu.com").replace(/\/$/, "");
 const LIMIT = Number(argOf("--limit", "0")) || Infinity;
 const JSON_OUT = argOf("--json", "");
 const CONCURRENCY = Number(argOf("--concurrency", "6"));
+
+/**
+ * Uncompressed HTML weight. A page that serialises a whole catalogue into its
+ * markup is slow to parse and to hydrate however well it gzips, and a crawler
+ * works from the uncompressed document. It is an error for the pages the weight
+ * work covers and a warning everywhere else, so the rest of the site is visible
+ * without failing the gate for pages nobody has slimmed yet.
+ */
+const HTML_MAX_KB = Number(argOf("--max-html-kb", "250"));
+const WEIGHT_GATED = new Set(["/", "/courses", "/blog", "/courses/cphq-preparation"]);
 
 /** Google truncates around here; these are the ticket's limits. */
 const TITLE_MAX = 60;
@@ -107,6 +118,17 @@ function inspect(url, html) {
   const description = metaContent(html, "name", "description");
 
   const issues = [];
+
+  const htmlKB = Buffer.byteLength(html) / 1024;
+  if (htmlKB > HTML_MAX_KB) {
+    // /ar/courses is the same page as /courses in the other locale.
+    const path = new URL(url).pathname.replace(/^\/ar(?=\/|$)/, "") || "/";
+    issues.push({
+      level: WEIGHT_GATED.has(path) ? "error" : "warn",
+      kind: "html-heavy",
+      detail: `${htmlKB.toFixed(0)} KB uncompressed (limit ${HTML_MAX_KB})`,
+    });
+  }
 
   if (!title) issues.push({ level: "error", kind: "title-missing", detail: "no <title>" });
   else if (title.length > TITLE_MAX)
@@ -192,6 +214,7 @@ function inspect(url, html) {
 
   return {
     url,
+    htmlKB: Math.round(htmlKB * 10) / 10,
     title,
     description,
     og,

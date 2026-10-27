@@ -9,6 +9,7 @@ import type { PublicCategory } from "@/lib/dal/course-taxonomy";
 import { CourseCard } from "./course-card";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_NAME, localeUrl, breadcrumbLd } from "@/lib/seo";
+import { toCourseCardData } from "@/features/marketing/lib/course-card-data";
 
 /* Pick a lucide icon per known category slug. */
 const CAT_ICON: Record<string, React.ElementType> = {
@@ -165,7 +166,7 @@ export function CategoryLanding({
             </div>
             {courses.length > 0 ? (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {courses.map((c) => <CourseCard key={c.id} course={c} />)}
+                {courses.map((c) => <CourseCard key={c.id} course={toCourseCardData(c)} />)}
               </div>
             ) : (
               <p className="rounded-2xl border border-dashed border-border py-16 text-center text-muted-foreground">

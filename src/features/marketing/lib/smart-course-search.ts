@@ -1,6 +1,48 @@
-import type { CourseRow } from "@/types";
+import type { CourseRow, InstructorLookup } from "@/types";
 import type { BlogPost } from "@/types/blog";
-import type { InstructorLookup } from "@/types";
+
+/** Course fields the *full* haystack is built from. Server-side only. */
+export type HaystackSource = Pick<
+  CourseRow,
+  | "titleEn"
+  | "titleAr"
+  | "slug"
+  | "category"
+  | "difficulty"
+  | "headlineEn"
+  | "headlineAr"
+  | "subHeadlineEn"
+  | "subHeadlineAr"
+  | "descriptionEn"
+  | "descriptionAr"
+  | "whoCanAttendEn"
+  | "whoCanAttendAr"
+  | "instructorNames"
+  | "tagLabels"
+  | "modules"
+>;
+
+/**
+ * What the browser needs to search and rank a course. `searchText` is the short
+ * haystack; the full one arrives separately as a {@link SearchIndex}.
+ */
+export interface SearchableCourse {
+  id: string;
+  slug: string;
+  titleEn: string;
+  category: string;
+  searchText: string;
+  headlineEn?: string;
+  whoCanAttendEn?: string;
+  instructorNames: string[];
+  tagLabels: string[];
+}
+
+export type SearchableInstructor = Pick<InstructorLookup, "id" | "label" | "title" | "slug">;
+export type SearchableArticle = Pick<BlogPost, "id" | "slug" | "title" | "excerpt" | "tags" | "category">;
+
+/** course id → full normalised haystack, from /api/course-search-index. */
+export type SearchIndex = Record<string, string>;
 
 /** Topic/career aliases so “Quality” also surfaces CPHQ, Patient Safety, etc. */
 const TOPIC_ALIASES: Record<string, string[]> = {
@@ -74,7 +116,8 @@ function stripHtml(html?: string): string {
   return html.replace(/<[^>]+>/g, " ");
 }
 
-function courseHaystack(c: CourseRow): string {
+/** Full haystack: everything a visitor might type that a course contains. */
+export function courseHaystack(c: HaystackSource): string {
   return norm(
     [
       c.titleEn,
@@ -103,6 +146,51 @@ function courseHaystack(c: CourseRow): string {
   );
 }
 
+/**
+ * Short haystack, sent with the page. Leaves out the description, the audience
+ * text and the curriculum — the bulk of a course record — which is what makes
+ * the full one worth fetching lazily instead.
+ */
+export function courseSearchText(
+  c: Pick<
+    HaystackSource,
+    | "titleEn"
+    | "titleAr"
+    | "slug"
+    | "category"
+    | "difficulty"
+    | "headlineEn"
+    | "headlineAr"
+    | "subHeadlineEn"
+    | "subHeadlineAr"
+    | "instructorNames"
+    | "tagLabels"
+  >,
+): string {
+  return norm(
+    [
+      c.titleEn,
+      c.titleAr,
+      c.slug,
+      c.category,
+      c.difficulty,
+      c.headlineEn,
+      c.headlineAr,
+      c.subHeadlineEn,
+      c.subHeadlineAr,
+      ...(c.instructorNames ?? []),
+      ...(c.tagLabels ?? []),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+/** The best haystack on hand: the full one once fetched, the short one until then. */
+function hayFor(c: SearchableCourse, index?: SearchIndex | null): string {
+  return index?.[c.id] ?? c.searchText;
+}
+
 function scoreText(haystack: string, terms: string[]): number {
   let score = 0;
   for (const term of terms) {
@@ -115,32 +203,38 @@ function scoreText(haystack: string, terms: string[]): number {
   return score;
 }
 
-function looksLikeCertification(c: CourseRow): boolean {
+function looksLikeCertification(c: SearchableCourse): boolean {
   const blob = `${c.titleEn} ${c.slug} ${c.category}`.toLowerCase();
   return /\b(cphq|chbm|cip|certif|naqh|nahq|diploma|board)\b/i.test(blob);
 }
 
-function certificationLabel(c: CourseRow): string {
+function certificationLabel(c: SearchableCourse): string {
   const m = c.titleEn.match(/\b([A-Z]{3,6})\b/);
   if (m) return m[1]!;
   if (/cphq/i.test(c.slug) || /cphq/i.test(c.titleEn)) return "CPHQ";
   return c.titleEn;
 }
 
-export function courseMatchesSmartSearch(course: CourseRow, query: string): boolean {
+export function courseMatchesSmartSearch(
+  course: SearchableCourse,
+  query: string,
+  index?: SearchIndex | null,
+): boolean {
   const terms = expandQuery(query);
   if (!terms.length) return true;
-  return scoreText(courseHaystack(course), terms) > 0;
+  return scoreText(hayFor(course, index), terms) > 0;
 }
 
 export function buildSmartHits(opts: {
   query: string;
-  courses: CourseRow[];
-  instructors?: InstructorLookup[];
-  articles?: BlogPost[];
+  courses: SearchableCourse[];
+  instructors?: SearchableInstructor[];
+  articles?: SearchableArticle[];
+  /** Full haystacks, once fetched. Until then the short inline text is used. */
+  index?: SearchIndex | null;
   limitPerKind?: number;
 }): SmartHit[] {
-  const { query, courses, instructors = [], articles = [], limitPerKind = 4 } = opts;
+  const { query, courses, instructors = [], articles = [], index = null, limitPerKind = 4 } = opts;
   const terms = expandQuery(query);
   if (!terms.length) return [];
 
@@ -148,7 +242,7 @@ export function buildSmartHits(opts: {
 
   // Courses
   const scoredCourses = courses
-    .map((c) => ({ c, score: scoreText(courseHaystack(c), terms) }))
+    .map((c) => ({ c, score: scoreText(hayFor(c, index), terms) }))
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score);
 
@@ -232,7 +326,7 @@ export function buildSmartHits(opts: {
   let topicCount = 0;
   for (const label of topicLabels) {
     if (topicCount >= limitPerKind) break;
-    const related = courses.filter((c) => courseMatchesSmartSearch(c, label)).map((c) => c.id);
+    const related = courses.filter((c) => courseMatchesSmartSearch(c, label, index)).map((c) => c.id);
     hits.push({
       kind: "topic",
       id: `topic-${norm(label)}`,

@@ -6,37 +6,66 @@ import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { BlogPost } from "@/types/blog";
+import { useLazyJson } from "@/hooks/use-lazy-json";
+import type { ArticleCardData } from "@/features/blog/lib/article-card-data";
 import { ArticleCard } from "./article-card";
 
 type Sort = "newest" | "viewed" | "reading";
 
-export function BlogExplorerLive({ posts, categories }: { posts: BlogPost[]; categories: string[] }) {
+/**
+ * The blog listing's search, sort and filters.
+ *
+ * It is handed one page of articles (the server paginates at 12, with real
+ * crawlable links), and fetches the full set from /api/blog-index the first time
+ * a search, filter or non-default sort is used. Until that arrives it filters
+ * what it has, so the controls respond immediately. `children` is the pagination
+ * navigation — rendered by the server so it is plain links — and is hidden while
+ * filtering, because filtered results span every page.
+ */
+export function BlogExplorerLive({
+  posts,
+  categories,
+  tags,
+  children,
+}: {
+  posts: ArticleCardData[];
+  categories: string[];
+  /** The most-used tags across every article, computed on the server. */
+  tags: string[];
+  children?: React.ReactNode;
+}) {
   const [q, setQ] = React.useState("");
   const [category, setCategory] = React.useState<string | null>(null);
   const [tag, setTag] = React.useState<string | null>(null);
   const [sort, setSort] = React.useState<Sort>("newest");
+  const { data: index, load: loadIndex } = useLazyJson<ArticleCardData[]>("/api/blog-index");
 
-  const tags = React.useMemo(
-    () => [...new Set(posts.flatMap((p) => p.tags))].slice(0, 24),
-    [posts],
-  );
+  const exploring = Boolean(q.trim() || category || tag || sort !== "newest");
+  React.useEffect(() => {
+    if (exploring) loadIndex();
+  }, [exploring, loadIndex]);
+
+  const source = exploring ? (index ?? posts) : posts;
 
   const filtered = React.useMemo(() => {
     const query = q.trim().toLowerCase();
-    let rows = posts.filter((p) => {
+    let rows = source.filter((p) => {
       if (category && p.category !== category) return false;
       if (tag && !p.tags.includes(tag)) return false;
       if (query && ![p.title, p.excerpt, p.authorName, ...(p.tags ?? [])].some((v) => v?.toLowerCase().includes(query))) return false;
       return true;
     });
-    rows = [...rows].sort((a, b) => {
-      if (sort === "viewed") return b.views - a.views;
-      if (sort === "reading") return a.readingMinutes - b.readingMinutes;
-      return +new Date(b.publishedAt ?? 0) - +new Date(a.publishedAt ?? 0);
-    });
+    // The default view keeps the server's order (newest first, already paged);
+    // only an explicit sort or filter reorders.
+    if (exploring) {
+      rows = [...rows].sort((a, b) => {
+        if (sort === "viewed") return b.views - a.views;
+        if (sort === "reading") return a.readingMinutes - b.readingMinutes;
+        return +new Date(b.publishedAt ?? 0) - +new Date(a.publishedAt ?? 0);
+      });
+    }
     return rows;
-  }, [posts, q, category, tag, sort]);
+  }, [source, q, category, tag, sort, exploring]);
 
   const activeCount = (category ? 1 : 0) + (tag ? 1 : 0) + (q ? 1 : 0);
   const reset = () => { setQ(""); setCategory(null); setTag(null); };
@@ -47,7 +76,13 @@ export function BlogExplorerLive({ posts, categories }: { posts: BlogPost[]; cat
       <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">
         <div className="relative">
           <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search articles…" value={q} onChange={(e) => setQ(e.target.value)} className="ps-9" />
+          <Input
+            placeholder="Search articles…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onFocus={loadIndex}
+            className="ps-9"
+          />
         </div>
 
         <div className="space-y-2">
@@ -105,6 +140,7 @@ export function BlogExplorerLive({ posts, categories }: { posts: BlogPost[]; cat
             {filtered.map((p) => <ArticleCard key={p.id} post={p} featured={p.featured} />)}
           </div>
         )}
+        {!exploring && children}
       </div>
     </div>
   );

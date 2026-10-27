@@ -4,7 +4,6 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { X, ChevronDown } from "lucide-react";
 
-import type { CourseRow } from "@/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +17,7 @@ import {
   facetCounts,
   type CatalogFilterState,
   type FacetKey,
+  type FilterableCourse,
 } from "@/features/marketing/lib/catalog-filters";
 
 function toggleValue(list: string[], value: string): string[] {
@@ -128,7 +128,7 @@ interface Props {
   onChange: (next: CatalogFilterState) => void;
   priceCeiling: number;
   /** Full catalog — needed to compute per-option result counts. */
-  courses: CourseRow[];
+  courses: FilterableCourse[];
   className?: string;
 }
 

@@ -4,9 +4,14 @@ import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { SlidersHorizontal, X, SearchX } from "lucide-react";
 
-import type { CourseRow, InstructorLookup } from "@/types";
-import type { BlogPost } from "@/types/blog";
 import { cn } from "@/lib/utils";
+import { useLazyJson } from "@/hooks/use-lazy-json";
+import type { CatalogCourse } from "@/features/marketing/lib/course-card-data";
+import type { ArticleCardData } from "@/features/blog/lib/article-card-data";
+import type {
+  SearchableInstructor,
+  SearchIndex,
+} from "@/features/marketing/lib/smart-course-search";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -49,14 +54,26 @@ const CHIP_GROUPS = [
 export function CourseCatalog({
   courses,
   instructors = [],
-  articles = [],
 }: {
-  courses: CourseRow[];
-  instructors?: InstructorLookup[];
-  articles?: BlogPost[];
+  courses: CatalogCourse[];
+  instructors?: SearchableInstructor[];
 }) {
   const t = useTranslations("Marketing");
   const locale = useLocale();
+  // The page carries a short search text per course; the full one (descriptions,
+  // curriculum) is fetched the first time the search box is focused.
+  const { data: searchIndex, load: loadSearchIndex } = useLazyJson<SearchIndex>(
+    "/api/course-search-index",
+  );
+  // Article suggestions in the search dropdown come from the same lazily-fetched
+  // index the blog uses; the page used to carry 40 of them for this alone.
+  const { data: articleIndex, load: loadArticles } = useLazyJson<ArticleCardData[]>(
+    "/api/blog-index",
+  );
+  const warmSearch = React.useCallback(() => {
+    loadSearchIndex();
+    loadArticles();
+  }, [loadSearchIndex, loadArticles]);
   const [isPending, startTransition] = React.useTransition();
   const [search, setSearch] = React.useState("");
   const [pickedCourseIds, setPickedCourseIds] = React.useState<string[] | null>(
@@ -125,7 +142,7 @@ export function CourseCatalog({
   const filtered = courses.filter((c) => {
     if (pickedCourseIds?.length) {
       if (!pickedCourseIds.includes(c.id)) return false;
-    } else if (search.trim() && !courseMatchesSmartSearch(c, search)) {
+    } else if (search.trim() && !courseMatchesSmartSearch(c, search, searchIndex)) {
       return false;
     }
     if (!courseMatchesCatalogFilters(c, filters)) return false;
@@ -205,7 +222,9 @@ export function CourseCatalog({
             onPickCourses={setPickedDeferred}
             courses={courses}
             instructors={instructors}
-            articles={articles}
+            articles={articleIndex ?? undefined}
+            index={searchIndex}
+            onActivate={warmSearch}
             className="w-full min-w-0"
           />
         </div>
@@ -353,7 +372,7 @@ export function CourseCatalog({
             ) : sorted.length > 0 ? (
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {sorted.map((c) => (
-                  <CourseCard key={c.id} course={c} instructors={instructors} />
+                  <CourseCard key={c.id} course={c} />
                 ))}
               </div>
             ) : (
@@ -390,11 +409,7 @@ export function CourseCatalog({
                         .sort((a, b) => b.students - a.students)
                         .slice(0, 3)
                         .map((c) => (
-                          <CourseCard
-                            key={`suggest-${c.id}`}
-                            course={c}
-                            instructors={instructors}
-                          />
+                          <CourseCard key={`suggest-${c.id}`} course={c} />
                         ))}
                     </div>
                   </div>

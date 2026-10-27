@@ -1,6 +1,7 @@
 {
   "Common": {
     "appName": "IMETS Medical School",
+    "sending": "Sending…",
     "adminConsole": "Admin Console",
     "studentPortal": "Student Portal",
     "staffWorkspace": "Staff Workspace",

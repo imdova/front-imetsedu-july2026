@@ -10,7 +10,10 @@ import {
 } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
-import type { CourseRow } from "@/types";
+import type { CatalogCourse } from "@/features/marketing/lib/course-card-data";
+
+/** The three fields these suggestions are matched on and linked by. */
+type SuggestableCourse = Pick<CatalogCourse, "titleEn" | "slug" | "category">;
 import { cn } from "@/lib/utils";
 
 type PathStep = {
@@ -78,9 +81,9 @@ const PATHS: LearningPath[] = [
 ];
 
 function resolveCourse(
-  courses: CourseRow[],
+  courses: SuggestableCourse[],
   match: string[],
-): CourseRow | undefined {
+): SuggestableCourse | undefined {
   const scored = courses
     .map((c) => {
       const hay = `${c.titleEn} ${c.slug} ${c.category}`.toLowerCase();
@@ -95,7 +98,7 @@ function resolveCourse(
   return scored[0]?.c;
 }
 
-export function LearningPathsSection({ courses }: { courses: CourseRow[] }) {
+export function LearningPathsSection({ courses }: { courses: SuggestableCourse[] }) {
   const t = useTranslations("Marketing");
 
   return (

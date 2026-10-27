@@ -1,6 +1,7 @@
 {
   "Common": {
     "appName": "مدرسة IMETS الطبية",
+    "sending": "جارٍ الإرسال…",
     "adminConsole": "لوحة التحكم",
     "studentPortal": "بوابة الطالب",
     "staffWorkspace": "مساحة عمل الموظفين",

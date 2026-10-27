@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { dal } from "@/lib/dal";
 import { CourseCatalog } from "@/features/marketing/components/course-catalog";
+import { toCatalogCourse } from "@/features/marketing/lib/course-card-data";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -16,7 +17,7 @@ export default async function SearchPage({ params }: { params: Promise<{ locale:
   const t = await getTranslations("Pages");
 
   const res = await dal.courses.fetchPublishedCourses();
-  const courses = res.ok ? res.data : [];
+  const courses = (res.ok ? res.data : []).map((c) => toCatalogCourse(c));
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

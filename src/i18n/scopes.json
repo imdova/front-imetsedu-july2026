@@ -1,0 +1,4 @@
+{
+  "root": ["Common"],
+  "public": ["Common", "Marketing", "Nav"]
+}

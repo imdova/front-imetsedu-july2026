@@ -7,6 +7,7 @@ import { CatalogHeroBanner } from "@/features/marketing/components/catalog-hero-
 import { seoAlternates, socialMeta, courseListLd, localeUrl, metaDescription } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { toCatalogCourse } from "@/features/marketing/lib/course-card-data";
 
 /** Course listing. Cleared early by the cache tags on its data. */
 export const revalidate = 600;
@@ -40,15 +41,30 @@ export default async function CatalogPage({
   setRequestLocale(locale);
   const t = await getTranslations("Marketing");
 
-  const [coursesRes, instructorsRes, articlesRes] = await Promise.all([
+  const [coursesRes, instructorsRes] = await Promise.all([
     dal.courses.fetchPublishedCourses(),
     dal.lookups.fetchInstructors(),
-    dal.blog.fetchPublicArticles({ limit: 40 }),
   ]);
 
   const courses = coursesRes.ok ? coursesRes.data : [];
   const instructors = instructorsRes.ok ? instructorsRes.data : [];
-  const articles = articlesRes.ok ? articlesRes.data.data : [];
+
+  /*
+   * What crosses to the client. The catalog is a client component (it filters
+   * and searches in the browser), so whatever is passed to it is serialised into
+   * the page. It used to receive the full course records — descriptions,
+   * curriculum, FAQs — plus every instructor and 40 whole articles, which made
+   * this page ~1 MB. Now it gets card fields and precomputed filter facets; the
+   * full search text loads on demand from /api/course-search-index, and article
+   * suggestions from /api/blog-index.
+   */
+  const catalogCourses = courses.map((c) => toCatalogCourse(c, instructors));
+  const searchInstructors = instructors.map((i) => ({
+    id: i.id,
+    label: i.label,
+    title: i.title,
+    slug: i.slug,
+  }));
 
   return (
     <div className="mx-auto max-w-7xl px-2 py-12 sm:px-3 lg:px-4">
@@ -71,7 +87,7 @@ export default async function CatalogPage({
         ]}
       />
       <CatalogHeroBanner title={t("catalogTitle")} subtitle={t("catalogSubtitle")} />
-      <CourseCatalog courses={courses} instructors={instructors} articles={articles} />
+      <CourseCatalog courses={catalogCourses} instructors={searchInstructors} />
     </div>
   );
 }

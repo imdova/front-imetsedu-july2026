@@ -5,7 +5,10 @@ import { useTranslations } from "next-intl";
 import { Compass, ArrowRight, RotateCcw, Sparkles } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
-import type { CourseRow } from "@/types";
+import type { CatalogCourse } from "@/features/marketing/lib/course-card-data";
+
+/** The three fields these suggestions are matched on and linked by. */
+type SuggestableCourse = Pick<CatalogCourse, "titleEn" | "slug" | "category">;
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +74,7 @@ const RESULT_MATCH: Record<QuizAnswer, { titleKey: string; bodyKey: string; keyw
   },
 };
 
-function pickCourse(courses: CourseRow[], keywords: string[]): CourseRow | undefined {
+function pickCourse(courses: SuggestableCourse[], keywords: string[]): SuggestableCourse | undefined {
   const scored = courses
     .map((c) => {
       const hay = `${c.titleEn} ${c.slug} ${c.category}`.toLowerCase();
@@ -95,7 +98,7 @@ function majority(answers: QuizAnswer[]): QuizAnswer {
   return (Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] as QuizAnswer) ?? "quality";
 }
 
-export function CareerQuizCta({ courses }: { courses: CourseRow[] }) {
+export function CareerQuizCta({ courses }: { courses: SuggestableCourse[] }) {
   const t = useTranslations("Marketing");
   const [started, setStarted] = React.useState(false);
   const [step, setStep] = React.useState(0);

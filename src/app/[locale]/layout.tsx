@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Geist, Geist_Mono, Cairo, Plus_Jakarta_Sans } from "next/font/google";
-import { NextIntlClientProvider, hasLocale } from "next-intl";
+import { hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 
 import "../globals.css";
 import { routing, isRtl } from "@/i18n/routing";
+import { IntlScope } from "@/i18n/intl-scope";
+import { ROOT_NAMESPACES } from "@/i18n/scopes";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ThemeNoFlashScript } from "@/components/providers/theme-no-flash-script";
 import { ApiBootstrap } from "@/components/providers/api-bootstrap";
@@ -136,7 +138,10 @@ export default async function LocaleLayout({
         <MetaPixel pixelId={publicSettings?.integrations?.metaPixelId} />
         <GoogleAnalytics measurementId={publicSettings?.integrations?.gaMeasurementId} />
         <MicrosoftClarity />
-        <NextIntlClientProvider>
+        {/* Only what the shell itself reads. Each route area nests its own
+            scope (see src/i18n/scopes.ts) — handing the whole catalogue to
+            every page put ~170 KB of admin strings into public HTML. */}
+        <IntlScope namespaces={ROOT_NAMESPACES}>
           <ApiBootstrap />
           <SiteSettingsProvider value={{
             branding: publicSettings?.branding ?? {},
@@ -150,7 +155,7 @@ export default async function LocaleLayout({
               </TooltipProvider>
             </ThemeProvider>
           </SiteSettingsProvider>
-        </NextIntlClientProvider>
+        </IntlScope>
       </body>
     </html>
   );

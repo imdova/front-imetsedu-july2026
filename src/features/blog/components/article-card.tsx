@@ -12,7 +12,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { BlogPost } from "@/types/blog";
+import type { ArticleCardData } from "@/features/blog/lib/article-card-data";
 
 const fmtDate = (iso?: string) =>
   iso ? new Date(iso).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" }) : "";
@@ -44,7 +44,7 @@ function iconFor(category: string) {
   return BookOpen;
 }
 
-export function ArticleCard({ post, featured }: { post: BlogPost; featured?: boolean }) {
+export function ArticleCard({ post, featured }: { post: ArticleCardData; featured?: boolean }) {
   const accent = accentFor(post.category || post.title);
   const Icon = iconFor(post.category || "");
   // The card carries the article's own language, not the page's: an English

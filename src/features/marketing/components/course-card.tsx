@@ -1,24 +1,13 @@
 "use client";
 
-import type { ElementType } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import {
-  ArrowRight,
-  CalendarDays,
-  Monitor,
-  Star,
-  Users,
-  GraduationCap,
-  Radio,
-  Languages,
-  Flame,
-} from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
-import type { CourseRow, InstructorLookup } from "@/types";
+import type { CourseCardData } from "@/features/marketing/lib/course-card-data";
 import { cn, deriveDiscount, formatCompact } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { CardIcon, type CardIconName } from "@/components/shared/card-icons";
 import { courseSocialProof } from "@/features/marketing/lib/course-social-proof";
 import { useGeoCurrency, pickCourseMoney } from "@/hooks/use-geo-currency";
 
@@ -26,33 +15,13 @@ function formatMoney(amount: number, currency: string) {
   return `${amount.toLocaleString("en-US")} ${currency}`;
 }
 
-function resolveFaculty(
-  course: CourseRow,
-  instructors: InstructorLookup[],
-): { name: string; title?: string; image?: string } | null {
-  const profile = course.instructorProfile;
-  if (profile?.name) {
-    return { name: profile.name, title: profile.title, image: profile.image };
-  }
-  const named = course.instructorNames?.[0];
-  if (!named) return null;
-  const hit = instructors.find(
-    (i) => i.label.trim().toLowerCase() === named.trim().toLowerCase(),
-  );
-  return {
-    name: named,
-    title: hit?.title,
-    image: hit?.avatarUrl,
-  };
-}
-
-export function CourseCard({
-  course,
-  instructors = [],
-}: {
-  course: CourseRow;
-  instructors?: InstructorLookup[];
-}) {
+/**
+ * A course listing card. It takes `CourseCardData` — the dozen fields it
+ * renders — rather than the full record: this is a client component, so every
+ * prop is serialised into the page, and a whole `CourseRow` is ~20 KB.
+ * Build the data with `toCourseCardData` on the server.
+ */
+export function CourseCard({ course }: { course: CourseCardData }) {
   const t = useTranslations("Marketing");
   // Currency follows the visitor's country (EG→EGP, SA→SAR, else→USD); EGP is
   // the default until geo resolves, and any course without a price in the target
@@ -72,7 +41,7 @@ export function CourseCard({
   // "Most popular" must be an editorial flag or a real rating — never a
   // synthesised one, which is what made every card claim the badge.
   const isMostPopular = course.isTopRated || (hasReviews && rating >= 4.7);
-  const faculty = resolveFaculty(course, instructors);
+  const faculty = course.faculty;
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition-shadow hover:shadow-md">
@@ -91,12 +60,12 @@ export function CourseCard({
         <div className="absolute inset-x-2.5 top-2.5 flex flex-wrap gap-1.5">
           {isBestSeller && (
             <span className="inline-flex items-center gap-1 rounded-full bg-[#f4c430] px-2.5 py-1 text-[11px] font-bold leading-none text-[#051a4a] shadow">
-              <Flame className="size-3" /> {t("cardBadgeBestSeller")}
+              <CardIcon name="flame" className="size-3" /> {t("cardBadgeBestSeller")}
             </span>
           )}
           {isMostPopular && (
             <span className="inline-flex items-center gap-1 rounded-full bg-[#0b3fa8] px-2.5 py-1 text-[11px] font-bold leading-none text-white shadow">
-              <Star className="size-3 fill-current" />{" "}
+              <CardIcon name="star" className="size-3 fill-current" />{" "}
               {t("cardBadgeMostPopular")}
             </span>
           )}
@@ -131,17 +100,17 @@ export function CourseCard({
 
         <div className="flex flex-wrap gap-1.5">
           <CardBadge
-            icon={GraduationCap}
+            icon="graduation-cap"
             label={t("cardBadgeCertificate")}
             tone="bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800"
           />
           <CardBadge
-            icon={Radio}
+            icon="radio"
             label={t("cardBadgeLive")}
             tone="bg-rose-50 text-rose-700 ring-1 ring-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-800"
           />
           <CardBadge
-            icon={Languages}
+            icon="languages"
             label={t("cardBadgeBilingual")}
             tone="bg-violet-50 text-violet-700 ring-1 ring-violet-200/80 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800"
           />
@@ -149,23 +118,23 @@ export function CourseCard({
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-xs text-muted-foreground">
           <MetaItem
-            icon={Radio}
+            icon="radio"
             iconClassName="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
             label={t("cardLectures", { count: course.lectures })}
             live
           />
           <MetaItem
-            icon={CalendarDays}
+            icon="calendar-days"
             iconClassName="text-amber-600 bg-amber-50 dark:bg-amber-950/40"
             label={t("cardFrequency")}
           />
           <MetaItem
-            icon={Users}
+            icon="users"
             iconClassName="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
             label={t("cardStudents", { count: formatCompact(course.students) })}
           />
           <MetaItem
-            icon={Monitor}
+            icon="monitor"
             iconClassName="text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40"
             label={t("cardOnlineZoom")}
           />
@@ -214,7 +183,7 @@ export function CourseCard({
         <Button asChild className="w-full gap-2 rounded-xl">
           <Link href={`/courses/${course.slug}`}>
             {t("cardDetails")}
-            <ArrowRight className="size-4 rtl:rotate-180" />
+            <CardIcon name="arrow-right" className="size-4 rtl:rotate-180" />
           </Link>
         </Button>
       </div>
@@ -228,8 +197,9 @@ function StarRating({ rating }: { rating: number }) {
       {Array.from({ length: 5 }, (_, i) => {
         const filled = rating > 0 && i < Math.round(rating);
         return (
-          <Star
+          <CardIcon
             key={i}
+            name="star"
             className={cn(
               "size-3.5",
               filled
@@ -244,11 +214,11 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 function CardBadge({
-  icon: Icon,
+  icon,
   label,
   tone,
 }: {
-  icon: ElementType;
+  icon: CardIconName;
   label: string;
   tone: string;
 }) {
@@ -259,19 +229,19 @@ function CardBadge({
         tone,
       )}
     >
-      <Icon className="size-3" strokeWidth={2.25} />
+      <CardIcon name={icon} className="size-3 stroke-[2.25]" />
       {label}
     </span>
   );
 }
 
 function MetaItem({
-  icon: Icon,
+  icon,
   iconClassName,
   label,
   live,
 }: {
-  icon: ElementType;
+  icon: CardIconName;
   iconClassName: string;
   label: string;
   live?: boolean;
@@ -284,7 +254,7 @@ function MetaItem({
           iconClassName,
         )}
       >
-        <Icon className="size-3.5" />
+        <CardIcon name={icon} className="size-3.5" />
       </span>
       <span className="inline-flex items-center gap-1.5 leading-tight">
         {live ? (

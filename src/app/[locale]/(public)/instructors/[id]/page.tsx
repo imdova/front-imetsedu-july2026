@@ -12,6 +12,7 @@ import { CourseCard } from "@/features/marketing/components/course-card";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_NAME, seoAlternates, socialMeta, localeUrl, personLd, breadcrumbLd } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
+import { toCourseCardData } from "@/features/marketing/lib/course-card-data";
 
 /** Faculty profile. Cleared early by the cache tags on its data. */
 export const revalidate = 3600;
@@ -252,7 +253,7 @@ export default async function InstructorDetailPage({
           <h2 className="font-heading text-2xl font-bold tracking-tight">{t("coursesByInstructor")}</h2>
           <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {courses.map((c) => (
-              <CourseCard key={c.id} course={c} />
+              <CourseCard key={c.id} course={toCourseCardData(c)} />
             ))}
           </div>
         </div>

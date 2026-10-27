@@ -19,11 +19,13 @@ import { Input } from "@/components/ui/input";
 import {
   buildSmartHits,
   SMART_HIT_ORDER,
+  type SearchableArticle,
+  type SearchableCourse,
+  type SearchableInstructor,
+  type SearchIndex,
   type SmartHit,
   type SmartHitKind,
 } from "@/features/marketing/lib/smart-course-search";
-import type { CourseRow, InstructorLookup } from "@/types";
-import type { BlogPost } from "@/types/blog";
 
 const KIND_ICON: Record<SmartHitKind, React.ElementType> = {
   course: GraduationCap,
@@ -47,9 +49,13 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   onPickCourses?: (courseIds: string[] | null) => void;
-  courses: CourseRow[];
-  instructors?: InstructorLookup[];
-  articles?: BlogPost[];
+  courses: SearchableCourse[];
+  instructors?: SearchableInstructor[];
+  articles?: SearchableArticle[];
+  /** Full course haystacks, once fetched; the short inline text is used until then. */
+  index?: SearchIndex | null;
+  /** Called the first time the box is focused — the cue to fetch the index. */
+  onActivate?: () => void;
   className?: string;
 }
 
@@ -60,6 +66,8 @@ export function SmartSearchBox({
   courses,
   instructors = [],
   articles = [],
+  index = null,
+  onActivate,
   className,
 }: Props) {
   const t = useTranslations("Marketing");
@@ -69,9 +77,9 @@ export function SmartSearchBox({
   const hits = React.useMemo(
     () =>
       value.trim().length >= 2
-        ? buildSmartHits({ query: value, courses, instructors, articles })
+        ? buildSmartHits({ query: value, courses, instructors, articles, index })
         : [],
-    [value, courses, instructors, articles],
+    [value, courses, instructors, articles, index],
   );
 
   const grouped = React.useMemo(() => {
@@ -120,7 +128,10 @@ export function SmartSearchBox({
             onPickCourses?.(null);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setOpen(true);
+            onActivate?.();
+          }}
           placeholder={t("smartSearchPlaceholder")}
           className="h-11 ps-9 pe-9"
           autoComplete="off"

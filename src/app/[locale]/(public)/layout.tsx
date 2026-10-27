@@ -8,8 +8,12 @@ import { PublicBannerBar } from "@/features/marketing/components/public-banner-b
 import { getTheme } from "@/lib/db/site-settings";
 import { dal } from "@/lib/dal";
 import { JsonLd } from "@/components/seo/json-ld";
+import { CardIconSprite } from "@/components/shared/card-icon-sprite";
 import { organizationLd, websiteLd } from "@/lib/seo";
 import { Wrench } from "lucide-react";
+import { IntlScope } from "@/i18n/intl-scope";
+import { PUBLIC_NAMESPACES } from "@/i18n/scopes";
+import publicMessageKeys from "@/i18n/public-message-keys.json";
 
 /** Public marketing shell: header + content + footer. No authenticated chrome. */
 export default async function PublicLayout({
@@ -87,25 +91,29 @@ export default async function PublicLayout({
     }));
 
   return (
-    <div className="flex min-h-svh flex-col">
-      {/* Organization node built from Site Settings — areaServed, address,
-          contact point and social profiles. Blank settings are omitted. */}
-      <JsonLd
-        data={[
-          organizationLd({
-            description: settings?.general?.tagline,
-            phone: settings?.contact?.phone,
-            email: settings?.contact?.supportEmail,
-            address: settings?.contact?.address,
-            social: settings?.social,
-          }),
-          websiteLd(),
-        ]}
-      />
-      <PublicBannerBar />
-      <PublicHeader logoLight={logoLight} logoBlue={logoBlue} locale={locale} megaCategories={megaCategories} megaCourses={megaCourses} />
-      <main className="flex-1">{children}</main>
-      <FooterGate><PublicFooter logoLight={logoLight} /></FooterGate>
-    </div>
+    <IntlScope namespaces={PUBLIC_NAMESPACES} keys={publicMessageKeys}>
+      <div className="flex min-h-svh flex-col">
+        {/* Organization node built from Site Settings — areaServed, address,
+            contact point and social profiles. Blank settings are omitted. */}
+        <JsonLd
+          data={[
+            organizationLd({
+              description: settings?.general?.tagline,
+              phone: settings?.contact?.phone,
+              email: settings?.contact?.supportEmail,
+              address: settings?.contact?.address,
+              social: settings?.social,
+            }),
+            websiteLd(),
+          ]}
+        />
+        {/* Paths for <CardIcon>, referenced by course cards. Once per page. */}
+        <CardIconSprite />
+        <PublicBannerBar />
+        <PublicHeader logoLight={logoLight} logoBlue={logoBlue} locale={locale} megaCategories={megaCategories} megaCourses={megaCourses} />
+        <main className="flex-1">{children}</main>
+        <FooterGate><PublicFooter logoLight={logoLight} /></FooterGate>
+      </div>
+    </IntlScope>
   );
 }

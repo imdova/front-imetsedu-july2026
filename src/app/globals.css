@@ -225,6 +225,22 @@
   }
 }
 
+@layer components {
+  /*
+   * Drawing style for sprite icons (<CardIcon>): the same stroke, fill and caps a
+   * lucide <svg> sets as attributes on every instance. Here once instead, so each
+   * icon is a short <use> reference. It sits in the components layer so a utility
+   * such as `fill-current` or `stroke-[2.25]` still overrides it.
+   */
+  .ico {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
 @layer utilities {
   /* Thin, themed scrollbars for nav rails and scroll areas */
   .scrollbar-thin {
