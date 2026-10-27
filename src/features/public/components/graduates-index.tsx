@@ -1,8 +1,8 @@
-/* eslint-disable @next/next/no-img-element -- S3-hosted graduate portraits in the card avatar stacks */
 import { ArrowRight, Award, CalendarDays, GraduationCap, PartyPopper, Sparkles, Users } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import type { GraduateCohort } from "@/lib/dal/graduates";
+import { SmartImage } from "@/components/shared/smart-image";
 
 const fmtMonthYear = (iso: string) => {
   if (!iso) return "";
@@ -109,7 +109,7 @@ export function GraduatesIndex({ cohorts }: { cohorts: GraduateCohort[] }) {
                   <div className="flex items-center">
                     {c.previewPhotos.slice(0, 4).map((src, j) => (
                       <span key={src + j} className="-ml-3 first:ml-0 size-14 overflow-hidden rounded-full p-[3px] shadow-lg" style={{ background: "linear-gradient(150deg,#F6E0B0,#D9A441 45%,#8F6516 78%,#F2D08A)", zIndex: 10 - j }}>
-                        <img src={src} alt="" aria-hidden="true" className="size-full rounded-full border-2 border-[#0A1747] object-cover" loading="lazy" />
+                        <SmartImage src={src} alt="" aria-hidden="true" width={56} height={56} sizes="56px" className="size-full rounded-full border-2 border-[#0A1747] object-cover" />
                       </span>
                     ))}
                     {c.graduatesCount > 4 && (

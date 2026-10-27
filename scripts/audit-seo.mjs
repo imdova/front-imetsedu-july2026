@@ -41,6 +41,8 @@ const WEIGHT_GATED = new Set(["/", "/courses", "/blog", "/courses/cphq-preparati
 
 /** Google truncates around here; these are the ticket's limits. */
 const TITLE_MAX = 60;
+/** Blog posts, courses, comparisons and country pages: a title over the limit is an error. */
+const TITLE_GATED = /^\/(blog|courses|compare)\/[^/]+$|^\/[^/]+\/(egypt|saudi-arabia|uae|kuwait|qatar|oman|jordan)$/;
 const DESC_MAX = 155;
 const BRAND = "IMETS";
 
@@ -132,16 +134,21 @@ function inspect(url, html) {
 
   if (!title) issues.push({ level: "error", kind: "title-missing", detail: "no <title>" });
   else if (title.length > TITLE_MAX)
-    issues.push({ level: "warn", kind: "title-long", detail: `${title.length} chars` });
+    issues.push({
+      // The four kinds of page with a title rule behind them (`scripts/titles.test.mjs`)
+      // fail the gate; everything else is reported without blocking.
+      level: TITLE_GATED.test(new URL(url).pathname.replace(/^\/ar(?=\/|$)/, "")) ? "error" : "warn",
+      kind: "title-long",
+      detail: `${title.length} chars`,
+    });
 
   if (!description) issues.push({ level: "error", kind: "description-missing", detail: "" });
   else if (description.length > DESC_MAX)
     issues.push({ level: "warn", kind: "description-long", detail: `${description.length} chars` });
 
   /*
-   * Doubled brand: the layout template appends "· IMETS Medical School" to
-   * whatever a page supplies, so a page whose own title already names IMETS
-   * ships it twice.
+   * Doubled brand: the layout template appends " | IMETS" to whatever a page
+   * supplies, so a page whose own title already names IMETS ships it twice.
    */
   const brandCount = (title.match(new RegExp(BRAND, "gi")) ?? []).length;
   if (brandCount > 1)

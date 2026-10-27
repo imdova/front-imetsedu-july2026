@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { cn } from "@/lib/utils";
 import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
+import { SmartImage } from "@/components/shared/smart-image";
 
 interface MarketingHeroProps {
   stats: { value: string; label: string; icon?: LucideIcon; rating?: boolean }[];
@@ -122,7 +123,8 @@ export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: Marketin
           <div id="hero-video" className="relative mx-auto w-full max-w-xl scroll-mt-28">
             <div className="pointer-events-none absolute -inset-6 rounded-[2.5rem] bg-[#1e6ef0]/25 blur-2xl" aria-hidden="true" />
             <div className="relative overflow-hidden rounded-2xl border-2 border-[#f4c430]/50 shadow-2xl shadow-black/40 ring-1 ring-white/15">
-              <YouTubePlayer videoId={videoId} autoPlay={false} />
+              {/* The poster is the largest thing in the first screen: load it first. */}
+              <YouTubePlayer videoId={videoId} autoPlay={false} priority />
             </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md sm:justify-start lg:gap-4">
@@ -132,8 +134,7 @@ export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: Marketin
               {faces.length > 0 && (
               <div className="flex items-center -space-x-2 rtl:space-x-reverse" aria-hidden="true">
                 {faces.map((src, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <SmartImage
                     key={src}
                     src={src}
                     alt=""
@@ -143,6 +144,7 @@ export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: Marketin
                     aria-hidden="true"
                     width={36}
                     height={36}
+                    sizes="36px"
                     className="size-9 rounded-full border-2 border-[#0a2f7a] object-cover shadow-sm"
                     style={{ zIndex: faces.length - i }}
                   />

@@ -150,7 +150,8 @@ export async function generateMetadata({
      * An authored meta title is the complete SERP title, not a fragment to
      * suffix.
      *
-     * The layout template appends " · IMETS Medical School" — 23 characters.
+     * The layout template appended " · IMETS Medical School" — 23 characters
+     * (now " | IMETS", 8, but the reasoning holds).
      * On top of an authored 58-character title that is 81, and Google truncates
      * around 60, so the tail that got cut was the brand the suffix existed to
      * add. Nine of the ten course pages were over the limit for exactly this
@@ -697,12 +698,13 @@ export default async function CourseDetailPage({
   const enrollCard = (
     <div className="overflow-hidden rounded-2xl bg-card shadow-[0_12px_48px_rgba(15,23,42,0.14)] ring-1 ring-border/60">
       {previewVideoId ? (
-        <YouTubePlayer videoId={previewVideoId} autoPlay={false} />
+        <YouTubePlayer videoId={previewVideoId} autoPlay={false} priority />
       ) : (
         <div className="relative aspect-video bg-muted">
           {/* LCP element on mobile (the enroll card renders inline near the top
-              there, and in the sticky rail on lg+). `priority` opts out of the
-              default lazy-load; `sizes` must describe BOTH layouts or the
+              there, and in the sticky rail on lg+). Eager + high fetch priority
+              opts out of the default lazy-load (the `priority` prop is
+              deprecated in Next 16); `sizes` must describe BOTH layouts or the
               browser picks a 360px source for a full-width phone card. */}
           <Image
             src={course.thumbnailUrl}
@@ -710,7 +712,8 @@ export default async function CourseDetailPage({
             // duplicates the H1, which is poor alt text but better than none).
             alt={imageAlt}
             fill
-            priority
+            loading="eager"
+            fetchPriority="high"
             sizes="(min-width: 1024px) 360px, 100vw"
             className="object-cover"
           />

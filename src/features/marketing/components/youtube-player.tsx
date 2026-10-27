@@ -4,6 +4,7 @@ import * as React from "react";
 import { Volume2, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { loadYouTubeApi } from "@/features/marketing/lib/youtube";
+import { SmartImage } from "@/components/shared/smart-image";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -21,6 +22,7 @@ export function YouTubePlayer({
   autoPlay = true,
   unmuteOnStart = true,
   hideYouTubeChrome = false,
+  priority = false,
   onEnded,
   onProgress,
   className,
@@ -36,6 +38,8 @@ export function YouTubePlayer({
   /** Overlay the top strip so the video title + "Watch on YouTube" link aren't
    * clickable (keeps the centre play button and bottom controls usable). */
   hideYouTubeChrome?: boolean;
+  /** The poster is the first thing on screen (a hero): load it eagerly, first. */
+  priority?: boolean;
   /** Autoplay (muted, then attempt unmute). When false, the video loads paused —
    * the user plays/pauses/mutes via the native controls (no forced background sound). */
   autoPlay?: boolean;
@@ -168,10 +172,21 @@ export function YouTubePlayer({
           type="button"
           onClick={() => setActivated(true)}
           aria-label={playLabel}
-          className="group absolute inset-0 z-[6] flex items-center justify-center bg-black bg-cover bg-center"
-          style={{ backgroundImage: `url(https://i.ytimg.com/vi/${videoId}/hqdefault.jpg)` }}
+          className="group absolute inset-0 z-[6] flex items-center justify-center bg-black"
         >
-          <span className="grid size-16 place-items-center rounded-full bg-black/55 text-white shadow-lg ring-1 ring-white/30 transition group-hover:scale-105">
+          {/* Was a CSS background of the 480 px original, which the optimizer
+              never saw. As an image it is resized and served as AVIF/WebP, and
+              can be told it is the LCP element. */}
+          <SmartImage
+            src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="(min-width: 1024px) 576px, 100vw"
+            priority={priority}
+            className="object-cover"
+          />
+          <span className="relative grid size-16 place-items-center rounded-full bg-black/55 text-white shadow-lg ring-1 ring-white/30 transition group-hover:scale-105">
             <Play className="size-7 translate-x-0.5 fill-current" />
           </span>
         </button>

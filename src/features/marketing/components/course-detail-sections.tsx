@@ -43,6 +43,7 @@ import type {
 import { CareerRoadmapTimeline } from "@/features/marketing/components/career-roadmap-timeline";
 import { CountUp } from "@/features/marketing/components/count-up";
 import { KnowledgeTimeline } from "@/features/marketing/components/knowledge-timeline";
+import { SmartImage } from "@/components/shared/smart-image";
 
 const tr = (locale: string, en: string, ar: string) =>
   locale === "ar" ? ar : en;
@@ -996,17 +997,15 @@ export function CourseInstructor({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           {profile?.image ? (
             <span className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-muted ring-1 ring-border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {/* Admin-pasted URL from an arbitrary host, so next/image would
-                  throw unless the domain is in remotePatterns — plain <img>,
-                  but lazy + sized so it can't shift layout. */}
-              <img
+              {/* An admin-pasted URL, possibly from any host. SmartImage
+                  optimizes it when the host is on the allow-list and renders a
+                  plain sized, lazy <img> when it is not, instead of throwing. */}
+              <SmartImage
                 src={profile.image}
                 alt={name}
-                loading="lazy"
-                decoding="async"
                 width={80}
                 height={80}
+                sizes="80px"
                 className="size-full object-cover"
               />
             </span>

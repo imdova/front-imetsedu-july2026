@@ -16,8 +16,9 @@
  *  3. A key is shipped if its name appears as a string literal in that code. This
  *     over-includes (a literal that merely equals a key name keeps it) and never
  *     under-includes for literal or table-driven keys.
- *  4. A template key such as `spec${n}` ships every key sharing the prefix, taken
- *     only from the reader files themselves.
+ *  4. A template key such as `spec${n}` ships every key sharing the prefix, and
+ *     `${item.key}Desc` every key sharing the suffix, taken only from the reader
+ *     files themselves.
  *
  * What it cannot see is a key assembled by string concatenation. That is flagged
  * as an error here, so a new one fails the build instead of rendering a raw key.
@@ -126,7 +127,18 @@ for (const ns of PUBLIC_NAMESPACES) {
     for (const m of load(f).src.matchAll(/`([A-Za-z][\w]{3,})\$\{/g)) prefixes.add(m[1]);
   }
 
-  const shipped = keys.filter((k) => literals.has(k) || [...prefixes].some((p) => k.startsWith(p)));
+  // Suffix templates (`${item.titleKey}Desc`): the mirror image, and just as
+  // invisible to the literal scan. The first scoped build shipped none of the
+  // header's "…Desc" keys, so the Resources menu rendered "Nav.navFreeExamDesc"
+  // as its description. Ships every key in the namespace ending in the suffix.
+  const suffixes = new Set();
+  for (const f of nsReaders) {
+    for (const m of load(f).src.matchAll(/`\$\{[^}`]+\}([A-Za-z][\w]{2,})`/g)) suffixes.add(m[1]);
+  }
+
+  const shipped = keys.filter(
+    (k) => literals.has(k) || [...prefixes].some((p) => k.startsWith(p)) || [...suffixes].some((s) => k.endsWith(s)),
+  );
   result[ns] = shipped.sort();
 
   // A reader asking for a literal key that does not exist is a real bug today.

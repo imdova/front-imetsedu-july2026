@@ -41,7 +41,6 @@ export async function LearningJourneySection() {
                 alt={t("ljTitle")}
                 width={1536}
                 height={768}
-                priority
                 sizes="(max-width:1024px) 100vw, 1152px"
                 className="h-auto w-full object-contain"
               />

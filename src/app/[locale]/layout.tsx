@@ -19,6 +19,7 @@ import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
 import { SiteSettingsProvider } from "@/components/providers/site-settings-provider";
 import { dal } from "@/lib/dal";
+import { TITLE_SUFFIX } from "@/lib/seo-titles";
 import { getTheme, getSiteSettings } from "@/lib/db/site-settings";
 
 // Configure the server-side integration client (cookie bearer token) once.
@@ -59,7 +60,11 @@ export async function generateMetadata({
   const ogImage = ss?.branding?.ogImage || undefined;
 
   return {
-    title: { default: seoTitle, template: `%s · ${siteName}` },
+    // " | IMETS", not " · IMETS Medical School": 8 characters instead of 23, so a
+    // 50-character title still fits under the 60 where Google cuts. Independent
+    // of `siteName` on purpose — an admin renaming the school must not be able to
+    // push every page's title over the limit.
+    title: { default: seoTitle, template: `%s${TITLE_SUFFIX}` },
     description,
     ...(keywords ? { keywords } : {}),    // Icons come from the files in app/ (icon.png, apple-icon.png, favicon.ico)
     // — the real logo. A branding favicon from site settings used to override

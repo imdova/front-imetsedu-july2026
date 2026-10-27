@@ -15,12 +15,12 @@ export async function generateMetadata({
   const { locale } = await params;
   return {
     /*
-     * Absolute, because the layout template appends " · IMETS Medical School"
-     * to anything that is not — and this title already ends in it, which is how
-     * the page shipped "Our Graduates | IMETS Medical School · IMETS Medical
-     * School" to a 70-character SERP slot.
+     * Absolute, because the layout template appends " | IMETS" to anything that
+     * is not already branded — and this title names the school itself, which is
+     * how the page once shipped "Our Graduates | IMETS Medical School · IMETS
+     * Medical School" to a 70-character SERP slot.
      */
-    title: { absolute: "Our Graduates — IMETS Medical School" },
+    title: { absolute: "Our Graduates | IMETS" },
     description:
       "Celebrating every cohort of IMETS Medical School graduates — browse graduation galleries by program and class.",
     // Was a hardcoded English canonical, which pointed /ar/graduates at the

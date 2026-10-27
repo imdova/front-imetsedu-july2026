@@ -20,10 +20,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TagsInput } from "@/components/shared/tags-input";
 import { ImageUpload } from "@/components/shared/image-upload";
+import { TITLE_SUFFIX } from "@/lib/seo-titles";
 import { FormSection } from "./form-section";
 
-/** What the public layout appends to every page title (`%s · <site name>`). */
-const BRAND_SUFFIX = " · IMETS Medical School";
+/** What the public layout appends to a title that is not authored (`%s | IMETS`). */
+const BRAND_SUFFIX = TITLE_SUFFIX;
 
 /** Google truncates desktop titles at roughly this width. */
 const SERP_TITLE_PX = 580;
@@ -52,8 +53,8 @@ export function SeoPanel() {
   const metaTitle = useWatch({ control, name: "seo.metaTitleEn" }) ?? "";
   const slug = useWatch({ control, name: "slug" });
   const suppressSuffix = useWatch({ control, name: "suppressBrandSuffix" });
-  // The public layout renders `%s · IMETS Medical School`; the counter and the
-  // preview must both reflect that, or they describe a title nobody will see.
+  // The public layout renders `%s | IMETS`; the counter and the preview must
+  // both reflect that, or they describe a title nobody will see.
   const suffix = suppressSuffix ? "" : BRAND_SUFFIX;
   const composedTitle = metaTitle ? `${metaTitle}${suffix}` : "";
 

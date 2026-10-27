@@ -17,6 +17,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { SmartImage } from "@/components/shared/smart-image";
 
 export function PublicHeader({
   logoLight,
@@ -74,23 +75,33 @@ export function PublicHeader({
           {isHome ? (
             // Logo for the blue hero navbar (admin-configurable), falling back
             // to the packaged white+gold mark.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <SmartImage
               src={logoBlue || "/logo-white.svg"}
               alt={brandAlt}
+              // Logos are admin-uploaded at any size; the hint is a 3:1 box so the
+              // header reserves roughly the right width before the file arrives,
+              // and `w-auto` lets the real aspect take over.
+              width={108}
+              height={36}
+              sizes="108px"
+              priority
               className="h-9 w-auto max-w-[190px] object-contain"
             />
           ) : (
             <BrandImage
               kind="navbar"
               alt={brandAlt}
-              className="h-9 max-w-[160px] object-contain"
+              className="h-9 w-auto max-w-[160px] object-contain"
               fallback={
                 logoLight ? (
-                  <img
+                  <SmartImage
                     src={logoLight}
                     alt={brandAlt}
-                    className="h-9 max-w-[160px] object-contain"
+                    width={108}
+                    height={36}
+                    sizes="108px"
+                    priority
+                    className="h-9 w-auto max-w-[160px] object-contain"
                   />
                 ) : (
                   <>

@@ -1,6 +1,7 @@
 import { MapPin, Star, ThumbsUp } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SmartImage } from "@/components/shared/smart-image";
 import { cn, getInitials } from "@/lib/utils";
 
 export interface StudentTextReview {
@@ -80,12 +81,12 @@ function ReviewCard({ review }: { review: StudentTextReview }) {
       <StarRow rating={review.rating ?? 5} />
 
       <Avatar className="mt-5 size-24 border-4 border-white shadow-lg ring-2 ring-[#0b3fa8]/35">
-        {review.photo ? (
-          <AvatarImage src={review.photo} alt={review.name} className="object-cover" />
-        ) : null}
         <AvatarFallback className="bg-[#0b3fa8] text-xl font-semibold text-white">
           {getInitials(review.name)}
         </AvatarFallback>
+        {review.photo ? (
+          <SmartImage src={review.photo} alt={review.name} fill sizes="96px" className="rounded-full object-cover" />
+        ) : null}
       </Avatar>
 
       <h3 className="mt-4 text-base font-bold text-[#0a2f7a]">{review.name}</h3>

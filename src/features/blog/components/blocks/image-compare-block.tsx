@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { GripVertical } from "lucide-react";
+import { SmartImage } from "@/components/shared/smart-image";
 
 /** Before/after image comparison slider. Client island used by the block
  *  renderer. Drag the handle (or use the range input) to reveal the "before". */
@@ -41,14 +42,14 @@ export function ImageCompareBlock({
       onPointerLeave={() => (dragging.current = false)}
     >
       {/* After (full) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={afterUrl} alt="After" className="absolute inset-0 size-full object-cover" />
+      <SmartImage src={afterUrl} alt="After" fill sizes="(min-width: 1024px) 768px, 100vw" className="object-cover" />
       {/* Before (clipped to pos) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <SmartImage
         src={beforeUrl}
         alt="Before"
-        className="absolute inset-0 size-full object-cover"
+        fill
+        sizes="(min-width: 1024px) 768px, 100vw"
+        className="object-cover"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
       />
 

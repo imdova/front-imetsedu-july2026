@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale } from "next-intl/server";
 
-import { SITE_NAME } from "@/lib/seo";
-
 /**
  * 404 boundary for routes that exist but call `notFound()` — an unknown course
  * slug, a deleted article, a category that never existed.
@@ -26,7 +24,7 @@ import { SITE_NAME } from "@/lib/seo";
  */
 
 export const metadata: Metadata = {
-  title: { absolute: `404 — Page not found · ${SITE_NAME}` },
+  title: { absolute: "404 — Page not found | IMETS" },
   robots: { index: false, follow: true },
 };
 

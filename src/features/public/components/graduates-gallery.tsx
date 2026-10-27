@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element -- S3-hosted graduate photos; design needs plain <img> inside the gold halo */
 import type { GraduateCohort } from "@/lib/dal/graduates";
 import { SITE_LOGO } from "@/lib/seo";
+import { SmartImage } from "@/components/shared/smart-image";
 
 const fmtIssued = (iso: string) => {
   if (!iso) return "";
@@ -84,8 +84,8 @@ export function GraduatesGallery({ cohort }: { cohort: GraduateCohort }) {
             <li className="grad" key={g.id || i} style={{ ["--i" as string]: i } as React.CSSProperties}>
               <div className="halo">
                 {g.photoUrl
-                  ? <img src={g.photoUrl} alt={g.name} loading={i < 8 ? "eager" : "lazy"} />
-                  : <img src={SITE_LOGO} alt="" aria-hidden="true" style={{ objectFit: "contain", padding: 18 }} />}
+                  ? <SmartImage src={g.photoUrl} alt={g.name} width={240} height={240} sizes="(min-width: 1024px) 200px, 40vw" loading={i < 8 ? "eager" : "lazy"} />
+                  : <SmartImage src={SITE_LOGO} alt="" aria-hidden="true" width={240} height={240} sizes="200px" style={{ objectFit: "contain", padding: 18 }} />}
               </div>
               <p className="name">{g.name}</p>
               {(g.title || g.country) && <p className="sub">{[g.title, g.country].filter(Boolean).join(" · ")}</p>}

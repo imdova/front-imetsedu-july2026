@@ -278,3 +278,124 @@ identical coordinates and the page is the same height.
 † `/blog` now shows 12 articles instead of 48; the first 12 and the surrounding page
 match. Home differs from the previous commit by under 1%, entirely two article cover
 images caught in different load states.
+
+## P2-03 — Images
+
+### Before (production, 1440 px viewport, DPR 1)
+
+Measured in Chrome over the DevTools protocol (`img-audit`: every `<img>`, natural vs
+rendered width, response format and bytes). Lighthouse is not installed on this machine,
+so the two Lighthouse findings are measured by what they test: *Properly size images* =
+natural width more than 2× rendered; *Serve images in next-gen formats* = JPEG/PNG
+responses.
+
+| Page | Images | Raw `<img>` | Oversized (>2×) | Not WebP/AVIF | Image KB |
+|---|---:|---:|---:|---:|---:|
+| `/` | 52 | 16 | 16 | 14 | 10,115 |
+| `/courses` | 15 | 5 | 5 | 3 | 1,218 |
+| `/blog` | 14 | 14 | 14 | 12 | **32,090** |
+| `/courses/cphq-preparation` | 10 | 6 | 5 | 3 | 1,164 |
+| `/graduates` | 28 | 28 | 28 | 26 | 13,927 |
+| `/free-courses` | 25 | 25 | 21 | 5 | 655 |
+| `/blog/<article>` | 6 | 5 | 5 | 3 | 1,130 |
+
+The cause was not the image optimizer being off — course cards already used `next/image`.
+It was raw `<img>` tags (logos, graduate faces, mega-menu thumbnails, blog covers, review
+screenshots, the YouTube poster as a CSS background) pointing at multi-megabyte S3
+originals: a 3,072 px graduate photo shown at 36 px, a 6 MB PNG blog cover shown at 297 px.
+
+### What changed
+
+- **`src/lib/image-hosts.ts`** — one allow-list, read by both `next.config.ts` and the
+  browser. `IMAGE_HOST` (or `NEXT_PUBLIC_IMAGE_HOST`) names the media host; it defaults to
+  `imets-medical.s3.us-east-1.amazonaws.com`. Putting a CDN in front of S3 is: set
+  `IMAGE_HOST=cdn.imetsedu.com`, rebuild. Nothing else names the bucket.
+- **`next.config.ts`** — `formats: ["image/avif", "image/webp"]`, a 7-day
+  `minimumCacheTTL` (uploads are keyed by name, never replaced), and `remotePatterns`
+  generated from the allow-list. **The previous `**.amazonaws.com` wildcard is gone**: it
+  let anyone use our optimizer as a proxy for any AWS-hosted file.
+- **`SmartImage`** (`src/components/shared/smart-image.tsx`) — `next/image` for allow-listed
+  hosts; a plain, lazy, sized `<img>` for a URL an admin pasted from elsewhere (which
+  `next/image` would throw on). If the optimizer itself fails for an image, it falls back
+  to the original file rather than showing a broken image.
+- **~25 components switched over**, each with a `sizes` that describes its real CSS width
+  (blog cards `300px` beside the sidebar, mega-menu thumbs `300px`, avatars `36/56/96px`,
+  article body `768px`, …) so the browser picks the smallest candidate.
+- **Priority** (`loading="eager"` + `fetchPriority="high"`, the Next 16 replacement for the
+  deprecated `priority` prop): header logo, the home hero poster, the course page's
+  preview/enroll image, the blog article cover. Everything else is lazy. A below-the-fold
+  image that was marked `priority` (it preloaded 1,152 px on every home visit) lost it.
+- The YouTube facade poster was a CSS `background-image` of a 480 px original, invisible to
+  the optimizer; it is now an image.
+- **Country pages have no images** (they are text and a form), so there is nothing to
+  prioritise there.
+
+### After (local production build against the live API, 1440 px)
+
+| Page | Images | Raw `<img>` | Oversized (>2×) | Image KB |
+|---|---:|---:|---:|---:|
+| `/` | 53 | 1 † | **0** | 650 |
+| `/courses` | 15 | 0 | 0 | 200 |
+| `/blog` | 14 | 0 | 0 | 87 |
+| `/courses/cphq-preparation` | 11 | 0 | 0 | 158 |
+| `/graduates` | 28 | 0 | 0 | 108 |
+| `/free-courses` | 25 | 0 | 0 | 377 |
+| `/blog/<article>` | 6 | 0 | 0 | 76 |
+
+Every image that loaded is AVIF. `audit-seo` over all 157 sitemap URLs: **0 raw `<img>`**.
+† A flag/avatar whose optimizer request timed out on this machine and fell back to the
+original; see below.
+
+### Caveats
+
+- **Lighthouse was not run.** The proxy above measures the two named findings directly,
+  but run Lighthouse on production after deploy to confirm.
+- **First request after every deploy is slow.** The optimizer cache lives in
+  `.next/cache/images`, and the deploy's `rm -rf .next` empties it. AVIF costs more CPU to
+  encode than WebP; on a 3.8 GB VPS shared with the backend, expect the first visits to
+  warm the cache. `minimumCacheTTL` stops it re-encoding afterwards.
+- **The optimizer gives up on an upstream download after ~7 s.** Several blog covers are
+  6 MB, 2816×1536 PNGs; from this machine they take 5–8 s to fetch and some failed. From
+  the VPS the same files download in **1.2 s**, so this should not occur in production —
+  and `SmartImage` falls back to the original if it does. The real fix is to re-export those
+  covers as JPEG/WebP at 1600 px when they are next edited.
+- Logo `width`/`height` are a 3:1 hint (the file's real ratio takes over via `w-auto`).
+
+## P2-04 — Title templates
+
+### What was wrong
+
+The root layout appended ` · IMETS Medical School` (23 characters) to every title that did
+not already name the school. On a blog post whose `seoTitle` was a sensible 45 characters
+that made 70, so Google cut the tail — the brand — and on longer ones, the keyword.
+
+**The CMS field and the backfill already existed**: all 48 posts have a `seoTitle`, all ≤ 60
+characters. What was missing was rendering it as the whole title, and validating it.
+
+### What changed
+
+| Area | Change |
+|---|---|
+| Blog posts | `title: { absolute: seoTitle || title }` — no suffix. H1 and JSON-LD keep the full headline. |
+| CMS | `seoTitle` is `@MaxLength(60)` in the API; the article builder stops at 60, shows a red counter and warns when no meta title is set and the headline itself exceeds 60. |
+| Jobs | `{Role} — {City} \| IMETS Careers`. Employer and country leave the title; they stay in the H1 line and the JobPosting JSON-LD. A long role is cut at a word with `…`; the city and brand are kept. |
+| Static pages | Layout template is `%s \| IMETS` (8 characters, not 23) and no longer depends on the admin-editable site name. Graduates, policy, profile, 404, success stories, course fallbacks, and the OG titles of category and instructor pages all use ` \| IMETS`. |
+| Over-length | The UAE infection-control country-page title was 62 → 56; `/lp/partnership` was 72 → 57. |
+| Course admin | The SEO panel's counter used the old 23-character suffix and counted it on titles that are already absolute; it now uses the new one. |
+| Tests | `scripts/titles.test.mjs` (`npm run test:titles`, also run by `prebuild`) fails if any country, compare or bundled course title exceeds 60. `TITLES_LIVE=1` also checks every blog post and course in the CMS. The SEO audit now treats an over-length title on blog, course, compare and country pages as an **error**. |
+
+### Blog title table
+
+The 48 current `seoTitle`s are the proposal — see the approval table in the thread. None
+exceeds 60 characters, and each opens with its subject (CPHQ, CBAHI, GAHAR, CIC, …) well inside the first 50.
+
+## Found while verifying: raw i18n keys in the header (a P2-02 regression)
+
+The Resources menu in the public header rendered **`Nav.navFreeExamDesc`**,
+`Nav.navBlogDesc`, `Nav.navReviewsDesc`, `Nav.navVerifyDesc` and `Nav.navHelpDesc` as its
+descriptions, on every public page in both languages, since P2-02 shipped. The key
+generator (`gen-public-message-keys.mjs`) only recognised prefix templates
+(`` `spec${n}` ``); the header builds `` `${item.titleKey}Desc` ``. The menu is closed on
+load, so the screenshot comparison never showed it. The generator now handles suffix
+templates, and `npm run check:raw-keys [base-url]` sweeps 36 pages for any raw key in the
+served HTML (exits 1 if it finds one).

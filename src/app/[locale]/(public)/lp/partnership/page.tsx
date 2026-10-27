@@ -181,8 +181,8 @@ export async function generateMetadata({
     // would otherwise append it a second time.
     title: {
       absolute: ar
-        ? "شراكة مع IMETS Medical School — للمستشفيات والمؤسسات التعليمية"
-        : "Partner with IMETS Medical School — Hospitals & Educational Institutions",
+        ? "شراكة مع IMETS | للمستشفيات والمؤسسات التعليمية"
+        : "Partner with IMETS | Hospitals & Educational Institutions",
     },
     description,
     // The page built its metadata by hand and so never emitted an OG image,

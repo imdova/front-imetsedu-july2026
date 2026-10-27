@@ -13,9 +13,9 @@ const SITE = "https://imetsedu.com";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; username: string }> }): Promise<Metadata> {
   const { username } = await params;
   const res = await dal.profiles.fetchPublicProfile(username);
-  if (!res.ok) return { title: "Profile | IMETS Medical School", robots: { index: false } };
+  if (!res.ok) return { title: "Profile | IMETS", robots: { index: false } };
   const p = res.data;
-  const title = `${p.name} — ${p.headline || "IMETS Medical School graduate"}`;
+  const title = `${p.name} — ${p.headline || "IMETS graduate"}`;
   return {
     title,
     description: p.summary || `${p.name}'s verified IMETS Medical School profile — credentials, competencies and learning record.`,

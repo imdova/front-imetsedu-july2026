@@ -791,8 +791,16 @@ function SeoPanel({
         <p className="text-xs font-semibold text-muted-foreground">Search metadata</p>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">Meta title</Label>
-          <Input value={meta.seoTitle} onChange={(e) => setM("seoTitle", e.target.value)} placeholder="Defaults to title" />
-          <p className="text-end text-[11px] text-muted-foreground">{metaTitle.length}/60</p>
+          {/* The page title exactly as typed: the site adds no brand to an article.
+              The API refuses more than 60, so the field stops there too. */}
+          <Input value={meta.seoTitle} maxLength={60} onChange={(e) => setM("seoTitle", e.target.value)} placeholder="Defaults to title" />
+          <div className="flex items-start justify-between gap-2 text-[11px] text-muted-foreground">
+            <span>Shown as the page title exactly as typed — no brand is added. Put the main keyword first.</span>
+            <span className={cn("shrink-0", metaTitle.length > 60 && "font-medium text-destructive")}>{metaTitle.length}/60</span>
+          </div>
+          {!meta.seoTitle && meta.title.length > 60 && (
+            <p className="text-[11px] text-destructive">The title is {meta.title.length} characters and Google cuts at about 60 — write a shorter meta title.</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">Meta description</Label>

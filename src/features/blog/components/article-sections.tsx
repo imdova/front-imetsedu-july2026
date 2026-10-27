@@ -29,6 +29,7 @@ import { CarouselBlock } from "./blocks/carousel-block";
 import { CountdownBlock } from "./blocks/countdown-block";
 import { ImageCompareBlock } from "./blocks/image-compare-block";
 import { TypedTextBlock } from "./blocks/typed-text-block";
+import { SmartImage } from "@/components/shared/smart-image";
 
 /** Curated icon set for the Icon Box block (kept small + serializable). */
 const ICONS: Record<string, LucideIcon> = {
@@ -84,8 +85,16 @@ export function headingId(text: string): string {
     .slice(0, 60);
 }
 
-// eslint-disable-next-line @next/next/no-img-element
-const Img = (p: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...p} alt={p.alt ?? ""} />;
+const Img = ({ src, alt, className }: { src: string; alt?: string; className?: string }) => (
+  <SmartImage
+    src={src}
+    alt={alt ?? ""}
+    width={1200}
+    height={675}
+    sizes="(min-width: 1024px) 768px, 100vw"
+    className={cn("h-auto", className)}
+  />
+);
 
 function Block({ block: b }: { block: ArticleBlock }) {
   switch (b.type) {

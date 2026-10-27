@@ -4,7 +4,8 @@ import { ArrowRight, MapPin } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { getInitials } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SmartImage } from "@/components/shared/smart-image";
 
 /**
  * Meet Our Graduates — real people from the graduation cohorts.
@@ -99,10 +100,16 @@ export async function AlumniSection() {
           >
             <div className="flex items-center gap-3">
               <Avatar className="size-14 border-2 border-white shadow ring-2 ring-[#0b3fa8]/20">
-                {a.photoUrl && <AvatarImage src={a.photoUrl} alt={a.name} className="object-cover" />}
                 <AvatarFallback className="bg-[#0b3fa8] text-base font-semibold text-white">
                   {getInitials(a.name)}
                 </AvatarFallback>
+                {/* Graduate photos are up to 3072 px on S3 and shown at 56. The
+                    Radix AvatarImage is a bare <img>, so this goes through the
+                    optimizer instead; it sits over the initials, which stay as
+                    the fallback until it loads. */}
+                {a.photoUrl && (
+                  <SmartImage src={a.photoUrl} alt={a.name} fill sizes="56px" className="rounded-full object-cover" />
+                )}
               </Avatar>
               <div className="min-w-0">
                 <p className="truncate font-heading text-base font-bold text-[#0a2f7a] group-hover:underline">

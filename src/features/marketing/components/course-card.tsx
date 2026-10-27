@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CardIcon, type CardIconName } from "@/components/shared/card-icons";
 import { courseSocialProof } from "@/features/marketing/lib/course-social-proof";
 import { useGeoCurrency, pickCourseMoney } from "@/hooks/use-geo-currency";
+import { SmartImage } from "@/components/shared/smart-image";
 
 function formatMoney(amount: number, currency: string) {
   return `${amount.toLocaleString("en-US")} ${currency}`;
@@ -144,8 +145,7 @@ export function CourseCard({ course }: { course: CourseCardData }) {
           <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/30 px-2.5 py-2">
             {faculty.image ? (
               <span className="relative size-9 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={faculty.image} alt={faculty.name} loading="lazy" decoding="async" className="size-full object-cover" />
+                <SmartImage src={faculty.image} alt={faculty.name} fill sizes="36px" className="object-cover" />
               </span>
             ) : (
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">

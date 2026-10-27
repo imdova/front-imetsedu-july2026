@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { BRAND, BRAND_NAME_AR } from "@/constants/navigation";
 import { BrandImage } from "@/components/shared/brand-image";
+import { SmartImage } from "@/components/shared/smart-image";
 
 export async function PublicFooter({ logoLight }: { logoLight?: string }) {
   const locale = await getLocale();
@@ -52,7 +53,7 @@ export async function PublicFooter({ logoLight }: { logoLight?: string }) {
               className="h-9 max-w-40 object-contain"
               fallback={
                 logoLight ? (
-                  <img src={logoLight} alt={brandAlt} loading="lazy" decoding="async" className="h-9 max-w-40 object-contain" />
+                  <SmartImage src={logoLight} alt={brandAlt} width={108} height={36} sizes="108px" className="h-9 w-auto max-w-40 object-contain" />
                 ) : (
                   <>
                     <span className="grid size-9 place-items-center rounded-xl bg-linear-to-br from-primary to-[oklch(0.62_0.19_286)] text-white">

@@ -6,6 +6,7 @@ import { ChevronDown, ArrowRight, Sparkles, Star, Users, Layers } from "lucide-r
 import { Link } from "@/i18n/navigation";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useGeoCurrency, pickCourseMoney } from "@/hooks/use-geo-currency";
+import { SmartImage } from "@/components/shared/smart-image";
 
 export interface MegaCourse {
   id: string;
@@ -208,14 +209,13 @@ export function CoursesMegaMenu({
                                 aria-hidden makes that intent explicit rather
                                 than leaving an empty alt to be read as an
                                 oversight. */}
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                            <SmartImage
                               src={c.thumbnailUrl}
                               alt=""
                               aria-hidden="true"
-                              loading="lazy"
-                              decoding="async"
-                              className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              fill
+                              sizes="(min-width: 640px) 300px, 100vw"
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
                             />
                             {c.isBestseller && (
                               <span className="absolute start-2 top-2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">

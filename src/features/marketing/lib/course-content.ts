@@ -1385,8 +1385,8 @@ function hospitalManagementContent(locale: string): CourseContent {
     // SEO intent is covered by FAQ + About — avoid stacking more essay blocks.
     seoSections: [],
     pageSeo: {
-      metaTitleEn: "Hospital Management Diploma Online | IMETS Medical School",
-      metaTitleAr: "دبلومة إدارة المستشفيات أونلاين | مدرسة IMETS الطبية",
+      metaTitleEn: "Hospital Management Diploma Online | IMETS",
+      metaTitleAr: "دبلومة إدارة المستشفيات أونلاين | IMETS",
       metaDescriptionEn:
         "Advance your healthcare career with IMETS Hospital Management Diploma. Learn leadership, hospital operations, quality management, finance, HR, and patient safety through live online learning.",
       metaDescriptionAr:
@@ -1758,8 +1758,8 @@ function infectionControlDiplomaContent(locale: string): CourseContent {
     // certificate": no licensing-authority approval has been evidenced, and the
     // FAQ on this same page says so. The two must not contradict each other.
     pageSeo: {
-      metaTitleEn: "Infection Control Diploma Online | IMETS Medical School",
-      metaTitleAr: "دبلومة مكافحة العدوى أونلاين | مدرسة IMETS الطبية",
+      metaTitleEn: "Infection Control Diploma Online | IMETS",
+      metaTitleAr: "دبلومة مكافحة العدوى أونلاين | IMETS",
       metaDescriptionEn:
         "IMETS Infection Control Diploma: live online classes for healthcare professionals. Practical infection prevention skills, expert instructors, certificate.",
       metaDescriptionAr:
@@ -2470,8 +2470,8 @@ const COURSE_EXTRAS: Record<
     // leads. "Live Online Healthcare Marketing Program" sits in the description
     // — a 94-char title loses the brand to truncation entirely.
     pageSeo: {
-      metaTitleEn: "Healthcare Marketing Diploma Online | IMETS Medical School",
-      metaTitleAr: "دبلومة التسويق الصحي أونلاين | مدرسة IMETS الطبية",
+      metaTitleEn: "Healthcare Marketing Diploma Online | IMETS",
+      metaTitleAr: "دبلومة التسويق الصحي أونلاين | IMETS",
       metaDescriptionEn:
         "IMETS Healthcare Marketing Diploma: branding, patient acquisition, healthcare marketing strategy and digital marketing — live online classes, certificate.",
       metaDescriptionAr:

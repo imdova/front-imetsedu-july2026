@@ -3,6 +3,7 @@
 import * as React from "react";
 import { X, ChevronLeft, ChevronRight, ThumbsUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SmartImage } from "@/components/shared/smart-image";
 
 export interface ReviewShot {
   src: string;
@@ -90,13 +91,14 @@ export function StudentReviewGallery({
               onClick={() => setOpen(i)}
               className="block w-full break-inside-avoid overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <SmartImage
                 src={s.src}
                 alt={s.alt ?? `Student review ${i + 1}`}
-                loading="lazy"
+                width={600}
+                height={800}
+                sizes="(min-width: 1024px) 300px, 50vw"
                 onError={() => setFailed((f) => ({ ...f, [i]: true }))}
-                className="w-full"
+                className="h-auto w-full"
               />
             </button>
           ),

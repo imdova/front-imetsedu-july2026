@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { SmartImage } from "@/components/shared/smart-image";
 
 /** Image carousel — prev/next arrows, dot navigation, gentle auto-advance.
  *  Client island used by the block renderer. */
@@ -34,8 +35,14 @@ export function CarouselBlock({
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border/60">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={current.url} alt={current.alt ?? ""} className="aspect-video w-full object-cover" />
+      <SmartImage
+        src={current.url}
+        alt={current.alt ?? ""}
+        width={1200}
+        height={675}
+        sizes="(min-width: 1024px) 768px, 100vw"
+        className="aspect-video h-auto w-full object-cover"
+      />
       {list.length > 1 && (
         <>
           <button

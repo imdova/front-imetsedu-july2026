@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { useSiteSettings } from "@/components/providers/site-settings-provider";
+import { SmartImage } from "@/components/shared/smart-image";
 
 /**
  * Renders the configured logo (from site settings) for the navbar or footer,
@@ -33,6 +34,16 @@ export function BrandImage({
     : (dark && branding.darkLogoUrl) || branding.logoUrl;
 
   if (!url) return <>{fallback}</>;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={url} alt={alt} className={className} />;
+  // The navbar logo is in the first screen of every page; the footer one is not.
+  return (
+    <SmartImage
+      src={url}
+      alt={alt}
+      width={108}
+      height={36}
+      sizes="108px"
+      priority={kind === "navbar"}
+      className={className}
+    />
+  );
 }

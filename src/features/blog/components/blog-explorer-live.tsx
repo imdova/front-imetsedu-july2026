@@ -12,6 +12,9 @@ import { ArticleCard } from "./article-card";
 
 type Sort = "newest" | "viewed" | "reading";
 
+/** Three columns beside a 240 px sidebar from xl up: a card is about 300 px wide. */
+const LISTING_COVER_SIZES = "(min-width: 1280px) 300px, (min-width: 640px) 45vw, 100vw";
+
 /**
  * The blog listing's search, sort and filters.
  *
@@ -137,7 +140,7 @@ export function BlogExplorerLive({
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((p) => <ArticleCard key={p.id} post={p} featured={p.featured} />)}
+            {filtered.map((p) => <ArticleCard key={p.id} post={p} featured={p.featured} sizes={LISTING_COVER_SIZES} />)}
           </div>
         )}
         {!exploring && children}

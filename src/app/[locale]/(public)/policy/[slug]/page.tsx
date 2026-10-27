@@ -19,7 +19,7 @@ export async function generateMetadata({
   const doc = POLICIES[slug];
   if (!doc) return {};
   return staticPageMeta({
-    title: `${doc.title} — IMETS Medical School`,
+    title: `${doc.title} | IMETS`,
     description: metaDescription(doc.intro),
     path: `/policy/${slug}`,
     locale,

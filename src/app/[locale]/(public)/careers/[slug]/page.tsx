@@ -23,6 +23,7 @@ import type { CareerJobDto } from "@/lib/dal/career-hub";
 import { Button } from "@/components/ui/button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { breadcrumbLd, localeUrl, staticPageMeta } from "@/lib/seo";
+import { jobTitle } from "@/lib/seo-titles";
 import {
   SCHEMA_EMPLOYMENT,
   countryOf,
@@ -66,10 +67,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const res = await dal.careerHub.fetchJob(slug);
   if (!res.ok) return { robots: { index: false } };
   const job = res.data;
-  const where = [job.city, countryOf(job.country)?.en].filter(Boolean).join(", ");
   const path = `/careers/${job.slug}`;
   const meta = await staticPageMeta({
-    title: `${job.title} — ${job.employer}${where ? `, ${where}` : ""}`,
+    // "{Role} — {City} | IMETS Careers". The employer and the country were here
+    // and pushed most titles past 60; both stay in the H1 and the JobPosting
+    // JSON-LD, where they are structured data rather than title budget.
+    title: jobTitle(job),
     description: plain(job.description, 155),
     path,
     locale,

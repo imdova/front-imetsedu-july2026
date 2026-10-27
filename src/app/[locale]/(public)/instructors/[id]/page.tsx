@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_NAME, seoAlternates, socialMeta, localeUrl, personLd, breadcrumbLd } from "@/lib/seo";
+import { TITLE_SUFFIX } from "@/lib/seo-titles";
 import { mergeSeo } from "@/lib/public-seo";
 import { toCourseCardData } from "@/features/marketing/lib/course-card-data";
 
@@ -79,7 +80,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: seoAlternates(path, locale),
-    ...socialMeta({ title: `${title} · ${SITE_NAME}`, description, path, locale, image: instructor.avatarUrl }),
+    ...socialMeta({ title: `${title}${TITLE_SUFFIX}`, description, path, locale, image: instructor.avatarUrl }),
   });
 }
 

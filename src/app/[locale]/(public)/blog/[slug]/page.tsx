@@ -12,6 +12,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import {
   SITE_URL, SITE_NAME, localeUrl, metaDescription, breadcrumbLd, personRef, ORGANIZATION_ID,
 } from "@/lib/seo";
+import { blogTitle } from "@/lib/seo-titles";
 import { ArticleSections, ArticleContent, headingId } from "@/features/blog/components/article-sections";
 import { ReadingProgress, ArticleToc } from "@/features/blog/components/article-reader-ui";
 import { ArticleViewCounter } from "@/features/blog/components/article-view-counter";
@@ -61,7 +62,7 @@ export async function generateMetadata({
   const post = res.data;
   // Matches the page: no metadata for a locale the article does not exist in.
   if (locale !== (post.language === "ar" ? "ar" : "en")) return {};
-  const title = post.seoTitle || post.title;
+  const title = blogTitle(post);
   const description = post.seoDescription || metaDescription(post.excerpt, title);
   const ogImage = post.coverImageUrl || `${SITE_URL}/blog/${post.slug}/og`;
 
@@ -86,7 +87,9 @@ export async function generateMetadata({
   const url = canonical;
 
   return {
-    title,
+    // Absolute: the title is the keyword, and the layout's brand suffix would
+    // push a 50-character title past the 60 where Google starts cutting it.
+    title: { absolute: title },
     description,
     alternates: {
       canonical,
@@ -304,7 +307,8 @@ export default async function ArticleDetailPage({
             alt={post.title}
             fill
             sizes="(max-width: 1024px) 100vw, 1024px"
-            priority
+            loading="eager"
+            fetchPriority="high"
             className="object-cover"
           />
         </div>

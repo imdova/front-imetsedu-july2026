@@ -11,7 +11,7 @@ import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { ReviewsShowcase } from "@/features/marketing/components/reviews-showcase";
-import { SITE_NAME, seoAlternates, socialMeta } from "@/lib/seo";
+import { seoAlternates, socialMeta } from "@/lib/seo";
 import { mergeSeo } from "@/lib/public-seo";
 
 export const revalidate = 300;
@@ -25,7 +25,7 @@ export async function generateMetadata({
   const title =
     locale === "ar"
       ? "قصص نجاح متخصصي الرعاية الصحية | IMETS"
-      : "Healthcare Career Success Stories | IMETS Medical School";
+      : "Healthcare Career Success Stories | IMETS";
   const description =
     locale === "ar"
       ? "اكتشف كيف طوّر الأطباء والممرضون والصيادلة وقادة الرعاية الصحية ومتخصصو الجودة مسيرتهم المهنية بعد الانضمام إلى IMETS Medical School عبر مصر ودول الخليج."
@@ -35,7 +35,7 @@ export async function generateMetadata({
     description,
     alternates: seoAlternates("/success-stories", locale),
     ...socialMeta({
-      title: `${title} · ${SITE_NAME}`,
+      title,
       description,
       path: "/success-stories",
       locale,

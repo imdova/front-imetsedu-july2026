@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import type { StudentReview } from "@/lib/db/student-reviews";
 import { VideoFacade } from "./video-facade";
 import { extractYouTubeVideoId } from "@/features/marketing/lib/youtube-id";
+import { SmartImage } from "@/components/shared/smart-image";
 
 const poster = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 const FACEBOOK_CAROUSEL_LIMIT = 10;
@@ -135,12 +136,12 @@ function FacebookCarousel({
             className="group w-[min(78vw,280px)] shrink-0 snap-start overflow-hidden rounded-2xl border border-[#1877F2]/15 bg-white text-start shadow-md ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl sm:w-[300px]"
           >
             <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <SmartImage
                 src={s.imageUrl}
                 alt={s.caption || s.studentName || "Facebook recommendation"}
-                loading="lazy"
-                className="size-full object-cover object-top transition duration-500 group-hover:scale-[1.03]"
+                fill
+                sizes="(min-width: 1280px) 300px, (min-width: 640px) 45vw, 100vw"
+                className="object-cover object-top transition duration-500 group-hover:scale-[1.03]"
               />
               <span className="absolute start-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-[#1877F2] px-2.5 py-1 text-[0.65rem] font-bold text-white shadow">
                 <span className="grid size-4 place-items-center rounded-full bg-white/20 text-[0.55rem]">
@@ -193,14 +194,14 @@ function WhatsAppGrid({
           className="group relative block w-full break-inside-avoid overflow-hidden rounded-2xl border border-[#25D366]/25 bg-card text-start shadow-sm ring-1 ring-black/5 transition-transform hover:-translate-y-0.5"
         >
           <div className="relative overflow-hidden bg-muted">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <SmartImage
               src={s.imageUrl}
               alt={s.caption || s.studentName || "WhatsApp conversation"}
-              loading="lazy"
-              decoding="async"
+              width={600}
+              height={800}
+              sizes="(min-width: 1280px) 300px, (min-width: 640px) 45vw, 100vw"
               style={{ filter: "none" }}
-              className="block w-full object-cover object-top [filter:none!important]"
+              className="block h-auto w-full object-cover object-top [filter:none!important]"
             />
             <span className="absolute start-2.5 top-2.5 inline-flex max-w-[calc(100%-1.25rem)] items-center gap-1.5 rounded-full bg-[#25D366] px-2.5 py-1 text-[0.65rem] font-bold leading-tight text-white shadow-md">
               <BadgeCheck className="size-3.5 shrink-0" />

@@ -7,7 +7,7 @@ import "./globals.css";
 const geistSans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "404 — Page not found · IMETS Medical School",
+  title: "404 — Page not found | IMETS",
 };
 
 /**

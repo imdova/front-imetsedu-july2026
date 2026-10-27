@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
+import { allImageHosts, imageHost } from "./src/lib/image-hosts";
+
 const nextConfig: NextConfig = {
+  // Lets a check build go to its own folder (NEXT_DIST_DIR=.next/check) so it
+  // starts from nothing without touching a running site's `.next`. Unset in
+  // every normal build and deploy, where it is just `.next`.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+
   // "X-Powered-By: Next.js" tells an attacker which framework to target and
   // tells a visitor nothing.
   poweredByHeader: false,
@@ -50,18 +57,20 @@ const nextConfig: NextConfig = {
       { source: "/ar/terms", destination: "/ar/policy/terms", statusCode: 301 },
     ];
   },
+  // `IMAGE_HOST` reaches the browser bundle as well as this config, so
+  // `SmartImage` and the optimizer always agree on what is allowed.
+  env: { NEXT_PUBLIC_IMAGE_HOST: imageHost() },
   images: {
-    remotePatterns: [
-      // Demo course thumbnails (replace with the asset CDN when going live).
-      { protocol: "https", hostname: "images.unsplash.com" },
-      // VdoCipher / general media host used by the backend.
-      { protocol: "https", hostname: "**.imetsedu.com" },
-      // Backend S3 uploads (receipts, course media, avatars).
-      { protocol: "https", hostname: "**.amazonaws.com" },
-      // YouTube video poster thumbnails (student testimonial reviews).
-      { protocol: "https", hostname: "i.ytimg.com" },
-      { protocol: "https", hostname: "img.youtube.com" },
-    ],
+    // AVIF first, WebP as the fallback; the optimizer picks per request from the
+    // browser's Accept header. (The default is WebP only.) AVIF costs more CPU the
+    // first time a given image is encoded, which `minimumCacheTTL` amortises.
+    formats: ["image/avif", "image/webp"],
+    // Uploads are named by key and not replaced in place, so a long cache is safe
+    // and keeps the VPS from re-encoding the same file. The default is 4 hours.
+    minimumCacheTTL: 60 * 60 * 24 * 7,
+    // Exact hosts only — see src/lib/image-hosts.ts. The previous
+    // `**.amazonaws.com` let anyone proxy any AWS-hosted file through the optimizer.
+    remotePatterns: allImageHosts().map((hostname) => ({ protocol: "https" as const, hostname })),
   },
 };
 

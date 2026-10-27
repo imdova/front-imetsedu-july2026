@@ -6,6 +6,7 @@ import { redirect } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { CategoryLanding } from "@/features/marketing/components/category-landing";
 import { SITE_NAME, seoAlternates, socialMeta, metaDescription } from "@/lib/seo";
+import { TITLE_SUFFIX } from "@/lib/seo-titles";
 import { mergeSeo } from "@/lib/public-seo";
 
 /** Course listing, filtered by category. Cleared early by the cache tags on its data. */
@@ -47,7 +48,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: seoAlternates(path, locale),
-    ...socialMeta({ title: `${title} · ${SITE_NAME}`, description, path, locale, image: cat.image }),
+    ...socialMeta({ title: `${title}${TITLE_SUFFIX}`, description, path, locale, image: cat.image }),
   });
 }
 

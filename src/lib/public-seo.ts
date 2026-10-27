@@ -7,21 +7,24 @@
 import type { Metadata } from "next";
 import * as seoSvc from "@integration/services/seo";
 
+import { isBranded } from "@/lib/seo-titles";
+
 /**
  * A page title, with the brand appearing exactly once.
  *
- * The root layout applies `template: "%s · IMETS Medical School"`, which is
- * right for a title that does not name the school and wrong for one that does.
- * Fourteen pages shipped the brand twice — the homepage read "IMETS Medical
- * School — Advance Your Healthcare Career with Internationally Recognized
- * Programs · IMETS Medical School" at 117 characters, of which barely half
- * survived to the SERP and none of it was a target keyword.
+ * The root layout applies `template: "%s | IMETS"`, which is right for a title
+ * that does not name the school and wrong for one that does. Fourteen pages
+ * shipped the brand twice — the homepage read "IMETS Medical School — Advance
+ * Your Healthcare Career with Internationally Recognized Programs · IMETS
+ * Medical School" at 117 characters, of which barely half survived to the SERP
+ * and none of it was a target keyword.
  *
  * Returning `{ absolute }` opts that title out of the template. Applied
  * centrally in `mergeSeo` below, so a new page cannot reintroduce the problem.
+ * The rule itself lives in `seo-titles.ts`, which the title test also loads.
  */
 export function brandedTitle(title: string): string | { absolute: string } {
-  return /IMETS/i.test(title) ? { absolute: title } : title;
+  return isBranded(title) ? { absolute: title } : title;
 }
 
 export async function resolveSeoMetadata(path: string): Promise<Metadata> {
@@ -67,7 +70,7 @@ export async function mergeSeo(path: string, base: Metadata): Promise<Metadata> 
   };
   /*
    * Normalise the title here rather than at every call site: the layout's
-   * "%s · IMETS Medical School" template is only correct for titles that do not
+   * "%s | IMETS" template is only correct for titles that do not
    * already name the school, and pages that do were shipping the brand twice.
    * A page that has already decided (by passing `{ absolute }`) is left alone.
    */

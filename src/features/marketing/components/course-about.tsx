@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { SmartImage } from "@/components/shared/smart-image";
 
 const tr = (locale: string, en: string, ar: string) =>
   locale === "ar" ? ar : en;
@@ -50,13 +51,13 @@ export function CourseAbout({
       >
         {imageUrl ? (
           <div className="relative aspect-[5/4] overflow-hidden rounded-[1.75rem] bg-muted shadow-lg ring-1 ring-border/50 lg:order-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <SmartImage
               src={imageUrl}
               alt={imageAlt}
-              loading="lazy"
-              decoding="async"
-              className="size-full object-cover"
+              fill
+              // Half the container from lg up, the full width below it.
+              sizes="(min-width: 1024px) 600px, 100vw"
+              className="object-cover"
             />
           </div>
         ) : null}

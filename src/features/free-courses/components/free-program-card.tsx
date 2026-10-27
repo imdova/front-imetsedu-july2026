@@ -2,6 +2,7 @@ import { PlayCircle, ArrowRight, Sparkles, Clock, Play } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import type { FreeProgram } from "@/lib/dal/free-courses";
+import { SmartImage } from "@/components/shared/smart-image";
 
 const tr = (locale: string, en: string, ar: string) => (locale === "ar" ? ar : en);
 
@@ -29,13 +30,12 @@ export function FreeProgramCard({ locale, program }: { locale: string; program: 
     >
       <div className="relative aspect-video overflow-hidden bg-muted">
         {program.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SmartImage
             src={program.thumbnailUrl}
             alt={title}
-            loading="lazy"
-            decoding="async"
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+            sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="grid size-full place-items-center bg-gradient-to-br from-primary/15 to-primary/5">

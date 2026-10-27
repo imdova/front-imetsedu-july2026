@@ -13,6 +13,7 @@ import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { ArticleCardData } from "@/features/blog/lib/article-card-data";
+import { SmartImage } from "@/components/shared/smart-image";
 
 const fmtDate = (iso?: string) =>
   iso ? new Date(iso).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" }) : "";
@@ -44,7 +45,22 @@ function iconFor(category: string) {
   return BookOpen;
 }
 
-export function ArticleCard({ post, featured }: { post: ArticleCardData; featured?: boolean }) {
+/**
+ * `sizes` describes the cover's CSS width at each breakpoint — it is what lets the
+ * browser fetch the smallest file that fills the card. The default fits the full-
+ * width category grid; the blog index has a sidebar and passes its own.
+ */
+const DEFAULT_COVER_SIZES = "(min-width: 1280px) 390px, (min-width: 640px) 50vw, 100vw";
+
+export function ArticleCard({
+  post,
+  featured,
+  sizes = DEFAULT_COVER_SIZES,
+}: {
+  post: ArticleCardData;
+  featured?: boolean;
+  sizes?: string;
+}) {
   const accent = accentFor(post.category || post.title);
   const Icon = iconFor(post.category || "");
   // The card carries the article's own language, not the page's: an English
@@ -63,11 +79,12 @@ export function ArticleCard({ post, featured }: { post: ArticleCardData; feature
     >
       <div className="relative aspect-[16/9] overflow-hidden">
         {post.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SmartImage
             src={post.coverImageUrl}
             alt={post.title}
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+            sizes={sizes}
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className={cn("relative grid size-full place-items-center bg-gradient-to-br", accent)}>
