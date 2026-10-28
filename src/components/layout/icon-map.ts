@@ -46,6 +46,7 @@ import {
   Link2,
   PlayCircle,
   BookOpen,
+  Clapperboard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -101,6 +102,7 @@ export const ICONS: Record<string, LucideIcon> = {
   Link2,
   PlayCircle,
   BookOpen,
+  Clapperboard,
 };
 
 export function getIcon(name: string): LucideIcon {

@@ -184,6 +184,19 @@ export const ADMIN_NAV: NavSection[] = [
     ],
   },
   {
+    labelKey: "sectionVideoLibrary",
+    items: [
+      {
+        titleKey: "videoLibrary",
+        href: "/admin/video-library",
+        icon: "Clapperboard",
+        // Uploads and deletes spend / free the VdoCipher quota, and the backend
+        // module is admin-only — so the nav item is too.
+        adminOnly: true,
+      },
+    ],
+  },
+  {
     labelKey: "sectionCareerHub",
     items: [
       {

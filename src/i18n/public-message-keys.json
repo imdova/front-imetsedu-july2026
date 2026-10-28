@@ -355,6 +355,7 @@
     "sectionTeaching",
     "sectionTransactions",
     "sectionUsers",
+    "sectionVideoLibrary",
     "sectionWorkspace",
     "seoManager",
     "settings",
@@ -364,6 +365,7 @@
     "transcript",
     "transcripts",
     "users",
+    "videoLibrary",
     "whatsapp"
   ]
 }
