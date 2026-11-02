@@ -96,7 +96,7 @@ export default async function HomePage({
 
   return (
     <>
-      <MarketingHero stats={stats} videoId="SSlmmUH2Ado" />
+      <MarketingHero stats={stats} />
 
       <TrustedBySection />
 

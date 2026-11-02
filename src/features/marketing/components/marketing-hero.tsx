@@ -4,13 +4,10 @@ import { Sparkles, Star, ArrowRight, Check, type LucideIcon } from "lucide-react
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { cn } from "@/lib/utils";
-import { YouTubePlayer } from "@/features/marketing/components/youtube-player";
 import { SmartImage } from "@/components/shared/smart-image";
 
 interface MarketingHeroProps {
   stats: { value: string; label: string; icon?: LucideIcon; rating?: boolean }[];
-  /** YouTube id for the hero intro video (click-to-play, no forced sound). */
-  videoId?: string;
 }
 
 /** How many faces the overlapping stack shows. */
@@ -46,11 +43,18 @@ async function learnerFaces(): Promise<string[]> {
 }
 
 /**
- * Modern two-column hero: badge + headline + CTAs + social proof on one side,
- * a framed click-to-play intro video on the other. Royal-blue campaign gradient
- * with gold CTA accents; a stats band follows underneath.
+ * Full-width campus hero: the school's building photograph as the background,
+ * with the badge, headline, CTAs and social proof laid over its left side, then
+ * a stats band underneath.
+ *
+ * The photo's signage sits top-right, so the copy is pinned to the PHYSICAL left
+ * in both languages (`mr-auto`, not `me-auto`) — in Arabic the text is still
+ * right-aligned inside its box, but the box never moves over the sign — and the
+ * navy scrim is a physical left→right fade for the same reason. The height is a
+ * `min-h`, not a fixed one, so a longer translation or a narrow window grows the
+ * hero instead of clipping it.
  */
-export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: MarketingHeroProps) {
+export async function MarketingHero({ stats }: MarketingHeroProps) {
   const t = await getTranslations("Marketing");
   const faces = await learnerFaces();
   const satisfaction = stats.find((s) => s.rating) ?? stats.find((s) => s.value.includes(".")) ?? stats[1];
@@ -58,14 +62,33 @@ export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: Marketin
 
   return (
     <>
-      <section className="relative overflow-hidden marketing-gradient-bg">
-        <div className="pointer-events-none absolute inset-0 marketing-hero-grid opacity-40" aria-hidden="true" />
-        <div className="pointer-events-none absolute -left-24 top-16 size-80 rounded-full bg-[#f4c430]/15 blur-3xl" aria-hidden="true" />
-        <div className="pointer-events-none absolute -right-20 bottom-8 size-96 rounded-full bg-sky-400/20 blur-3xl" aria-hidden="true" />
+      <section className="relative isolate flex min-h-[26.5rem] items-center overflow-hidden bg-[#051a4a]">
+        {/* The hero image is the largest thing in the first screen: load it first.
+            object-position keeps the signage in view when a wide, short hero crops
+            the 2:1 photo to a band. */}
+        <SmartImage
+          src="/campus/imets-building.webp"
+          alt=""
+          aria-hidden="true"
+          fill
+          priority
+          sizes="100vw"
+          className="-z-20 object-cover object-[78%_36%] lg:object-[50%_36%]"
+        />
+        {/* Scrim: even on small screens (copy fills the width), a left→right fade
+            on desktop so the right side — and the signage — stays clear. */}
+        <div
+          className="pointer-events-none absolute inset-0 -z-10 bg-[#051a4a]/70 lg:bg-transparent lg:bg-gradient-to-r lg:from-[#051a4a]/90 lg:via-[#051a4a]/70 lg:via-55% lg:to-[#051a4a]/5"
+          aria-hidden="true"
+        />
+        {/* Keeps the (absolutely positioned) header legible over bright sky. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-28 bg-gradient-to-b from-[#051a4a]/60 to-transparent"
+          aria-hidden="true"
+        />
 
-        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pb-20 pt-28 sm:px-6 sm:pt-32 lg:grid-cols-2 lg:gap-12 lg:pb-24 lg:px-8">
-          {/* Copy */}
-          <div className="text-center lg:text-start">
+        <div className="relative mx-auto w-full max-w-6xl px-4 pb-6 pt-[4.25rem] sm:px-6 lg:px-8">
+          <div className="mr-auto max-w-3xl text-center lg:text-start">
             {satisfaction && (
               <span className="inline-flex items-center gap-2 rounded-full bg-[#f4c430] px-3 py-1 text-xs font-bold text-[#051a4a] shadow">
                 <Sparkles className="size-3.5" />
@@ -73,100 +96,75 @@ export async function MarketingHero({ stats, videoId = "R9-6cBqzczo" }: Marketin
               </span>
             )}
 
-            <h1 className="mt-5 text-balance font-heading text-3xl font-extrabold leading-[1.12] tracking-[-0.02em] text-white sm:text-4xl lg:text-[2.5rem]">
+            <h1 className="mt-3 text-balance font-heading text-3xl font-extrabold leading-[1.12] tracking-[-0.02em] text-white drop-shadow-sm sm:text-4xl lg:text-[2.25rem]">
               {t("heroTitle")}
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-pretty text-lg leading-relaxed text-white/80 sm:text-xl lg:mx-0">
+            <p className="mx-auto mt-3 max-w-2xl text-pretty text-base leading-relaxed text-white/90 sm:text-lg lg:mx-0">
               {t("heroSubtitle")}
             </p>
 
-            <p className="mx-auto mt-5 max-w-xl text-center text-sm font-semibold leading-relaxed text-white/90 sm:text-base lg:mx-0 lg:text-start">
-              {t("heroTrustedByLine")}
-            </p>
+            {/* Real graduate photographs, unnamed here and aria-hidden: the
+                stack is a visual device for the line beside it, and the names
+                belong on the cohort page where the consent was given. */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+              {faces.length > 0 && (
+                <div className="flex items-center -space-x-2 rtl:space-x-reverse" aria-hidden="true">
+                  {faces.map((src, i) => (
+                    <SmartImage
+                      key={src}
+                      src={src}
+                      alt=""
+                      // Redundant with the aria-hidden container above, and kept
+                      // anyway: per-image accessibility scanners read the tag,
+                      // not its ancestors, and this is what one of them flagged.
+                      aria-hidden="true"
+                      width={28}
+                      height={28}
+                      sizes="28px"
+                      className="size-7 rounded-full border-2 border-[#0a2f7a] object-cover shadow-sm"
+                      style={{ zIndex: faces.length - i }}
+                    />
+                  ))}
+                </div>
+              )}
+              <p className="text-xs font-semibold leading-snug text-white/90 sm:text-sm">{t("heroTrustedByLine")}</p>
+            </div>
 
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4 lg:justify-start">
+            <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
               <Link
                 href="/courses"
                 className={cn(
-                  "group inline-flex h-12 min-w-[12rem] items-center justify-center gap-2 rounded-full px-8 text-base font-bold transition-all duration-200",
+                  "group inline-flex h-11 min-w-[12rem] items-center justify-center gap-2 rounded-full px-8 text-base font-bold transition-all duration-200",
                   "bg-[#f4c430] text-[#051a4a] shadow-lg shadow-black/25 hover:-translate-y-0.5 hover:bg-[#e0b020] hover:shadow-xl",
                 )}
               >
                 {t("browseCourses")}
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
               </Link>
-              <a
-                href="#hero-video"
+              <Link
+                href="/success-stories"
                 className={cn(
-                  "inline-flex h-12 min-w-[12rem] items-center justify-center rounded-full px-8 text-base font-semibold text-white ring-2 ring-inset ring-white/40 backdrop-blur transition-all duration-200",
-                  "bg-white/10 hover:bg-white/20 hover:ring-white/60",
+                  "inline-flex h-11 min-w-[12rem] items-center justify-center rounded-full px-8 text-base font-semibold text-white ring-2 ring-inset ring-white/50 backdrop-blur transition-all duration-200",
+                  "bg-white/10 hover:bg-white/20 hover:ring-white/70",
                 )}
               >
                 {t("watchStudentStories")}
-              </a>
+              </Link>
             </div>
 
-            <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 lg:justify-start">
+            <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 lg:justify-start">
               {valueBadges.map((label) => (
-                <li
-                  key={label}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90"
-                >
+                <li key={label} className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90">
                   <Check className="size-4 shrink-0 text-[#f4c430]" strokeWidth={2.75} />
                   {label}
                 </li>
               ))}
             </ul>
           </div>
-
-          {/* Intro video + Coursera-style trust strip */}
-          <div id="hero-video" className="relative mx-auto w-full max-w-xl scroll-mt-28">
-            <div className="pointer-events-none absolute -inset-6 rounded-[2.5rem] bg-[#1e6ef0]/25 blur-2xl" aria-hidden="true" />
-            <div className="relative overflow-hidden rounded-2xl border-2 border-[#f4c430]/50 shadow-2xl shadow-black/40 ring-1 ring-white/15">
-              {/* The poster is the largest thing in the first screen: load it first. */}
-              <YouTubePlayer videoId={videoId} autoPlay={false} priority />
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md sm:justify-start lg:gap-4">
-              {/* Real graduate photographs, unnamed here and aria-hidden: the
-                  stack is a visual device for the line beside it, and the names
-                  belong on the cohort page where the consent was given. */}
-              {faces.length > 0 && (
-              <div className="flex items-center -space-x-2 rtl:space-x-reverse" aria-hidden="true">
-                {faces.map((src, i) => (
-                  <SmartImage
-                    key={src}
-                    src={src}
-                    alt=""
-                    // Redundant with the aria-hidden container above, and kept
-                    // anyway: per-image accessibility scanners read the tag,
-                    // not its ancestors, and this is what one of them flagged.
-                    aria-hidden="true"
-                    width={36}
-                    height={36}
-                    sizes="36px"
-                    className="size-9 rounded-full border-2 border-[#0a2f7a] object-cover shadow-sm"
-                    style={{ zIndex: faces.length - i }}
-                  />
-                ))}
-              </div>
-              )}
-
-              <div className="flex min-w-0 flex-col gap-0.5 text-center sm:text-start">
-                {/* The star rating that sat here was unsourced — see the stats
-                    array in the home page. The learner count beside it is a
-                    real business figure, so the badge keeps that and drops the
-                    number nobody can vouch for. */}
-                <p className="text-xs font-medium leading-snug text-white/85 sm:text-sm">
-                  {t("heroSocialProof")}
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto -mt-12 w-full max-w-6xl px-4 pb-16 sm:-mt-16 sm:px-6 lg:px-8">
+      <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
         <h2 className="mb-6 text-center font-heading text-lg font-bold tracking-tight text-[#0a2f7a] sm:text-xl">
           {t("numbersTitle")}
         </h2>
