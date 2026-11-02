@@ -35,7 +35,7 @@ export function CohortCountdown({ target, labels }: { target: string; labels: Co
   const targetSeconds = Math.floor(Date.parse(target) / 1000);
 
   if (now !== null && Number.isFinite(targetSeconds) && targetSeconds <= now) {
-    return <p className="text-sm font-semibold text-[#0a2f7a]">{labels.started}</p>;
+    return <p className="text-sm font-bold text-[#0a1f4d]">{labels.started}</p>;
   }
 
   const left = now === null || !Number.isFinite(targetSeconds) ? null : targetSeconds - now;
@@ -48,11 +48,11 @@ export function CohortCountdown({ target, labels }: { target: string; labels: Co
 
   return (
     // Digits always read left-to-right, in Arabic too.
-    <div dir="ltr" className="flex items-start gap-2" role="timer" aria-label={parts.map(([v, l]) => `${v} ${l}`).join(" ")}>
+    <div dir="ltr" className="flex gap-3" role="timer" aria-label={parts.map(([v, l]) => `${v} ${l}`).join(" ")}>
       {parts.map(([value, label]) => (
-        <div key={label} className="flex min-w-[3.25rem] flex-col items-center rounded-xl border border-blue-100 bg-white px-2 py-2 shadow-sm">
-          <span className="font-heading text-xl font-extrabold leading-none tabular-nums text-[#0a2f7a]">{value}</span>
-          <span className="mt-1 text-[10px] font-semibold text-slate-500">{label}</span>
+        <div key={label} className="min-w-[62px] rounded-xl bg-white p-3 text-center shadow-sm ring-1 ring-black/[0.03]">
+          <span className="block font-heading text-3xl font-extrabold leading-none tabular-nums text-[#0a1f4d]">{value}</span>
+          <span className="mt-1 block text-xs text-slate-600">{label}</span>
         </div>
       ))}
     </div>
