@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { Sparkles, Star, ArrowRight, Check, type LucideIcon } from "lucide-react";
+import { Sparkles, ArrowRight, Check, type LucideIcon } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
@@ -44,8 +44,8 @@ async function learnerFaces(): Promise<string[]> {
 
 /**
  * Full-width campus hero: the school's building photograph as the background,
- * with the badge, headline, CTAs and social proof laid over its left side, then
- * a stats band underneath.
+ * with the badge, headline, CTAs and social proof laid over its left side. The
+ * `stats` only feed the badge; the band underneath is `ExploreCohortsSection`.
  *
  * The photo's signage sits top-right, so the copy is pinned to the PHYSICAL left
  * in both languages (`mr-auto`, not `me-auto`) — in Arabic the text is still
@@ -62,7 +62,7 @@ export async function MarketingHero({ stats }: MarketingHeroProps) {
 
   return (
     <>
-      <section className="relative isolate flex min-h-[26.5rem] items-center overflow-hidden bg-[#051a4a]">
+      <section className="relative isolate flex min-h-[31.8rem] items-center overflow-hidden bg-[#051a4a]">
         {/* The hero image is the largest thing in the first screen: load it first.
             object-position keeps the signage in view when a wide, short hero crops
             the 2:1 photo to a band. */}
@@ -161,38 +161,6 @@ export async function MarketingHero({ stats }: MarketingHeroProps) {
               ))}
             </ul>
           </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
-        <h2 className="mb-6 text-center font-heading text-lg font-bold tracking-tight text-[#0a2f7a] sm:text-xl">
-          {t("numbersTitle")}
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="group flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-blue-100 bg-white px-4 py-6 text-center shadow-md transition-all hover:-translate-y-1 hover:border-[#0b3fa8]/40 hover:shadow-lg"
-            >
-              {s.rating ? (
-                <>
-                  <span className="flex gap-0.5 text-[#f4c430]" aria-hidden="true">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="size-4 fill-current" />
-                    ))}
-                  </span>
-                  <p className="font-heading text-3xl font-extrabold tracking-tight text-[#0a2f7a] tabular-nums sm:text-4xl">
-                    {s.value}
-                  </p>
-                </>
-              ) : (
-                <p className="font-heading text-3xl font-extrabold tracking-tight text-[#0a2f7a] tabular-nums sm:text-4xl">
-                  {s.value}
-                </p>
-              )}
-              <p className="mt-1 text-sm font-semibold leading-snug text-slate-600">{s.label}</p>
-            </div>
-          ))}
         </div>
       </section>
     </>

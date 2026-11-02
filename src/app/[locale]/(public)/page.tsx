@@ -13,6 +13,7 @@ import { dal } from "@/lib/dal";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/features/marketing/components/course-card";
 import { MarketingHero } from "@/features/marketing/components/marketing-hero";
+import { ExploreCohortsSection } from "@/features/marketing/components/explore-cohorts-section";
 import { HealthcareFacultySection } from "@/features/marketing/components/healthcare-faculty-section";
 import { TrustedBySection } from "@/features/marketing/components/trusted-by-section";
 import { LearningJourneySection } from "@/features/marketing/components/learning-journey-section";
@@ -97,6 +98,8 @@ export default async function HomePage({
   return (
     <>
       <MarketingHero stats={stats} />
+
+      <ExploreCohortsSection locale={locale} />
 
       <TrustedBySection />
 
