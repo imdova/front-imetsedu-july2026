@@ -14,7 +14,7 @@ import {
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 import { dal } from "@/lib/dal";
-import type { PaymentLink, PaymentType } from "@/lib/dal/payment-links";
+import { PAYMENT_CURRENCIES, type PaymentCurrency, type PaymentLink, type PaymentType } from "@/lib/dal/payment-links";
 import type { CourseRow } from "@/types";
 import { useConfirm } from "@/hooks/use-confirm";
 import { usePermission } from "@/hooks/use-permission";
@@ -57,12 +57,30 @@ function suggestUsd(c: CourseRow): number {
   return Math.round((egp / EGP_PER_USD) * 100) / 100;
 }
 
+const CURRENCY_LABELS: Record<PaymentCurrency, string> = {
+  USD: "USD — US Dollar",
+  SAR: "SAR — Saudi Riyal",
+  EGP: "EGP — Egyptian Pound",
+};
+
+/**
+ * Suggested price for a course in the chosen currency. USD keeps its EGP→USD
+ * fallback; SAR and EGP use the course's own list/sale price and suggest
+ * nothing (0) when the course has none, rather than inventing a conversion.
+ */
+function suggestAmount(c: CourseRow, currency: PaymentCurrency): number {
+  const pick = (sale?: number, list?: number) => (sale && sale > 0 ? sale : list ?? 0);
+  if (currency === "SAR") return pick(c.salePriceSAR, c.priceSAR);
+  if (currency === "EGP") return pick(c.salePriceEGP, c.priceEGP);
+  return suggestUsd(c);
+}
+
 const num = (s: string) => {
   const n = Number(s);
   return Number.isFinite(n) && n > 0 ? n : 0;
 };
 
-const EMPTY = { courseId: "", paymentType: "cash" as PaymentType, amount: "", discount: "", tax: "" };
+const EMPTY = { courseId: "", paymentType: "cash" as PaymentType, currency: "USD" as PaymentCurrency, amount: "", discount: "", tax: "" };
 
 export function PaymentLinksManager() {
   const canCreate = usePermission("crm.payment_links.create");
@@ -126,7 +144,25 @@ export function PaymentLinksManager() {
 
   const onSelectCourse = (id: string) => {
     const c = courses.find((x) => x.id === id);
-    setForm((f) => ({ ...f, courseId: id, amount: c ? String(suggestUsd(c)) : f.amount }));
+    setForm((f) => {
+      const s = c ? suggestAmount(c, f.currency) : 0;
+      return { ...f, courseId: id, amount: c ? (s > 0 ? String(s) : "") : f.amount };
+    });
+  };
+
+  /**
+   * Switching currency re-suggests the course price — but only if the amount is
+   * still the suggestion (or empty), so a price typed by hand is never
+   * overwritten. Discount and taxes are cleared: a "20" typed as USD must not
+   * quietly become 20 riyals.
+   */
+  const onSelectCurrency = (currency: PaymentCurrency) => {
+    setForm((f) => {
+      const c = courses.find((x) => x.id === f.courseId);
+      const untouched = !f.amount || (c ? Number(f.amount) === suggestAmount(c, f.currency) : false);
+      const next = c ? suggestAmount(c, currency) : 0;
+      return { ...f, currency, amount: untouched ? (next > 0 ? String(next) : "") : f.amount, discount: "", tax: "" };
+    });
   };
 
   const copy = async (token: string) => {
@@ -152,7 +188,7 @@ export function PaymentLinksManager() {
       amount,
       discount,
       tax,
-      currency: "USD",
+      currency: form.currency,
     });
     setSaving(false);
     if (!res.ok) { toast.error(res.error); return; }
@@ -240,17 +276,26 @@ export function PaymentLinksManager() {
                   </Select>
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="space-y-1.5">
-                  <Label>Amount (USD)</Label>
+                  <Label>Currency</Label>
+                  <Select value={form.currency} onValueChange={(v) => onSelectCurrency(v as PaymentCurrency)}>
+                    <SelectTrigger aria-label="Currency"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_CURRENCIES.map((c) => <SelectItem key={c} value={c}>{CURRENCY_LABELS[c]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Amount ({form.currency})</Label>
                   <Input type="number" min={0} step="0.01" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Discount (USD)</Label>
+                  <Label>Discount ({form.currency})</Label>
                   <Input type="number" min={0} step="0.01" value={form.discount} onChange={(e) => setForm((f) => ({ ...f, discount: e.target.value }))} placeholder="0.00" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Taxes (USD)</Label>
+                  <Label>Taxes ({form.currency})</Label>
                   <Input type="number" min={0} step="0.01" value={form.tax} onChange={(e) => setForm((f) => ({ ...f, tax: e.target.value }))} placeholder="0.00" />
                 </div>
               </div>
@@ -277,17 +322,21 @@ export function PaymentLinksManager() {
             </div>
             <p className="mt-2 text-xs text-muted-foreground">{typeLabel(form.paymentType)}</p>
             <dl className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Amount</dt><dd className="tabular-nums">{formatCurrency(amount, "USD")}</dd></div>
-              {discount > 0 && <div className="flex justify-between text-success"><dt>Discount</dt><dd className="tabular-nums">−{formatCurrency(discount, "USD")}</dd></div>}
-              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd className="tabular-nums">{formatCurrency(subtotal, "USD")}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Taxes</dt><dd className="tabular-nums">{formatCurrency(tax, "USD")}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Amount</dt><dd className="tabular-nums">{formatCurrency(amount, form.currency)}</dd></div>
+              {discount > 0 && <div className="flex justify-between text-success"><dt>Discount</dt><dd className="tabular-nums">−{formatCurrency(discount, form.currency)}</dd></div>}
+              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd className="tabular-nums">{formatCurrency(subtotal, form.currency)}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Taxes</dt><dd className="tabular-nums">{formatCurrency(tax, form.currency)}</dd></div>
             </dl>
             <Separator className="my-3" />
             <div className="flex items-baseline justify-between">
               <span className="font-semibold">Total due</span>
-              <span className="font-heading text-xl font-bold tabular-nums text-primary">{formatCurrency(total, "USD")}</span>
+              <span className="font-heading text-xl font-bold tabular-nums text-primary">{formatCurrency(total, form.currency)}</span>
             </div>
-            <p className="mt-3 text-[11px] text-muted-foreground">A PayPal link will be generated for this total. Share it with the customer to collect payment.</p>
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              {form.currency === "USD"
+                ? "The customer can pay by card or PayPal for this total. Share the link to collect payment."
+                : `The customer pays this total in ${form.currency} by card — PayPal isn't offered for ${form.currency} links. Share the link to collect payment.`}
+            </p>
           </aside>
         </section>
       )}

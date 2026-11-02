@@ -21,12 +21,25 @@ const TYPE_LABELS: Record<PaymentType, [string, string]> = {
   installment_3: ["3rd installment", "القسط الثالث"],
 };
 
+const CURRENCY_NAMES: Record<string, [string, string]> = {
+  USD: ["US Dollar", "دولار أمريكي"],
+  SAR: ["Saudi Riyal", "ريال سعودي"],
+  EGP: ["Egyptian Pound", "جنيه مصري"],
+};
+
 export function PayLinkView({ link, locale }: { link: PublicPaymentLink; locale: string }) {
   const t = (en: string, ar: string) => (locale === "ar" ? ar : en);
   const router = useRouter();
   const [redirecting, setRedirecting] = React.useState(false);
   const [stripeReady, setStripeReady] = React.useState(false);
+  const [stripeChecked, setStripeChecked] = React.useState(false);
   const [stripeBusy, setStripeBusy] = React.useState(false);
+
+  // PayPal here always charges PAYPAL_CURRENCY, so it is only offered on links
+  // in that currency. Any other link (SAR, EGP) is card-only — showing PayPal
+  // would charge the link's number in the wrong currency.
+  const paypalOffered = link.currency === PAYPAL_CURRENCY;
+  const currencyName = CURRENCY_NAMES[link.currency]?.[locale === "ar" ? 1 : 0];
 
   // The card button only appears where the server actually has Stripe keys, so
   // a half-configured environment shows PayPal alone instead of a button that
@@ -34,7 +47,9 @@ export function PayLinkView({ link, locale }: { link: PublicPaymentLink; locale:
   React.useEffect(() => {
     let alive = true;
     dal.stripe.fetchStripeStatus().then((res) => {
-      if (alive && res.ok) setStripeReady(res.data.configured);
+      if (!alive) return;
+      if (res.ok) setStripeReady(res.data.configured);
+      setStripeChecked(true);
     });
     return () => {
       alive = false;
@@ -99,7 +114,9 @@ export function PayLinkView({ link, locale }: { link: PublicPaymentLink; locale:
     <div className="space-y-6">
       <div className="text-center">
         <h1 className="font-heading text-2xl font-bold sm:text-3xl">{t("Complete your payment", "أكمل عملية الدفع")}</h1>
-        <p className="text-sm text-muted-foreground">{t("Secure payment by card or PayPal.", "دفع آمن بالبطاقة أو عبر PayPal.")}</p>
+        <p className="text-sm text-muted-foreground">
+          {paypalOffered ? t("Secure payment by card or PayPal.", "دفع آمن بالبطاقة أو عبر PayPal.") : t("Secure payment by card.", "دفع آمن بالبطاقة.")}
+        </p>
       </div>
 
       <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm sm:p-6">
@@ -118,6 +135,10 @@ export function PayLinkView({ link, locale }: { link: PublicPaymentLink; locale:
         </div>
 
         <dl className="space-y-2 py-4 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">{t("Currency", "العملة")}</dt>
+            <dd className="font-medium">{link.currency}{currencyName ? ` · ${currencyName}` : ""}</dd>
+          </div>
           <div className="flex justify-between"><dt className="text-muted-foreground">{t("Amount", "المبلغ")}</dt><dd className="tabular-nums">{formatCurrency(link.amount, link.currency)}</dd></div>
           {link.discount > 0 && (
             <div className="flex justify-between text-success"><dt>{t("Discount", "الخصم")}</dt><dd className="tabular-nums">−{formatCurrency(link.discount, link.currency)}</dd></div>
@@ -145,26 +166,42 @@ export function PayLinkView({ link, locale }: { link: PublicPaymentLink; locale:
                   {stripeBusy ? <Loader2 className="size-4 animate-spin" /> : <CreditCard className="size-4" />}
                   {t("Pay by card", "ادفع بالبطاقة")}
                 </Button>
-                <div className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-muted-foreground">
-                  <span className="h-px flex-1 bg-border" />
-                  {t("or", "أو")}
-                  <span className="h-px flex-1 bg-border" />
-                </div>
+                {paypalOffered && (
+                  <div className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <span className="h-px flex-1 bg-border" />
+                    {t("or", "أو")}
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                )}
               </>
             )}
-            <PaypalButton
-              clientId={PAYPAL_CLIENT_ID}
-              currency={PAYPAL_CURRENCY}
-              amount={link.total}
-              description={link.courseTitle}
-              label="buynow"
-              labels={{
-                loading: t("Loading PayPal…", "جارٍ تحميل PayPal…"),
-                failed: t("Couldn’t load PayPal. Check your connection and try again.", "تعذّر تحميل PayPal. تحقق من اتصالك وحاول مجددًا."),
-              }}
-              onPaid={onPaid}
-              onError={onError}
-            />
+            {paypalOffered && (
+              <PaypalButton
+                clientId={PAYPAL_CLIENT_ID}
+                currency={PAYPAL_CURRENCY}
+                amount={link.total}
+                description={link.courseTitle}
+                label="buynow"
+                labels={{
+                  loading: t("Loading PayPal…", "جارٍ تحميل PayPal…"),
+                  failed: t("Couldn’t load PayPal. Check your connection and try again.", "تعذّر تحميل PayPal. تحقق من اتصالك وحاول مجددًا."),
+                }}
+                onPaid={onPaid}
+                onError={onError}
+              />
+            )}
+            {!paypalOffered && !stripeReady && (
+              stripeChecked ? (
+                <p className="rounded-xl border border-dashed border-border/70 p-4 text-center text-sm text-muted-foreground">
+                  {t(
+                    `Card payment isn’t available for this link right now. Please contact us to complete your payment in ${link.currency}.`,
+                    `الدفع بالبطاقة غير متاح لهذا الرابط حاليًا. يرجى التواصل معنا لإتمام الدفع بعملة ${currencyName ?? link.currency}.`,
+                  )}
+                </p>
+              ) : (
+                <div className="flex justify-center py-3"><Loader2 className="size-5 animate-spin text-muted-foreground" /></div>
+              )
+            )}
           </div>
         ) : (
           <p className="rounded-xl border border-dashed border-border/70 p-4 text-center text-sm text-muted-foreground">

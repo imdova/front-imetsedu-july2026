@@ -4,6 +4,10 @@ import * as svc from "@integration/services/payment-links";
 
 export type PaymentType = "cash" | "installment_1" | "installment_2" | "installment_3";
 
+/** Currencies a link can be priced in. PayPal only handles USD; the rest are card-only. */
+export const PAYMENT_CURRENCIES = ["USD", "SAR", "EGP"] as const;
+export type PaymentCurrency = (typeof PAYMENT_CURRENCIES)[number];
+
 export interface PaymentLink {
   id: string;
   token: string;
