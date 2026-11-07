@@ -3,7 +3,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, ArrowRight, Check, FileText, Info, Loader2, Megaphone, Mic, Paperclip,
+  ArrowLeft, ArrowRight, Check, Download, FileText, Info, Loader2, Megaphone, Mic, Paperclip,
   Send, Square, Type, Upload, UserPlus, Users, X,
 } from "lucide-react";
 
@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
-  DetailRow, MediaPreview, fmtDur, parseRecipients, parseWaRecipientsFile, type WaMediaAttachment,
+  DetailRow, MediaPreview, downloadWaRecipientsTemplate, fmtDur, parseRecipients, parseWaRecipientsFile, type WaMediaAttachment,
 } from "@/features/admin/components/whatsapp-shared";
 
 /**
@@ -142,6 +142,10 @@ export function WhatsappCampaignWizard({ templates, groups }: { templates: WaTem
       });
       toast.success(`Imported ${rows.length} number${rows.length === 1 ? "" : "s"}`);
     } catch { toast.error("Could not read that file. Use .xlsx/.csv with a phone column."); }
+  };
+
+  const downloadTemplate = async () => {
+    try { await downloadWaRecipientsTemplate(); } catch { toast.error("Could not create the template file. Try again."); }
   };
 
   const send = async () => {
@@ -286,6 +290,7 @@ export function WhatsappCampaignWizard({ templates, groups }: { templates: WaTem
                       <div className="flex items-center justify-between border-b border-border/70 px-3 py-2">
                         <p className="text-xs font-medium text-muted-foreground">{imported.length.toLocaleString()} number{imported.length === 1 ? "" : "s"} imported</p>
                         <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" className="gap-1.5" onClick={downloadTemplate}><Download className="size-3.5" /> Template</Button>
                           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => excelRef.current?.click()}><Upload className="size-3.5" /> Add more</Button>
                           <Button variant="ghost" size="sm" onClick={() => setImported([])}>Clear all</Button>
                         </div>
@@ -302,15 +307,22 @@ export function WhatsappCampaignWizard({ templates, groups }: { templates: WaTem
                       </div>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => excelRef.current?.click()}
-                      className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-border/70 p-8 text-center transition-colors hover:border-primary/50 hover:bg-muted/30"
-                    >
-                      <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary"><Upload className="size-6" /></div>
-                      <p className="text-sm font-medium">Click to upload a spreadsheet</p>
-                      <p className="text-xs text-muted-foreground">.xlsx, .xls or .csv with a <span className="font-medium">phone</span> column (and optional <span className="font-medium">name</span>)</p>
-                    </button>
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => excelRef.current?.click()}
+                        className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-border/70 p-8 text-center transition-colors hover:border-primary/50 hover:bg-muted/30"
+                      >
+                        <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary"><Upload className="size-6" /></div>
+                        <p className="text-sm font-medium">Click to upload a spreadsheet</p>
+                        <p className="text-xs text-muted-foreground">.xlsx, .xls or .csv with a <span className="font-medium">phone</span> column (and optional <span className="font-medium">name</span>)</p>
+                      </button>
+                      <div className="flex justify-center">
+                        <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={downloadTemplate}>
+                          <Download className="size-3.5" /> Download Excel template
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </TabsContent>
 

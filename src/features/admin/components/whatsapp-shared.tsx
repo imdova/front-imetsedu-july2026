@@ -45,6 +45,52 @@ export async function parseWaRecipientsFile(file: File): Promise<WaRecipient[]> 
   return out;
 }
 
+/**
+ * Download a ready-to-fill .xlsx for the campaign's "Import from Excel" tab.
+ *
+ * The headers are exactly what `parseWaRecipientsFile` looks for (`phone`, and
+ * an optional `name`). Phones are written as TEXT, and the cells below the
+ * examples are pre-formatted as text too: in a General cell Excel shows a
+ * 12-digit number as 2.01E+11 and a CSV save then keeps the rounded value, which
+ * would send to the wrong people. The examples and the how-to live on a second
+ * sheet — the importer only reads the first one, so neither is imported.
+ */
+export async function downloadWaRecipientsTemplate(): Promise<void> {
+  const XLSX = await import("xlsx");
+
+  const rows: string[][] = [
+    ["phone", "name"],
+    ["201001234567", "Ahmed Hassan"],
+    ["966501234567", "Sara Ali"],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const FILLABLE_ROWS = 500;
+  for (let r = 1; r < FILLABLE_ROWS; r++) {
+    for (const c of [0, 1]) {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      const cell = ws[ref] ?? { t: "s", v: "" };
+      ws[ref] = { ...cell, t: "s", z: "@" };
+    }
+  }
+  ws["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: FILLABLE_ROWS - 1, c: 1 } });
+  ws["!cols"] = [{ wch: 20 }, { wch: 28 }];
+
+  const help = XLSX.utils.aoa_to_sheet([
+    ["How to fill the Recipients sheet"],
+    [""],
+    ["phone", "Required. Full international number, digits only, no + (Egypt 2010…, Saudi 9665…)."],
+    ["name", "Optional. Used wherever your message has {{name}}."],
+    [""],
+    ["The first two rows are examples — replace them. Keep the column headings (phone, name) as they are."],
+  ]);
+  help["!cols"] = [{ wch: 12 }, { wch: 90 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Recipients");
+  XLSX.utils.book_append_sheet(wb, help, "How to fill");
+  XLSX.writeFile(wb, "whatsapp-recipients-template.xlsx");
+}
+
 /** WhatsApp-style rendered media preview (image / video / audio / document chip). */
 export function MediaPreview({ media, className }: { media: WaMediaAttachment; className?: string }) {
   // eslint-disable-next-line @next/next/no-img-element -- user-uploaded S3 media, no next/image optimization
