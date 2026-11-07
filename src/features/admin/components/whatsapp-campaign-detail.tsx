@@ -2,17 +2,18 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowLeft, CheckCheck, Loader2, RefreshCw, Send, Users } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Ban, CheckCheck, Loader2, RefreshCw, Send, Users } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type { WaCampaignReport } from "@/lib/dal/whatsapp";
+import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { cn } from "@/lib/utils";
 import {
-  CampaignStatusBadge, DeliveryStatusBadge, DetailRow, MediaPreview,
+  CampaignStatusBadge, DeliveryStatusBadge, DetailRow, MediaPreview, cancelCampaignPrompt,
 } from "@/features/admin/components/whatsapp-shared";
 
 const fmtAt = (v?: string | null) =>
@@ -23,7 +24,10 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
   const [report, setReport] = React.useState(initial);
   const [refreshing, setRefreshing] = React.useState(false);
   const [resending, setResending] = React.useState(false);
+  const [cancelling, setCancelling] = React.useState(false);
+  const { confirm, Confirmation } = useConfirm();
   const { campaign: c, stats, recipients } = report;
+  const sending = c.status === "sending";
 
   const refresh = async () => {
     setRefreshing(true);
@@ -40,6 +44,16 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
     if (!r.ok) { toast.error(r.error); return; }
     toast.success(`Retried ${r.data.retried} failed recipient${r.data.retried === 1 ? "" : "s"} — ${r.data.sent} accepted${r.data.failed ? `, ${r.data.failed} rejected` : ""}`);
     if (r.data.errors?.length) toast.warning(r.data.errors[0]);
+    void refresh();
+  };
+
+  const cancel = async () => {
+    if (!(await confirm({ ...cancelCampaignPrompt(c.name, c.running), variant: "destructive" }))) return;
+    setCancelling(true);
+    const r = await dal.whatsapp.cancelCampaign(c.id);
+    setCancelling(false);
+    if (!r.ok) { toast.error(r.error); void refresh(); return; }
+    toast.success(r.data.wasRunning ? "Cancelled — the send stops before its next message" : "Cancelled");
     void refresh();
   };
 
@@ -62,7 +76,7 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl font-semibold">{c.name}</h1>
-              <CampaignStatusBadge status={c.status} />
+              <CampaignStatusBadge status={c.status} running={c.running} />
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {c.mode === "manual" ? "Manual message" : `Template · ${c.templateName}`} · created {fmtAt(c.createdAt)}{c.sentAt ? ` · sent ${fmtAt(c.sentAt)}` : ""}
@@ -70,7 +84,12 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {stats.failed > 0 && (
+          {sending && (
+            <Button variant="outline" className="gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={cancel} disabled={cancelling}>
+              {cancelling ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4" />} Cancel sending
+            </Button>
+          )}
+          {stats.failed > 0 && !sending && (
             <Button className="gap-1.5" onClick={resendFailed} disabled={resending || refreshing} title="Best retried 24–48h after the original send — per-user marketing limits reset over time.">
               {resending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Resend to failed ({stats.failed})
             </Button>
@@ -80,6 +99,30 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
           </Button>
         </div>
       </div>
+
+      {/* A "sending" campaign with no live send behind it will never finish — say so, and how to clear it. */}
+      {sending && !c.running && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-300/60 bg-amber-50 p-4 text-sm dark:bg-amber-950/20">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <div className="min-w-0">
+            <p className="font-medium text-amber-800 dark:text-amber-300">This send was interrupted</p>
+            <p className="mt-0.5 text-muted-foreground">
+              The server restarted while it was sending, so {stats.notSent.toLocaleString()} recipient{stats.notSent === 1 ? " was" : "s were"} never messaged and it will not finish on its own. Cancel it to clear the “sending” status.
+            </p>
+          </div>
+        </div>
+      )}
+      {c.status === "cancelled" && (
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4 text-sm">
+          <Ban className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <p className="font-medium">Sending was cancelled</p>
+            <p className="mt-0.5 text-muted-foreground">
+              {stats.notSent.toLocaleString()} recipient{stats.notSent === 1 ? " was" : "s were"} not messaged. Messages WhatsApp had already accepted still go out and show in the statistics below.
+            </p>
+          </div>
+        </div>
+      )}
 
       {c.lastError && (
         <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
@@ -214,6 +257,7 @@ export function WhatsappCampaignDetail({ initial }: { initial: WaCampaignReport 
           </Card>
         </div>
       </div>
+      {Confirmation}
     </div>
   );
 }

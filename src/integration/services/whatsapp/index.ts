@@ -15,12 +15,14 @@ export interface WaCampaignDto {
   defaultParams: string; recipients: { phone: string; name?: string }[];
   status: string; total: number; sentCount: number; failedCount: number; sentAt?: string; createdAt: string; lastError?: string;
   deliveredCount?: number; deliveryFailedCount?: number; deliveryError?: string;
+  /** Server-side: a send loop is alive for this campaign. False on a 'sending' row = interrupted by a restart. */
+  running?: boolean;
 }
 export interface WaMediaUploadDto { url: string; kind: string; mime: string; filename: string }
 export interface WaAutomationDto {
   _id: string; name: string; trigger: string; triggerTag?: string; steps?: string; active: boolean; sentCount: number; createdAt: string;
 }
-export interface WaSendResult { sent: number; failed: number; total: number; errors: string[] }
+export interface WaSendResult { sent: number; failed: number; total: number; errors: string[]; cancelled?: boolean }
 
 export const getStatus = (): Promise<Result<WaStatusDto>> => api.get(`${BASE}/status`, { revalidate: false });
 
@@ -67,6 +69,8 @@ export const listCampaigns = (): Promise<Result<WaCampaignDto[]>> => api.get(`${
 export const createCampaign = (input: Record<string, unknown>): Promise<Result<WaCampaignDto>> => api.post(`${BASE}/campaigns`, input);
 export const uploadCampaignMedia = (form: FormData): Promise<Result<WaMediaUploadDto>> => api.post(`${BASE}/campaigns/upload-media`, form);
 export const sendCampaign = (id: string): Promise<Result<WaSendResult>> => api.post(`${BASE}/campaigns/${id}/send`, {});
+export const cancelCampaign = (id: string): Promise<Result<{ success: boolean; wasRunning: boolean }>> =>
+  api.post(`${BASE}/campaigns/${id}/cancel`, {});
 export interface WaCampaignReportDto {
   campaign: WaCampaignDto;
   stats: { total: number; accepted: number; delivered: number; read: number; failed: number; notSent: number };

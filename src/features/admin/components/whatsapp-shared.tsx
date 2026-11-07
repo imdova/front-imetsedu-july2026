@@ -114,12 +114,38 @@ export function DetailRow({ k, v }: { k: string; v: React.ReactNode }) {
   );
 }
 
+/**
+ * What to tell the admin before cancelling a campaign. A live send is stopped
+ * (and what WhatsApp already accepted can't be recalled); an interrupted one has
+ * nothing running, so cancelling only clears its stuck "sending" status.
+ */
+export function cancelCampaignPrompt(name: string, running: boolean) {
+  return running
+    ? {
+        title: "Cancel sending",
+        description: `“${name}” stops before its next message. Messages WhatsApp has already accepted can't be recalled — everyone after that point is not messaged.`,
+        confirmText: "Cancel sending",
+        cancelText: "Keep sending",
+      }
+    : {
+        title: "Clear interrupted campaign",
+        description: `“${name}” stopped when the server restarted, so the rest of its recipients were never messaged. Cancelling clears its “sending” status.`,
+        confirmText: "Cancel campaign",
+        cancelText: "Keep as is",
+      };
+}
+
 /** Campaign lifecycle status → badge. */
-export function CampaignStatusBadge({ status }: { status: string }) {
+export function CampaignStatusBadge({ status, running }: { status: string; running?: boolean }) {
   if (status === "sent") return <Badge className="bg-success/12 text-success hover:bg-success/15">Sent</Badge>;
   // Meta accepted none of the messages — distinct from a sent campaign with some failures.
   if (status === "failed") return <Badge variant="destructive">Failed</Badge>;
-  if (status === "sending") return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300">Sending…</Badge>;
+  if (status === "cancelled") return <Badge variant="outline" className="text-muted-foreground">Cancelled</Badge>;
+  if (status === "sending") {
+    // "Sending" with no live send behind it: the server restarted mid-loop, so it will never finish on its own.
+    if (running === false) return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300">Interrupted</Badge>;
+    return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300">Sending…</Badge>;
+  }
   return <Badge variant="secondary" className="capitalize">{status || "draft"}</Badge>;
 }
 

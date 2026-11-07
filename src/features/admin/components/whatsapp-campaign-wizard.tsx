@@ -162,7 +162,9 @@ export function WhatsappCampaignWizard({ templates, groups }: { templates: WaTem
     const res = await dal.whatsapp.sendCampaign(c.data.id);
     setSending(false);
     if (!res.ok) { toast.error(res.error); return; }
-    toast.success(`Sent ${res.data.sent}/${res.data.total}${res.data.failed ? ` · ${res.data.failed} failed` : ""}`);
+    toast.success(res.data.cancelled
+      ? `Cancelled — ${res.data.sent} of ${res.data.total} were sent first`
+      : `Sent ${res.data.sent}/${res.data.total}${res.data.failed ? ` · ${res.data.failed} failed` : ""}`);
     if (res.data.errors?.length) toast.warning(res.data.errors[0]);
     router.push(`/admin/whatsapp-campaigns/${c.data.id}`);
   };

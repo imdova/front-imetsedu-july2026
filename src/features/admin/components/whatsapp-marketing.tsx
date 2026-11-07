@@ -14,7 +14,7 @@ import { Link } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import type { WaStatus, WaGroup, WaTemplate, WaCampaign, WaAutomation, WaConversation, WaThread, WaList, WaTemplateFolder, WaAnalytics } from "@/lib/dal/whatsapp";
 import { WhatsappAutomationBuilder } from "@/features/admin/components/whatsapp-automation-builder";
-import { CampaignStatusBadge, MediaPreview, fmtDur } from "@/features/admin/components/whatsapp-shared";
+import { CampaignStatusBadge, MediaPreview, cancelCampaignPrompt, fmtDur } from "@/features/admin/components/whatsapp-shared";
 import { WhatsappSettingsPanel } from "@/features/admin/components/whatsapp-settings-panel";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -1138,7 +1138,19 @@ function CampaignsPanel({ initial, confirm }: {
     setBusyId(null);
     // A refused send stores its reason on the campaign — refresh so the row shows it.
     if (!r.ok) { toast.error(r.error); refresh(); return; }
-    toast.success(`Sent ${r.data.sent}/${r.data.total}${r.data.failed ? ` · ${r.data.failed} failed` : ""}`);
+    toast.success(r.data.cancelled
+      ? `Cancelled — ${r.data.sent} of ${r.data.total} were sent first`
+      : `Sent ${r.data.sent}/${r.data.total}${r.data.failed ? ` · ${r.data.failed} failed` : ""}`);
+    refresh();
+  };
+
+  const cancel = async (c: WaCampaign) => {
+    if (!(await confirm({ ...cancelCampaignPrompt(c.name, c.running), variant: "destructive" }))) return;
+    setBusyId(c.id);
+    const r = await dal.whatsapp.cancelCampaign(c.id);
+    setBusyId(null);
+    if (!r.ok) { toast.error(r.error); refresh(); return; }
+    toast.success(r.data.wasRunning ? "Cancelled — the send stops before its next message" : "Cancelled");
     refresh();
   };
 
@@ -1184,14 +1196,14 @@ function CampaignsPanel({ initial, confirm }: {
                       <p className="truncate text-[11px] text-muted-foreground">{c.mode === "manual" ? "Manual message" : `Template · ${c.templateName}`} · {c.total} recipients</p>
                     </div>
                   </div>
-                  <div><CampaignStatusBadge status={c.status} /></div>
+                  <div><CampaignStatusBadge status={c.status} running={c.running} /></div>
                   <div className="min-w-0 text-xs text-muted-foreground">
                     {c.status === "failed" ? (
                       <>
                         <span className="tabular-nums text-destructive">{c.failedCount} of {c.total} rejected</span>
                         {c.lastError && <p className="mt-0.5 truncate text-[11px] text-destructive" title={c.lastError}>{c.lastError}</p>}
                       </>
-                    ) : c.status === "sent" ? (
+                    ) : c.status === "sent" || c.status === "cancelled" ? (
                       <>
                         <span className="tabular-nums">{c.sentCount} accepted</span>
                         {c.deliveredCount > 0 && <span className="text-success"> · {c.deliveredCount} delivered</span>}
@@ -1209,6 +1221,11 @@ function CampaignsPanel({ initial, confirm }: {
                     {c.status === "draft" && (
                       <Button variant="ghost" size="icon" className="size-8" title="Send now" onClick={() => sendNow(c)} disabled={busyId === c.id}>
                         {busyId === c.id ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4 text-primary" />}
+                      </Button>
+                    )}
+                    {c.status === "sending" && (
+                      <Button variant="ghost" size="icon" className="size-8" title={c.running ? "Cancel sending" : "Cancel (interrupted)"} onClick={() => cancel(c)} disabled={busyId === c.id}>
+                        {busyId === c.id ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4 text-destructive" />}
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" className="size-8" title="Delete" onClick={() => del(c)}><Trash2 className="size-4 text-destructive" /></Button>
