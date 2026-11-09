@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
 import { scoreLead } from "@/lib/crm/scoring";
+import { cleanEmail } from "@/lib/clean-email";
 import { useCrmVariables } from "@/hooks/use-crm-variables";
 import { useAuth } from "@/store";
 import {
@@ -101,10 +102,20 @@ function iconForSpecialty(value: string): React.ElementType {
   return GraduationCap;
 }
 
-const schema = z.object({
+/**
+ * Built per render with the translated email message (the schema lives outside
+ * the component, so it cannot call `t` itself).
+ */
+const buildSchema = (emailInvalid: string) => z.object({
   // Phone is the only required field — everything else is optional.
   fullName: z.string().trim(),
-  email: z.union([z.string().trim().email(), z.literal("")]),
+  // Invisible direction marks and Arabic-style digits are stripped before the check — they make an
+  // address that looks fine fail — and the cleaned value is what gets saved. A plain refine (not a
+  // union) so a bad address says WHY, instead of zod's generic "Invalid input".
+  email: z
+    .string()
+    .transform(cleanEmail)
+    .refine((v) => v === "" || z.email().safeParse(v).success, { message: emailInvalid }),
   phoneCountryCode: z.string().trim().min(1),
   phone: z.string().trim().min(6, "Required"),
   whatsAppCountryCode: z.string().trim().min(1),
@@ -121,7 +132,7 @@ const schema = z.object({
   leadType: z.string(),
   linkedinUrl: z.string().trim(),
 });
-type Values = z.infer<typeof schema>;
+type Values = z.infer<ReturnType<typeof buildSchema>>;
 
 function ageFromDob(dob: string): number | null {
   if (!dob) return null;
@@ -216,6 +227,7 @@ export function CreateLeadForm({
     [locale],
   );
 
+  const schema = React.useMemo(() => buildSchema(t("emailInvalid")), [t]);
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: editLead
@@ -469,7 +481,20 @@ export function CreateLeadForm({
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("fEmail")}</FormLabel>
-                  <FormControl><Input type="email" dir="ltr" placeholder="john.doe@example.com" {...field} /></FormControl>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      dir="ltr"
+                      placeholder="john.doe@example.com"
+                      {...field}
+                      onBlur={(e) => {
+                        field.onBlur();
+                        // Show the cleaned address (hidden marks stripped) instead of silently saving a different one.
+                        const cleaned = cleanEmail(e.target.value);
+                        if (cleaned !== e.target.value) form.setValue("email", cleaned, { shouldValidate: true, shouldDirty: true });
+                      }}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

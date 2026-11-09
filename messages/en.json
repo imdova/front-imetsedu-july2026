@@ -3584,6 +3584,7 @@
     "openExisting": "Open existing lead",
     "fFullName": "Full name",
     "fEmail": "Email",
+    "emailInvalid": "Enter a valid email address — check for a typo or a hidden character",
     "fPhone": "Phone",
     "fWhatsApp": "WhatsApp",
     "fCountry": "Country",

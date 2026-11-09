@@ -10,6 +10,7 @@
     "lint": "eslint",
     "check:geo": "node scripts/check-geo-content.mjs",
     "test:titles": "node --no-warnings --test scripts/titles.test.mjs",
+    "test:email": "node --no-warnings --test scripts/clean-email.test.mjs",
     "check:raw-keys": "node scripts/check-raw-keys.mjs",
     "audit:seo": "node scripts/audit-seo.mjs",
     "check:alt": "node scripts/check-alt-text.mjs",
