@@ -40,10 +40,11 @@ function postToStorage(creds: UploadCredentials, file: File, onProgress: (pct: n
 }
 
 export function UploadDialog({
-  open, onOpenChange, folderId, folderName, onFinished,
+  open, onOpenChange, account, folderId, folderName, onFinished,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  account: string;
   folderId: string;
   folderName: string;
   /** Called once a run finishes with at least one successful upload. */
@@ -70,7 +71,7 @@ export function UploadDialog({
     // One at a time: browsers and S3 handle a few big parallel uploads badly.
     for (const item of items.filter((i) => i.status === "queued" || i.status === "error")) {
       patch(item.id, { status: "uploading", progress: 0, error: undefined });
-      const cred = await dal.videoLibrary.requestUpload(item.title.trim() || stripExt(item.file.name), folderId);
+      const cred = await dal.videoLibrary.requestUpload(item.title.trim() || stripExt(item.file.name), folderId, account);
       if (!cred.ok) { patch(item.id, { status: "error", error: cred.error }); continue; }
       try {
         await postToStorage(cred.data, item.file, (progress) => patch(item.id, { progress }));

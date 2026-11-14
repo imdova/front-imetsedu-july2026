@@ -1,26 +1,30 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight, Copy, Film, Folder, FolderPlus, Loader2, MoreVertical, Pencil, Play, RefreshCw, Search, Trash2, UploadCloud } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Film, Folder, FolderPlus, KeyRound, Loader2, MoreVertical, Pencil, Play, RefreshCw, Search, Trash2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { dal } from "@/lib/dal";
-import type { FolderView, LibraryVideo } from "@/lib/dal/video-library";
+import type { FolderView, LibraryVideo, VdoAccount } from "@/lib/dal/video-library";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PAGE_SIZE } from "../lib/constants";
+import { AccountsDialog } from "./accounts-dialog";
 import { UploadDialog } from "./upload-dialog";
 import { VideoPreviewDialog } from "./video-preview-dialog";
 
 const HREF = "/admin/video-library";
 
-const href = (p: { folder?: string; page?: number; q?: string }) => {
+/** Every link carries the VdoCipher account, since folders and videos belong to one account. */
+const makeHref = (account: string) => (p: { folder?: string; page?: number; q?: string }) => {
   const qs = new URLSearchParams();
+  if (account) qs.set("account", account);
   if (p.folder && p.folder !== "root") qs.set("folder", p.folder);
   if (p.q) qs.set("q", p.q);
   if (p.page && p.page > 1) qs.set("page", String(p.page));
@@ -44,8 +48,10 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function VideoLibrary({
-  folderId, view, videos, page, q, error,
+  accounts, account, folderId, view, videos, page, q, error,
 }: {
+  accounts: VdoAccount[];
+  account: string;
   folderId: string;
   view: FolderView | null;
   videos: { count: number; rows: LibraryVideo[] } | null;
@@ -54,9 +60,11 @@ export function VideoLibrary({
   error?: string;
 }) {
   const router = useRouter();
+  const href = React.useMemo(() => makeHref(account), [account]);
   const { confirm, Confirmation } = useConfirm();
   const [search, setSearch] = React.useState(q);
   const [uploadOpen, setUploadOpen] = React.useState(false);
+  const [accountsOpen, setAccountsOpen] = React.useState(false);
   const [preview, setPreview] = React.useState<{ id: string; title: string } | null>(null);
   const [folderDialog, setFolderDialog] = React.useState<{ mode: "create" } | { mode: "rename"; id: string; name: string } | null>(null);
   const [folderName, setFolderName] = React.useState("");
@@ -78,8 +86,8 @@ export function VideoLibrary({
     if (!name || !folderDialog) return;
     setSaving(true);
     const r = folderDialog.mode === "create"
-      ? await dal.videoLibrary.createFolder(name, folderId)
-      : await dal.videoLibrary.renameFolder(folderDialog.id, name);
+      ? await dal.videoLibrary.createFolder(name, folderId, account)
+      : await dal.videoLibrary.renameFolder(folderDialog.id, name, account);
     setSaving(false);
     if (!r.ok) { toast.error(r.error); return; }
     toast.success(folderDialog.mode === "create" ? "Folder created" : "Folder renamed");
@@ -94,7 +102,7 @@ export function VideoLibrary({
       confirmText: "Delete", variant: "destructive",
     });
     if (!yes) return;
-    const r = await dal.videoLibrary.deleteFolder(id);
+    const r = await dal.videoLibrary.deleteFolder(id, account);
     if (!r.ok) { toast.error(r.error); return; }
     toast.success("Folder deleted");
     refresh();
@@ -107,7 +115,7 @@ export function VideoLibrary({
       confirmText: "Delete", variant: "destructive",
     });
     if (!yes) return;
-    const r = await dal.videoLibrary.deleteVideo(v.id);
+    const r = await dal.videoLibrary.deleteVideo(v.id, account);
     if (!r.ok) { toast.error(r.error); return; }
     toast.success("Video deleted");
     refresh();
@@ -123,6 +131,15 @@ export function VideoLibrary({
     <div className="space-y-5">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
+        {accounts.length > 0 && (
+          <Select value={account} onValueChange={(id) => router.push(makeHref(id)({}))}>
+            <SelectTrigger className="w-[190px]" aria-label="VdoCipher account"><SelectValue placeholder="Account" /></SelectTrigger>
+            <SelectContent>
+              {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        <Button type="button" variant="outline" size="icon" onClick={() => setAccountsOpen(true)} aria-label="Manage VdoCipher accounts" title="Manage VdoCipher accounts"><KeyRound className="size-4" /></Button>
         <form onSubmit={submitSearch} className="flex min-w-[240px] flex-1 items-center gap-2">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -133,8 +150,8 @@ export function VideoLibrary({
         <Button type="button" variant="outline" size="icon" onClick={refresh} disabled={refreshing} aria-label="Refresh">
           <RefreshCw className={`size-4 ${refreshing ? "animate-spin" : ""}`} />
         </Button>
-        <Button type="button" variant="outline" onClick={() => openFolderDialog({ mode: "create" })}><FolderPlus className="size-4" /> New Folder</Button>
-        <Button type="button" onClick={() => setUploadOpen(true)}><UploadCloud className="size-4" /> Upload Video</Button>
+        <Button type="button" variant="outline" disabled={!account} onClick={() => openFolderDialog({ mode: "create" })}><FolderPlus className="size-4" /> New Folder</Button>
+        <Button type="button" disabled={!account} onClick={() => setUploadOpen(true)}><UploadCloud className="size-4" /> Upload Video</Button>
       </div>
 
       {/* Breadcrumb */}
@@ -142,7 +159,7 @@ export function VideoLibrary({
         {!isRoot && (
           <Link href={href({ folder: view?.path.at(-2)?.id ?? "root" })} aria-label="Up one level" className="rounded p-1 text-muted-foreground hover:bg-muted"><ChevronLeft className="size-4 rtl:rotate-180" /></Link>
         )}
-        {isRoot ? <span className="font-medium">My Videos</span> : <Link href={HREF} className="text-muted-foreground hover:text-foreground">My Videos</Link>}
+        {isRoot ? <span className="font-medium">My Videos</span> : <Link href={href({})} className="text-muted-foreground hover:text-foreground">My Videos</Link>}
         {view?.path.map((p, i) => (
           <React.Fragment key={p.id}>
             <span className="text-muted-foreground">/</span>
@@ -153,6 +170,14 @@ export function VideoLibrary({
         ))}
         {q && <span className="ms-2 text-muted-foreground">· results for “{q}” <Link href={href({ folder: folderId })} className="text-primary hover:underline">clear</Link></span>}
       </nav>
+
+      {!account && !error && (
+        <div className="grid place-items-center gap-2 rounded-xl border border-dashed py-16 text-center">
+          <KeyRound className="size-8 text-muted-foreground" />
+          <p className="text-sm font-medium">No VdoCipher account is configured</p>
+          <Button type="button" size="sm" onClick={() => setAccountsOpen(true)}>Add an account</Button>
+        </div>
+      )}
 
       {error && <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
 
@@ -220,7 +245,7 @@ export function VideoLibrary({
             );
           })}
         </section>
-      ) : !error && (
+      ) : !error && account && (
         <div className="grid place-items-center gap-2 rounded-xl border border-dashed py-16 text-center">
           <Film className="size-8 text-muted-foreground" />
           <p className="text-sm font-medium">{q ? "No videos match your search" : folders.length ? "No videos directly in this folder" : isRoot ? "No videos yet" : "This folder is empty"}</p>
@@ -239,8 +264,9 @@ export function VideoLibrary({
         </div>
       )}
 
-      <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} folderId={folderId} folderName={isRoot ? "My Videos" : currentName} onFinished={refresh} />
-      <VideoPreviewDialog video={preview} onClose={() => setPreview(null)} />
+      <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} account={account} folderId={folderId} folderName={isRoot ? "My Videos" : currentName} onFinished={refresh} />
+      <VideoPreviewDialog video={preview} account={account} onClose={() => setPreview(null)} />
+      <AccountsDialog open={accountsOpen} onOpenChange={setAccountsOpen} accounts={accounts} onChanged={refresh} />
 
       <Dialog open={!!folderDialog} onOpenChange={(o) => !o && !saving && setFolderDialog(null)}>
         <DialogContent className="sm:max-w-md">

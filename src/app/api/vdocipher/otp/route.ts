@@ -1,51 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const VDOCIPHER_API_BASE = "https://dev.vdocipher.com/api/videos";
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://main-api.imetsedu.com";
 const DEFAULT_TTL = 300;
 
-async function resolveApiSecret(): Promise<string | undefined> {
-  try {
-    const res = await fetch(`${BACKEND_URL}/general-settings`, { cache: "no-store" });
-    if (res.ok) {
-      const data = await res.json();
-      const settings = Array.isArray(data) ? data[0] : data;
-      const secret: string | undefined = settings?.vdocipher?.apiSecret;
-      if (secret) return secret;
-    }
-  } catch {
-    // fall through to env var
-  }
-  return process.env.VDOCIPHER_API_SECRET;
-}
-
+/**
+ * Playback OTP for a lecture video. The backend holds every VdoCipher account's
+ * secret and works out which account owns the video, so this route no longer
+ * touches a secret at all — it is only a same-origin relay for the player.
+ */
 export async function POST(request: NextRequest) {
-  const apiSecret = await resolveApiSecret();
-  if (!apiSecret) {
-    return NextResponse.json({ message: "VdoCipher API secret is not configured" }, { status: 500 });
-  }
-
   const body = await request.json().catch(() => null);
   const videoId = typeof body?.videoId === "string" ? body.videoId.trim() : "";
   if (!videoId) {
     return NextResponse.json({ message: "Missing videoId" }, { status: 400 });
   }
-
   const ttl = Number.isFinite(body?.ttl) ? Number(body.ttl) : DEFAULT_TTL;
 
-  const response = await fetch(
-    `${VDOCIPHER_API_BASE}/${encodeURIComponent(videoId)}/otp`,
-    {
+  let response: Response;
+  try {
+    response = await fetch(`${BACKEND_URL}/vdocipher/otp`, {
       method: "POST",
-      headers: {
-        Authorization: `Apisecret ${apiSecret}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ ttl }),
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ videoId, ttl }),
       cache: "no-store",
-    },
-  );
+    });
+  } catch {
+    return NextResponse.json({ message: "Could not reach the video service" }, { status: 502 });
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -55,8 +36,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const data = (await response.json()) as { otp?: string; playbackInfo?: string };
-  if (!data.otp || !data.playbackInfo) {
+  const data = (await response.json().catch(() => null)) as { otp?: string; playbackInfo?: string } | null;
+  if (!data?.otp || !data.playbackInfo) {
     return NextResponse.json({ message: "Invalid response from VdoCipher" }, { status: 502 });
   }
 

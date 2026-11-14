@@ -7,18 +7,18 @@ import { dal } from "@/lib/dal";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 /** Mounted only while open, so credentials are fetched fresh (and expire unused) per preview. */
-function Player({ videoId, title }: { videoId: string; title: string }) {
+function Player({ videoId, title, account }: { videoId: string; title: string; account: string }) {
   const [creds, setCreds] = React.useState<{ otp: string; playbackInfo: string } | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
-    void dal.videoLibrary.fetchPreviewOtp(videoId).then((r) => {
+    void dal.videoLibrary.fetchPreviewOtp(videoId, account).then((r) => {
       if (cancelled) return;
       if (r.ok) setCreds(r.data); else setError(r.error);
     });
     return () => { cancelled = true; };
-  }, [videoId]);
+  }, [videoId, account]);
 
   if (error) return <p className="grid aspect-video place-items-center rounded-lg bg-muted px-4 text-center text-sm text-destructive">{error}</p>;
   if (!creds) return <div className="grid aspect-video place-items-center rounded-lg bg-muted"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>;
@@ -35,7 +35,7 @@ function Player({ videoId, title }: { videoId: string; title: string }) {
   );
 }
 
-export function VideoPreviewDialog({ video, onClose }: { video: { id: string; title: string } | null; onClose: () => void }) {
+export function VideoPreviewDialog({ video, account, onClose }: { video: { id: string; title: string } | null; account: string; onClose: () => void }) {
   return (
     <Dialog open={!!video} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-3xl">
@@ -43,7 +43,7 @@ export function VideoPreviewDialog({ video, onClose }: { video: { id: string; ti
           <DialogTitle className="pe-6 leading-snug">{video?.title}</DialogTitle>
           <DialogDescription className="font-mono text-xs">{video?.id}</DialogDescription>
         </DialogHeader>
-        {video && <Player key={video.id} videoId={video.id} title={video.title} />}
+        {video && <Player key={video.id} videoId={video.id} title={video.title} account={account} />}
       </DialogContent>
     </Dialog>
   );
