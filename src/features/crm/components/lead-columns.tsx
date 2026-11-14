@@ -204,6 +204,14 @@ export function getLeadColumns(
             <span className={assigned ? "" : "text-muted-foreground"}>
               {assigned ? l.counselorName : t("unassignedLabel")}
             </span>
+            {assigned && l.transferredAtISO && (
+              <span
+                className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[0.6rem] font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
+                title={l.transferredFromName ? t("transferredFrom", { name: l.transferredFromName }) : t("transferredByAdmin")}
+              >
+                {t("transferredBadge")}
+              </span>
+            )}
           </span>
         );
       },

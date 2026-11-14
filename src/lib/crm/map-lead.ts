@@ -170,6 +170,8 @@ export function mapLead(raw: any): Lead {
     jobTitle: raw.jobTitle ?? raw.data?.jobTitle,
     counselorId: raw.counselor?._id ?? raw.counselorId ?? "",
     counselorName: raw.counselor?.name ?? raw.counselorName ?? "Unassigned",
+    transferredAtISO: raw.transferredAt ?? undefined,
+    transferredFromName: raw.transferredFrom?.name ?? undefined,
     priority: (raw.priority as LeadPriority) ?? "warm",
     score: typeof raw.score === "number" ? raw.score : 0,
     stageKey: STAGE_MAP[rawStage] ?? "new",

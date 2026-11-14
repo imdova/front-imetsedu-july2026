@@ -131,6 +131,7 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   const [country, setCountry] = React.useState("all");
   const [courseId, setCourseId] = React.useState("all");
   const [pipeline, setPipeline] = React.useState("all");
+  const [transfer, setTransfer] = React.useState("all");
   const [range, setRange] = React.useState<Range>("all");
   const [customFrom, setCustomFrom] = React.useState("");
   const [customTo, setCustomTo] = React.useState("");
@@ -226,13 +227,13 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
   const load = React.useCallback(async () => {
     setLoading(true);
     const effectiveCounselorId = lockedCounselorId ?? counselorId;
-    const res = await dal.crm.fetchLeads({ search, stage, source, counselorId: effectiveCounselorId, priority, specialty, country, courseId, pipeline });
+    const res = await dal.crm.fetchLeads({ search, stage, source, counselorId: effectiveCounselorId, priority, specialty, country, courseId, pipeline, transfer });
     if (res.ok) setRows(res.data);
     else toast.error(res.error);
     setLoading(false);
-  }, [search, stage, source, counselorId, lockedCounselorId, priority, specialty, country, courseId, pipeline]);
+  }, [search, stage, source, counselorId, lockedCounselorId, priority, specialty, country, courseId, pipeline, transfer]);
 
-  const active = search || [stage, source, counselorId, priority, specialty, country, courseId, pipeline].some((v) => v !== "all");
+  const active = search || [stage, source, counselorId, priority, specialty, country, courseId, pipeline, transfer].some((v) => v !== "all");
 
   const advancedCount = React.useMemo(
     () => [priority, specialty, country].filter((v) => v !== "all").length,
@@ -259,6 +260,7 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
     setCountry("all");
     setCourseId("all");
     setPipeline("all");
+    setTransfer("all");
     setRange("all");
     setCustomFrom("");
     setCustomTo("");
@@ -430,6 +432,17 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
               all={t("everyone")}
               options={counselors.map((c) => ({ value: c.id, label: c.name }))}
               className="w-[150px]"
+            />
+          )}
+
+          {!isStaff && (
+            <Filter
+              label={t("filterTransfer")}
+              value={transfer}
+              onChange={setTransfer}
+              all={t("allTransfers")}
+              options={[{ value: "transferred", label: t("transferredByAdmin") }]}
+              className="w-[170px]"
             />
           )}
 

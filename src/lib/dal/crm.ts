@@ -100,6 +100,7 @@ export const fetchLeads = async (filters: db.LeadFilters = {}): Promise<Result<d
     if (f(filters.specialty)) rows = rows.filter((r) => eq(r.specialty, filters.specialty));
     if (f(filters.country)) rows = rows.filter((r) => eq(r.country, filters.country));
     if (f(filters.courseId)) rows = rows.filter((r) => r.coursesOfInterest.includes(filters.courseId!));
+    if (filters.transfer === "transferred") rows = rows.filter((r) => !!r.transferredAtISO);
     if (phoneSearch) rows = rows.filter((r) => leadPhoneMatches(phoneSearch, r));
     return ok(rows);
   } catch (err) {

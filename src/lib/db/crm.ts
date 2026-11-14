@@ -117,6 +117,9 @@ export interface Lead {
   jobTitle?: string;
   counselorId: string;
   counselorName: string;
+  /** Set when an admin moved this lead from another sales agent (latest transfer). */
+  transferredAtISO?: string;
+  transferredFromName?: string;
   priority: LeadPriority;
   score: number;
   stageKey: string;
@@ -326,6 +329,8 @@ export interface LeadFilters {
   specialty?: string;
   country?: string;
   courseId?: string;
+  /** "transferred" → only leads an admin reassigned to another sales agent (client-side). */
+  transfer?: string;
 }
 
 export async function getLeads(filters: LeadFilters = {}): Promise<Lead[]> {
