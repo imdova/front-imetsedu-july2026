@@ -435,16 +435,14 @@ export function LeadsTable({ initialData, stages, counselors, pipelines, courseO
             />
           )}
 
-          {!isStaff && (
-            <Filter
-              label={t("filterTransfer")}
-              value={transfer}
-              onChange={setTransfer}
-              all={t("allTransfers")}
-              options={[{ value: "transferred", label: t("transferredByAdmin") }]}
-              className="w-[170px]"
-            />
-          )}
+          <Filter
+            label={t("filterTransfer")}
+            value={transfer}
+            onChange={setTransfer}
+            all={t("allTransfers")}
+            options={[{ value: "transferred", label: t("transferredByAdmin") }]}
+            className="w-[170px]"
+          />
 
           <Filter
             label={t("filterCourse")}
